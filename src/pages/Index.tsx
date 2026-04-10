@@ -1,16 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { LearningSidebar } from "@/components/LearningSidebar";
+import { GoalsBar } from "@/components/GoalsBar";
+import { ChatArea } from "@/components/ChatArea";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const [activeSubtopic, setActiveSubtopic] = useState("ml-2-2");
+  const [activeTitle, setActiveTitle] = useState("Backpropagation");
+
+  const handleSelect = (id: string, title: string) => {
+    setActiveSubtopic(id);
+    setActiveTitle(title);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="flex h-screen overflow-hidden">
+      <LearningSidebar activeSubtopic={activeSubtopic} onSelectSubtopic={handleSelect} />
+      <div className="flex-1 flex flex-col min-h-0">
+        <GoalsBar />
+        <ChatArea activeSubtopicTitle={activeTitle} />
+      </div>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
