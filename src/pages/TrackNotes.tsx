@@ -11,12 +11,11 @@ const TrackNotes = () => {
   const { getTrackNotes, removeNote } = useNotes();
 
   const track = useMemo(() => learningTracks.find((t) => t.id === trackId), [trackId]);
-  if (!track) return <Navigate to="/" replace />;
-
-  const notes = getTrackNotes(track.id);
+  const notes = useMemo(() => (track ? getTrackNotes(track.id) : []), [track, getTrackNotes]);
 
   // Group notes by topic -> subtopic
   const grouped = useMemo(() => {
+    if (!track) return new Map();
     const map = new Map<string, { topicTitle: string; subtopics: Map<string, { subtopicTitle: string; notes: typeof notes }> }>();
     for (const note of notes) {
       const topic = track.topics.find((t) => t.id === note.topicId);
@@ -32,6 +31,8 @@ const TrackNotes = () => {
     }
     return map;
   }, [notes, track]);
+
+  if (!track) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-background">
