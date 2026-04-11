@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import TrackDetail from "./pages/TrackDetail";
 import TrackNotes from "./pages/TrackNotes";
 import TrackTracker from "./pages/TrackTracker";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/track/:trackId" element={<TrackDetail />} />
             <Route path="/track/:trackId/notes" element={<TrackNotes />} />
             <Route path="/track/:trackId/tracker" element={<TrackTracker />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

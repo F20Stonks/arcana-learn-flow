@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, BookOpen, ArrowLeft } from "lucide-react";
+import { ChevronRight, Zap, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Track } from "@/data/learningTracks";
 import { StatusDot } from "./StatusDot";
@@ -31,10 +31,10 @@ export function LearningSidebar({
     <aside className="w-72 shrink-0 border-r border-border bg-sidebar flex flex-col h-screen">
       <div className="p-5 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <BookOpen className="h-4 w-4 text-primary" />
+          <div className="h-8 w-8 rounded-lg bg-primary/10 arc-border flex items-center justify-center">
+            <Zap className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-base font-semibold tracking-tight text-foreground">Jarvis</span>
+          <span className="font-display text-sm font-bold tracking-wider text-gradient-jarvis">JARVIS</span>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export function LearningSidebar({
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
                         activeSubtopic === sub.id
-                          ? "bg-accent text-accent-foreground"
+                          ? "bg-primary/10 text-primary arc-border"
                           : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
@@ -98,7 +98,7 @@ export function LearningSidebar({
 
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+          <div className="h-7 w-7 rounded-full bg-primary/20 arc-border flex items-center justify-center text-xs font-semibold text-primary">
             A
           </div>
           <div className="text-sm">
