@@ -144,8 +144,8 @@ const TrackTracker = () => {
   if (!track) return <Navigate to="/" replace />;
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      <header className="border-b border-border px-8 py-5 shrink-0">
+    <div className="h-screen bg-background bg-grid flex flex-col">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl px-8 py-4 shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
