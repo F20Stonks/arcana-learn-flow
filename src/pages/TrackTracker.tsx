@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, GitBranch } from "lucide-react";
+import { ArrowLeft, GitBranch, Zap } from "lucide-react";
 import {
   ReactFlow,
   Background,
