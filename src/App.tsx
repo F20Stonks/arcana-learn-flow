@@ -3,24 +3,31 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "./pages/Home.tsx";
-import TrackDetail from "./pages/TrackDetail.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { NotesProvider } from "@/stores/NotesContext";
+import Home from "./pages/Home";
+import TrackDetail from "./pages/TrackDetail";
+import TrackNotes from "./pages/TrackNotes";
+import TrackTracker from "./pages/TrackTracker";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/track/:trackId" element={<TrackDetail />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <NotesProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/track/:trackId" element={<TrackDetail />} />
+            <Route path="/track/:trackId/notes" element={<TrackNotes />} />
+            <Route path="/track/:trackId/tracker" element={<TrackTracker />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </NotesProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

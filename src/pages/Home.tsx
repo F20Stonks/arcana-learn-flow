@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import { BookOpen, StickyNote, GitBranch } from "lucide-react";
 import { learningTracks } from "@/data/learningTracks";
 import { StatusDot } from "@/components/StatusDot";
+import { JarvisChat } from "@/components/JarvisChat";
 
 function getTrackProgress(track: (typeof learningTracks)[0]) {
   const all = track.topics.flatMap((t) => t.subtopics);
@@ -39,33 +40,64 @@ const Home = () => {
             const { done, total } = getTrackProgress(track);
             const pct = total > 0 ? Math.round((done / total) * 100) : 0;
             return (
-              <button
+              <div
                 key={track.id}
-                onClick={() => navigate(`/track/${track.id}`)}
-                className="group text-left border border-border rounded-xl bg-card p-6 hover:border-primary/40 hover:bg-card/80 transition-all"
+                className="group border border-border rounded-xl bg-card overflow-hidden hover:border-primary/40 transition-all"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-3xl">{track.emoji}</span>
-                  <StatusDot status={overallStatus(track)} />
+                {/* Clickable card body */}
+                <button
+                  onClick={() => navigate(`/track/${track.id}`)}
+                  className="w-full text-left p-6 pb-4"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-3xl">{track.emoji}</span>
+                    <StatusDot status={overallStatus(track)} />
+                  </div>
+                  <h2 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                    {track.title}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    {track.topics.length} topics · {total} subtopics
+                  </p>
+                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">{pct}% complete</p>
+                </button>
+
+                {/* Action buttons */}
+                <div className="px-6 pb-4 flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/track/${track.id}/notes`);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground bg-secondary hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <StickyNote className="h-3 w-3" />
+                    Notes
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/track/${track.id}/tracker`);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground bg-secondary hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <GitBranch className="h-3 w-3" />
+                    Tracker
+                  </button>
                 </div>
-                <h2 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                  {track.title}
-                </h2>
-                <p className="text-xs text-muted-foreground mb-4">
-                  {track.topics.length} topics · {total} subtopics
-                </p>
-                <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-2">{pct}% complete</p>
-              </button>
+              </div>
             );
           })}
         </div>
       </main>
+
+      <JarvisChat />
     </div>
   );
 };
