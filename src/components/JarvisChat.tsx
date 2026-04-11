@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Send, Sparkles, X, MessageCircle } from "lucide-react";
+import { Send, Sparkles, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
@@ -14,7 +14,7 @@ const initialMessages: Message[] = [
     id: "1",
     role: "assistant",
     content:
-      "Hey! 👋 I'm Jarvis, your learning assistant. Tell me about your goals — what do you want to learn? I'll create a structured learning track for you.\n\nFor example: *\"I want to master machine learning from scratch\"* or *\"Help me prepare for system design interviews.\"*",
+      "Hey! 👋 I'm **Jarvis**, your learning architect. Tell me what you want to master and I'll build a structured learning track for you.\n\nTry: *\"I want to learn distributed systems\"* or *\"Help me get into deep learning.\"*",
   },
 ];
 
@@ -33,7 +33,7 @@ export function JarvisChat() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content:
-          "Great goal! 🎯 I'd create a learning track for that with structured topics and subtopics. In the full version, I'll generate a complete track with curated content.\n\nFor now, check out the existing tracks on your dashboard to get started!",
+          "Great goal! 🎯 I'd create a structured track for that with curated topics and subtopics. In the full version, I'll generate a complete learning path with AI-powered lessons.\n\nFor now, explore the existing tracks on your dashboard!",
       },
     ]);
     setInput("");
@@ -43,21 +43,21 @@ export function JarvisChat() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25 hover:scale-105 transition-transform arc-glow-strong"
       >
-        <MessageCircle className="h-6 w-6" />
+        <Zap className="h-6 w-6" />
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-96 h-[520px] bg-card border border-border rounded-2xl shadow-2xl shadow-black/40 flex flex-col overflow-hidden">
+    <div className="fixed bottom-6 right-6 z-50 w-[400px] h-[540px] bg-card arc-border rounded-2xl shadow-2xl shadow-black/50 flex flex-col overflow-hidden arc-glow">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-background/50">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">Jarvis</span>
-          <span className="text-[10px] text-muted-foreground">Goal Planner</span>
+          <Zap className="h-4 w-4 text-primary" />
+          <span className="font-display text-xs font-bold tracking-wider text-gradient-jarvis">JARVIS</span>
+          <span className="text-[10px] text-muted-foreground ml-1">Goal Planner</span>
         </div>
         <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
           <X className="h-4 w-4" />
@@ -73,7 +73,7 @@ export function JarvisChat() {
                 "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-secondary text-secondary-foreground rounded-bl-md"
+                  : "bg-secondary text-secondary-foreground rounded-bl-md arc-border"
               )}
             >
               {msg.role === "assistant" ? (
@@ -90,12 +90,12 @@ export function JarvisChat() {
 
       {/* Input */}
       <div className="p-3 border-t border-border">
-        <div className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-2 arc-border">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Tell Jarvis your learning goals…"
+            placeholder="Tell Jarvis what you want to learn…"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           <button

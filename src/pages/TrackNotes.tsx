@@ -35,8 +35,8 @@ const TrackNotes = () => {
   if (!track) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-8 py-5">
+    <div className="min-h-screen bg-background bg-grid">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl px-8 py-4">
         <div className="flex items-center gap-3 max-w-4xl mx-auto">
           <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />

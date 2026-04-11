@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,52 +6,57 @@
 
 @layer base {
   :root {
-    --background: 225 15% 8%;
+    --background: 220 20% 6%;
     --foreground: 210 20% 92%;
 
-    --card: 225 14% 11%;
+    --card: 220 18% 9%;
     --card-foreground: 210 20% 92%;
 
-    --popover: 225 14% 11%;
+    --popover: 220 18% 9%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 142 60% 50%;
-    --primary-foreground: 225 15% 8%;
+    --primary: 200 100% 55%;
+    --primary-foreground: 220 20% 4%;
 
-    --secondary: 225 12% 16%;
+    --secondary: 220 15% 13%;
     --secondary-foreground: 210 15% 75%;
 
-    --muted: 225 12% 14%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 220 15% 12%;
+    --muted-foreground: 215 12% 48%;
 
-    --accent: 225 12% 18%;
+    --accent: 220 15% 15%;
     --accent-foreground: 210 20% 88%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 225 12% 18%;
-    --input: 225 12% 18%;
-    --ring: 142 60% 50%;
+    --border: 220 15% 14%;
+    --input: 220 15% 14%;
+    --ring: 200 100% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 225 14% 9%;
+    --sidebar-background: 220 18% 7%;
     --sidebar-foreground: 210 15% 75%;
-    --sidebar-primary: 142 60% 50%;
-    --sidebar-primary-foreground: 225 15% 8%;
-    --sidebar-accent: 225 12% 14%;
+    --sidebar-primary: 200 100% 55%;
+    --sidebar-primary-foreground: 220 20% 4%;
+    --sidebar-accent: 220 15% 12%;
     --sidebar-accent-foreground: 210 20% 88%;
-    --sidebar-border: 225 12% 16%;
-    --sidebar-ring: 142 60% 50%;
+    --sidebar-border: 220 15% 13%;
+    --sidebar-ring: 200 100% 55%;
 
     /* Custom tokens */
-    --status-green: 142 60% 50%;
+    --status-green: 160 70% 45%;
     --status-yellow: 45 93% 58%;
-    --status-red: 0 72% 55%;
-    --surface-chat: 225 14% 10%;
-    --surface-input: 225 12% 12%;
-    --glow-primary: 0 0% 100% / 0.03;
+    --status-red: 0 65% 50%;
+    --surface-chat: 220 18% 8%;
+    --surface-input: 220 15% 10%;
+    --glow-primary: 200 100% 55%;
+    --glow-accent: 260 80% 60%;
+
+    /* Streak / gamification */
+    --streak-flame: 25 95% 55%;
+    --xp-gold: 45 100% 60%;
   }
 }
 
@@ -66,17 +71,63 @@
   }
 }
 
+/* Arc reactor glow effect */
+.arc-glow {
+  box-shadow:
+    0 0 20px hsl(var(--glow-primary) / 0.15),
+    0 0 60px hsl(var(--glow-primary) / 0.05),
+    inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+
+.arc-glow-strong {
+  box-shadow:
+    0 0 30px hsl(var(--glow-primary) / 0.25),
+    0 0 80px hsl(var(--glow-primary) / 0.08),
+    inset 0 1px 0 hsl(0 0% 100% / 0.08);
+}
+
+.arc-border {
+  border: 1px solid hsl(var(--glow-primary) / 0.2);
+}
+
+/* Gradient text */
+.text-gradient-jarvis {
+  background: linear-gradient(135deg, hsl(200, 100%, 60%), hsl(260, 80%, 65%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle grid background */
+.bg-grid {
+  background-image:
+    linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(225 12% 22%);
+  background: hsl(220 15% 20%);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(225 12% 28%);
+  background: hsl(220 15% 28%);
+}
+
+/* React Flow overrides for dark theme */
+.react-flow__controls button {
+  background: hsl(220, 18%, 12%) !important;
+  border-color: hsl(220, 15%, 18%) !important;
+  color: hsl(210, 20%, 70%) !important;
+  fill: hsl(210, 20%, 70%) !important;
+}
+.react-flow__controls button:hover {
+  background: hsl(220, 18%, 16%) !important;
 }
