@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2 } from "lucide-react";
+import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 
 type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number };
@@ -111,11 +111,11 @@ export default function Dashboard() {
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct(t)}%` }} />
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/notes`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/notes`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                       <BookOpen className="h-3 w-3" /> Notes
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/knowledge-map`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <Map className="h-3 w-3" /> Map
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/questions`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <Target className="h-3 w-3" /> Questions
                     </button>
                   </div>
                 </div>
