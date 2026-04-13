@@ -8,6 +8,8 @@ import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import Dashboard from "./pages/Dashboard";
 import TrackOverview from "./pages/TrackOverview";
+import TrackNotes from "./pages/TrackNotes";
+import QuestionAttack from "./pages/QuestionAttack";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -52,6 +54,8 @@ function AppRoutes() {
       <Route path="/onboarding" element={<OnboardingGuard><OnboardingPage /></OnboardingGuard>} />
       <Route path="/dashboard" element={<DashboardGuard><Dashboard /></DashboardGuard>} />
       <Route path="/track/:trackId" element={<DashboardGuard><TrackOverview /></DashboardGuard>} />
+      <Route path="/track/:trackId/notes" element={<DashboardGuard><TrackNotes /></DashboardGuard>} />
+      <Route path="/track/:trackId/questions" element={<DashboardGuard><QuestionAttack /></DashboardGuard>} />
       <Route path="/session/:subtopicId" element={<DashboardGuard><SessionPage /></DashboardGuard>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
