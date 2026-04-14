@@ -1,70 +1,15 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send, Loader2, Clock, Zap, BookOpen, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import "katex/dist/katex.min.css";
-import { InlineMath, BlockMath } from "react-katex";
 import { Tables } from "@/integrations/supabase/types";
+import MathRenderer from "@/components/MathRenderer";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-}
-
-// Parse math delimiters in text
-function renderMathContent(content: string) {
-  // Split on $$ (block) and $ (inline) math delimiters
-  const parts: React.ReactNode[] = [];
-  let remaining = content;
-  let key = 0;
-
-  // Handle block math first $$...$$
-  while (remaining.includes("$$")) {
-    const start = remaining.indexOf("$$");
-    const end = remaining.indexOf("$$", start + 2);
-    if (end === -1) break;
-
-    if (start > 0) {
-      parts.push(<ReactMarkdown key={key++}>{remaining.slice(0, start)}</ReactMarkdown>);
-    }
-    const math = remaining.slice(start + 2, end);
-    try {
-      parts.push(<BlockMath key={key++} math={math} />);
-    } catch {
-      parts.push(<code key={key++}>{math}</code>);
-    }
-    remaining = remaining.slice(end + 2);
-  }
-
-  // Handle inline math $...$
-  if (remaining.includes("$")) {
-    const regex = /\$([^$]+)\$/g;
-    let lastIndex = 0;
-    let match;
-    const inlineParts: React.ReactNode[] = [];
-
-    while ((match = regex.exec(remaining)) !== null) {
-      if (match.index > lastIndex) {
-        inlineParts.push(<ReactMarkdown key={key++}>{remaining.slice(lastIndex, match.index)}</ReactMarkdown>);
-      }
-      try {
-        inlineParts.push(<InlineMath key={key++} math={match[1]} />);
-      } catch {
-        inlineParts.push(<code key={key++}>{match[1]}</code>);
-      }
-      lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < remaining.length) {
-      inlineParts.push(<ReactMarkdown key={key++}>{remaining.slice(lastIndex)}</ReactMarkdown>);
-    }
-    parts.push(...inlineParts);
-  } else if (remaining) {
-    parts.push(<ReactMarkdown key={key++}>{remaining}</ReactMarkdown>);
-  }
-
-  return parts;
 }
 
 export default function SessionPage() {
@@ -89,13 +34,11 @@ export default function SessionPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Timer
   useEffect(() => {
     timerRef.current = setInterval(() => setSessionTime((t) => t + 1), 1000);
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // Load subtopic context
   useEffect(() => {
     if (!subtopicId || !user) return;
     loadContext();
@@ -113,20 +56,15 @@ export default function SessionPage() {
       setTrack(tr);
     }
 
-    // Create session
     const { data: sess } = await supabase.from("sessions").insert({
-      user_id: user!.id,
-      subtopic_id: subtopicId!,
-      session_type: "learn",
+      user_id: user!.id, subtopic_id: subtopicId!, session_type: "learn",
     }).select().single();
     if (sess) setSessionId(sess.id);
 
-    // Update subtopic status
     if (sub.status === "unlocked") {
       await supabase.from("subtopics").update({ status: "in_progress" }).eq("id", sub.id);
     }
 
-    // Load existing notes
     const { data: existingNotes } = await supabase.from("notes").select("*").eq("subtopic_id", subtopicId!).eq("user_id", user!.id);
     setNotes(existingNotes || []);
   };
@@ -139,7 +77,6 @@ export default function SessionPage() {
     setInput("");
     setIsStreaming(true);
 
-    // Save user message to DB
     await supabase.from("messages").insert({ session_id: sessionId, role: "user", content: text });
 
     try {
@@ -152,11 +89,8 @@ export default function SessionPage() {
         body: JSON.stringify({
           messages: newMessages,
           context: {
-            subtopic: subtopic?.title,
-            topic: topic?.title,
-            subject: track?.subject,
-            level: track?.level,
-            examBoard: track?.exam_board,
+            subtopic: subtopic?.title, topic: topic?.title,
+            subject: track?.subject, level: track?.level, examBoard: track?.exam_board,
           },
         }),
       });
@@ -179,10 +113,8 @@ export default function SessionPage() {
           textBuffer = textBuffer.slice(newlineIndex + 1);
           if (line.endsWith("\r")) line = line.slice(0, -1);
           if (line.startsWith(":") || line.trim() === "" || !line.startsWith("data: ")) continue;
-
           const jsonStr = line.slice(6).trim();
           if (jsonStr === "[DONE]") break;
-
           try {
             const parsed = JSON.parse(jsonStr);
             const delta = parsed.choices?.[0]?.delta?.content;
@@ -203,11 +135,10 @@ export default function SessionPage() {
         }
       }
 
-      // Save assistant message
       if (assistantContent) {
         await supabase.from("messages").insert({ session_id: sessionId, role: "assistant", content: assistantContent });
       }
-    } catch (err) {
+    } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setIsStreaming(false);
@@ -216,7 +147,6 @@ export default function SessionPage() {
 
   const endSession = async () => {
     if (sessionId) {
-      // Call assessment edge function
       try {
         const resp = await supabase.functions.invoke("assess-session", {
           body: { sessionId, subtopicId, messages },
@@ -224,7 +154,6 @@ export default function SessionPage() {
         if (resp.data) {
           const { complete, xp_earned, notes_to_save } = resp.data;
           setXpEarned(xp_earned || 0);
-
           if (complete && subtopic) {
             await supabase.from("subtopics").update({ status: "complete", completed_at: new Date().toISOString() }).eq("id", subtopic.id);
           }
@@ -250,7 +179,6 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
@@ -268,7 +196,6 @@ export default function SessionPage() {
       </header>
 
       <div className="flex-1 flex min-h-0">
-        {/* Chat */}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
@@ -283,23 +210,24 @@ export default function SessionPage() {
                     ? "bg-primary text-primary-foreground rounded-br-md"
                     : "bg-card border border-border text-card-foreground rounded-bl-md"
                 }`}>
-                  <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-foreground">
-                    {renderMathContent(msg.content)}
-                  </div>
+                  <MathRenderer content={msg.content} />
                 </div>
               </div>
             ))}
             {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex justify-start">
                 <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <div className="flex gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
                 </div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
               <input
@@ -321,7 +249,6 @@ export default function SessionPage() {
           </div>
         </div>
 
-        {/* Notes panel - desktop */}
         <aside className={`${showNotes ? "block" : "hidden"} md:block w-full md:w-80 border-l border-border bg-card overflow-y-auto`}>
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">Knowledge Bank</h3>
@@ -334,7 +261,9 @@ export default function SessionPage() {
               notes.map((n) => (
                 <div key={n.id} className="bg-accent rounded-lg p-3">
                   <h4 className="text-xs font-medium text-foreground mb-1">{n.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-3">{n.content}</p>
+                  <div className="text-xs text-muted-foreground">
+                    <MathRenderer content={n.content} />
+                  </div>
                 </div>
               ))
             )}

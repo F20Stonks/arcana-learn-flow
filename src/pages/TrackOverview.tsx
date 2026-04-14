@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Lock, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import KnowledgeMap from "@/components/KnowledgeMap";
 
 type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
@@ -11,9 +12,11 @@ const STATUS_COLORS: Record<string, string> = {
   complete: "bg-status-green",
   in_progress: "bg-status-yellow",
   review_due: "bg-status-red",
-  unlocked: "bg-muted-foreground",
+  unlocked: "bg-primary",
   locked: "bg-muted",
 };
+
+type View = "overview" | "map";
 
 export default function TrackOverview() {
   const { trackId } = useParams();
@@ -23,6 +26,7 @@ export default function TrackOverview() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<View>("overview");
 
   useEffect(() => {
     if (!trackId || !user) return;
@@ -42,7 +46,6 @@ export default function TrackOverview() {
       enriched.push({ ...topic, subtopics: subs || [] });
     }
     setTopics(enriched);
-    // Auto-expand first topic
     if (enriched.length > 0) setExpanded(new Set([enriched[0].id]));
     setLoading(false);
   };
@@ -69,6 +72,16 @@ export default function TrackOverview() {
           </button>
           <h2 className="text-sm font-semibold text-foreground">{track?.title}</h2>
           <p className="text-xs text-muted-foreground mt-1">{track?.subject} {track?.level && `· ${track.level}`}</p>
+        </div>
+
+        {/* Quick actions */}
+        <div className="p-3 border-b border-border flex gap-2">
+          <button onClick={() => navigate(`/track/${trackId}/notes`)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-accent text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <BookOpen className="h-3.5 w-3.5" /> Notes
+          </button>
+          <button onClick={() => navigate(`/track/${trackId}/questions`)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-accent text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <Target className="h-3.5 w-3.5" /> Questions
+          </button>
         </div>
 
         <div className="p-2">
@@ -108,52 +121,77 @@ export default function TrackOverview() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-6 sm:p-8">
-        <div className="max-w-2xl">
+      <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
+        <div className="max-w-3xl">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-3xl">{track?.emoji}</span>
-            <div>
+            <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">{track?.title}</h1>
               <p className="text-sm text-muted-foreground">{track?.subject} {track?.exam_board && `· ${track.exam_board}`}</p>
             </div>
           </div>
 
-          {track?.exam_date && (
-            <div className="bg-card border border-border rounded-xl p-4 mb-6">
-              <p className="text-xs text-muted-foreground mb-1">Exam date</p>
-              <p className="text-sm font-medium text-foreground">{new Date(track.exam_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
-            </div>
+          {/* View toggle */}
+          <div className="flex gap-1 bg-accent rounded-lg p-1 mb-6 w-fit">
+            <button
+              onClick={() => setView("overview")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === "overview" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setView("map")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${view === "map" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Map className="h-3 w-3" /> Knowledge Map
+            </button>
+          </div>
+
+          {view === "overview" ? (
+            <>
+              {track?.exam_date && (
+                <div className="bg-card border border-border rounded-xl p-4 mb-6">
+                  <p className="text-xs text-muted-foreground mb-1">Exam date</p>
+                  <p className="text-sm font-medium text-foreground">{new Date(track.exam_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+                </div>
+              )}
+
+              <div className="bg-card border border-border rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">Progress</p>
+                  <p className="text-xs font-medium text-foreground">{pct}%</p>
+                </div>
+                <div className="w-full h-2 rounded-full bg-secondary">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
+              </div>
+
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Topics</h3>
+                <div className="space-y-2">
+                  {topics.map((t) => {
+                    const tc = t.subtopics.filter(s => s.status === "complete").length;
+                    const tp = t.subtopics.length > 0 ? Math.round((tc / t.subtopics.length) * 100) : 0;
+                    return (
+                      <div key={t.id} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[t.status]}`} />
+                          <span className="text-sm text-foreground">{t.title}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{tp}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <KnowledgeMap
+              topics={topics}
+              onSubtopicClick={(id) => navigate(`/session/${id}`)}
+            />
           )}
-
-          <div className="bg-card border border-border rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-muted-foreground">Progress</p>
-              <p className="text-xs font-medium text-foreground">{pct}%</p>
-            </div>
-            <div className="w-full h-2 rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
-          </div>
-
-          <div className="bg-card border border-border rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Topics</h3>
-            <div className="space-y-2">
-              {topics.map((t) => {
-                const tc = t.subtopics.filter(s => s.status === "complete").length;
-                const tp = t.subtopics.length > 0 ? Math.round((tc / t.subtopics.length) * 100) : 0;
-                return (
-                  <div key={t.id} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[t.status]}`} />
-                      <span className="text-sm text-foreground">{t.title}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{tp}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </main>
     </div>
