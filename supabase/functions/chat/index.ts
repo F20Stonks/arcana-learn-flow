@@ -9,30 +9,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, context } = await req.json();
+    const { messages, context, systemOverride } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are Jarvis, an elite AI tutor. You teach with clarity, precision, and depth. You adapt to the student's level and build understanding step by step.
+    const systemPrompt = systemOverride || `You are Jarvis, an elite AI tutor. Teach with clarity and precision.
 
-Current session context:
+Context:
 - Subtopic: ${context?.subtopic || "General"}
 - Topic: ${context?.topic || "General"}  
 - Subject: ${context?.subject || "General"}
 - Level: ${context?.level || "Not specified"}
 - Exam board: ${context?.examBoard || "Not specified"}
 
-Teaching approach:
-1. Start by gauging what the student already knows
-2. Build concepts from foundations up
-3. Use clear examples and analogies
-4. For maths/science, use LaTeX notation with $ delimiters for inline and $$ for block equations
-5. Ask probing questions to check understanding
-6. Identify and address misconceptions
-7. Provide practice problems when appropriate
-8. Be encouraging but rigorous — don't let gaps slide
-
-Keep responses focused and concise. Use markdown formatting. When the student demonstrates mastery of a concept, acknowledge it and move forward.`;
+Rules:
+1. Be CONCISE — 2-4 sentences per response unless the student asks for detail
+2. Use $...$ for inline math and $$...$$ for block math
+3. Ask one probing question per response to check understanding
+4. Build from what they know — don't repeat basics they've shown mastery of
+5. If they're stuck, give a hint first, not the full answer
+6. Use markdown: **bold** for key terms, bullet lists for steps
+7. Be encouraging but never let gaps slide`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

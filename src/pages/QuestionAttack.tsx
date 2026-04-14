@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, Brain } from "lucide-react";
+import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, Brain, HelpCircle } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import ReactMarkdown from "react-markdown";
+import MathRenderer from "@/components/MathRenderer";
+import MiniChat from "@/components/MiniChat";
 import "katex/dist/katex.min.css";
-import { InlineMath, BlockMath } from "react-katex";
 
 type TopicWithSubs = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
@@ -17,36 +17,6 @@ interface Question {
   explanation: string;
   difficulty: string;
   topic: string;
-}
-
-function renderMath(content: string) {
-  const parts: React.ReactNode[] = [];
-  let remaining = content;
-  let key = 0;
-
-  while (remaining.includes("$$")) {
-    const start = remaining.indexOf("$$");
-    const end = remaining.indexOf("$$", start + 2);
-    if (end === -1) break;
-    if (start > 0) parts.push(<ReactMarkdown key={key++}>{remaining.slice(0, start)}</ReactMarkdown>);
-    try { parts.push(<BlockMath key={key++} math={remaining.slice(start + 2, end)} />); } catch { parts.push(<code key={key++}>{remaining.slice(start + 2, end)}</code>); }
-    remaining = remaining.slice(end + 2);
-  }
-
-  if (remaining.includes("$")) {
-    const regex = /\$([^$]+)\$/g;
-    let lastIndex = 0;
-    let match;
-    while ((match = regex.exec(remaining)) !== null) {
-      if (match.index > lastIndex) parts.push(<ReactMarkdown key={key++}>{remaining.slice(lastIndex, match.index)}</ReactMarkdown>);
-      try { parts.push(<InlineMath key={key++} math={match[1]} />); } catch { parts.push(<code key={key++}>{match[1]}</code>); }
-      lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < remaining.length) parts.push(<ReactMarkdown key={key++}>{remaining.slice(lastIndex)}</ReactMarkdown>);
-  } else if (remaining) {
-    parts.push(<ReactMarkdown key={key++}>{remaining}</ReactMarkdown>);
-  }
-  return parts;
 }
 
 type Phase = "config" | "loading" | "question" | "feedback" | "results";
@@ -60,13 +30,15 @@ export default function QuestionAttack() {
   const [topics, setTopics] = useState<TopicWithSubs[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Config state
+  // Config
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "exam">("medium");
   const [questionCount, setQuestionCount] = useState(5);
   const [questionType, setQuestionType] = useState<"mixed" | "mcq" | "open">("mixed");
+  const [timed, setTimed] = useState(false);
+  const [timePerQuestion, setTimePerQuestion] = useState(60);
 
-  // Quiz state
+  // Quiz
   const [phase, setPhase] = useState<Phase>("config");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -75,26 +47,42 @@ export default function QuestionAttack() {
   const [feedback, setFeedback] = useState<{ correct: boolean; explanation: string } | null>(null);
   const [score, setScore] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [showMiniChat, setShowMiniChat] = useState(false);
+  const [timer, setTimer] = useState(0);
 
   useEffect(() => {
     if (!trackId || !user) return;
     loadData();
   }, [trackId, user]);
 
+  // Timer countdown
+  useEffect(() => {
+    if (phase !== "question" || !timed) return;
+    setTimer(timePerQuestion);
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          submitAnswer();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, currentIdx, timed]);
+
   const loadData = async () => {
     const { data: t } = await supabase.from("learning_tracks").select("*").eq("id", trackId!).single();
     setTrack(t);
-
     const { data: rawTopics } = await supabase.from("topics").select("*").eq("track_id", trackId!).order("order_index");
     if (!rawTopics) { setLoading(false); return; }
-
     const enriched: TopicWithSubs[] = [];
     for (const topic of rawTopics) {
       const { data: subs } = await supabase.from("subtopics").select("*").eq("topic_id", topic.id).order("order_index");
       enriched.push({ ...topic, subtopics: subs || [] });
     }
     setTopics(enriched);
-    // Select all by default
     setSelectedTopics(new Set(enriched.map(t => t.id)));
     setLoading(false);
   };
@@ -110,37 +98,24 @@ export default function QuestionAttack() {
   const startQuiz = async () => {
     if (selectedTopics.size === 0) return;
     setPhase("loading");
-
     const selectedTopicNames = topics
       .filter(t => selectedTopics.has(t.id))
-      .map(t => ({
-        topic: t.title,
-        subtopics: t.subtopics.map(s => s.title),
-      }));
+      .map(t => ({ topic: t.title, subtopics: t.subtopics.map(s => s.title) }));
 
     try {
       const resp = await supabase.functions.invoke("question-attack", {
         body: {
-          subject: track?.subject,
-          level: track?.level,
-          examBoard: track?.exam_board,
-          topics: selectedTopicNames,
-          difficulty,
-          questionCount,
-          questionType,
+          subject: track?.subject, level: track?.level, examBoard: track?.exam_board,
+          topics: selectedTopicNames, difficulty, questionCount, questionType,
         },
       });
-
       if (resp.error) throw resp.error;
-      const data = resp.data;
-      if (data.questions && data.questions.length > 0) {
-        setQuestions(data.questions);
+      if (resp.data.questions?.length > 0) {
+        setQuestions(resp.data.questions);
         setCurrentIdx(0);
         setScore(0);
         setPhase("question");
-      } else {
-        throw new Error("No questions generated");
-      }
+      } else throw new Error("No questions");
     } catch (err) {
       console.error("Question generation failed:", err);
       setPhase("config");
@@ -150,38 +125,28 @@ export default function QuestionAttack() {
   const submitAnswer = async () => {
     const q = questions[currentIdx];
     if (!q) return;
-
     const userAnswer = q.options ? q.options[selectedOption!] : answer;
     if (!userAnswer?.trim()) return;
-
     setFeedbackLoading(true);
 
     try {
       const resp = await supabase.functions.invoke("question-attack", {
         body: {
-          mode: "assess",
-          question: q.question,
-          correctAnswer: q.correct_answer,
-          userAnswer,
-          explanation: q.explanation,
-          subject: track?.subject,
-          level: track?.level,
+          mode: "assess", question: q.question, correctAnswer: q.correct_answer,
+          userAnswer, explanation: q.explanation, subject: track?.subject, level: track?.level,
         },
       });
-
-      const data = resp.data;
-      const isCorrect = data?.correct ?? false;
+      const isCorrect = resp.data?.correct ?? false;
       if (isCorrect) setScore(s => s + 1);
-      setFeedback({ correct: isCorrect, explanation: data?.feedback || q.explanation });
-      setPhase("feedback");
+      setFeedback({ correct: isCorrect, explanation: resp.data?.feedback || q.explanation });
     } catch {
-      // Fallback: simple string match
       const isCorrect = userAnswer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
       if (isCorrect) setScore(s => s + 1);
       setFeedback({ correct: isCorrect, explanation: q.explanation });
-      setPhase("feedback");
     } finally {
       setFeedbackLoading(false);
+      setPhase("feedback");
+      setShowMiniChat(false);
     }
   };
 
@@ -193,6 +158,7 @@ export default function QuestionAttack() {
       setAnswer("");
       setSelectedOption(null);
       setFeedback(null);
+      setShowMiniChat(false);
       setPhase("question");
     }
   };
@@ -216,6 +182,11 @@ export default function QuestionAttack() {
         </div>
         {phase !== "config" && phase !== "loading" && (
           <div className="flex items-center gap-3 text-sm">
+            {timed && phase === "question" && (
+              <span className={`font-mono text-xs ${timer <= 10 ? "text-destructive" : "text-muted-foreground"}`}>
+                {timer}s
+              </span>
+            )}
             <span className="text-muted-foreground">{currentIdx + 1}/{questions.length}</span>
             <span className="text-xp font-medium">{score} correct</span>
           </div>
@@ -233,7 +204,18 @@ export default function QuestionAttack() {
 
             {/* Topic selection */}
             <div className="bg-card border border-border rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-3">Topics to test</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground">Topics to test</h3>
+                <button
+                  onClick={() => {
+                    if (selectedTopics.size === topics.length) setSelectedTopics(new Set());
+                    else setSelectedTopics(new Set(topics.map(t => t.id)));
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {selectedTopics.size === topics.length ? "Deselect all" : "Select all"}
+                </button>
+              </div>
               <div className="space-y-2">
                 {topics.map(t => (
                   <label key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
@@ -268,11 +250,11 @@ export default function QuestionAttack() {
               </div>
             </div>
 
-            {/* Question count & type */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Count, type, timer */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-medium text-foreground mb-3">Questions</h3>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {[5, 10, 15, 20].map(n => (
                     <button
                       key={n}
@@ -303,6 +285,29 @@ export default function QuestionAttack() {
                   ))}
                 </div>
               </div>
+
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-sm font-medium text-foreground mb-3">Timer</h3>
+                <label className="flex items-center gap-2 cursor-pointer mb-2">
+                  <input type="checkbox" checked={timed} onChange={e => setTimed(e.target.checked)} className="rounded border-border text-primary focus:ring-primary" />
+                  <span className="text-sm text-foreground">Timed mode</span>
+                </label>
+                {timed && (
+                  <div className="flex gap-2">
+                    {[30, 60, 120].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setTimePerQuestion(s)}
+                        className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                          timePerQuestion === s ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground"
+                        }`}
+                      >
+                        {s}s
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
@@ -331,9 +336,7 @@ export default function QuestionAttack() {
                 <span className="text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded-full">{currentQ.topic}</span>
                 <span className="text-xs text-muted-foreground">{currentQ.difficulty}</span>
               </div>
-              <div className="prose prose-sm prose-invert max-w-none text-foreground">
-                {renderMath(currentQ.question)}
-              </div>
+              <MathRenderer content={currentQ.question} />
             </div>
 
             {currentQ.options ? (
@@ -352,7 +355,7 @@ export default function QuestionAttack() {
                       <span className="h-6 w-6 rounded-full border border-current flex items-center justify-center text-xs font-medium shrink-0">
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <div className="prose prose-sm prose-invert max-w-none">{renderMath(opt)}</div>
+                      <MathRenderer content={opt} />
                     </div>
                   </button>
                 ))}
@@ -379,7 +382,7 @@ export default function QuestionAttack() {
 
         {/* FEEDBACK */}
         {phase === "feedback" && feedback && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className={`rounded-xl p-6 border ${feedback.correct ? "bg-status-green/10 border-status-green/30" : "bg-destructive/10 border-destructive/30"}`}>
               <div className="flex items-center gap-2 mb-3">
                 {feedback.correct ? (
@@ -388,10 +391,28 @@ export default function QuestionAttack() {
                   <><XCircle className="h-5 w-5 text-destructive" /><span className="text-sm font-semibold text-destructive">Not quite</span></>
                 )}
               </div>
-              <div className="prose prose-sm prose-invert max-w-none text-foreground">
-                {renderMath(feedback.explanation)}
-              </div>
+              <MathRenderer content={feedback.explanation} />
             </div>
+
+            {/* Mini-chat for wrong answers */}
+            {!feedback.correct && !showMiniChat && (
+              <button
+                onClick={() => setShowMiniChat(true)}
+                className="w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-medium hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+              >
+                <HelpCircle className="h-4 w-4" /> I need help understanding this
+              </button>
+            )}
+
+            {showMiniChat && currentQ && (
+              <MiniChat
+                question={currentQ.question}
+                correctAnswer={currentQ.correct_answer}
+                explanation={currentQ.explanation}
+                context={{ subject: track?.subject || undefined, level: track?.level || undefined }}
+                onClose={() => setShowMiniChat(false)}
+              />
+            )}
 
             <button
               onClick={nextQuestion}
@@ -416,7 +437,7 @@ export default function QuestionAttack() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setPhase("config"); setQuestions([]); setScore(0); setCurrentIdx(0); }}
+                onClick={() => { setPhase("config"); setQuestions([]); setScore(0); setCurrentIdx(0); setShowMiniChat(false); }}
                 className="flex-1 py-3 rounded-xl bg-accent text-foreground text-sm font-medium hover:bg-accent/80 transition-colors"
               >
                 New Attack
