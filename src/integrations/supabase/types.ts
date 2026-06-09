@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_customers: {
+        Row: {
+          created_at: string
+          id: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_challenges: {
         Row: {
           date: string
@@ -151,7 +175,6 @@ export type Database = {
           display_name: string | null
           id: string
           onboarding_complete: boolean
-          stripe_customer_id: string | null
           subscription_tier: string
           total_xp: number
           updated_at: string
@@ -165,7 +188,6 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_complete?: boolean
-          stripe_customer_id?: string | null
           subscription_tier?: string
           total_xp?: number
           updated_at?: string
@@ -179,7 +201,6 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_complete?: boolean
-          stripe_customer_id?: string | null
           subscription_tier?: string
           total_xp?: number
           updated_at?: string
