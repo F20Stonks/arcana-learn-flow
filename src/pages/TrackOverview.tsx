@@ -209,6 +209,7 @@ export default function TrackOverview() {
           ) : (
             <KnowledgeMap
               topics={topics}
+              trackTitle={track?.title}
               onSubtopicClick={(id) => navigate(`/session/${id}`)}
             />
           )}
