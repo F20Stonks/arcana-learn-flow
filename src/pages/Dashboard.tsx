@@ -83,7 +83,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Learning Tracks</h3>
             <button
-              onClick={() => navigate("/onboarding")}
+              onClick={() => navigate("/onboarding?new=1")}
               className="flex items-center gap-1.5 text-xs text-primary hover:underline"
             >
               <Plus className="h-3.5 w-3.5" /> New track
@@ -93,7 +93,7 @@ export default function Dashboard() {
           {tracks.length === 0 ? (
             <div className="bg-card border border-border rounded-xl p-8 text-center">
               <p className="text-muted-foreground text-sm mb-4">No tracks yet. Let Jarvis build one for you.</p>
-              <button onClick={() => navigate("/onboarding")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
+              <button onClick={() => navigate("/onboarding?new=1")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
                 Create a track
               </button>
             </div>

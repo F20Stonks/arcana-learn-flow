@@ -66,7 +66,7 @@ export default function OnboardingPage() {
               track_id: track.id,
               title: t.title,
               order_index: ti,
-              status: ti === 0 ? "unlocked" : "locked",
+              status: "unlocked",
             }).select().single();
 
             if (topic) {
@@ -75,7 +75,7 @@ export default function OnboardingPage() {
                   topic_id: topic.id,
                   title: t.subtopics[si],
                   order_index: si,
-                  status: ti === 0 && si === 0 ? "unlocked" : "locked",
+                  status: "unlocked",
                   estimated_minutes: 30,
                 });
               }
