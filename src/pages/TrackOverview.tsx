@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Lock, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 
@@ -56,6 +56,18 @@ export default function TrackOverview() {
     return next;
   });
 
+  const toggleComplete = async (sub: Tables<"subtopics">) => {
+    const nextStatus = sub.status === "complete" ? "unlocked" : "complete";
+    // Optimistic update
+    setTopics((prev) =>
+      prev.map((t) => ({
+        ...t,
+        subtopics: t.subtopics.map((s) => (s.id === sub.id ? { ...s, status: nextStatus } : s)),
+      }))
+    );
+    await supabase.from("subtopics").update({ status: nextStatus }).eq("id", sub.id);
+  };
+
   const totalSubs = topics.reduce((a, t) => a + t.subtopics.length, 0);
   const completedSubs = topics.reduce((a, t) => a + t.subtopics.filter((s) => s.status === "complete").length, 0);
   const pct = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
@@ -99,19 +111,27 @@ export default function TrackOverview() {
               {expanded.has(topic.id) && (
                 <div className="ml-6 pl-3 border-l border-border space-y-0.5 mb-1">
                   {topic.subtopics.map((sub) => (
-                    <button
-                      key={sub.id}
-                      onClick={() => sub.status !== "locked" && navigate(`/session/${sub.id}`)}
-                      disabled={sub.status === "locked"}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {sub.status === "locked" ? (
-                        <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
-                      ) : (
-                        <div className={`h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[sub.status]}`} />
-                      )}
-                      <span className="text-xs text-muted-foreground">{sub.title}</span>
-                    </button>
+                    <div key={sub.id} className="group flex items-center gap-1 pr-2 rounded-lg hover:bg-accent transition-colors">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleComplete(sub); }}
+                        className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-secondary transition-colors"
+                        title={sub.status === "complete" ? "Mark incomplete" : "Mark complete"}
+                      >
+                        {sub.status === "complete" ? (
+                          <div className="h-4 w-4 rounded-full bg-status-green flex items-center justify-center">
+                            <Check className="h-2.5 w-2.5 text-background" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => navigate(`/session/${sub.id}`)}
+                        className="flex-1 text-left py-2 text-xs text-muted-foreground hover:text-foreground transition-colors truncate"
+                      >
+                        {sub.title}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
