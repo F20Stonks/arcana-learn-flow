@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setProfile(null);
+      setProfileReady(false);
       setAuthLoading(false);
     };
 
@@ -57,14 +59,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
+      setProfileReady(true);
       setProfileLoading(false);
       return;
     }
 
     let cancelled = false;
+    setProfileReady(false);
     setProfileLoading(true);
     fetchProfile(user.id).then((data) => {
-      if (!cancelled) setProfile(data);
+      if (!cancelled) {
+        setProfile(data);
+        setProfileReady(true);
+      }
     }).finally(() => {
       if (!cancelled) setProfileLoading(false);
     });
@@ -97,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) setProfile(await fetchProfile(user.id));
   };
 
-  const loading = authLoading || profileLoading;
+  const loading = authLoading || profileLoading || !profileReady;
 
   return (
     <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
