@@ -1,83 +1,26 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { InlineMath, BlockMath } from "react-katex";
 
 /**
- * Shared math + markdown renderer used across sessions, notes, and questions.
- * Handles $...$ inline math, $$...$$ block math, and standard markdown.
+ * Shared math + markdown renderer. Uses remark-math + rehype-katex so inline
+ * math stays truly inline inside paragraphs (no forced block breaks).
  */
 export function MathRenderer({ content }: { content: string }) {
-  const parts = parseMathAndMarkdown(content);
-  return <div className="math-renderer">{parts}</div>;
-}
-
-function parseMathAndMarkdown(content: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  let key = 0;
-
-  // Regex: match $$...$$ (block) or $...$ (inline), being careful with escapes
-  // We process in order of appearance, block first priority via non-greedy match
-  const mathRegex = /(\$\$[\s\S]*?\$\$|\$(?!\s)([^$\n]+?)(?<!\s)\$)/g;
-
-  let lastIndex = 0;
-  let match;
-
-  while ((match = mathRegex.exec(content)) !== null) {
-    // Add text before this match as markdown
-    if (match.index > lastIndex) {
-      const text = content.slice(lastIndex, match.index);
-      if (text.trim()) {
-        nodes.push(
-          <ReactMarkdown key={key++} remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {text}
-          </ReactMarkdown>
-        );
-      }
-    }
-
-    const raw = match[0];
-    if (raw.startsWith("$$")) {
-      const math = raw.slice(2, -2).trim();
-      try {
-        nodes.push(<BlockMath key={key++} math={math} />);
-      } catch {
-        nodes.push(<pre key={key++} className="text-sm text-destructive font-mono bg-accent rounded p-2 overflow-x-auto">{math}</pre>);
-      }
-    } else {
-      const math = raw.slice(1, -1);
-      try {
-        nodes.push(<InlineMath key={key++} math={math} />);
-      } catch {
-        nodes.push(<code key={key++} className="text-sm font-mono text-destructive">{math}</code>);
-      }
-    }
-
-    lastIndex = mathRegex.lastIndex;
-  }
-
-  // Remaining text
-  if (lastIndex < content.length) {
-    const remaining = content.slice(lastIndex);
-    if (remaining.trim()) {
-      nodes.push(
-        <ReactMarkdown key={key++} remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {remaining}
-        </ReactMarkdown>
-      );
-    }
-  }
-
-  if (nodes.length === 0) {
-    nodes.push(
-      <ReactMarkdown key={0} remarkPlugins={[remarkGfm]} components={markdownComponents}>
+  return (
+    <div className="math-renderer">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
+        components={markdownComponents}
+      >
         {content}
       </ReactMarkdown>
-    );
-  }
-
-  return nodes;
+    </div>
+  );
 }
 
 // Custom markdown components for consistent dark-theme styling

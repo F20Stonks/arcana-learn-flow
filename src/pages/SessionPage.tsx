@@ -12,6 +12,28 @@ interface ChatMessage {
   content: string;
 }
 
+type ChoiceType = "mcq" | "truefalse" | "match" | "freeform";
+interface ChoiceBlock {
+  type: ChoiceType;
+  options: string[];
+}
+
+function extractChoices(raw: string): { text: string; choices: ChoiceBlock | null } {
+  const re = /<choices\s+type="(mcq|truefalse|match|freeform)"\s*>([\s\S]*?)<\/choices>/i;
+  const m = raw.match(re);
+  if (!m) return { text: raw, choices: null };
+  const type = m[1].toLowerCase() as ChoiceType;
+  const body = m[2];
+  const options = body
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("-"))
+    .map((l) => l.replace(/^[-*]\s*/, "").trim())
+    .filter(Boolean);
+  const text = raw.replace(re, "").trim();
+  return { text, choices: { type, options } };
+}
+
 export default function SessionPage() {
   const { subtopicId } = useParams();
   const { user, refreshProfile } = useAuth();
@@ -203,17 +225,23 @@ export default function SessionPage() {
                 <p className="text-muted-foreground text-sm">Start your session. Ask Jarvis anything about <strong className="text-foreground">{subtopic?.title}</strong>.</p>
               </div>
             )}
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-card border border-border text-card-foreground rounded-bl-md"
-                }`}>
-                  <MathRenderer content={msg.content} />
+            {messages.map((msg, i) => {
+              const isUser = msg.role === "user";
+              const { text } = isUser ? { text: msg.content } : extractChoices(msg.content);
+              return (
+                <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={
+                      isUser
+                        ? "max-w-[85%] sm:max-w-[70%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed bg-primary text-primary-foreground"
+                        : "max-w-[90%] sm:max-w-[80%] text-sm leading-relaxed text-foreground"
+                    }
+                  >
+                    <MathRenderer content={text} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex justify-start">
                 <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
@@ -228,25 +256,13 @@ export default function SessionPage() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-                placeholder="Ask Jarvis…"
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                disabled={isStreaming}
-              />
-              <button
-                onClick={() => sendMessage(input)}
-                disabled={!input.trim() || isStreaming}
-                className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          <InteractionPanel
+            messages={messages}
+            isStreaming={isStreaming}
+            input={input}
+            setInput={setInput}
+            onSend={sendMessage}
+          />
         </div>
 
         <aside className={`${showNotes ? "block" : "hidden"} md:block w-full md:w-80 border-l border-border bg-card overflow-y-auto`}>
@@ -269,6 +285,84 @@ export default function SessionPage() {
             )}
           </div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function InteractionPanel({
+  messages,
+  isStreaming,
+  input,
+  setInput,
+  onSend,
+}: {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  input: string;
+  setInput: (v: string) => void;
+  onSend: (text: string) => void;
+}) {
+  const last = messages[messages.length - 1];
+  const choices =
+    last && last.role === "assistant" && !isStreaming
+      ? extractChoices(last.content).choices
+      : null;
+
+  const [showText, setShowText] = useState(false);
+
+  if (choices && choices.options.length > 0 && choices.type !== "freeform" && !showText) {
+    return (
+      <div className="p-4 border-t border-border bg-background">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {choices.options.map((opt, idx) => (
+            <button
+              key={idx}
+              onClick={() => onSend(opt)}
+              disabled={isStreaming}
+              className="flex-1 min-w-[140px] px-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors text-left leading-snug disabled:opacity-40"
+            >
+              <MathRenderer content={opt} />
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowText(true)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Type instead →
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 border-t border-border">
+      <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              onSend(input);
+              setShowText(false);
+            }
+          }}
+          placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Jarvis…"}
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          disabled={isStreaming}
+          autoFocus
+        />
+        <button
+          onClick={() => {
+            onSend(input);
+            setShowText(false);
+          }}
+          disabled={!input.trim() || isStreaming}
+          className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
+        >
+          <Send className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
