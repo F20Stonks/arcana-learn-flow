@@ -22,35 +22,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).single();
-    setProfile(data);
+    const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
+    return data;
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        // Use setTimeout to avoid Supabase deadlock
-        setTimeout(() => fetchProfile(session.user.id), 0);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+    let cancelled = false;
+
+    const applySession = (nextSession: Session | null) => {
+      if (cancelled) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setProfile(null);
+      setProfileReady(false);
+      setAuthLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      setLoading(false);
+      applySession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileReady(true);
+      setProfileLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setProfileReady(false);
+    setProfileLoading(true);
+    fetchProfile(user.id).then((data) => {
+      if (!cancelled) {
+        setProfile(data);
+        setProfileReady(true);
+      }
+    }).finally(() => {
+      if (!cancelled) setProfileLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     const { error } = await supabase.auth.signUp({
@@ -72,8 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) setProfile(await fetchProfile(user.id));
   };
+
+  const loading = authLoading || profileLoading || !profileReady;
 
   return (
     <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
