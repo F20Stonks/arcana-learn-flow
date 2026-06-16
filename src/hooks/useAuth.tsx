@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
-    setProfile(data);
+    return data;
   };
 
   useEffect(() => {
@@ -63,7 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     setProfileLoading(true);
-    fetchProfile(user.id).finally(() => {
+    fetchProfile(user.id).then((data) => {
+      if (!cancelled) setProfile(data);
+    }).finally(() => {
       if (!cancelled) setProfileLoading(false);
     });
 
@@ -92,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) setProfile(await fetchProfile(user.id));
   };
 
   const loading = authLoading || profileLoading;
