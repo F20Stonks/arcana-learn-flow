@@ -289,3 +289,81 @@ export default function SessionPage() {
     </div>
   );
 }
+
+function InteractionPanel({
+  messages,
+  isStreaming,
+  input,
+  setInput,
+  onSend,
+}: {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  input: string;
+  setInput: (v: string) => void;
+  onSend: (text: string) => void;
+}) {
+  const last = messages[messages.length - 1];
+  const choices =
+    last && last.role === "assistant" && !isStreaming
+      ? extractChoices(last.content).choices
+      : null;
+
+  const [showText, setShowText] = useState(false);
+
+  if (choices && choices.options.length > 0 && choices.type !== "freeform" && !showText) {
+    return (
+      <div className="p-4 border-t border-border bg-background">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {choices.options.map((opt, idx) => (
+            <button
+              key={idx}
+              onClick={() => onSend(opt)}
+              disabled={isStreaming}
+              className="flex-1 min-w-[140px] px-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors text-left leading-snug disabled:opacity-40"
+            >
+              <MathRenderer content={opt} />
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowText(true)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Type instead →
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 border-t border-border">
+      <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              onSend(input);
+              setShowText(false);
+            }
+          }}
+          placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Jarvis…"}
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          disabled={isStreaming}
+          autoFocus
+        />
+        <button
+          onClick={() => {
+            onSend(input);
+            setShowText(false);
+          }}
+          disabled={!input.trim() || isStreaming}
+          className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
+        >
+          <Send className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
