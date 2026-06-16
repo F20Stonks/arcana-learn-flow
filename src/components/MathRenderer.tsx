@@ -11,7 +11,7 @@ import "katex/dist/katex.min.css";
  */
 export function MathRenderer({ content }: { content: string }) {
   return (
-    <div className="math-renderer prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed">
+    <div className="math-renderer">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
