@@ -225,7 +225,6 @@ export default function SessionPage() {
                 <p className="text-muted-foreground text-sm">Start your session. Ask Jarvis anything about <strong className="text-foreground">{subtopic?.title}</strong>.</p>
               </div>
             )}
-            {messages.map((msg, i) => (
             {messages.map((msg, i) => {
               const isUser = msg.role === "user";
               const { text } = isUser ? { text: msg.content } : extractChoices(msg.content);
