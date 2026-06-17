@@ -50,6 +50,7 @@ export default function SessionPage() {
   const [showNotes, setShowNotes] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
+  const [isEnding, setIsEnding] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -168,6 +169,8 @@ export default function SessionPage() {
   };
 
   const endSession = async () => {
+    if (isEnding) return;
+    setIsEnding(true);
     if (sessionId) {
       try {
         const resp = await supabase.functions.invoke("assess-session", {
@@ -180,7 +183,8 @@ export default function SessionPage() {
             await supabase.from("subtopics").update({ status: "complete", completed_at: new Date().toISOString() }).eq("id", subtopic.id);
           }
           if (xp_earned) {
-            await supabase.from("profiles").update({ total_xp: (await supabase.from("profiles").select("total_xp").eq("user_id", user!.id).single()).data!.total_xp + xp_earned }).eq("user_id", user!.id);
+            const { data: p } = await supabase.from("profiles").select("total_xp").eq("user_id", user!.id).single();
+            if (p) await supabase.from("profiles").update({ total_xp: (p.total_xp || 0) + xp_earned }).eq("user_id", user!.id);
           }
           if (notes_to_save) {
             for (const n of notes_to_save) {
@@ -191,9 +195,10 @@ export default function SessionPage() {
           await refreshProfile();
         }
       } catch {
-        await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId);
+        try { await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId); } catch {}
       }
     }
+    setIsEnding(false);
     navigate(-1);
   };
 
@@ -213,7 +218,10 @@ export default function SessionPage() {
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{formatTime(sessionTime)}</div>
           {xpEarned > 0 && <div className="flex items-center gap-1 text-xs text-xp"><Zap className="h-3.5 w-3.5" />+{xpEarned}</div>}
           <button onClick={() => setShowNotes(!showNotes)} className="text-muted-foreground hover:text-foreground md:hidden"><BookOpen className="h-4 w-4" /></button>
-          <button onClick={endSession} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors">End</button>
+          <button onClick={endSession} disabled={isEnding} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+            {isEnding && <Loader2 className="h-3 w-3 animate-spin" />}
+            {isEnding ? "Ending…" : "End"}
+          </button>
         </div>
       </header>
 
