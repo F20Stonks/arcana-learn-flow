@@ -52,6 +52,11 @@ export default function SessionPage() {
   const [xpEarned, setXpEarned] = useState(0);
   const [isEnding, setIsEnding] = useState(false);
 
+  const goBack = () => {
+    const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
+    navigate(dest, { replace: true });
+  };
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -199,7 +204,7 @@ export default function SessionPage() {
       }
     }
     setIsEnding(false);
-    navigate(-1);
+    goBack();
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
@@ -208,7 +213,7 @@ export default function SessionPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
+          <button onClick={goBack} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{subtopic?.title}</p>
             <p className="text-xs text-muted-foreground truncate">{topic?.title} · {track?.subject}</p>
