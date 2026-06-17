@@ -2,10 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Loader2, Clock, Zap, BookOpen, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Clock, Zap } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
+import MathTheater from "@/components/workspace/MathTheater";
+import BridgeCards from "@/components/workspace/BridgeCards";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -47,7 +49,6 @@ export default function SessionPage() {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [notes, setNotes] = useState<Tables<"notes">[]>([]);
-  const [showNotes, setShowNotes] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
   const [isEnding, setIsEnding] = useState(false);
@@ -210,7 +211,7 @@ export default function SessionPage() {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={goBack} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
@@ -222,7 +223,6 @@ export default function SessionPage() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{formatTime(sessionTime)}</div>
           {xpEarned > 0 && <div className="flex items-center gap-1 text-xs text-xp"><Zap className="h-3.5 w-3.5" />+{xpEarned}</div>}
-          <button onClick={() => setShowNotes(!showNotes)} className="text-muted-foreground hover:text-foreground md:hidden"><BookOpen className="h-4 w-4" /></button>
           <button onClick={endSession} disabled={isEnding} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50 flex items-center gap-1.5">
             {isEnding && <Loader2 className="h-3 w-3 animate-spin" />}
             {isEnding ? "Ending…" : "End"}
@@ -231,7 +231,8 @@ export default function SessionPage() {
       </header>
 
       <div className="flex-1 flex min-h-0">
-        <div className="flex-1 flex flex-col min-h-0">
+        {/* LEFT — Companion Panel (40%) */}
+        <div className="w-full lg:w-2/5 flex flex-col min-h-0 border-r border-border">
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
               <div className="text-center py-12">
@@ -276,28 +277,17 @@ export default function SessionPage() {
             setInput={setInput}
             onSend={sendMessage}
           />
+
+          <BridgeCards
+            subject={track?.subject}
+            onPick={(hint) => sendMessage(hint)}
+          />
         </div>
 
-        <aside className={`${showNotes ? "block" : "hidden"} md:block w-full md:w-80 border-l border-border bg-card overflow-y-auto`}>
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Knowledge Bank</h3>
-            <button onClick={() => setShowNotes(false)} className="md:hidden text-muted-foreground"><X className="h-4 w-4" /></button>
-          </div>
-          <div className="p-4 space-y-3">
-            {notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Notes will appear here as you learn.</p>
-            ) : (
-              notes.map((n) => (
-                <div key={n.id} className="bg-accent rounded-lg p-3">
-                  <h4 className="text-xs font-medium text-foreground mb-1">{n.title}</h4>
-                  <div className="text-xs text-muted-foreground">
-                    <MathRenderer content={n.content} />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </aside>
+        {/* RIGHT — Math Theater (60%) */}
+        <div className="hidden lg:flex lg:w-3/5 min-h-0">
+          <MathTheater subtopicId={subtopicId} />
+        </div>
       </div>
     </div>
   );
