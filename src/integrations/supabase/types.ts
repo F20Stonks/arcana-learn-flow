@@ -62,6 +62,53 @@ export type Database = {
         }
         Relationships: []
       }
+      insights: {
+        Row: {
+          created_at: string
+          environment: string
+          formulas: Json
+          id: string
+          mode: string
+          params: Json
+          subtopic_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          environment: string
+          formulas?: Json
+          id?: string
+          mode?: string
+          params?: Json
+          subtopic_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          formulas?: Json
+          id?: string
+          mode?: string
+          params?: Json
+          subtopic_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_tracks: {
         Row: {
           created_at: string
