@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 
 type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number };
 
@@ -17,6 +18,8 @@ export default function Dashboard() {
     if (!user) return;
     loadTracks();
   }, [user]);
+
+  useEffect(() => { applyStoredAccent(); }, []);
 
   const loadTracks = async () => {
     const { data: rawTracks } = await supabase
@@ -57,6 +60,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-sm"><Flame className="h-4 w-4 text-streak" /><span className="font-semibold text-foreground">{profile?.weekly_streak || 0}</span></div>
             <div className="flex items-center gap-1.5 text-sm"><Trophy className="h-4 w-4 text-xp" /><span className="font-semibold text-foreground">{profile?.total_xp || 0}</span></div>
+            <CustomizeMenu />
             <button onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground transition-colors"><Settings className="h-5 w-5" /></button>
             <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors"><LogOut className="h-5 w-5" /></button>
           </div>
