@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Library, Trash2, Atom, Sigma } from "lucide-react";
-import VectorFieldEnvironment from "./VectorFieldEnvironment";
-import WrappedPeriodicEnvironment from "./WrappedPeriodicEnvironment";
+import SimulationFactory from "./SimulationFactory";
 import MathRenderer from "@/components/MathRenderer";
-import { mathTheme, EnvironmentKind, MathMode } from "@/lib/mathTheme";
+import { mathTheme, MathMode } from "@/lib/mathTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import type { SimulationPayload } from "@/lib/simulationPayload";
 
 interface Props {
   subtopicId?: string;
+  payload: SimulationPayload;
 }
 
 interface InsightRow {
@@ -22,98 +23,58 @@ interface InsightRow {
   created_at: string;
 }
 
-// Labels per environment + mode (the isomorphism)
-const labels: Record<EnvironmentKind, Record<MathMode, { title: string; subtitle: string; formulas: string[] }>> = {
-  vector: {
-    pure: {
-      title: "Multivariable Calculus",
-      subtitle: "Gradient Descent Optimization",
-      formulas: ["$\\vec{v}(x,y) = -\\nabla f(x,y)$", "$f(x,y) = \\tfrac{1}{2}(x^2 + y^2)$"],
-    },
-    applied: {
-      title: "Plasma Physics",
-      subtitle: "Magnetic Confinement & Lorentz Force Tracking",
-      formulas: ["$\\vec{F} = q(\\vec{E} + \\vec{v}\\times\\vec{B})$", "Confinement minimizes drift across $\\vec{B}$ lines"],
-    },
-  },
-  wrapped: {
-    pure: {
-      title: "Modular Arithmetic",
-      subtitle: "Chinese Remainder Theorem on $\\mathbb{Z}/n\\mathbb{Z}$",
-      formulas: ["$x \\equiv a \\pmod{n}$", "$\\mathbb{Z}/m \\times \\mathbb{Z}/n \\cong \\mathbb{Z}/mn$"],
-    },
-    applied: {
-      title: "Periodic Phase Space",
-      subtitle: "Toroidal motion of coupled oscillators",
-      formulas: ["$\\theta_1(t) = \\omega_1 t \\pmod{2\\pi}$", "$\\theta_2(t) = \\omega_2 t \\pmod{2\\pi}$"],
-    },
-  },
-};
+// Mode keys map: "abstract" / "applied" from payload, mirrored onto MathMode union.
+const MODE_ABSTRACT: MathMode = "pure";
+const MODE_APPLIED: MathMode = "applied";
 
-export default function MathTheater({ subtopicId }: Props) {
+export default function MathTheater({ subtopicId, payload }: Props) {
   const { user } = useAuth();
-  const [env, setEnv] = useState<EnvironmentKind>("vector");
-  const [mode, setMode] = useState<MathMode>("pure");
+  const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
   const [tab, setTab] = useState<"theater" | "library">("theater");
 
-  // Vector params
-  const [strength, setStrength] = useState(1.2);
-  const [particles, setParticles] = useState(220);
-  const [fxExpr, setFxExpr] = useState("-x");
-  const [fyExpr, setFyExpr] = useState("-y");
+  // Build initial slider params from payload — fully data-driven.
+  const initialParams = useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {};
+    const sliders = (payload.config as { sliders?: { key: string; default: number }[] }).sliders ?? [];
+    for (const s of sliders) out[s.key] = s.default;
+    return out;
+  }, [payload]);
 
-  // Wrapped params
-  const [slope, setSlope] = useState(1.61);
-  const [period, setPeriod] = useState(10);
-  const [speed, setSpeed] = useState(1.5);
-  const [wxExpr] = useState("t");
-  const [wyExpr] = useState("slope * t");
+  const [params, setParams] = useState<Record<string, number>>(initialParams);
+  // reset params when payload changes (e.g. lesson switch)
+  useEffect(() => { setParams(initialParams); }, [initialParams]);
 
   const [insights, setInsights] = useState<InsightRow[]>([]);
   const [loadingLib, setLoadingLib] = useState(false);
 
-  const meta = labels[env][mode];
+  const meta = mode === MODE_APPLIED ? payload.labels.applied : payload.labels.abstract;
+  const sliders = (payload.config as { sliders?: import("@/lib/simulationPayload").NumericSlider[] }).sliders ?? [];
 
   const loadInsights = async () => {
     if (!user) return;
     setLoadingLib(true);
     const { data } = await supabase
-      .from("insights")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .from("insights").select("*")
+      .order("created_at", { ascending: false }).limit(50);
     setInsights((data as unknown as InsightRow[]) || []);
     setLoadingLib(false);
   };
 
-  useEffect(() => {
-    if (tab === "library") loadInsights();
-  }, [tab, user]);
-
-  const currentParams = useMemo<Record<string, number>>(() => {
-    return env === "vector"
-      ? { strength, particles }
-      : { slope, period, speed };
-  }, [env, strength, particles, slope, period, speed]);
+  useEffect(() => { if (tab === "library") loadInsights(); }, [tab, user]);
 
   const saveInsight = async () => {
     if (!user) return;
-    const formulas =
-      env === "vector" ? [`fx = ${fxExpr}`, `fy = ${fyExpr}`, ...meta.formulas] : [`x(t) = ${wxExpr}`, `y(t) = ${wyExpr}`, ...meta.formulas];
     const { error } = await supabase.from("insights").insert({
       user_id: user.id,
       subtopic_id: subtopicId ?? null,
-      title: `${meta.title} · ${meta.subtitle}`,
-      environment: env,
+      title: `${meta.title} · ${meta.subtitle.replace(/\$/g, "")}`,
+      environment: payload.archetype,
       mode,
-      formulas,
-      params: currentParams,
+      formulas: meta.formulas,
+      params,
     });
     if (error) toast.error("Couldn't save insight");
-    else {
-      toast.success("Saved to your Insights Library");
-      if (tab === "library") loadInsights();
-    }
+    else { toast.success("Saved to your Insights Library"); if (tab === "library") loadInsights(); }
   };
 
   const deleteInsight = async (id: string) => {
@@ -126,75 +87,58 @@ export default function MathTheater({ subtopicId }: Props) {
       {/* Header: tabs + toggle */}
       <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: mathTheme.grid }}>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTab("theater")}
+          <button onClick={() => setTab("theater")}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              tab === "theater" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+              tab === "theater" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"}`}>
             Math Theater
           </button>
-          <button
-            onClick={() => setTab("library")}
+          <button onClick={() => setTab("library")}
             className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
-              tab === "library" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+              tab === "library" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"}`}>
             <Library className="h-3.5 w-3.5" /> Insights
           </button>
         </div>
 
         {tab === "theater" && (
           <div className="flex items-center gap-2">
-            {/* Env selector */}
-            <div className="flex rounded-md overflow-hidden border" style={{ borderColor: mathTheme.grid }}>
-              <button
-                onClick={() => setEnv("vector")}
-                className={`px-2.5 py-1 text-[11px] ${env === "vector" ? "bg-sky-500/20 text-sky-200" : "text-slate-400"}`}
-              >Vector Field</button>
-              <button
-                onClick={() => setEnv("wrapped")}
-                className={`px-2.5 py-1 text-[11px] ${env === "wrapped" ? "bg-sky-500/20 text-sky-200" : "text-slate-400"}`}
-              >Wrapped Periodic</button>
+            <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
+              style={{ borderColor: mathTheme.grid, color: mathTheme.textDim }}>
+              {payload.archetype.replace("_", " ")}
             </div>
-            {/* Isomorphism toggle */}
             <button
-              onClick={() => setMode(mode === "pure" ? "applied" : "pure")}
+              onClick={() => setMode(mode === MODE_ABSTRACT ? MODE_APPLIED : MODE_ABSTRACT)}
               className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] border transition-colors"
               style={{ borderColor: mathTheme.grid, color: mathTheme.text }}
-              title="Toggle Pure ↔ Applied"
+              title="Toggle Abstract Formalism ↔ Applied Reality"
             >
-              {mode === "pure" ? <Sigma className="h-3.5 w-3.5 text-sky-300" /> : <Atom className="h-3.5 w-3.5 text-violet-300" />}
-              <span className="capitalize">{mode === "pure" ? "Pure Math" : "Applied Physics"}</span>
+              {mode === MODE_ABSTRACT
+                ? <Sigma className="h-3.5 w-3.5 text-sky-300" />
+                : <Atom className="h-3.5 w-3.5 text-violet-300" />}
+              <span>{mode === MODE_ABSTRACT ? "Abstract Formalism" : "Applied Reality"}</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Theater body (canvas always mounted to keep 60fps) */}
+      {/* Theater body */}
       <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
-        {env === "vector" ? (
-          <VectorFieldEnvironment fxExpr={fxExpr} fyExpr={fyExpr} particleCount={particles} strength={strength} />
-        ) : (
-          <WrappedPeriodicEnvironment fxExpr={wxExpr} fyExpr={wyExpr} slope={slope} period={period} speed={speed} />
-        )}
+        <SimulationFactory payload={payload} params={params} />
 
-        {/* Overlay: title + formulas */}
+        {/* Overlay: dynamic labels from payload */}
         <div className="absolute top-3 left-3 right-3 pointer-events-none">
           <div className="rounded-lg backdrop-blur-sm bg-black/30 border border-white/5 px-3 py-2 max-w-[60%]">
             <div className="text-[10px] uppercase tracking-wider" style={{ color: mathTheme.textDim }}>
               {meta.title}
             </div>
-            <div className="text-sm font-semibold" style={{ color: mathTheme.text }}>{meta.subtitle}</div>
+            <div className="text-sm font-semibold" style={{ color: mathTheme.text }}>
+              <MathRenderer content={meta.subtitle} />
+            </div>
             <div className="mt-1 text-xs space-y-0.5" style={{ color: mathTheme.text }}>
-              {meta.formulas.map((f, i) => (
-                <div key={i}><MathRenderer content={f} /></div>
-              ))}
+              {meta.formulas.map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
             </div>
           </div>
         </div>
 
-        {/* Save button */}
         <button
           onClick={saveInsight}
           className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-100 text-xs font-medium transition-colors"
@@ -202,26 +146,24 @@ export default function MathTheater({ subtopicId }: Props) {
           <Bookmark className="h-3.5 w-3.5" /> Save to Notebook
         </button>
 
-        {/* Sliders */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-sm bg-black/40 border-t" style={{ borderColor: mathTheme.grid }}>
-          {env === "vector" ? (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[11px]" style={{ color: mathTheme.text }}>
-              <Slider label={`Strength · ${strength.toFixed(2)}`} value={strength} min={0.1} max={4} step={0.05} onChange={setStrength} />
-              <Slider label={`Particles · ${particles}`} value={particles} min={20} max={300} step={10} onChange={(v) => setParticles(Math.round(v))} />
-              <TextField label="f_x(x,y)" value={fxExpr} onChange={setFxExpr} />
-              <TextField label="f_y(x,y)" value={fyExpr} onChange={setFyExpr} />
+        {/* Dynamic sliders from payload */}
+        {sliders.length > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-sm bg-black/40 border-t" style={{ borderColor: mathTheme.grid }}>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]" style={{ color: mathTheme.text }}>
+              {sliders.map((s) => (
+                <Slider key={s.key}
+                  label={`${s.label} · ${(params[s.key] ?? s.default).toFixed(s.step < 1 ? 2 : 0)}`}
+                  value={params[s.key] ?? s.default}
+                  min={s.min} max={s.max} step={s.step}
+                  onChange={(v) => setParams((p) => ({ ...p, [s.key]: v }))}
+                />
+              ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-[11px]" style={{ color: mathTheme.text }}>
-              <Slider label={`Slope · ${slope.toFixed(2)}`} value={slope} min={0.1} max={4} step={0.01} onChange={setSlope} />
-              <Slider label={`Period · ${period.toFixed(1)}`} value={period} min={2} max={20} step={0.5} onChange={setPeriod} />
-              <Slider label={`Speed · ${speed.toFixed(2)}`} value={speed} min={0.2} max={6} step={0.1} onChange={setSpeed} />
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Library tab */}
+      {/* Library */}
       <div className={`flex-1 min-h-0 overflow-y-auto p-4 ${tab === "library" ? "" : "hidden"}`}>
         <h3 className="text-sm font-semibold mb-3" style={{ color: mathTheme.text }}>My Insights Library</h3>
         {loadingLib ? (
@@ -244,9 +186,7 @@ export default function MathTheater({ subtopicId }: Props) {
                   </button>
                 </div>
                 <div className="mt-2 space-y-0.5 text-xs" style={{ color: mathTheme.text }}>
-                  {(it.formulas || []).map((f, i) => (
-                    <div key={i}><MathRenderer content={f} /></div>
-                  ))}
+                  {(it.formulas || []).map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
                 </div>
                 <div className="mt-1 text-[10px]" style={{ color: mathTheme.textDim }}>
                   {Object.entries(it.params || {}).map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed?.(2) ?? v : v}`).join(" · ")}
@@ -260,31 +200,14 @@ export default function MathTheater({ subtopicId }: Props) {
   );
 }
 
-function Slider({
-  label, value, min, max, step, onChange,
-}: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {
+function Slider({ label, value, min, max, step, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void;
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span>{label}</span>
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="accent-sky-400"
-      />
-    </label>
-  );
-}
-
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span>{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        spellCheck={false}
-        className="px-2 py-1 rounded bg-black/40 border border-white/10 text-xs text-slate-100 font-mono outline-none focus:border-sky-400/60"
-      />
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))} className="accent-sky-400" />
     </label>
   );
 }

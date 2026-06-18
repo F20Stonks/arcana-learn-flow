@@ -8,6 +8,7 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
 import BridgeCards from "@/components/workspace/BridgeCards";
+import { resolveSimulationPayload } from "@/lib/simulationPayload";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -286,7 +287,10 @@ export default function SessionPage() {
 
         {/* RIGHT — Math Theater (60%) */}
         <div className="hidden lg:flex lg:w-3/5 min-h-0">
-          <MathTheater subtopicId={subtopicId} />
+          <MathTheater
+            subtopicId={subtopicId}
+            payload={resolveSimulationPayload({ subtopic, topic, track })}
+          />
         </div>
       </div>
     </div>
