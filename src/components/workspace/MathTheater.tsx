@@ -8,9 +8,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { SimulationPayload } from "@/lib/simulationPayload";
 
+interface VizHistoryEntry {
+  id: string;
+  payload: SimulationPayload;
+  preview: string;
+  messageIndex: number;
+}
+
 interface Props {
   subtopicId?: string;
   payload: SimulationPayload;
+  history?: VizHistoryEntry[];
+  activeVizId?: string | null;
+  onSelectViz?: (id: string) => void;
 }
 
 interface InsightRow {
@@ -27,7 +37,13 @@ interface InsightRow {
 const MODE_ABSTRACT: MathMode = "pure";
 const MODE_APPLIED: MathMode = "applied";
 
-export default function MathTheater({ subtopicId, payload }: Props) {
+export default function MathTheater({
+  subtopicId,
+  payload,
+  history = [],
+  activeVizId = null,
+  onSelectViz,
+}: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
   const [tab, setTab] = useState<"theater" | "library">("theater");
@@ -145,6 +161,36 @@ export default function MathTheater({ subtopicId, payload }: Props) {
         >
           <Bookmark className="h-3.5 w-3.5" /> Save to Notebook
         </button>
+
+        {/* Visualization history strip — AI-emitted vizzes the student can scrub back through */}
+        {history.length > 0 && (
+          <div
+            className="absolute left-3 right-3 flex gap-2 overflow-x-auto pb-1 pt-2"
+            style={{
+              bottom: sliders.length > 0 ? 92 : 12,
+              scrollbarWidth: "thin",
+            }}
+          >
+            {history.map((h, idx) => {
+              const active = h.id === activeVizId;
+              return (
+                <button
+                  key={h.id}
+                  onClick={() => onSelectViz?.(h.id)}
+                  className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider border transition-all backdrop-blur-sm ${
+                    active
+                      ? "bg-sky-500/30 border-sky-400/70 text-white"
+                      : "bg-black/40 border-white/10 text-slate-300 hover:border-sky-400/40"
+                  }`}
+                  title={h.preview}
+                >
+                  <span className="opacity-60 mr-1">#{idx + 1}</span>
+                  {h.preview}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Dynamic sliders from payload */}
         {sliders.length > 0 && (

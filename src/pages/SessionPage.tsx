@@ -8,7 +8,8 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
 import BridgeCards from "@/components/workspace/BridgeCards";
-import { resolveSimulationPayload } from "@/lib/simulationPayload";
+import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
+import { extractViz } from "@/lib/vizExtract";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -37,6 +38,19 @@ function extractChoices(raw: string): { text: string; choices: ChoiceBlock | nul
   return { text, choices: { type, options } };
 }
 
+function cleanAssistantText(raw: string): string {
+  // strip <viz> first, then <choices>
+  const { text: noViz } = extractViz(raw);
+  return extractChoices(noViz).text;
+}
+
+interface VizHistoryEntry {
+  id: string;
+  payload: SimulationPayload;
+  preview: string; // short label
+  messageIndex: number;
+}
+
 export default function SessionPage() {
   const { subtopicId } = useParams();
   const { user, refreshProfile } = useAuth();
@@ -53,6 +67,10 @@ export default function SessionPage() {
   const [sessionTime, setSessionTime] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
   const [isEnding, setIsEnding] = useState(false);
+
+  // Visualization spec history — AI emits <viz> blocks that drive the canvas
+  const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
+  const [activeVizId, setActiveVizId] = useState<string | null>(null);
 
   const goBack = () => {
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
@@ -167,6 +185,18 @@ export default function SessionPage() {
 
       if (assistantContent) {
         await supabase.from("messages").insert({ session_id: sessionId, role: "assistant", content: assistantContent });
+        const { viz } = extractViz(assistantContent);
+        if (viz) {
+          const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const preview =
+            viz.labels?.abstract?.title ||
+            viz.archetype.replace("_", " ");
+          setVizHistory((prev) => [
+            ...prev,
+            { id, payload: viz, preview, messageIndex: newMessages.length },
+          ]);
+          setActiveVizId(id);
+        }
       }
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
@@ -242,7 +272,7 @@ export default function SessionPage() {
             )}
             {messages.map((msg, i) => {
               const isUser = msg.role === "user";
-              const { text } = isUser ? { text: msg.content } : extractChoices(msg.content);
+              const text = isUser ? msg.content : cleanAssistantText(msg.content);
               return (
                 <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
                   <div
@@ -289,7 +319,13 @@ export default function SessionPage() {
         <div className="hidden lg:flex lg:w-3/5 min-h-0">
           <MathTheater
             subtopicId={subtopicId}
-            payload={resolveSimulationPayload({ subtopic, topic, track })}
+            payload={
+              vizHistory.find((v) => v.id === activeVizId)?.payload ??
+              resolveSimulationPayload({ subtopic, topic, track })
+            }
+            history={vizHistory}
+            activeVizId={activeVizId}
+            onSelectViz={(id) => setActiveVizId(id)}
           />
         </div>
       </div>

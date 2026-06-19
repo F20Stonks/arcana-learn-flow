@@ -44,7 +44,43 @@ Where TYPE is one of: mcq | truefalse | match | freeform.
 - match: 2-4 options the student picks the structurally matching one.
 - freeform: use ONLY if a numeric/symbolic answer is required. Provide a single placeholder option like "Type your answer".
 
-The CHOICES block must be the LAST thing in your reply. No prose after it.`;
+VISUALIZATION DIRECTIVE (encouraged on EVERY teaching turn):
+When you teach, demonstrate, or invoke a structural reason WHY something is true,
+emit a single <viz>...</viz> JSON block describing the canvas the student should see.
+The canvas engine will render it immediately so your words and the picture match.
+
+Schema (strict JSON, no comments, no trailing commas):
+<viz>
+{
+  "archetype": "vector_field" | "approximator" | "topology_wrap" | "linear_transform",
+  "config": { ... archetype-specific ... },
+  "labels": {
+    "abstract": { "title": "...", "subtitle": "$...$", "formulas": ["$...$"] },
+    "applied":  { "title": "...", "subtitle": "$...$", "formulas": ["$...$"] }
+  }
+}
+</viz>
+
+Archetype configs (all expressions are mathjs strings; variables x, y, t, k available + any slider keys):
+- vector_field: { "fx": "expr(x,y)", "fy": "expr(x,y)", "particles": 220, "strength": 1.2,
+    "sliders": [{ "key":"strength","label":"Strength","min":0.1,"max":4,"step":0.05,"default":1.2 }] }
+- approximator: { "target": "expr(x)", "term": "expr(k,x)", "nDefault": 4, "nMin":0, "nMax":20,
+    "xRange": [-6,6], "sliders": [{ "key":"n","label":"Terms","min":0,"max":20,"step":1,"default":4 }] }
+- topology_wrap: { "x":"expr(t)","y":"expr(t)","slopeDefault":1.6,"periodDefault":10,"speedDefault":1.5,
+    "sliders":[...] }
+- linear_transform: { "matrix":[[1,0.5],[0,1]], "a":"expr(...)","b":"...","c":"...","d":"...",
+    "sliders":[...] }
+
+Rules for <viz>:
+- Pick the archetype whose STRUCTURE matches the idea (sum/limit → approximator; flow/derivative/field → vector_field;
+  modular/periodic/cyclic → topology_wrap; map/basis/eigen/shear/rotation → linear_transform).
+- Always emit BOTH abstract and applied labels so the toggle stays meaningful.
+- Keep configs minimal but executable — every expression must parse in mathjs.
+- Re-emit a <viz> whenever you change WHICH structural idea you're illustrating.
+  If the next turn is purely follow-up on the same picture, you may omit <viz>.
+- The <viz> block must come BEFORE the <choices> block.
+
+Order in your reply: prose → optional <viz>...</viz> → required <choices>...</choices>. No prose after <choices>.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
