@@ -10,6 +10,8 @@ import MathTheater from "@/components/workspace/MathTheater";
 import BridgeCards from "@/components/workspace/BridgeCards";
 import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
 import { extractViz } from "@/lib/vizExtract";
+import type { SceneSpec } from "@/lib/sceneSpec";
+import { isSceneSpec } from "@/lib/sceneSpec";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -46,7 +48,7 @@ function cleanAssistantText(raw: string): string {
 
 interface VizHistoryEntry {
   id: string;
-  payload: SimulationPayload;
+  payload: SimulationPayload | SceneSpec;
   preview: string; // short label
   messageIndex: number;
 }
@@ -188,9 +190,9 @@ export default function SessionPage() {
         const { viz } = extractViz(assistantContent);
         if (viz) {
           const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-          const preview =
-            viz.labels?.abstract?.title ||
-            viz.archetype.replace("_", " ");
+          const preview = isSceneSpec(viz)
+            ? viz.title || "scene"
+            : viz.labels?.abstract?.title || viz.archetype.replace("_", " ");
           setVizHistory((prev) => [
             ...prev,
             { id, payload: viz, preview, messageIndex: newMessages.length },
