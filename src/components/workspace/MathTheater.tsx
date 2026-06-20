@@ -1,23 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Library, Trash2, Atom, Sigma } from "lucide-react";
+import { Bookmark, Library, Trash2 } from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
+import Scene3D from "./Scene3D";
 import MathRenderer from "@/components/MathRenderer";
 import { mathTheme, MathMode } from "@/lib/mathTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { SimulationPayload } from "@/lib/simulationPayload";
+import { isSceneSpec, type SceneSpec } from "@/lib/sceneSpec";
+
+type Payload = SimulationPayload | SceneSpec;
 
 interface VizHistoryEntry {
   id: string;
-  payload: SimulationPayload;
+  payload: Payload;
   preview: string;
   messageIndex: number;
 }
 
 interface Props {
   subtopicId?: string;
-  payload: SimulationPayload;
+  payload: Payload;
   history?: VizHistoryEntry[];
   activeVizId?: string | null;
   onSelectViz?: (id: string) => void;
@@ -47,11 +51,16 @@ export default function MathTheater({
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
   const [tab, setTab] = useState<"theater" | "library">("theater");
+  const [time, setTime] = useState(0);
+
+  const isScene = isSceneSpec(payload);
 
   // Build initial slider params from payload — fully data-driven.
   const initialParams = useMemo<Record<string, number>>(() => {
     const out: Record<string, number> = {};
-    const sliders = (payload.config as { sliders?: { key: string; default: number }[] }).sliders ?? [];
+    const sliders = isSceneSpec(payload)
+      ? payload.sliders ?? []
+      : (payload.config as { sliders?: { key: string; default: number }[] }).sliders ?? [];
     for (const s of sliders) out[s.key] = s.default;
     return out;
   }, [payload]);
@@ -63,8 +72,19 @@ export default function MathTheater({
   const [insights, setInsights] = useState<InsightRow[]>([]);
   const [loadingLib, setLoadingLib] = useState(false);
 
-  const meta = mode === MODE_APPLIED ? payload.labels.applied : payload.labels.abstract;
-  const sliders = (payload.config as { sliders?: import("@/lib/simulationPayload").NumericSlider[] }).sliders ?? [];
+  const meta = isScene
+    ? {
+        title: (payload as SceneSpec).title,
+        subtitle: (payload as SceneSpec).caption ?? "",
+        formulas: (payload as SceneSpec).why ? [(payload as SceneSpec).why!] : [],
+      }
+    : mode === MODE_APPLIED
+      ? (payload as SimulationPayload).labels.applied
+      : (payload as SimulationPayload).labels.abstract;
+
+  const sliders = isScene
+    ? (payload as SceneSpec).sliders ?? []
+    : ((payload as SimulationPayload).config as { sliders?: import("@/lib/simulationPayload").NumericSlider[] }).sliders ?? [];
 
   const loadInsights = async () => {
     if (!user) return;
@@ -80,11 +100,15 @@ export default function MathTheater({
 
   const saveInsight = async () => {
     if (!user) return;
+    const env = isScene ? "scene" : (payload as SimulationPayload).archetype;
+    const title = isScene
+      ? (payload as SceneSpec).title
+      : `${meta.title} · ${(meta.subtitle ?? "").replace(/\$/g, "")}`;
     const { error } = await supabase.from("insights").insert({
       user_id: user.id,
       subtopic_id: subtopicId ?? null,
-      title: `${meta.title} · ${meta.subtitle.replace(/\$/g, "")}`,
-      environment: payload.archetype,
+      title,
+      environment: env,
       mode,
       formulas: meta.formulas,
       params,
@@ -119,26 +143,19 @@ export default function MathTheater({
           <div className="flex items-center gap-2">
             <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
               style={{ borderColor: mathTheme.grid, color: mathTheme.textDim }}>
-              {payload.archetype.replace("_", " ")}
+              {isScene ? "scene" : (payload as SimulationPayload).archetype.replace("_", " ")}
             </div>
-            <button
-              onClick={() => setMode(mode === MODE_ABSTRACT ? MODE_APPLIED : MODE_ABSTRACT)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] border transition-colors"
-              style={{ borderColor: mathTheme.grid, color: mathTheme.text }}
-              title="Toggle Abstract Formalism ↔ Applied Reality"
-            >
-              {mode === MODE_ABSTRACT
-                ? <Sigma className="h-3.5 w-3.5 text-sky-300" />
-                : <Atom className="h-3.5 w-3.5 text-violet-300" />}
-              <span>{mode === MODE_ABSTRACT ? "Abstract Formalism" : "Applied Reality"}</span>
-            </button>
           </div>
         )}
       </div>
 
       {/* Theater body */}
       <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
-        <SimulationFactory payload={payload} params={params} />
+        {isScene ? (
+          <Scene3D spec={payload as SceneSpec} params={params} time={time} onTime={setTime} />
+        ) : (
+          <SimulationFactory payload={payload as SimulationPayload} params={params} />
+        )}
 
         {/* Overlay: dynamic labels from payload */}
         <div className="absolute top-3 left-3 right-3 pointer-events-none">
@@ -146,12 +163,19 @@ export default function MathTheater({
             <div className="text-[10px] uppercase tracking-wider" style={{ color: mathTheme.textDim }}>
               {meta.title}
             </div>
-            <div className="text-sm font-semibold" style={{ color: mathTheme.text }}>
-              <MathRenderer content={meta.subtitle} />
-            </div>
+            {meta.subtitle && (
+              <div className="text-sm font-semibold" style={{ color: mathTheme.text }}>
+                <MathRenderer content={meta.subtitle} />
+              </div>
+            )}
             <div className="mt-1 text-xs space-y-0.5" style={{ color: mathTheme.text }}>
               {meta.formulas.map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
             </div>
+            {isScene && (payload as SceneSpec).flat !== true && (
+              <div className="mt-1 text-[10px]" style={{ color: mathTheme.textDim }}>
+                Drag to orbit · scroll to zoom · right-click to pan
+              </div>
+            )}
           </div>
         </div>
 
