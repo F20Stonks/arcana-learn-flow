@@ -10,32 +10,31 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     // ASSESS mode — evaluate a single answer
     if (body.mode === "assess") {
       const { question, correctAnswer, userAnswer, explanation, subject, level } = body;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "claude-sonnet-5",
+          max_tokens: 1024,
+          system: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Assess the student's answer fairly. For mathematical answers, check mathematical equivalence not just string matching. Respond ONLY with valid JSON: {"correct": true/false, "feedback": "detailed explanation of why the answer is correct or incorrect, with the correct working shown"}`,
           messages: [
-            {
-              role: "system",
-              content: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Assess the student's answer fairly. For mathematical answers, check mathematical equivalence not just string matching. Respond ONLY with valid JSON: {"correct": true/false, "feedback": "detailed explanation of why the answer is correct or incorrect, with the correct working shown"}`
-            },
             {
               role: "user",
               content: `Question: ${question}\nCorrect answer: ${correctAnswer}\nStudent's answer: ${userAnswer}\nReference explanation: ${explanation}\n\nIs the student's answer correct? Provide detailed feedback.`
-            }
+            },
+            { role: "assistant", content: "{" },
           ],
-          response_format: { type: "json_object" },
         }),
       });
 
@@ -49,7 +48,7 @@ serve(async (req) => {
       const data = await response.json();
       let result;
       try {
-        result = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+        result = JSON.parse("{" + (data.content?.[0]?.text || "}"));
       } catch {
         result = { correct: false, feedback: explanation };
       }
@@ -104,19 +103,21 @@ Respond ONLY with valid JSON:
 For open-ended questions, omit the "options" field entirely.
 Distribute questions across the selected topics. Make questions specific and rigorous.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-5",
+        max_tokens: 8192,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: `Generate ${questionCount} ${difficulty} difficulty ${subject} questions now.` },
+          { role: "assistant", content: "{" },
         ],
-        response_format: { type: "json_object" },
       }),
     });
 
@@ -124,16 +125,13 @@ Distribute questions across the selected topics. Make questions specific and rig
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited. Please try again shortly." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
       const t = await response.text();
       console.error("Question gen error:", response.status, t);
       throw new Error("AI error");
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "{}";
+    const content = "{" + (data.content?.[0]?.text || "}");
 
     let result;
     try {

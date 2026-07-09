@@ -10,8 +10,8 @@ serve(async (req) => {
 
   try {
     const { sessionId, subtopicId, messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     const systemPrompt = `You are assessing a tutoring session. Based on the conversation, determine:
 1. Whether the student has sufficiently understood the subtopic (complete: true/false)
@@ -29,19 +29,21 @@ Respond ONLY with a valid JSON object:
   "xp_earned": 50
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-5",
+        max_tokens: 1024,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: `Session conversation:\n${messages.map((m: any) => `${m.role}: ${m.content}`).join("\n\n")}\n\nAssess this session now.` },
+          { role: "assistant", content: "{" },
         ],
-        response_format: { type: "json_object" },
       }),
     });
 
@@ -53,8 +55,8 @@ Respond ONLY with a valid JSON object:
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "{}";
-    
+    const content = "{" + (data.content?.[0]?.text || "}");
+
     let result;
     try {
       result = JSON.parse(content);
