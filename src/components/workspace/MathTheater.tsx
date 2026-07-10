@@ -220,14 +220,22 @@ export default function MathTheater({
         {sliders.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-sm bg-black/40 border-t" style={{ borderColor: mathTheme.grid }}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]" style={{ color: mathTheme.text }}>
-              {sliders.map((s) => (
-                <Slider key={s.key}
-                  label={`${s.label} · ${(params[s.key] ?? s.default).toFixed(s.step < 1 ? 2 : 0)}`}
-                  value={params[s.key] ?? s.default}
-                  min={s.min} max={s.max} step={s.step}
-                  onChange={(v) => setParams((p) => ({ ...p, [s.key]: v }))}
-                />
-              ))}
+              {sliders.map((s) => {
+                const raw = params[s.key] ?? s.default;
+                const num = typeof raw === "number" && Number.isFinite(raw) ? raw : Number(raw);
+                const safe = Number.isFinite(num) ? num : 0;
+                const step = typeof s.step === "number" && s.step > 0 ? s.step : 0.1;
+                return (
+                  <Slider key={s.key}
+                    label={`${s.label} · ${safe.toFixed(step < 1 ? 2 : 0)}`}
+                    value={safe}
+                    min={typeof s.min === "number" ? s.min : 0}
+                    max={typeof s.max === "number" ? s.max : 1}
+                    step={step}
+                    onChange={(v) => setParams((p) => ({ ...p, [s.key]: v }))}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
