@@ -92,7 +92,8 @@ export default function SessionPage() {
   useEffect(() => {
     if (!subtopicId || !user) return;
     loadContext();
-  }, [subtopicId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtopicId, user?.id]);
 
   const loadContext = async () => {
     const { data: sub } = await supabase.from("subtopics").select("*").eq("id", subtopicId!).single();
