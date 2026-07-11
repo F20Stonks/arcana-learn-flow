@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Library, Trash2 } from "lucide-react";
+import { Bookmark, Library, Trash2, Palette, Check } from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
 import MathRenderer from "@/components/MathRenderer";
@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { SimulationPayload } from "@/lib/simulationPayload";
 import { isSceneSpec, type SceneSpec } from "@/lib/sceneSpec";
+import { VIZ_THEMES, loadVizTheme, saveVizTheme } from "@/lib/vizThemes";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Payload = SimulationPayload | SceneSpec;
 
@@ -52,6 +54,14 @@ export default function MathTheater({
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
   const [tab, setTab] = useState<"theater" | "library">("theater");
   const [time, setTime] = useState(0);
+  const [vizTheme, setVizTheme] = useState(loadVizTheme);
+
+  const selectVizTheme = (id: string) => {
+    const t = VIZ_THEMES.find((v) => v.id === id);
+    if (!t) return;
+    setVizTheme(t);
+    saveVizTheme(t.id);
+  };
 
   const isScene = isSceneSpec(payload);
 
@@ -123,7 +133,7 @@ export default function MathTheater({
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: mathTheme.bg }}>
+    <div className="h-full w-full flex flex-col" style={{ background: mathTheme.bg }}>
       {/* Header: tabs + toggle */}
       <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: mathTheme.grid }}>
         <div className="flex items-center gap-1">
@@ -145,6 +155,47 @@ export default function MathTheater({
               style={{ borderColor: mathTheme.grid, color: mathTheme.textDim }}>
               {isScene ? "scene" : (payload as SimulationPayload).archetype.replace("_", " ")}
             </div>
+            {isScene && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    title="Visualization style"
+                    className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                    style={{ borderColor: mathTheme.grid }}
+                  >
+                    <Palette className="h-3.5 w-3.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 p-2 bg-[#0b1020] border-white/10">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400 px-1 pb-1.5">
+                    Visualization style
+                  </div>
+                  <div className="space-y-1">
+                    {VIZ_THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => selectVizTheme(t.id)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                          vizTheme.id === t.id ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5"
+                        }`}
+                      >
+                        <span className="flex -space-x-1 shrink-0">
+                          {t.palette.slice(0, 3).map((c, i) => (
+                            <span
+                              key={i}
+                              className="h-3.5 w-3.5 rounded-full border border-black/40"
+                              style={{ background: c, boxShadow: t.glow ? `0 0 6px ${c}` : undefined }}
+                            />
+                          ))}
+                        </span>
+                        <span className="flex-1 text-left">{t.name}</span>
+                        {vizTheme.id === t.id && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         )}
       </div>
@@ -152,7 +203,7 @@ export default function MathTheater({
       {/* Theater body */}
       <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
         {isScene ? (
-          <Scene3D spec={payload as SceneSpec} params={params} time={time} onTime={setTime} />
+          <Scene3D spec={payload as SceneSpec} params={params} time={time} onTime={setTime} theme={vizTheme} />
         ) : (
           <SimulationFactory payload={payload as SimulationPayload} params={params} />
         )}

@@ -3,6 +3,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Line, Text, Html } from "@react-three/drei";
 import { evaluate, parse, type EvalFunction } from "mathjs";
 import * as THREE from "three";
+import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import type {
   SceneSpec,
   Primitive,
@@ -17,6 +18,29 @@ import type {
   TextPrim,
   GroupPrim,
 } from "@/lib/sceneSpec";
+import { buildColorMap, type VizTheme } from "@/lib/vizThemes";
+
+/* ---------------- theming helpers ---------------- */
+
+interface Style {
+  colorMap: Map<string, string>;
+  glow: boolean;
+}
+
+function resolveColor(original: string | undefined, fallback: string, style: Style): string {
+  const c = original ?? fallback;
+  return style.colorMap.get(c) ?? c;
+}
+
+function collectColors(objects: Primitive[]): string[] {
+  const out: string[] = [];
+  const visit = (p: Primitive) => {
+    if ("color" in p && typeof p.color === "string") out.push(p.color);
+    if (p.kind === "group") p.children.forEach(visit);
+  };
+  objects.forEach(visit);
+  return out;
+}
 
 /* ---------------- expression compiler with safe fallback ---------------- */
 
@@ -53,14 +77,15 @@ function vec3(
 
 /* ---------------- primitive renderers ---------------- */
 
-function PointR({ p, scope }: { p: PointPrim; scope: Scope }) {
+function PointR({ p, scope, style }: { p: PointPrim; scope: Scope; style: Style }) {
   const getPos = useMemo(() => vec3(p.at), [p.at]);
   const pos = getPos(scope);
+  const color = resolveColor(p.color, "#60a5fa", style);
   return (
     <group position={pos}>
       <mesh>
         <sphereGeometry args={[p.size ?? 0.08, 16, 16]} />
-        <meshStandardMaterial color={p.color ?? "#60a5fa"} emissive={p.color ?? "#60a5fa"} emissiveIntensity={0.4} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={style.glow ? 1.1 : 0.4} />
       </mesh>
       {p.label && (
         <Html distanceFactor={10} style={{ pointerEvents: "none" }}>
@@ -71,7 +96,7 @@ function PointR({ p, scope }: { p: PointPrim; scope: Scope }) {
   );
 }
 
-function CurveR({ p, scope }: { p: CurvePrim; scope: Scope }) {
+function CurveR({ p, scope, style }: { p: CurvePrim; scope: Scope; style: Style }) {
   const samples = p.samples ?? 200;
   const fx = useMemo(() => compile(p.x), [p.x]);
   const fy = useMemo(() => compile(p.y), [p.y]);
@@ -90,10 +115,17 @@ function CurveR({ p, scope }: { p: CurvePrim; scope: Scope }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx, fy, fz, p.tMin, p.tMax, samples, JSON.stringify(scope)]);
   if (pts.length < 2) return null;
-  return <Line points={pts} color={p.color ?? "#38bdf8"} lineWidth={p.width ?? 2} />;
+  const color = resolveColor(p.color, "#38bdf8", style);
+  const width = p.width ?? 2;
+  return (
+    <>
+      {style.glow && <Line points={pts} color={color} lineWidth={width + 7} transparent opacity={0.25} />}
+      <Line points={pts} color={color} lineWidth={width} />
+    </>
+  );
 }
 
-function SurfaceR({ p, scope }: { p: SurfacePrim; scope: Scope }) {
+function SurfaceR({ p, scope, style }: { p: SurfacePrim; scope: Scope; style: Style }) {
   const us = p.uSamples ?? 48;
   const vs = p.vSamples ?? 48;
   const fx = useMemo(() => compile(p.x), [p.x]);
@@ -131,22 +163,23 @@ function SurfaceR({ p, scope }: { p: SurfacePrim; scope: Scope }) {
     return g;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx, fy, fz, p.uMin, p.uMax, p.vMin, p.vMax, us, vs, JSON.stringify(scope)]);
+  const color = resolveColor(p.color, "#3b82f6", style);
   return (
     <mesh geometry={geom}>
       <meshStandardMaterial
-        color={p.color ?? "#3b82f6"}
+        color={color}
         opacity={p.opacity ?? 0.7}
         transparent={(p.opacity ?? 0.7) < 1}
         wireframe={!!p.wireframe}
         side={THREE.DoubleSide}
-        emissive={p.color ?? "#3b82f6"}
-        emissiveIntensity={0.08}
+        emissive={color}
+        emissiveIntensity={style.glow ? 0.35 : 0.08}
       />
     </mesh>
   );
 }
 
-function VectorFieldR({ p, scope }: { p: VectorFieldPrim; scope: Scope }) {
+function VectorFieldR({ p, scope, style }: { p: VectorFieldPrim; scope: Scope; style: Style }) {
   const [xMin, xMax, yMin, yMax, zMin = 0, zMax = 0] = p.bounds;
   const d = p.density ?? 8;
   const scale = p.scale ?? 0.3;
@@ -175,24 +208,26 @@ function VectorFieldR({ p, scope }: { p: VectorFieldPrim; scope: Scope }) {
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx, fy, fz, xMin, xMax, yMin, yMax, zMin, zMax, d, scale, JSON.stringify(scope)]);
+  const color = resolveColor(p.color, "#60a5fa", style);
   return (
     <group>
       {arrows.map((a, i) => (
-        <Line key={i} points={[a.from, a.to]} color={p.color ?? "#60a5fa"} lineWidth={1.2} />
+        <Line key={i} points={[a.from, a.to]} color={color} lineWidth={1.2} />
       ))}
     </group>
   );
 }
 
-function ArrowR({ p, scope }: { p: ArrowPrim; scope: Scope }) {
+function ArrowR({ p, scope, style }: { p: ArrowPrim; scope: Scope; style: Style }) {
   const from = vec3(p.from)(scope);
   const to = vec3(p.to)(scope);
   const dir = to.clone().sub(from);
   const length = dir.length();
   if (length < 1e-6) return null;
+  const color = resolveColor(p.color, "#fbbf24", style);
   return (
     <>
-      <arrowHelper args={[dir.clone().normalize(), from, length, new THREE.Color(p.color ?? "#fbbf24").getHex(), Math.min(0.3, length * 0.2), Math.min(0.15, length * 0.1)]} />
+      <arrowHelper args={[dir.clone().normalize(), from, length, new THREE.Color(color).getHex(), Math.min(0.3, length * 0.2), Math.min(0.15, length * 0.1)]} />
       {p.label && (
         <Html position={to} distanceFactor={10} style={{ pointerEvents: "none" }}>
           <span className="text-[10px] text-amber-200 whitespace-nowrap select-none">{p.label}</span>
@@ -202,7 +237,7 @@ function ArrowR({ p, scope }: { p: ArrowPrim; scope: Scope }) {
   );
 }
 
-function PolygonR({ p, scope }: { p: PolygonPrim; scope: Scope }) {
+function PolygonR({ p, scope, style }: { p: PolygonPrim; scope: Scope; style: Style }) {
   const verts = p.vertices.map((v) => vec3([v[0], v[1], v[2] ?? 0])(scope));
   if (verts.length < 3) return null;
   const geom = useMemo(() => {
@@ -219,22 +254,24 @@ function PolygonR({ p, scope }: { p: PolygonPrim; scope: Scope }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(verts.map(v => [v.x, v.y, v.z]))]);
   const outline = [...verts, verts[0]];
+  const color = resolveColor(p.color, "#38bdf8", style);
+  const outlineColor = resolveColor(p.outline ?? p.color, "#38bdf8", style);
   return (
     <>
       <mesh geometry={geom}>
         <meshStandardMaterial
-          color={p.color ?? "#38bdf8"}
+          color={color}
           opacity={p.opacity ?? 0.35}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
-      <Line points={outline} color={p.outline ?? p.color ?? "#38bdf8"} lineWidth={1.5} />
+      <Line points={outline} color={outlineColor} lineWidth={1.5} />
     </>
   );
 }
 
-function GridR({ p }: { p: GridPrim }) {
+function GridR({ p, theme }: { p: GridPrim; theme: VizTheme }) {
   const size = (p.size ?? 5) * 2;
   const divs = p.divisions ?? 10;
   const plane = p.plane ?? "xy";
@@ -244,8 +281,8 @@ function GridR({ p }: { p: GridPrim }) {
     <Grid
       args={[size, size, divs, divs]}
       rotation={rot}
-      cellColor={p.color ?? "#1e3a8a"}
-      sectionColor={p.color ?? "#3b82f6"}
+      cellColor={p.color ?? theme.gridColor}
+      sectionColor={p.color ?? theme.gridColor}
       fadeDistance={30}
       infiniteGrid={false}
     />
@@ -276,29 +313,29 @@ function TextR({ p, scope }: { p: TextPrim; scope: Scope }) {
   );
 }
 
-function GroupR({ p, scope }: { p: GroupPrim; scope: Scope }) {
+function GroupR({ p, scope, style, theme }: { p: GroupPrim; scope: Scope; style: Style; theme: VizTheme }) {
   const m = p.matrix && p.matrix.length === 16
     ? new THREE.Matrix4().fromArray(p.matrix.map((e) => compile(e)(scope)))
     : null;
   return (
     <group matrixAutoUpdate={!m} matrix={m ?? undefined}>
-      {p.children.map((c, i) => <PrimitiveR key={i} prim={c} scope={scope} />)}
+      {p.children.map((c, i) => <PrimitiveR key={i} prim={c} scope={scope} style={style} theme={theme} />)}
     </group>
   );
 }
 
-function PrimitiveR({ prim, scope }: { prim: Primitive; scope: Scope }) {
+function PrimitiveR({ prim, scope, style, theme }: { prim: Primitive; scope: Scope; style: Style; theme: VizTheme }) {
   switch (prim.kind) {
-    case "point": return <PointR p={prim} scope={scope} />;
-    case "curve": return <CurveR p={prim} scope={scope} />;
-    case "surface": return <SurfaceR p={prim} scope={scope} />;
-    case "vectorField": return <VectorFieldR p={prim} scope={scope} />;
-    case "arrow": return <ArrowR p={prim} scope={scope} />;
-    case "polygon": return <PolygonR p={prim} scope={scope} />;
-    case "grid": return <GridR p={prim} />;
+    case "point": return <PointR p={prim} scope={scope} style={style} />;
+    case "curve": return <CurveR p={prim} scope={scope} style={style} />;
+    case "surface": return <SurfaceR p={prim} scope={scope} style={style} />;
+    case "vectorField": return <VectorFieldR p={prim} scope={scope} style={style} />;
+    case "arrow": return <ArrowR p={prim} scope={scope} style={style} />;
+    case "polygon": return <PolygonR p={prim} scope={scope} style={style} />;
+    case "grid": return <GridR p={prim} theme={theme} />;
     case "axes": return <AxesR p={prim} />;
     case "text": return <TextR p={prim} scope={scope} />;
-    case "group": return <GroupR p={prim} scope={scope} />;
+    case "group": return <GroupR p={prim} scope={scope} style={style} theme={theme} />;
     default: return null;
   }
 }
@@ -324,36 +361,94 @@ interface Props {
   params: Record<string, number>;
   time: number;
   onTime: (t: number) => void;
+  theme: VizTheme;
 }
 
-export default function Scene3D({ spec, params, time, onTime }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type OrbitControlsImpl = any;
+
+export default function Scene3D({ spec, params, time, onTime, theme }: Props) {
   const scope: Scope = { ...params, time };
   const cam: [number, number, number] = spec.camera ?? (spec.flat ? [0, 0, 8] : [6, 6, 6]);
+  const initialCam = useRef(cam);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+
+  const style: Style = useMemo(() => {
+    const used = collectColors(spec.objects);
+    return { colorMap: buildColorMap(used, theme.palette), glow: theme.glow };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(spec.objects), theme]);
+
+  const zoomBy = (factor: number) => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object;
+    const target = controls.target;
+    const offset = camera.position.clone().sub(target).multiplyScalar(factor);
+    camera.position.copy(target.clone().add(offset));
+    controls.update();
+  };
+
+  const resetView = () => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    controls.object.position.set(...initialCam.current);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  };
+
   return (
-    <Canvas
-      camera={{ position: cam, fov: 50, near: 0.1, far: 1000 }}
-      gl={{ antialias: true, alpha: true }}
-      style={{ background: "transparent" }}
-    >
-      <color attach="background" args={["#070b1a"]} />
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[8, 12, 8]} intensity={0.8} />
-      <directionalLight position={[-6, -4, -6]} intensity={0.3} color="#60a5fa" />
-      <Suspense fallback={null}>
-        {spec.objects.map((o, i) => (
-          <PrimitiveR key={i} prim={o} scope={scope} />
-        ))}
-      </Suspense>
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.1}
-        enablePan
-        enableZoom
-        enableRotate={!spec.flat}
-        minDistance={1}
-        maxDistance={80}
-      />
-      <TimeTicker onTick={onTime} />
-    </Canvas>
+    <div className="relative w-full h-full">
+      <Canvas
+        camera={{ position: cam, fov: 50, near: 0.1, far: 1000 }}
+        gl={{ antialias: true, alpha: true }}
+        style={{ background: "transparent" }}
+      >
+        <color attach="background" args={[theme.background]} />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[8, 12, 8]} intensity={0.8} />
+        <directionalLight position={[-6, -4, -6]} intensity={0.3} color="#60a5fa" />
+        <Suspense fallback={null}>
+          {spec.objects.map((o, i) => (
+            <PrimitiveR key={i} prim={o} scope={scope} style={style} theme={theme} />
+          ))}
+        </Suspense>
+        <OrbitControls
+          ref={controlsRef}
+          enableDamping
+          dampingFactor={0.1}
+          enablePan
+          enableZoom
+          enableRotate={!spec.flat}
+          minDistance={1}
+          maxDistance={80}
+        />
+        <TimeTicker onTick={onTime} />
+      </Canvas>
+
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-10">
+        <button
+          onClick={() => zoomBy(0.8)}
+          title="Zoom in"
+          className="p-1.5 rounded-md bg-black/40 border border-white/10 text-slate-200 hover:bg-black/60 hover:border-white/30 backdrop-blur-sm transition-colors"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => zoomBy(1.25)}
+          title="Zoom out"
+          className="p-1.5 rounded-md bg-black/40 border border-white/10 text-slate-200 hover:bg-black/60 hover:border-white/30 backdrop-blur-sm transition-colors"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={resetView}
+          title="Reset view"
+          className="p-1.5 rounded-md bg-black/40 border border-white/10 text-slate-200 hover:bg-black/60 hover:border-white/30 backdrop-blur-sm transition-colors"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }
