@@ -114,6 +114,9 @@ export function resolveSimulationPayload(input: {
 
   const has = (...kws: string[]) => kws.some((k) => haystack.includes(k));
 
+  if (has("complex", "imaginary", "argand", "de moivre", "polar form")) {
+    return DEFAULT_COMPLEX;
+  }
   if (has("series", "expansion", "approx", "taylor", "fourier", "integral", "sum", "riemann")) {
     return DEFAULT_APPROXIMATOR;
   }
@@ -209,6 +212,30 @@ const DEFAULT_TOPOLOGY: SimulationPayload = {
       title: "Periodic Phase Space",
       subtitle: "Coupled oscillators on a torus",
       formulas: ["$\\theta(t) = \\omega t \\pmod{2\\pi}$"],
+    },
+  },
+};
+
+const DEFAULT_COMPLEX: SimulationPayload = {
+  archetype: "linear_transform",
+  config: {
+    matrix: [[1, 0], [0, 1]],
+    a: "re", b: "-im", c: "im", d: "re",
+    sliders: [
+      { key: "re", label: "Re(z)", min: -2, max: 2, step: 0.05, default: 1 },
+      { key: "im", label: "Im(z)", min: -2, max: 2, step: 0.05, default: 1 },
+    ],
+  },
+  labels: {
+    abstract: {
+      title: "Complex Multiplication",
+      subtitle: "Multiplying by $z = a+bi$ acts on the plane as $\\begin{pmatrix}a&-b\\\\b&a\\end{pmatrix}$",
+      formulas: ["$z_1 z_2$ rotates by $\\arg(z_1)$ and scales by $|z_1|$"],
+    },
+    applied: {
+      title: "Argand Plane",
+      subtitle: "Every complex number is a point — multiplication is rotate + scale",
+      formulas: ["$|z_1 z_2| = |z_1||z_2|$"],
     },
   },
 };
