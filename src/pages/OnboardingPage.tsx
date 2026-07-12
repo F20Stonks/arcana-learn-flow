@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import BrandLogo from "@/components/BrandLogo";
 
 interface Message {
   role: "user" | "assistant";
@@ -102,7 +103,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border px-6 py-4">
-        <h1 className="text-xl font-bold text-foreground">Jarvis</h1>
+        <BrandLogo className="text-xl" />
       </header>
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 flex flex-col min-h-0">

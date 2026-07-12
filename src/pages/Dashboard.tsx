@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
+import BrandLogo from "@/components/BrandLogo";
 
 type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number };
 
@@ -56,7 +57,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="border-b border-border bg-background sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">Jarvis</h1>
+          <BrandLogo className="text-lg" />
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-sm"><Flame className="h-4 w-4 text-streak" /><span className="font-semibold text-foreground">{profile?.weekly_streak || 0}</span></div>
             <div className="flex items-center gap-1.5 text-sm"><Trophy className="h-4 w-4 text-xp" /><span className="font-semibold text-foreground">{profile?.total_xp || 0}</span></div>

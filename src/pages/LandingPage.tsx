@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MessageCircle, Boxes, GitBranch, RefreshCw, ArrowRight } from "lucide-react";
 import HeroVisual from "@/components/landing/HeroVisual";
 import Reveal from "@/components/landing/Reveal";
+import BrandLogo from "@/components/BrandLogo";
 
 const FEATURES = [
   {
@@ -38,7 +39,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Nav */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
-        <span className="text-lg font-bold tracking-tight">Jarvis</span>
+        <BrandLogo className="text-lg tracking-tight" />
         <Link
           to="/auth"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"

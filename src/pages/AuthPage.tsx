@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function AuthPage() {
   const { session, profile, loading, signIn, signUp } = useAuth();
@@ -36,7 +37,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Jarvis</h1>
+          <BrandLogo className="text-3xl tracking-tight" />
           <p className="text-sm text-muted-foreground mt-2">Your AI learning companion</p>
         </div>
 
