@@ -22,9 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileReady, setProfileReady] = useState(false);
+  // Whose profile `profile` currently reflects — compared against user?.id below so "loading" can
+  // never read a stale ready-state left over from before the real user was known (see useAuth fix notes).
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
@@ -57,21 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      setProfileReady(true);
-      setProfileLoading(false);
+      setProfile(null);
+      setProfileUserId(null);
       return;
     }
+    if (profileUserId === user.id) return; // already loaded (or loading) for this exact user
 
     let cancelled = false;
-    setProfileReady(false);
-    setProfileLoading(true);
     fetchProfile(user.id).then((data) => {
       if (!cancelled) {
         setProfile(data);
-        setProfileReady(true);
+        setProfileUserId(user.id);
       }
-    }).finally(() => {
-      if (!cancelled) setProfileLoading(false);
     });
 
     return () => {
@@ -103,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) setProfile(await fetchProfile(user.id));
   };
 
-  const loading = authLoading || profileLoading || !profileReady;
+  const loading = authLoading || (!!user && profileUserId !== user.id);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
