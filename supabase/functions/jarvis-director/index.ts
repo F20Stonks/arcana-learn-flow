@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,23 @@ serve(async (req) => {
     const { messages, userId, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const spec = mode === "onboarding" && Array.isArray(messages) && messages.length > 0
+      ? await resolveOfficialSpec(messages, LOVABLE_API_KEY).catch((e) => {
+          console.error("spec resolution failed:", e);
+          return null;
+        })
+      : null;
+
+    const groundingBlock = spec
+      ? `
+
+OFFICIAL SPECIFICATION EXCERPT (${spec.board} ${spec.subject}${spec.level ? `, ${spec.level}` : ""} — source: ${spec.sourceUrl}):
+"""
+${spec.text}
+"""
+You MUST base the track's topics and subtopics on this real content — cover every topic area listed here, in the terminology it uses. Do not invent top-level topics absent from this excerpt. Use your own judgment only to break each real topic down into reasonable subtopics, and to fill in any minor gaps left by truncation.`
+      : "";
 
     const systemPrompt = `You are Jarvis, an AI learning director. You help students plan their learning journey.
 
@@ -47,6 +65,7 @@ When you're ready to generate the track, respond with a JSON object in your mess
 </track>
 
 Include a friendly message before the track data. Create 4-8 topics with 3-7 subtopics each, ordered logically from foundational to advanced. Be specific to the student's exam board and level if mentioned.
+${groundingBlock}
 
 IMPORTANT: Only generate the track after you've asked about their timeline/exam date. If they haven't mentioned timing, ask about it first.` : "Help the student with their learning goals."}`;
 
@@ -86,7 +105,8 @@ IMPORTANT: Only generate the track after you've asked about their timeline/exam 
       try {
         const track = JSON.parse(trackMatch[1]);
         const message = content.replace(/<track>[\s\S]*?<\/track>/, "").trim();
-        return new Response(JSON.stringify({ message: message || "I've created your learning track! Let's get started.", track }), {
+        const specGrounding = spec ? { board: spec.board, subject: spec.subject, sourceUrl: spec.sourceUrl, sourceTitle: spec.sourceTitle } : null;
+        return new Response(JSON.stringify({ message: message || "I've created your learning track! Let's get started.", track, specGrounding }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (e) {
