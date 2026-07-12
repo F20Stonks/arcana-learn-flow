@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Loader2, Clock, Zap } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
@@ -55,6 +55,8 @@ interface VizHistoryEntry {
 
 export default function SessionPage() {
   const { subtopicId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isReview = searchParams.get("mode") === "review";
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
@@ -73,6 +75,15 @@ export default function SessionPage() {
   // Visualization spec history — AI emits <viz> blocks that drive the canvas
   const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
   const [activeVizId, setActiveVizId] = useState<string | null>(null);
+
+  // Below the lg breakpoint, Chat and Math Theater share the screen via a toggle
+  // instead of the theater being hidden outright (it used to just disappear).
+  const [mobileView, setMobileView] = useState<"chat" | "theater">("chat");
+  const lastSeenVizId = useRef<string | null>(null);
+  useEffect(() => {
+    if (mobileView === "theater") lastSeenVizId.current = activeVizId;
+  }, [mobileView, activeVizId]);
+  const hasUnseenViz = mobileView !== "theater" && !!activeVizId && activeVizId !== lastSeenVizId.current;
 
   const goBack = () => {
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
@@ -108,17 +119,28 @@ export default function SessionPage() {
     }
 
     const { data: sess } = await supabase.from("sessions").insert({
-      user_id: user!.id, subtopic_id: subtopicId!, session_type: "learn",
+      user_id: user!.id, subtopic_id: subtopicId!, session_type: isReview ? "review" : "learn",
     }).select().single();
     if (sess) setSessionId(sess.id);
 
-    if (sub.status === "unlocked") {
+    if (!isReview && sub.status === "unlocked") {
       await supabase.from("subtopics").update({ status: "in_progress" }).eq("id", sub.id);
     }
 
     const { data: existingNotes } = await supabase.from("notes").select("*").eq("subtopic_id", subtopicId!).eq("user_id", user!.id);
     setNotes(existingNotes || []);
   };
+
+  // Active-recall review sessions open with an AI-initiated retrieval question rather than
+  // waiting on the student, since they arrived here via a "review due" prompt, not their own question.
+  const reviewStarted = useRef(false);
+  useEffect(() => {
+    if (isReview && sessionId && !reviewStarted.current) {
+      reviewStarted.current = true;
+      sendMessage("Let's begin the review.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReview, sessionId]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming || !sessionId) return;
@@ -142,6 +164,8 @@ export default function SessionPage() {
           context: {
             subtopic: subtopic?.title, topic: topic?.title,
             subject: track?.subject, level: track?.level, examBoard: track?.exam_board,
+            mode: isReview ? "review" : undefined,
+            reviewNotes: isReview ? notes.map((n) => `- ${n.title}: ${n.content}`).join("\n") : undefined,
           },
         }),
       });
@@ -250,13 +274,31 @@ export default function SessionPage() {
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={goBack} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{subtopic?.title}</p>
+            <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
+              {subtopic?.title}
+              {isReview && <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-warning/15 text-warning">Review</span>}
+            </p>
             <p className="text-xs text-muted-foreground truncate">{topic?.title} · {track?.subject}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{formatTime(sessionTime)}</div>
           {xpEarned > 0 && <div className="flex items-center gap-1 text-xs text-xp"><Zap className="h-3.5 w-3.5" />+{xpEarned}</div>}
+          <div className="lg:hidden flex items-center gap-0.5 bg-accent rounded-lg p-0.5">
+            <button
+              onClick={() => setMobileView("chat")}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${mobileView === "chat" ? "bg-background text-foreground" : "text-muted-foreground"}`}
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> Chat
+            </button>
+            <button
+              onClick={() => setMobileView("theater")}
+              className={`relative px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${mobileView === "theater" ? "bg-background text-foreground" : "text-muted-foreground"}`}
+            >
+              <Box className="h-3.5 w-3.5" /> Theater
+              {hasUnseenViz && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />}
+            </button>
+          </div>
           <button onClick={endSession} disabled={isEnding} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50 flex items-center gap-1.5">
             {isEnding && <Loader2 className="h-3 w-3 animate-spin" />}
             {isEnding ? "Ending…" : "End"}
@@ -266,11 +308,15 @@ export default function SessionPage() {
 
       <div className="flex-1 flex min-h-0">
         {/* LEFT — Companion Panel (40%) */}
-        <div className="w-full lg:w-2/5 flex flex-col min-h-0 border-r border-border">
+        <div className={`w-full lg:w-2/5 flex-col min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground text-sm">Start your session. Ask Jarvis anything about <strong className="text-foreground">{subtopic?.title}</strong>.</p>
+                <p className="text-muted-foreground text-sm">
+                  {isReview
+                    ? <>Starting your recall review of <strong className="text-foreground">{subtopic?.title}</strong>…</>
+                    : <>Start your session. Ask Jarvis anything about <strong className="text-foreground">{subtopic?.title}</strong>.</>}
+                </p>
               </div>
             )}
             {messages.map((msg, i) => {
@@ -319,7 +365,7 @@ export default function SessionPage() {
         </div>
 
         {/* RIGHT — Math Theater (60%) */}
-        <div className="hidden lg:flex lg:w-3/5 min-h-0">
+        <div className={`w-full lg:w-3/5 min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex`}>
           <MathTheater
             subtopicId={subtopicId}
             payload={
