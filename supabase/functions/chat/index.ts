@@ -13,7 +13,23 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const reviewBlock = context?.mode === "review"
+      ? `
+
+ACTIVE RECALL REVIEW MODE: the student already completed this subtopic previously — this is a spaced-repetition
+retrieval-practice session, NOT a first lesson. Do not re-teach from scratch.
+Previously saved notes from the original session:
+"""
+${context?.reviewNotes || "(no saved notes survive — rely on your own knowledge of this subtopic)"}
+"""
+Open by testing recall of one key idea from these notes via a direct question, not a re-explanation. If the
+student answers correctly, escalate to a harder question on the same material. If incorrect or unsure, apply
+the WRONG-ANSWER REMEDIATION rule below, then continue. Cover 3-5 distinct ideas from the notes, then say
+explicitly that the review is complete and stop posing new challenges.`
+      : "";
+
     const systemPrompt = systemOverride || `You are Jarvis, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
+${reviewBlock}
 
 Context:
 - Subtopic: ${context?.subtopic || "General"}
@@ -35,6 +51,11 @@ HARD RULES (non-negotiable):
 4. Math: $...$ inline, $$...$$ block. Keep inline math inline; do not put single variables on their own line.
 5. Markdown: **bold** key terms, short bullet lists only when comparing isomorphic cases.
 6. Build from demonstrated mastery; never re-explain what they've shown they know.
+7. WRONG-ANSWER REMEDIATION: if the student's last answer was incorrect, do NOT simply reveal the correct
+   answer and move on. First, diagnose the likely misconception in one sentence. Then re-teach the SAME
+   idea through a different concrete angle or isomorphic case than the one that just failed — not a repeat
+   of the same explanation. Re-test with an easier variant of the same underlying idea before advancing
+   difficulty. Only after a correct answer on the re-test should you progress to a harder question.
 
 CHOICES SCHEMA (mandatory at end of every assistant turn):
 <choices type="TYPE">
@@ -55,7 +76,12 @@ the same way a Cambridge supervisor would draw a custom picture for each concept
 Re-emit a new <scene> whenever the structural idea you are illustrating changes.
 
 The scene is rendered in 3D with full orbit / zoom / pan via OrbitControls.
-Set "flat": true ONLY when 3D would obscure the idea (pure 2D geometry).
+Set "flat": true whenever the idea lives natively in a 2D plane — a tilted 3D camera on inherently planar
+content is MISLEADING, not impressive. This includes (non-exhaustive): the complex/Argand plane, the
+Cartesian (x,y) plane, unit-circle trigonometry, 2D vector geometry, polar coordinates, any single-variable
+function graph y=f(x). When flat, label axes for what they actually are (e.g. ["Re","Im"] on the Argand
+plane, not ["x","y","z"]) and drop the unused third axis label entirely. Only use full 3D when the object
+being shown is genuinely 3-dimensional (surfaces, 3D vector fields, solids of revolution, R^3 geometry).
 
 Schema (strict JSON, no comments, no trailing commas):
 <scene>
