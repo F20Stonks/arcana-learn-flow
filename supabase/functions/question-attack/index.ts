@@ -28,7 +28,7 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Assess the student's answer fairly. For mathematical answers, check mathematical equivalence not just string matching. Respond ONLY with valid JSON: {"correct": true/false, "feedback": "detailed explanation of why the answer is correct or incorrect, with the correct working shown"}`
+              content: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Assess the student's answer fairly. For mathematical answers, check mathematical equivalence, not just string matching. When the answer is INCORRECT, first name the likely misconception in one sentence (what the student is confusing or the step they skipped), then show the correct working. When it is CORRECT, confirm the structural reason the method works, not just "correct". Respond ONLY with valid JSON: {"correct": true/false, "feedback": "detailed feedback following the rule above, with the correct working shown"}`
             },
             {
               role: "user",
@@ -102,7 +102,7 @@ Respond ONLY with valid JSON:
 }
 
 For open-ended questions, omit the "options" field entirely.
-Distribute questions across the selected topics. Make questions specific and rigorous.`;
+Distribute questions across the selected topics. Make questions specific and rigorous — probe structural understanding (why a method works, when it fails), not just pattern-matching recall.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

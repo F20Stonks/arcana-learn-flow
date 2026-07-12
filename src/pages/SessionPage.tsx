@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
@@ -71,6 +71,11 @@ export default function SessionPage() {
   const [xpEarned, setXpEarned] = useState(0);
   const [isEnding, setIsEnding] = useState(false);
 
+  // Soft prerequisite nudge (framework §5): required concepts this subtopic assumes but the user
+  // hasn't learned yet. A gentle heads-up, never a block. Populated in loadContext.
+  const [prereqNudge, setPrereqNudge] = useState<string[] | null>(null);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
+
   // Visualization spec history — AI emits <viz> blocks that drive the canvas
   const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
   const [activeVizId, setActiveVizId] = useState<string | null>(null);
@@ -128,6 +133,33 @@ export default function SessionPage() {
 
     const { data: existingNotes } = await supabase.from("notes").select("*").eq("subtopic_id", subtopicId!).eq("user_id", user!.id);
     setNotes(existingNotes || []);
+
+    // Prerequisite check: concepts this subtopic "requires" that the user hasn't learned yet.
+    // (requires-edges are written at session completion, so this fires on re-entry and as the global
+    // concept graph fills in — first-ever teaching of a subtopic simply has no requires-edges yet.)
+    if (!isReview) {
+      const { data: reqRows } = await supabase
+        .from("subtopic_concepts")
+        .select("concept_id, concepts(name)")
+        .eq("subtopic_id", subtopicId!)
+        .eq("role", "requires");
+      const reqList = (reqRows || []) as unknown as { concept_id: string; concepts: { name: string } | null }[];
+      const reqIds = reqList.map((r) => r.concept_id);
+      if (reqIds.length > 0) {
+        const { data: known } = await supabase
+          .from("user_concept_knowledge")
+          .select("concept_id")
+          .eq("user_id", user!.id)
+          .in("concept_id", reqIds);
+        const knownList = (known || []) as { concept_id: string }[];
+        const knownSet = new Set(knownList.map((k) => k.concept_id));
+        const unknown = reqList
+          .filter((r) => !knownSet.has(r.concept_id))
+          .map((r) => r.concepts?.name)
+          .filter((n): n is string => !!n);
+        if (unknown.length > 0) setPrereqNudge(unknown);
+      }
+    }
   };
 
   // Active-recall review sessions open with an AI-initiated retrieval question rather than
@@ -236,29 +268,19 @@ export default function SessionPage() {
     setIsEnding(true);
     if (sessionId) {
       try {
+        // assess-session is the completion pipeline: it grades the session, extracts + tags concepts,
+        // grants concept knowledge, schedules/advances reviews, marks the subtopic complete, and awards
+        // XP — all server-side with the service role. The client just triggers it and refreshes the UI.
         const resp = await supabase.functions.invoke("assess-session", {
           body: { sessionId, subtopicId, messages },
         });
         if (resp.data) {
-          const { complete, xp_earned, notes_to_save } = resp.data;
-          setXpEarned(xp_earned || 0);
-          if (complete && subtopic) {
-            await supabase.from("subtopics").update({ status: "complete", completed_at: new Date().toISOString() }).eq("id", subtopic.id);
-          }
-          if (xp_earned) {
-            const { data: p } = await supabase.from("profiles").select("total_xp").eq("user_id", user!.id).single();
-            if (p) await supabase.from("profiles").update({ total_xp: (p.total_xp || 0) + xp_earned }).eq("user_id", user!.id);
-          }
-          if (notes_to_save) {
-            for (const n of notes_to_save) {
-              await supabase.from("notes").insert({ user_id: user!.id, subtopic_id: subtopicId!, title: n.title, content: n.content });
-            }
-          }
-          await supabase.from("sessions").update({ completed_at: new Date().toISOString(), xp_earned }).eq("id", sessionId);
+          setXpEarned(resp.data.xp_earned || 0);
           await refreshProfile();
         }
       } catch {
-        try { await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId); } catch {}
+        // Network/function failure: best-effort close the session row so it isn't left dangling.
+        try { await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId); } catch { /* nothing more we can do */ }
       }
     }
     setIsEnding(false);
@@ -304,6 +326,20 @@ export default function SessionPage() {
           </button>
         </div>
       </header>
+
+      {!isReview && prereqNudge && !nudgeDismissed && (
+        <div className="shrink-0 border-b border-warning/30 bg-warning/10 px-4 sm:px-6 py-2.5 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground flex-1 leading-snug">
+            This builds on <strong className="font-medium">{prereqNudge.slice(0, 3).join(", ")}</strong>
+            {prereqNudge.length > 3 ? `, +${prereqNudge.length - 3} more` : ""}, which you haven't covered yet.
+            You can carry on, or review those first.
+          </p>
+          <button onClick={() => setNudgeDismissed(true)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 flex min-h-0">
         {/* LEFT — Companion Panel (40%) */}

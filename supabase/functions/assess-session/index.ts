@@ -1,75 +1,329 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL = "google/gemini-3-flash-preview";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type ExtractedConcept = { name: string; type?: string; definition?: string; aliases?: string[] };
+type ConceptRow = { id: string; name: string; type: string; definition: string | null; aliases: string[] | null };
+
+const VALID_TYPES = new Set(["notation", "terminology", "skill"]);
+const norm = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+const formsOf = (c: { name: string; aliases?: string[] | null }) =>
+  [c.name, ...(c.aliases || [])].map(norm).filter(Boolean);
+
+const tokens = (s: string) => new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length > 2));
+function jaccard(a: string, b: string): number {
+  const A = tokens(a), B = tokens(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  for (const t of A) if (B.has(t)) inter++;
+  return inter / (A.size + B.size - inter);
+}
+
+// Search-before-create resolution (framework §5/§7c). Returns norm(name) -> concept id.
+async function resolveConcepts(
+  supabase: ReturnType<typeof createClient>,
+  taught: ExtractedConcept[],
+  required: ExtractedConcept[],
+  apiKey: string,
+): Promise<Map<string, string>> {
+  const resolved = new Map<string, string>();
+
+  // Unique specs by normalized name (merge taught + required; first spec wins).
+  const specs = new Map<string, ExtractedConcept>();
+  for (const c of [...taught, ...required]) {
+    const k = norm(c.name);
+    if (!k) continue;
+    if (!specs.has(k)) {
+      specs.set(k, {
+        name: c.name.trim(),
+        type: VALID_TYPES.has((c.type || "").toLowerCase()) ? (c.type as string).toLowerCase() : "terminology",
+        definition: (c.definition || "").trim(),
+        aliases: (c.aliases || []).map((a) => a.trim()).filter(Boolean),
+      });
+    }
+  }
+  if (specs.size === 0) return resolved;
+
+  const { data: existingRaw } = await supabase.from("concepts").select("id, name, type, definition, aliases");
+  const existing = (existingRaw || []) as ConceptRow[];
+
+  const toCreate: ExtractedConcept[] = [];
+  const ambiguous: { key: string; spec: ExtractedConcept; candidates: ConceptRow[] }[] = [];
+
+  for (const [key, spec] of specs) {
+    const specForms = new Set(formsOf(spec));
+    const exact = existing.find((c) => formsOf(c).some((f) => specForms.has(f)));
+    if (exact) {
+      resolved.set(key, exact.id);
+      continue;
+    }
+    const candidates = existing
+      .map((c) => ({ c, s: Math.max(jaccard(spec.name, c.name), ...(c.aliases || []).map((a) => jaccard(spec.name, a)), 0) }))
+      .filter((x) => x.s >= 0.34)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 5)
+      .map((x) => x.c);
+    if (candidates.length === 0) toCreate.push(spec);
+    else ambiguous.push({ key, spec, candidates });
+  }
+
+  // One AI reconcile call for the ambiguous cases only (§7c: default to LINK on ambiguity).
+  if (ambiguous.length > 0) {
+    try {
+      const payload = ambiguous.map((a, i) => ({
+        index: i,
+        concept: { name: a.spec.name, type: a.spec.type, definition: a.spec.definition },
+        candidates: a.candidates.map((c) => ({ id: c.id, name: c.name, definition: c.definition })),
+      }));
+      const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You deduplicate a GLOBAL concept registry. For each item you get an extracted concept and a shortlist of EXISTING concepts it might duplicate. Decide, per item, LINK vs CREATE:
+- Same concept (same meaning, even if worded/notated differently) → LINK: return that concept's id.
+- No candidate means the same thing → CREATE.
+- AMBIGUOUS/unsure → default to LINK to the closest candidate. A wrong merge is recoverable; a wrong new row silently fragments the registry.
+Respond ONLY with JSON: {"decisions":[{"index":number,"concept_id":string|null,"create":boolean}]}. When create is true, concept_id must be null.`,
+            },
+            { role: "user", content: JSON.stringify(payload) },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+        const decisions: { index: number; concept_id: string | null; create: boolean }[] = parsed.decisions || [];
+        for (const d of decisions) {
+          const item = ambiguous[d.index];
+          if (!item) continue;
+          if (!d.create && d.concept_id && item.candidates.some((c) => c.id === d.concept_id)) {
+            resolved.set(item.key, d.concept_id);
+          } else {
+            toCreate.push(item.spec);
+          }
+        }
+        // Any ambiguous item the model didn't return a decision for → link to top candidate (safe default).
+        for (const item of ambiguous) {
+          if (!resolved.has(item.key) && !toCreate.includes(item.spec)) {
+            resolved.set(item.key, item.candidates[0].id);
+          }
+        }
+      } else {
+        // Reconcile call failed → default every ambiguous item to LINK to its top candidate.
+        for (const item of ambiguous) resolved.set(item.key, item.candidates[0].id);
+      }
+    } catch (e) {
+      console.error("reconcile failed, defaulting ambiguous to LINK:", e);
+      for (const item of ambiguous) if (!resolved.has(item.key)) resolved.set(item.key, item.candidates[0].id);
+    }
+  }
+
+  // Create the genuinely-new concepts.
+  for (const spec of toCreate) {
+    const key = norm(spec.name);
+    if (resolved.has(key)) continue;
+    const { data: created, error } = await supabase
+      .from("concepts")
+      .insert({ name: spec.name, type: spec.type, definition: spec.definition || null, aliases: spec.aliases || [] })
+      .select("id")
+      .single();
+    if (!error && created) resolved.set(key, (created as { id: string }).id);
+    else console.error("concept create failed:", spec.name, error);
+  }
+
+  return resolved;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const fallback = { complete: false, confidence: "low", notes_to_save: [], xp_earned: 10, concepts_taught: [], concepts_required: [] };
 
   try {
     const { sessionId, subtopicId, messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are assessing a tutoring session. Based on the conversation, determine:
-1. Whether the student has sufficiently understood the subtopic (complete: true/false)
-2. Your confidence level (low/medium/high)
-3. Key notes to save from this session (array of {title, content} objects)
-4. XP to award (10-100 based on effort, understanding demonstrated, and difficulty)
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase = SUPABASE_URL && SERVICE_ROLE_KEY
+      ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+      : null;
+    if (!supabase) console.error("SERVICE ROLE unavailable — assessment will return but no knowledge will be persisted");
 
-Respond ONLY with a valid JSON object:
+    // Authoritative session facts (never trust the client for user/subtopic/type).
+    let userId: string | null = null;
+    let realSubtopicId: string | null = subtopicId || null;
+    let sessionType = "learn";
+    if (supabase && sessionId) {
+      const { data: sess } = await supabase.from("sessions").select("user_id, subtopic_id, session_type").eq("id", sessionId).maybeSingle();
+      if (sess) {
+        userId = (sess as any).user_id;
+        realSubtopicId = (sess as any).subtopic_id || realSubtopicId;
+        sessionType = (sess as any).session_type || "learn";
+      }
+    }
+    const isReview = sessionType === "review";
+
+    const systemPrompt = `You are the assessment engine for an elite tutoring session (targets: 9.0 TMUA, STEP S, Olympiad medals). You read the FULL transcript of ONE session and return a strict JSON verdict. Be rigorous and repeatable — apply the rubrics literally. Do NOT award completion or XP for effort alone.
+${isReview ? `\nThis is an ACTIVE-RECALL REVIEW session: the transcript tests recall of previously-learned material, it does not teach anything new. "complete" here means the student successfully recalled the material across the review's challenges. Leave "concepts_taught" and "concepts_required" as empty arrays (nothing new is taught in a review).\n` : ""}
+COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:
+- The student reached and answered the session's hardest / terminal challenge CORRECTLY.
+- They demonstrated the structural WHY (the mechanism that forces the result), not just a correct final answer.
+- Every wrong answer along the way was remediated to a correct re-test — the tutor left no idea flagged as "not secured".
+- No unresolved misconception remains at the end of the transcript.
+Otherwise "complete": false. A session that only covered easy rungs, or ended on a wrong/uncertain answer, is NOT complete.
+
+CONFIDENCE:
+- "high": several correct answers including the hardest rung, with the mechanism explained in the student's own words.
+- "medium": correct answers but thin reasoning, or one shaky recovery.
+- "low": mostly guided / multiple-choice hits with little evidence of independent understanding.
+
+XP RUBRIC (integer 10-100, be deterministic):
+- Base by hardest difficulty genuinely reached: easy rung = 20, intermediate = 40, advanced/proof = 60, terminal-hardest = 75.
+- +10 if the student recovered from a wrong answer to a correct re-test (productive struggle).
+- +10 if they articulated the WHY unprompted.
+- -15 if the session was abandoned early / ended incomplete (still award for what was shown).
+- Clamp to [10, 100].
+
+NOTES ("notes_to_save", 1-4 objects {title, content}): each "content" must capture the STRUCTURAL/CAUSAL takeaway — the mechanism, the load-bearing assumption, the counterfactual — NOT "we learned about X". Write them as durable revision notes the student can be quizzed on later.
+${isReview ? "" : `
+CONCEPT EXTRACTION (feeds a permanent GLOBAL knowledge tracker — be precise):
+- "concepts_taught": atomic concepts this session actually TAUGHT and the student demonstrated understanding of (only include a concept if the transcript shows they grasped it).
+- "concepts_required": atomic concepts the session ASSUMED the student already knew (prerequisites), not taught here.
+- Each concept: { "name": canonical concise name, "type": "notation" | "terminology" | "skill", "definition": one precise sentence (a good future search target), "aliases": [alternative names/notations, may be empty] }.
+- "name" must be canonical and reusable across subjects (shared global vocabulary): prefer "curl of a vector field" over "the curl thing"; put "∇×" and "curl operator" in aliases. Keep each concept ATOMIC (one notation / term / skill), never a whole topic.`}
+
+Respond ONLY with valid JSON:
 {
-  "complete": true,
-  "confidence": "high",
-  "notes_to_save": [
-    {"title": "Key concept name", "content": "Brief explanation of what was learned"}
-  ],
-  "xp_earned": 50
+  "complete": boolean,
+  "confidence": "low" | "medium" | "high",
+  "xp_earned": number,
+  "notes_to_save": [{"title": string, "content": string}],
+  "concepts_taught": [{"name": string, "type": string, "definition": string, "aliases": string[]}],
+  "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetch(GATEWAY_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: MODEL,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Session conversation:\n${messages.map((m: any) => `${m.role}: ${m.content}`).join("\n\n")}\n\nAssess this session now.` },
+          { role: "user", content: `Session conversation:\n${(messages || []).map((m: any) => `${m.role}: ${m.content}`).join("\n\n")}\n\nAssess this session now.` },
         ],
         response_format: { type: "json_object" },
       }),
     });
 
-    if (!response.ok) {
-      console.error("Assessment error:", response.status);
-      return new Response(JSON.stringify({ complete: false, confidence: "low", notes_to_save: [], xp_earned: 10 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!aiRes.ok) {
+      console.error("Assessment AI error:", aiRes.status);
+      return new Response(JSON.stringify(fallback), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "{}";
-    
-    let result;
+    const data = await aiRes.json();
+    let result: any;
     try {
-      result = JSON.parse(content);
+      result = JSON.parse(data.choices?.[0]?.message?.content || "{}");
     } catch {
-      result = { complete: false, confidence: "low", notes_to_save: [], xp_earned: 10 };
+      return new Response(JSON.stringify(fallback), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const complete = result.complete === true;
+    const xpEarned = Math.max(10, Math.min(100, Math.round(Number(result.xp_earned) || 10)));
+    const notes: { title: string; content: string }[] = Array.isArray(result.notes_to_save) ? result.notes_to_save : [];
+    const conceptsTaught: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_taught) ? result.concepts_taught : []);
+    const conceptsRequired: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_required) ? result.concepts_required : []);
+
+    // --- Completion pipeline (service role; each step best-effort so a partial failure never 500s) ---
+    if (supabase && sessionId) {
+      const nowIso = new Date().toISOString();
+      try {
+        if (!isReview && complete && userId && realSubtopicId) {
+          // Resolve concepts, then write graph edges + knowledge.
+          const idByName = await resolveConcepts(supabase, conceptsTaught, conceptsRequired, LOVABLE_API_KEY);
+          const taughtIds = [...new Set(conceptsTaught.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
+          const requiredIds = [...new Set(conceptsRequired.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
+
+          const scRows = [
+            ...taughtIds.map((id) => ({ subtopic_id: realSubtopicId, concept_id: id, role: "teaches" })),
+            ...requiredIds.filter((id) => !taughtIds.includes(id)).map((id) => ({ subtopic_id: realSubtopicId, concept_id: id, role: "requires" })),
+          ];
+          if (scRows.length) await supabase.from("subtopic_concepts").upsert(scRows, { onConflict: "subtopic_id,concept_id,role", ignoreDuplicates: true });
+
+          if (taughtIds.length) {
+            await supabase.from("user_concept_knowledge").upsert(
+              taughtIds.map((id) => ({ user_id: userId, concept_id: id, source_subtopic_id: realSubtopicId })),
+              { onConflict: "user_id,concept_id", ignoreDuplicates: true },
+            );
+          }
+
+          // Notes (moved server-side so they can carry concept links).
+          if (notes.length) {
+            await supabase.from("notes").insert(
+              notes.map((n) => ({ user_id: userId, subtopic_id: realSubtopicId, title: n.title, content: n.content, linked_concept_ids: taughtIds })),
+            );
+          }
+
+          // Mark subtopic complete + schedule first review if not already scheduled (§4/§6).
+          await supabase.from("subtopics").update({ status: "complete", completed_at: nowIso }).eq("id", realSubtopicId);
+          const { data: existingReview } = await supabase.from("subtopic_reviews").select("id").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
+          if (!existingReview) {
+            await supabase.from("subtopic_reviews").insert({
+              user_id: userId, subtopic_id: realSubtopicId, interval_days: 7,
+              next_review_due_at: new Date(Date.now() + 7 * DAY_MS).toISOString(), last_completed_at: nowIso,
+            });
+          }
+        }
+
+        // Review session that succeeded → advance the fixed-doubling schedule (§6).
+        if (isReview && complete && userId && realSubtopicId) {
+          const { data: row } = await supabase.from("subtopic_reviews").select("id, interval_days").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
+          if (row) {
+            const newInterval = ((row as any).interval_days || 7) * 2;
+            await supabase.from("subtopic_reviews").update({
+              interval_days: newInterval,
+              next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
+              last_completed_at: nowIso,
+            }).eq("id", (row as any).id);
+          }
+        }
+
+        // Session bookkeeping + XP (both modes).
+        await supabase.from("sessions").update({ completed_at: nowIso, xp_earned: xpEarned }).eq("id", sessionId);
+        if (xpEarned > 0 && userId) {
+          const { data: p } = await supabase.from("profiles").select("total_xp").eq("user_id", userId).maybeSingle();
+          if (p) await supabase.from("profiles").update({ total_xp: ((p as any).total_xp || 0) + xpEarned }).eq("user_id", userId);
+        }
+      } catch (pipeErr) {
+        console.error("completion pipeline error (assessment still returned):", pipeErr);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      complete,
+      confidence: result.confidence || "low",
+      xp_earned: xpEarned,
+      notes_to_save: notes,
+      concepts_taught: conceptsTaught.map((c) => c.name),
+      concepts_required: conceptsRequired.map((c) => c.name),
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("assess error:", e);
-    return new Response(JSON.stringify({ complete: false, confidence: "low", notes_to_save: [], xp_earned: 10 }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify(fallback), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

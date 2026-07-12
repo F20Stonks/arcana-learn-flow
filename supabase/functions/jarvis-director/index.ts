@@ -64,7 +64,7 @@ When you're ready to generate the track, respond with a JSON object in your mess
 }
 </track>
 
-Include a friendly message before the track data. Create 4-8 topics with 3-7 subtopics each, ordered logically from foundational to advanced. Be specific to the student's exam board and level if mentioned.
+Include a friendly message before the track data. Create 4-8 topics with 3-7 subtopics each, ordered logically from foundational to advanced — sequence them so each subtopic's prerequisites come before the ideas that depend on them, letting a student build every result from its underlying mechanism rather than memorise it in isolation. Be specific to the student's exam board and level if mentioned.
 ${groundingBlock}
 
 IMPORTANT: Only generate the track after you've asked about their timeline/exam date. If they haven't mentioned timing, ask about it first.` : "Help the student with their learning goals."}`;
