@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Library, Trash2, Palette, Check } from "lucide-react";
+import { Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2 } from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
 import MathRenderer from "@/components/MathRenderer";
@@ -55,6 +55,14 @@ export default function MathTheater({
   const [tab, setTab] = useState<"theater" | "library">("theater");
   const [time, setTime] = useState(0);
   const [vizTheme, setVizTheme] = useState(loadVizTheme);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
 
   const selectVizTheme = (id: string) => {
     const t = VIZ_THEMES.find((v) => v.id === id);
@@ -133,7 +141,10 @@ export default function MathTheater({
   };
 
   return (
-    <div className="h-full w-full flex flex-col" style={{ background: mathTheme.bg }}>
+    <div
+      className={fullscreen ? "fixed inset-0 z-[100] flex flex-col" : "h-full w-full flex flex-col"}
+      style={{ background: mathTheme.bg }}
+    >
       {/* Header: tabs + toggle */}
       <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: mathTheme.grid }}>
         <div className="flex items-center gap-1">
@@ -155,47 +166,58 @@ export default function MathTheater({
               style={{ borderColor: mathTheme.grid, color: mathTheme.textDim }}>
               {isScene ? "scene" : (payload as SimulationPayload).archetype.replace("_", " ")}
             </div>
-            {isScene && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    title="Visualization style"
-                    className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-                    style={{ borderColor: mathTheme.grid }}
-                  >
-                    <Palette className="h-3.5 w-3.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-56 p-2 bg-[#0b1020] border-white/10">
-                  <div className="text-[10px] uppercase tracking-wider text-slate-400 px-1 pb-1.5">
-                    Visualization style
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  title="Visualization style"
+                  className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                  style={{ borderColor: mathTheme.grid }}
+                >
+                  <Palette className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-2 bg-[#0b1020] border-white/10">
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 px-1 pb-1.5">
+                  Visualization style
+                </div>
+                {!isScene && (
+                  <div className="text-[10px] text-slate-500 px-1 pb-2 leading-relaxed">
+                    Applies once Jarvis draws a scene — pick now and it'll be ready.
                   </div>
-                  <div className="space-y-1">
-                    {VIZ_THEMES.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => selectVizTheme(t.id)}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                          vizTheme.id === t.id ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5"
-                        }`}
-                      >
-                        <span className="flex -space-x-1 shrink-0">
-                          {t.palette.slice(0, 3).map((c, i) => (
-                            <span
-                              key={i}
-                              className="h-3.5 w-3.5 rounded-full border border-black/40"
-                              style={{ background: c, boxShadow: t.glow ? `0 0 6px ${c}` : undefined }}
-                            />
-                          ))}
-                        </span>
-                        <span className="flex-1 text-left">{t.name}</span>
-                        {vizTheme.id === t.id && <Check className="h-3.5 w-3.5" />}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
+                )}
+                <div className="space-y-1">
+                  {VIZ_THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => selectVizTheme(t.id)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                        vizTheme.id === t.id ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5"
+                      }`}
+                    >
+                      <span className="flex -space-x-1 shrink-0">
+                        {t.palette.slice(0, 3).map((c, i) => (
+                          <span
+                            key={i}
+                            className="h-3.5 w-3.5 rounded-full border border-black/40"
+                            style={{ background: c, boxShadow: t.glow ? `0 0 6px ${c}` : undefined }}
+                          />
+                        ))}
+                      </span>
+                      <span className="flex-1 text-left">{t.name}</span>
+                      {vizTheme.id === t.id && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <button
+              onClick={() => setFullscreen((f) => !f)}
+              title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+              className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              style={{ borderColor: mathTheme.grid }}
+            >
+              {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            </button>
           </div>
         )}
       </div>
