@@ -28,7 +28,7 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Assess the student's answer fairly. For mathematical answers, check mathematical equivalence, not just string matching. When the answer is INCORRECT, first name the likely misconception in one sentence (what the student is confusing or the step they skipped), then show the correct working. When it is CORRECT, confirm the structural reason the method works, not just "correct". Respond ONLY with valid JSON: {"correct": true/false, "feedback": "detailed feedback following the rule above, with the correct working shown"}`
+              content: `You are an expert ${subject || "academic"} examiner at ${level || "A-Level"} standard. Grade the student's REASONING and method, not just the final answer — check mathematical equivalence (not string matching), and if the method is sound but a computation slipped, say so explicitly (that is a near-miss, not a blank wrong). When the answer is INCORRECT: (1) name the likely misconception or the exact step that failed, in one sentence; (2) give the single smallest next-step HINT that would unblock them; then (3) show the full correct working. When it is CORRECT: confirm the structural reason the method works and why it was the right tool here, not just "correct". Respond ONLY with valid JSON: {"correct": true/false, "feedback": "feedback following steps (1)-(3) for a wrong answer, or the correct-case rule, with full working shown"}`
             },
             {
               role: "user",
@@ -102,7 +102,7 @@ Respond ONLY with valid JSON:
 }
 
 For open-ended questions, omit the "options" field entirely.
-Distribute questions across the selected topics. Make questions specific and rigorous — probe structural understanding (why a method works, when it fails), not just pattern-matching recall.`;
+Distribute questions across the selected topics. Favour questions that require COMBINING more than one concept and TRANSFER to an unfamiliar context (not a re-skin of a standard example); at least some should ask the student to justify WHY a chosen method applies, or where it would fail, rather than only compute. Each "explanation" must show the structural reason the method works, not just the mechanical steps.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

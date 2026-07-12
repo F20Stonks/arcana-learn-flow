@@ -18,6 +18,7 @@ interface ChatMessage {
 }
 
 type ChoiceType = "mcq" | "truefalse" | "match" | "freeform";
+type Intensity = "guided" | "balanced" | "rigorous";
 interface ChoiceBlock {
   type: ChoiceType;
   options: string[];
@@ -75,6 +76,22 @@ export default function SessionPage() {
   // hasn't learned yet. A gentle heads-up, never a block. Populated in loadContext.
   const [prereqNudge, setPrereqNudge] = useState<string[] | null>(null);
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
+
+  // Concept-graph context fed to the teaching AI: known concepts (so it can build connections) and
+  // this subtopic's prerequisites with known flags (so it shores up gaps and anchors to what's known).
+  const [knownConceptNames, setKnownConceptNames] = useState<string[]>([]);
+  const [prerequisites, setPrerequisites] = useState<{ name: string; known: boolean }[]>([]);
+
+  // Student-facing teaching intensity (persisted). Scales how hard the loop pushes self-explanation and
+  // novel-problem solving; also the seam a future model-routing engine will read.
+  const [intensity, setIntensity] = useState<Intensity>(() => {
+    const saved = localStorage.getItem("teachingIntensity");
+    return saved === "guided" || saved === "rigorous" ? saved : "balanced";
+  });
+  const changeIntensity = (lvl: Intensity) => {
+    setIntensity(lvl);
+    localStorage.setItem("teachingIntensity", lvl);
+  };
 
   // Visualization spec history — AI emits <viz> blocks that drive the canvas
   const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
@@ -134,7 +151,22 @@ export default function SessionPage() {
     const { data: existingNotes } = await supabase.from("notes").select("*").eq("subtopic_id", subtopicId!).eq("user_id", user!.id);
     setNotes(existingNotes || []);
 
-    // Prerequisite check: concepts this subtopic "requires" that the user hasn't learned yet.
+    // Concept-graph context for the teaching AI: the student's most-recent known concepts (used for
+    // "connect in / connect out" bridges), independent of this subtopic.
+    const { data: knownRows } = await supabase
+      .from("user_concept_knowledge")
+      .select("known_at, concepts(name)")
+      .eq("user_id", user!.id)
+      .order("known_at", { ascending: false })
+      .limit(20);
+    setKnownConceptNames(
+      ((knownRows || []) as unknown as { concepts: { name: string } | null }[])
+        .map((r) => r.concepts?.name)
+        .filter((n): n is string => !!n),
+    );
+
+    // Prerequisite check: concepts this subtopic "requires", with known flags. Drives both the soft
+    // nudge (unknown ones) and the teaching context (anchors + gaps to shore up).
     // (requires-edges are written at session completion, so this fires on re-entry and as the global
     // concept graph fills in — first-ever teaching of a subtopic simply has no requires-edges yet.)
     if (!isReview) {
@@ -151,12 +183,12 @@ export default function SessionPage() {
           .select("concept_id")
           .eq("user_id", user!.id)
           .in("concept_id", reqIds);
-        const knownList = (known || []) as { concept_id: string }[];
-        const knownSet = new Set(knownList.map((k) => k.concept_id));
-        const unknown = reqList
-          .filter((r) => !knownSet.has(r.concept_id))
-          .map((r) => r.concepts?.name)
-          .filter((n): n is string => !!n);
+        const knownSet = new Set(((known || []) as { concept_id: string }[]).map((k) => k.concept_id));
+        const prereqs = reqList
+          .map((r) => ({ name: r.concepts?.name || "", known: knownSet.has(r.concept_id) }))
+          .filter((p) => p.name);
+        setPrerequisites(prereqs);
+        const unknown = prereqs.filter((p) => !p.known).map((p) => p.name);
         if (unknown.length > 0) setPrereqNudge(unknown);
       }
     }
@@ -197,6 +229,9 @@ export default function SessionPage() {
             subject: track?.subject, level: track?.level, examBoard: track?.exam_board,
             mode: isReview ? "review" : undefined,
             reviewNotes: isReview ? notes.map((n) => `- ${n.title}: ${n.content}`).join("\n") : undefined,
+            intensity,
+            knownConcepts: knownConceptNames,
+            prerequisites,
           },
         }),
       });
@@ -272,7 +307,7 @@ export default function SessionPage() {
         // grants concept knowledge, schedules/advances reviews, marks the subtopic complete, and awards
         // XP — all server-side with the service role. The client just triggers it and refreshes the UI.
         const resp = await supabase.functions.invoke("assess-session", {
-          body: { sessionId, subtopicId, messages },
+          body: { sessionId, subtopicId, messages, intensity },
         });
         if (resp.data) {
           setXpEarned(resp.data.xp_earned || 0);
@@ -385,6 +420,8 @@ export default function SessionPage() {
             <div ref={bottomRef} />
           </div>
 
+          {!isReview && <IntensitySelector intensity={intensity} onChange={changeIntensity} />}
+
           <InteractionPanel
             messages={messages}
             isStreaming={isStreaming}
@@ -407,6 +444,39 @@ export default function SessionPage() {
             onSelectViz={(id) => setActiveVizId(id)}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+const INTENSITY_META: Record<Intensity, { label: string; hint: string }> = {
+  guided: { label: "Guided", hint: "Mostly guided choices — lowest friction." },
+  balanced: { label: "Balanced", hint: "Regular self-explanation + a novel problem per idea." },
+  rigorous: { label: "Rigorous", hint: "Derive and solve novel problems unaided — hardest." },
+};
+
+function IntensitySelector({ intensity, onChange }: { intensity: Intensity; onChange: (v: Intensity) => void }) {
+  return (
+    <div className="px-4 pt-2 pb-1 flex items-center gap-2 border-t border-border">
+      <span
+        className="text-[11px] text-muted-foreground shrink-0"
+        title="How hard Jarvis pushes you to explain the why and solve novel problems yourself"
+      >
+        Depth
+      </span>
+      <div className="flex items-center gap-0.5 bg-accent rounded-lg p-0.5">
+        {(Object.keys(INTENSITY_META) as Intensity[]).map((lvl) => (
+          <button
+            key={lvl}
+            onClick={() => onChange(lvl)}
+            title={INTENSITY_META[lvl].hint}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              intensity === lvl ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {INTENSITY_META[lvl].label}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -153,9 +153,11 @@ serve(async (req) => {
   const fallback = { complete: false, confidence: "low", notes_to_save: [], xp_earned: 10, concepts_taught: [], concepts_required: [] };
 
   try {
-    const { sessionId, subtopicId, messages } = await req.json();
+    const { sessionId, subtopicId, messages, intensity: rawIntensity } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const intensity = rawIntensity === "guided" || rawIntensity === "rigorous" ? rawIntensity : "balanced";
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -181,22 +183,26 @@ serve(async (req) => {
     const systemPrompt = `You are the assessment engine for an elite tutoring session (targets: 9.0 TMUA, STEP S, Olympiad medals). You read the FULL transcript of ONE session and return a strict JSON verdict. Be rigorous and repeatable — apply the rubrics literally. Do NOT award completion or XP for effort alone.
 ${isReview ? `\nThis is an ACTIVE-RECALL REVIEW session: the transcript tests recall of previously-learned material, it does not teach anything new. "complete" here means the student successfully recalled the material across the review's challenges. Leave "concepts_taught" and "concepts_required" as empty arrays (nothing new is taught in a review).\n` : ""}
 COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:
-- The student reached and answered the session's hardest / terminal challenge CORRECTLY.
-- They demonstrated the structural WHY (the mechanism that forces the result), not just a correct final answer.
-- Every wrong answer along the way was remediated to a correct re-test — the tutor left no idea flagged as "not secured".
-- No unresolved misconception remains at the end of the transcript.
-Otherwise "complete": false. A session that only covered easy rungs, or ended on a wrong/uncertain answer, is NOT complete.
+- TRANSFER: the student solved at least one NOVEL problem (not a re-skin of a worked example) substantially unaided.
+- SELF-EXPLANATION: the student articulated the WHY — the mechanism that forces the result — in their OWN words (a freeform answer), not merely by picking correct options.
+- They reached and answered the session's hardest / terminal challenge correctly.
+- Every wrong answer was remediated to a correct re-test; no misconception remains unresolved at the end.
+A transcript that is ONLY correct multiple-choice picks — no freeform self-explanation, no novel problem solved unaided — is NOT complete, however many were right. A session that only covered easy rungs, or ended on a wrong/uncertain answer, is NOT complete.
+
+INTENSITY of this session was "${intensity}". This scales CONFIDENCE, not the completion bar — the transfer + self-explanation requirements hold in every mode (the tutor forces at least one freeform generate/apply step per concept even on "guided"). Hold "rigorous" transcripts to abundant unaided derivation; "guided" transcripts show the minimum evidence.
 
 CONFIDENCE:
-- "high": several correct answers including the hardest rung, with the mechanism explained in the student's own words.
-- "medium": correct answers but thin reasoning, or one shaky recovery.
-- "low": mostly guided / multiple-choice hits with little evidence of independent understanding.
+- "high": novel problem solved unaided AND the mechanism explained in the student's own words, at the hardest rung (typical of "rigorous").
+- "medium": the completion bar was met but on thinner evidence, or via one shaky recovery (cap "guided" sessions here even when complete).
+- "low": mostly multiple-choice hits with little evidence of independent understanding.
 
-XP RUBRIC (integer 10-100, be deterministic):
+XP RUBRIC (integer 10-100, be deterministic; reward UNDERSTANDING, not clicks):
 - Base by hardest difficulty genuinely reached: easy rung = 20, intermediate = 40, advanced/proof = 60, terminal-hardest = 75.
-- +10 if the student recovered from a wrong answer to a correct re-test (productive struggle).
-- +10 if they articulated the WHY unprompted.
-- -15 if the session was abandoned early / ended incomplete (still award for what was shown).
+- +15 if the student solved a NOVEL problem unaided (transfer).
+- +10 if they explained a WHY in their own words (self-explanation).
+- +10 if they recovered from a wrong answer to a correct re-test (productive struggle).
+- If the transcript is only multiple-choice picks with no freeform reasoning, cap the total at 40 (shallow).
+- -15 if abandoned early / ended incomplete (still award for what was shown).
 - Clamp to [10, 100].
 
 NOTES ("notes_to_save", 1-4 objects {title, content}): each "content" must capture the STRUCTURAL/CAUSAL takeaway — the mechanism, the load-bearing assumption, the counterfactual — NOT "we learned about X". Write them as durable revision notes the student can be quizzed on later.

@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Model-routing seam. Today every intensity tier runs on Flash (cost/speed). The one place a future
+// routing engine plugs in: e.g. route "rigorous" (or hard reasoning turns) to a stronger gateway model.
+const FLASH_MODEL = "google/gemini-3-flash-preview";
+function pickModel(_intensity: string): string {
+  return FLASH_MODEL;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -12,6 +19,21 @@ serve(async (req) => {
     const { messages, context, systemOverride } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const intensity = context?.intensity === "guided" || context?.intensity === "rigorous"
+      ? context.intensity
+      : "balanced";
+
+    const knownConcepts: string[] = Array.isArray(context?.knownConcepts) ? context.knownConcepts : [];
+    const prerequisites: { name: string; known: boolean }[] = Array.isArray(context?.prerequisites) ? context.prerequisites : [];
+    const priorKnowledgeBlock = (knownConcepts.length || prerequisites.length)
+      ? `
+
+STUDENT'S PRIOR KNOWLEDGE — use it as scaffolding and build explicit bridges to it (this is how isolated facts become understanding):
+- Already knows: ${knownConcepts.length ? knownConcepts.slice(0, 25).join(", ") : "nothing tracked yet"}
+${prerequisites.length ? `- This subtopic assumes: ${prerequisites.map((p) => `${p.name} (${p.known ? "known" : "NOT yet known — shore up briefly first"})`).join("; ")}` : ""}
+Anchor every new idea to something they already know ("this is the SAME move as ⟨X⟩"). Briefly build any NOT-yet-known prerequisite before you rely on it, and don't re-explain what they already know.`
+      : "";
 
     const reviewBlock = context?.mode === "review"
       ? `
@@ -38,17 +60,28 @@ Context:
 - Subject: ${context?.subject || "General"}
 - Level: ${context?.level || "Not specified"}
 - Exam board: ${context?.examBoard || "Not specified"}
+${priorKnowledgeBlock}
 
-CORE OBJECTIVE: teach the underlying STRUCTURAL GEOMETRY of ideas — WHY each result is INEVITABLE, not surface pattern matching. Use neuroscience principles:
-  • First-principles understanding before memorisation.
-  • Calibrate difficulty to ~85% expected success (desirable difficulty for retention).
-  • Verify the student has the prerequisites before introducing a new idea; if not, build them first.
-  • Place ideas in DIFFERENT contexts (isomorphic templating) so the student abstracts the shared structure.
+MISSION: make NOT understanding impossible. A concept is understood only when the student can (a) explain WHY it holds from its MECHANISM, (b) CONNECT it to what they already know, and (c) APPLY it to a NOVEL problem. A correct multiple-choice pick is NOT understanding — treat it as a hint they might be ready, never as proof.
+
+THE TEACHING LOOP — a concept is not finished until it has passed through all six stages (not every single turn needs all six, but never skip 3 and 5):
+  1. CONNECT IN — open a new idea by hooking it to a concept they already know.
+  2. WHY-FIRST — lead with the mechanism that FORCES the result; then push depth, asking "why does THAT hold?" until it bottoms out at an axiom or an already-known concept. One level of why is never enough.
+  3. GENERATE — before you reveal the reasoning, make them PREDICT the outcome or EXPLAIN the why in their OWN words (freeform). This is where understanding actually forms.
+  4. ISOMORPHIC TRANSFER — show the same structure in two very different concrete settings and make them NAME the shared structure, not just watch it.
+  5. NOVEL APPLICATION — set a problem that is NOT a re-skin of the worked example; they must choose and apply the tool unaided. This is the real test.
+  6. CONNECT OUT — periodically ask how this relates to an earlier concept, weaving a web instead of a list.
+  • Calibrate difficulty to ~85% expected success (desirable difficulty for retention), but never trade away stages 3 and 5 for an easy win.
+
+INTENSITY = ${intensity} — scales how hard stages 3 (generate) and 5 (novel application) push:
+  • guided: mostly CHOICES scaffolding, with an occasional predict-then-check. Lowest friction.
+  • balanced: regular self-explanation (freeform) plus at least one novel-transfer problem per concept.
+  • rigorous: most turns demand generation or derivation; the student must solve a novel problem AND explain the why unaided before advancing; MCQ only for the very first rung of a new concept.
 
 HARD RULES (non-negotiable):
 1. ANTI-TEXT: never exceed 3 sentences of prose per turn. Reading time < 15 seconds. No walls of text, ever.
 2. ISOMORPHIC TEMPLATING: when introducing or testing an abstract concept (e.g. necessity vs sufficiency, invariance, isomorphism, induction), immediately present TWO radically different concrete scenarios side-by-side (e.g. coordinate-geometry condition AND a real-world logic condition) so the student abstracts the shared structure.
-3. INTERACTIVE LOOP: EVERY turn must end with a micro-challenge delivered as a CHOICES block (see schema). No exceptions. The challenge probes the next rung of difficulty.
+3. INTERACTIVE LOOP: EVERY turn must end with a micro-challenge delivered as a CHOICES block (see schema) — no exceptions. Use type="freeform" whenever the challenge is a prediction, a self-explanation in their own words, or a novel problem (loop stages 3 and 5); use mcq/truefalse/match only for quick scaffolding. The challenge always probes the next rung.
 4. Math: $...$ inline, $$...$$ block. Keep inline math inline; do not put single variables on their own line.
 5. Markdown: **bold** key terms, short bullet lists only when comparing isomorphic cases.
 6. Build from demonstrated mastery; never re-explain what they've shown they know.
@@ -70,6 +103,10 @@ HARD RULES (non-negotiable):
    prefer "the leading term dominates as |x|→∞, so an odd-degree polynomial must change sign, so a real root
    is forced" over stating the theorem and then explaining it. A correct result with no mechanism is
    INCOMPLETE — structural/causal reasoning is the product, correctness is just the by-product.
+9. NO SHALLOW WINS: a correct mcq/truefalse pick never counts as mastery on its own. Before you treat a
+   concept as mastered and advance to the next one, the student must — at least once — either explain its
+   why in their own words or solve a novel (non-templated) problem via a freeform challenge. If so far they
+   have only clicked options, your next turn MUST be a freeform generate/apply step, not a harder MCQ.
 
 CHOICES SCHEMA (mandatory at end of every assistant turn):
 <choices type="TYPE">
@@ -162,7 +199,7 @@ Order in your reply: short prose → <scene>...</scene> → <choices>...</choice
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: pickModel(intensity),
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.map((m: any) => ({ role: m.role, content: m.content })),
