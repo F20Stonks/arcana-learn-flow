@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const { session, profile, loading, signIn, signUp } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [params] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(params.get("mode") === "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,7 +26,7 @@ export default function AuthPage() {
     setError("");
     setSubmitting(true);
     const result = isSignUp
-      ? await signUp(email, password, displayName)
+      ? await signUp(email, password)
       : await signIn(email, password);
     if (result.error) setError(result.error.message);
     setSubmitting(false);
@@ -41,15 +41,6 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <input
-              type="text"
-              placeholder="Display name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full h-11 rounded-lg border border-border bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          )}
           <input
             type="email"
             placeholder="Email"

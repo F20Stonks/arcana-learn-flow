@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import Dashboard from "./pages/Dashboard";
@@ -50,7 +51,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={
-        session ? (profile?.onboarding_complete ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />) : <Navigate to="/auth" replace />
+        session ? (profile?.onboarding_complete ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />) : <LandingPage />
       } />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/onboarding" element={<OnboardingGuard><OnboardingPage /></OnboardingGuard>} />
