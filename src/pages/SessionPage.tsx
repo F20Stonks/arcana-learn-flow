@@ -7,7 +7,6 @@ import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
-import BridgeCards from "@/components/workspace/BridgeCards";
 import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
 import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
@@ -356,11 +355,6 @@ export default function SessionPage() {
             input={input}
             setInput={setInput}
             onSend={sendMessage}
-          />
-
-          <BridgeCards
-            subject={track?.subject}
-            onPick={(hint) => sendMessage(hint)}
           />
         </div>
 
