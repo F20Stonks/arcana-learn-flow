@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      concepts: {
+        Row: {
+          aliases: string[] | null
+          created_at: string
+          definition: string | null
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          aliases?: string[] | null
+          created_at?: string
+          definition?: string | null
+          id?: string
+          name: string
+          type: string
+        }
+        Update: {
+          aliases?: string[] | null
+          created_at?: string
+          definition?: string | null
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
       daily_challenges: {
         Row: {
           date: string
@@ -295,6 +322,77 @@ export type Database = {
           },
         ]
       }
+      subtopic_concepts: {
+        Row: {
+          concept_id: string
+          id: string
+          role: string
+          subtopic_id: string
+        }
+        Insert: {
+          concept_id: string
+          id?: string
+          role: string
+          subtopic_id: string
+        }
+        Update: {
+          concept_id?: string
+          id?: string
+          role?: string
+          subtopic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_concepts_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_concepts_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_reviews: {
+        Row: {
+          id: string
+          interval_days: number
+          last_completed_at: string | null
+          next_review_due_at: string
+          subtopic_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          interval_days?: number
+          last_completed_at?: string | null
+          next_review_due_at: string
+          subtopic_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          interval_days?: number
+          last_completed_at?: string | null
+          next_review_due_at?: string
+          subtopic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_reviews_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtopics: {
         Row: {
           completed_at: string | null
@@ -364,6 +462,45 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "learning_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_concept_knowledge: {
+        Row: {
+          concept_id: string
+          id: string
+          known_at: string
+          source_subtopic_id: string | null
+          user_id: string
+        }
+        Insert: {
+          concept_id: string
+          id?: string
+          known_at?: string
+          source_subtopic_id?: string | null
+          user_id: string
+        }
+        Update: {
+          concept_id?: string
+          id?: string
+          known_at?: string
+          source_subtopic_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_concept_knowledge_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_concept_knowledge_source_subtopic_id_fkey"
+            columns: ["source_subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
             referencedColumns: ["id"]
           },
         ]
