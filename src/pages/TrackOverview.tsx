@@ -2,9 +2,21 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { SubjectIcon } from "@/lib/subjectIcons";
 
 type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
@@ -27,6 +39,8 @@ export default function TrackOverview() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("overview");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!trackId || !user) return;
@@ -68,6 +82,19 @@ export default function TrackOverview() {
     await supabase.from("subtopics").update({ status: nextStatus }).eq("id", sub.id);
   };
 
+  const confirmDeleteTrack = async () => {
+    if (!trackId) return;
+    setDeleting(true);
+    const { error } = await supabase.from("learning_tracks").delete().eq("id", trackId);
+    setDeleting(false);
+    if (error) {
+      toast.error("Couldn't delete track");
+      return;
+    }
+    toast.success("Track deleted");
+    navigate("/dashboard");
+  };
+
   const totalSubs = topics.reduce((a, t) => a + t.subtopics.length, 0);
   const completedSubs = topics.reduce((a, t) => a + t.subtopics.filter((s) => s.status === "complete").length, 0);
   const pct = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
@@ -79,9 +106,14 @@ export default function TrackOverview() {
       {/* Sidebar */}
       <aside className="w-full md:w-80 border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto md:min-h-screen">
         <div className="p-4 border-b border-border">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3">
-            <ArrowLeft className="h-4 w-4" /> Dashboard
-          </button>
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Dashboard
+            </button>
+            <button onClick={() => setConfirmingDelete(true)} className="text-muted-foreground hover:text-destructive transition-colors" title="Delete track">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <h2 className="text-sm font-semibold text-foreground">{track?.title}</h2>
           <p className="text-xs text-muted-foreground mt-1">{track?.subject} {track?.level && `· ${track.level}`}</p>
         </div>
@@ -144,7 +176,7 @@ export default function TrackOverview() {
       <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
         <div className="max-w-3xl">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl">{track?.emoji}</span>
+            <SubjectIcon subject={track?.subject} size="lg" />
             <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">{track?.title}</h1>
               <p className="text-sm text-muted-foreground">{track?.subject} {track?.exam_board && `· ${track.exam_board}`}</p>
@@ -215,6 +247,27 @@ export default function TrackOverview() {
           )}
         </div>
       </main>
+
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{track?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the track and everything in it — topics, subtopics, notes, and progress. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDeleteTrack(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

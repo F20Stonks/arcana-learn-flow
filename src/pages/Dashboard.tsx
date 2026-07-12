@@ -2,11 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target } from "lucide-react";
+import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 import BrandLogo from "@/components/BrandLogo";
 import HubSidebar from "@/components/HubSidebar";
+import GeneralChat from "@/components/GeneralChat";
+import { SubjectIcon } from "@/lib/subjectIcons";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number };
 
@@ -15,6 +28,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +67,20 @@ export default function Dashboard() {
 
   const pct = (t: Track) => (t.subtopicCount > 0 ? Math.round((t.completedCount / t.subtopicCount) * 100) : 0);
 
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("learning_tracks").delete().eq("id", pendingDelete.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Couldn't delete track");
+      return;
+    }
+    setTracks((prev) => prev.filter((t) => t.id !== pendingDelete.id));
+    setPendingDelete(null);
+    toast.success("Track deleted");
+  };
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
@@ -75,13 +105,29 @@ export default function Dashboard() {
         <div className="bg-card border border-border rounded-xl p-6">
           <h2 className="text-xl font-semibold text-foreground mb-1">Welcome back, {profile?.display_name || "learner"}</h2>
           <p className="text-sm text-muted-foreground mb-4">{tracks.length > 0 ? "Keep up the momentum." : "Create your first learning track to get started."}</p>
-          {tracks.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {tracks.length > 0 && (
+              <button
+                onClick={() => navigate(`/track/${tracks[0].id}`)}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Continue learning
+              </button>
+            )}
             <button
-              onClick={() => navigate(`/track/${tracks[0].id}`)}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              onClick={() => setChatOpen((v) => !v)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-foreground text-sm font-medium hover:bg-accent/70 transition-colors"
             >
-              Continue learning
+              <MessageCircle className="h-3.5 w-3.5" />
+              Ask Jarvis
+              <ChevronUp className={`h-3.5 w-3.5 transition-transform ${chatOpen ? "" : "rotate-180"}`} />
             </button>
+          </div>
+
+          {chatOpen && (
+            <div className="mt-5 pt-5 border-t border-border">
+              <GeneralChat />
+            </div>
           )}
         </div>
 
@@ -109,7 +155,7 @@ export default function Dashboard() {
               {tracks.map((t) => (
                 <div key={t.id} className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" onClick={() => navigate(`/track/${t.id}`)}>
                   <div className="flex items-start justify-between mb-3">
-                    <span className="text-2xl">{t.emoji}</span>
+                    <SubjectIcon subject={t.subject} />
                     <span className="text-xs text-muted-foreground">{pct(t)}%</span>
                   </div>
                   <h4 className="text-sm font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{t.title}</h4>
@@ -117,12 +163,19 @@ export default function Dashboard() {
                   <div className="w-full h-1.5 rounded-full bg-secondary">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct(t)}%` }} />
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3">
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/notes`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                       <BookOpen className="h-3 w-3" /> Notes
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/questions`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                       <Target className="h-3 w-3" /> Questions
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(t); }}
+                      className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                      title="Delete track"
+                    >
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
@@ -131,6 +184,27 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{pendingDelete?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the track and everything in it — topics, subtopics, notes, and progress. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
