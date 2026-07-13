@@ -131,8 +131,28 @@ export default function TrackPapers() {
     }
   };
 
-  const paperFileUrl = (p: PastPaper) =>
-    p.storage_path ? (supabase.storage.from("past-papers") as any).getPublicUrl(p.storage_path).data.publicUrl : p.source_url;
+  // Signed URLs work against a private/unregistered bucket exactly like a public one — they just carry a
+  // short-lived token instead of relying on the bucket's own public flag. Avoids needing the past-papers
+  // bucket to be marked public at all.
+  const [openingPaperId, setOpeningPaperId] = useState<string | null>(null);
+  const openPaper = async (p: PastPaper) => {
+    if (!p.storage_path) { window.open(p.source_url, "_blank", "noopener,noreferrer"); return; }
+    // Open the tab SYNCHRONOUSLY, inside the click handler, before any await — popup blockers key off
+    // direct user-gesture timing, and a window.open() after an awaited fetch commonly gets blocked even
+    // though this one isn't a stray popup. Navigate that already-open tab once the signed URL resolves.
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+    setOpeningPaperId(p.id);
+    try {
+      const { data, error } = await (supabase.storage.from("past-papers") as any).createSignedUrl(p.storage_path, 3600);
+      if (error || !data?.signedUrl) throw error || new Error("No signed URL returned");
+      if (tab) tab.location.href = data.signedUrl; else window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      console.error("Failed to open mirrored paper, falling back to source:", e);
+      if (tab) tab.location.href = p.source_url; else window.open(p.source_url, "_blank", "noopener,noreferrer");
+    } finally {
+      setOpeningPaperId(null);
+    }
+  };
 
   const toggleTopic = (id: string) => {
     setSelectedTopics((prev) => {
@@ -385,12 +405,11 @@ export default function TrackPapers() {
             )}
 
             {pastPapers.map((p) => (
-              <a
+              <button
                 key={p.id}
-                href={paperFileUrl(p)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
+                onClick={() => openPaper(p)}
+                disabled={openingPaperId === p.id}
+                className="w-full flex items-center gap-3 bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors text-left disabled:opacity-60"
               >
                 <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                   <FileText className="h-5 w-5 text-muted-foreground" />
@@ -399,8 +418,10 @@ export default function TrackPapers() {
                   <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
                   <p className="text-xs text-muted-foreground">{[p.year, p.paper_label].filter(Boolean).join(" · ") || "Official past paper"}</p>
                 </div>
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </a>
+                {openingPaperId === p.id
+                  ? <Loader2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 animate-spin" />
+                  : <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+              </button>
             ))}
           </div>
         )}
