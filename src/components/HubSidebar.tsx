@@ -5,7 +5,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap } from "lucide-react";
+import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network } from "lucide-react";
+import ConceptGraph from "@/components/ConceptGraph";
 
 type TrackRow = { id: string; title: string; emoji: string | null; exam_date: string | null; subject: string };
 type KnownConcept = { name: string; type: string; known_at: string };
@@ -78,7 +79,7 @@ export default function HubSidebar() {
           )}
         </button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+      <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle>Hub</SheetTitle>
         </SheetHeader>
@@ -89,13 +90,17 @@ export default function HubSidebar() {
           </div>
         ) : (
           <Tabs defaultValue="knowledge" className="flex-1 flex flex-col min-h-0 mt-2">
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="knowledge"><Brain className="h-3.5 w-3.5 mr-1.5" />Knowledge</TabsTrigger>
+              <TabsTrigger value="map"><Network className="h-3.5 w-3.5 mr-1.5" />Map</TabsTrigger>
               <TabsTrigger value="calendar"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Calendar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="knowledge" className="flex-1 overflow-y-auto">
               <KnowledgeTab tracks={tracks} knownConcepts={knownConcepts} />
+            </TabsContent>
+            <TabsContent value="map" className="flex-1 overflow-y-auto">
+              <ConceptGraph />
             </TabsContent>
             <TabsContent value="calendar" className="flex-1 overflow-y-auto">
               <CalendarTab tracks={tracks} reviews={reviews} subtopicTitles={subtopicTitles} />
@@ -110,36 +115,70 @@ export default function HubSidebar() {
 const CONCEPT_TYPE_LABEL: Record<string, string> = { notation: "notation", terminology: "term", skill: "skill" };
 
 function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConcepts: KnownConcept[] }) {
-  const recent = knownConcepts.slice(0, 10);
+  const [query, setQuery] = useState("");
+
+  const typeCounts = knownConcepts.reduce<Record<string, number>>((acc, c) => {
+    acc[c.type] = (acc[c.type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const q = query.trim().toLowerCase();
+  const filtered = q ? knownConcepts.filter((c) => c.name.toLowerCase().includes(q)) : knownConcepts;
 
   return (
-    <div className="space-y-5 py-2">
+    <div className="space-y-4 py-2">
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm font-medium text-foreground">Concepts known</span>
           <span className="text-2xl font-semibold text-primary tabular-nums">{knownConcepts.length}</span>
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed mb-3">
           Atomic concepts (notation, terminology, skills) you've locked in by completing sessions. These are
           global — learn one in any track and it counts everywhere.
         </p>
+        <div className="flex gap-1.5">
+          {(["notation", "terminology", "skill"] as const).map((t) => (
+            <div key={t} className="flex-1 rounded-lg bg-secondary/60 px-2 py-1.5 text-center">
+              <div className="text-base font-semibold text-foreground tabular-nums leading-none">{typeCounts[t] || 0}</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{CONCEPT_TYPE_LABEL[t]}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {recent.length > 0 ? (
-        <div>
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recently learned</h4>
-          <div className="space-y-1.5">
-            {recent.map((c, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-foreground bg-card border border-border rounded-lg px-3 py-2">
-                <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="truncate flex-1">{c.name}</span>
-                <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
-                  {CONCEPT_TYPE_LABEL[c.type] || c.type}
-                </span>
-              </div>
-            ))}
+      {knownConcepts.length > 0 ? (
+        <>
+          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search everything you know…"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            />
           </div>
-        </div>
+
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {q ? `${filtered.length} match${filtered.length === 1 ? "" : "es"}` : "All concepts"}
+            </h4>
+            {filtered.length > 0 ? (
+              <div className="space-y-1.5">
+                {filtered.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-foreground bg-card border border-border rounded-lg px-3 py-2">
+                    <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate flex-1">{c.name}</span>
+                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
+                      {CONCEPT_TYPE_LABEL[c.type] || c.type}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">No concepts match “{query}”.</p>
+            )}
+          </div>
+        </>
       ) : (
         <p className="text-sm text-muted-foreground text-center py-6">
           {tracks.length === 0
@@ -226,9 +265,9 @@ function CalendarTab({ tracks, reviews, subtopicTitles }: { tracks: TrackRow[]; 
       </div>
 
       <p className="text-xs text-muted-foreground bg-accent/50 rounded-lg p-3 leading-relaxed">
-        Reviews use a fixed-doubling schedule: the first lands one week after you complete a subtopic, and each
-        review you finish on time pushes the next one out twice as far (1 → 2 → 4 → 8 weeks…). Start a review from
-        the list above.
+        Reviews use expanding intervals: the first lands one week after you complete a subtopic, then each
+        review pushes the next one further out based on how solidly you recalled it — the stronger the recall,
+        the longer the gap. Struggle with one and it comes back sooner. Start a review from the list above.
       </p>
     </div>
   );
