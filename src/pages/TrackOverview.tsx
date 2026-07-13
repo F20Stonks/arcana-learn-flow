@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText, ClipboardList } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
+import SpecChecklist from "@/components/SpecChecklist";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +29,7 @@ const STATUS_COLORS: Record<string, string> = {
   locked: "bg-muted",
 };
 
-type View = "overview" | "map";
+type View = "overview" | "map" | "spec";
 
 export default function TrackOverview() {
   const { trackId } = useParams();
@@ -200,6 +201,12 @@ export default function TrackOverview() {
             >
               <Map className="h-3 w-3" /> Knowledge Map
             </button>
+            <button
+              onClick={() => setView("spec")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${view === "spec" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <ClipboardList className="h-3 w-3" /> Specification
+            </button>
           </div>
 
           {view === "overview" ? (
@@ -241,12 +248,14 @@ export default function TrackOverview() {
                 </div>
               </div>
             </>
-          ) : (
+          ) : view === "map" ? (
             <KnowledgeMap
               topics={topics}
               trackTitle={track?.title}
               onSubtopicClick={(id) => navigate(`/session/${id}`)}
             />
+          ) : (
+            <SpecChecklist trackId={trackId!} topics={topics} hasExamBoard={!!track?.exam_board} />
           )}
         </div>
       </main>
