@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
@@ -19,6 +19,18 @@ interface ChatMessage {
 
 type ChoiceType = "mcq" | "truefalse" | "match" | "freeform";
 type Intensity = "guided" | "balanced" | "rigorous";
+
+// Shape returned by the assess-session edge function — the session's payoff, surfaced in the
+// end-of-session summary instead of being discarded on navigate.
+interface AssessSummary {
+  complete: boolean;
+  confidence: "low" | "medium" | "high";
+  xp_earned: number;
+  notes_to_save: { title: string; content: string }[];
+  concepts_taught: string[];
+  concepts_required: string[];
+}
+
 interface ChoiceBlock {
   type: ChoiceType;
   options: string[];
@@ -71,6 +83,13 @@ export default function SessionPage() {
   const [sessionTime, setSessionTime] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
   const [isEnding, setIsEnding] = useState(false);
+  // End-of-session summary from assess-session. When set, an overlay shows the outcome (completion,
+  // XP, concepts banked, notes saved) before the student returns to the track.
+  const [summary, setSummary] = useState<AssessSummary | null>(null);
+  // Whether the student has answered a freeform (self-explanation / novel-answer) challenge at least
+  // once — the one completion criterion observable client-side. Surfaced as a live goal hint so the
+  // completion bar isn't a surprise at session end. (The AI still makes the authoritative verdict.)
+  const [selfExplained, setSelfExplained] = useState(false);
 
   // Soft prerequisite nudge (framework §5): required concepts this subtopic assumes but the user
   // hasn't learned yet. A gentle heads-up, never a block. Populated in loadContext.
@@ -139,10 +158,81 @@ export default function SessionPage() {
       setTrack(tr);
     }
 
-    const { data: sess } = await supabase.from("sessions").insert({
-      user_id: user!.id, subtopic_id: subtopicId!, session_type: isReview ? "review" : "learn",
-    }).select().single();
-    if (sess) setSessionId(sess.id);
+    // Resume an in-progress learn session for this subtopic if one exists — its transcript is already
+    // persisted in `messages`, so the student picks the teaching thread back up instead of starting cold.
+    // Reviews are always fresh retrieval sessions and are never resumed.
+    let activeSessionId: string | null = null;
+    if (!isReview) {
+      // Find this subtopic's incomplete learn sessions, then resume whichever one has the most recent
+      // MESSAGE — robust against stray empty session rows (an opened-but-untouched session counts for
+      // nothing, so it never shadows an older session that actually holds a transcript).
+      const { data: priorSessions } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("user_id", user!.id)
+        .eq("subtopic_id", subtopicId!)
+        .eq("session_type", "learn")
+        .is("completed_at", null);
+      const priorIds = ((priorSessions || []) as { id: string }[]).map((s) => s.id);
+      let priorMsgs: { role: string; content: string }[] | null = null;
+      if (priorIds.length) {
+        const { data: latest } = await supabase
+          .from("messages")
+          .select("session_id")
+          .in("session_id", priorIds)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latest) {
+          activeSessionId = (latest as { session_id: string }).session_id;
+          const { data: msgs } = await supabase
+            .from("messages")
+            .select("role, content")
+            .eq("session_id", activeSessionId)
+            .order("created_at", { ascending: true });
+          priorMsgs = (msgs || []) as { role: string; content: string }[];
+        }
+      }
+      if (activeSessionId && priorMsgs) {
+        const restored = ((priorMsgs || []) as { role: string; content: string }[])
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+        if (restored.length) {
+          setMessages(restored);
+          // Restore the self-explanation flag if the transcript already holds a freeform answer.
+          for (let k = 1; k < restored.length; k++) {
+            if (restored[k].role === "user" && restored[k - 1].role === "assistant" &&
+                extractChoices(restored[k - 1].content).choices?.type === "freeform") {
+              setSelfExplained(true);
+              break;
+            }
+          }
+          // Rebuild the visualization history from restored assistant turns so the theater isn't blank.
+          const restoredViz: VizHistoryEntry[] = [];
+          restored.forEach((m, idx) => {
+            if (m.role !== "assistant") return;
+            const { viz } = extractViz(m.content);
+            if (!viz) return;
+            const id = `${idx}-${Math.random().toString(36).slice(2, 7)}`;
+            const preview = isSceneSpec(viz) ? viz.title || "scene" : viz.labels?.abstract?.title || viz.archetype.replace("_", " ");
+            restoredViz.push({ id, payload: viz, preview, messageIndex: idx + 1 });
+          });
+          if (restoredViz.length) {
+            setVizHistory(restoredViz);
+            setActiveVizId(restoredViz[restoredViz.length - 1].id);
+          }
+        }
+      }
+    }
+
+    if (activeSessionId) {
+      setSessionId(activeSessionId);
+    } else {
+      const { data: sess } = await supabase.from("sessions").insert({
+        user_id: user!.id, subtopic_id: subtopicId!, session_type: isReview ? "review" : "learn",
+      }).select().single();
+      if (sess) setSessionId(sess.id);
+    }
 
     if (!isReview && sub.status === "unlocked") {
       await supabase.from("subtopics").update({ status: "in_progress" }).eq("id", sub.id);
@@ -207,6 +297,12 @@ export default function SessionPage() {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming || !sessionId) return;
+    // If this message is the student's answer to a freeform challenge (a self-explanation or a
+    // novel-problem attempt in their own words), mark the self-explanation criterion as met.
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant && extractChoices(lastAssistant.content).choices?.type === "freeform") {
+      setSelfExplained(true);
+    }
     const userMsg: ChatMessage = { role: "user", content: text };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
@@ -300,26 +396,36 @@ export default function SessionPage() {
 
   const endSession = async () => {
     if (isEnding) return;
-    setIsEnding(true);
-    if (sessionId) {
-      try {
-        // assess-session is the completion pipeline: it grades the session, extracts + tags concepts,
-        // grants concept knowledge, schedules/advances reviews, marks the subtopic complete, and awards
-        // XP — all server-side with the service role. The client just triggers it and refreshes the UI.
-        const resp = await supabase.functions.invoke("assess-session", {
-          body: { sessionId, subtopicId, messages, intensity },
-        });
-        if (resp.data) {
-          setXpEarned(resp.data.xp_earned || 0);
-          await refreshProfile();
-        }
-      } catch {
-        // Network/function failure: best-effort close the session row so it isn't left dangling.
-        try { await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId); } catch { /* nothing more we can do */ }
-      }
+    // Nothing was exchanged — no transcript to grade, so skip the assessment call and just leave.
+    if (!sessionId || messages.length === 0) {
+      goBack();
+      return;
     }
-    setIsEnding(false);
-    goBack();
+    setIsEnding(true);
+    try {
+      // assess-session is the completion pipeline: it grades the session, extracts + tags concepts,
+      // grants concept knowledge, schedules/advances reviews, marks the subtopic complete, and awards
+      // XP — all server-side with the service role. The client just triggers it and refreshes the UI.
+      const resp = await supabase.functions.invoke("assess-session", {
+        body: { sessionId, subtopicId, messages, intensity },
+      });
+      if (resp.data) {
+        const d = resp.data as AssessSummary;
+        setXpEarned(d.xp_earned || 0);
+        // A profile-refresh hiccup shouldn't cost the student their session summary.
+        try { await refreshProfile(); } catch { /* non-fatal — summary still shows */ }
+        setIsEnding(false);
+        setSummary(d); // hold on the page; the summary overlay's button navigates back
+        return;
+      }
+      throw new Error("assessment returned no data");
+    } catch {
+      // Network/function failure: best-effort close the session row so it isn't left dangling,
+      // then leave — we have no verdict to summarize.
+      try { await supabase.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId); } catch { /* nothing more we can do */ }
+      setIsEnding(false);
+      goBack();
+    }
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
@@ -385,8 +491,21 @@ export default function SessionPage() {
                 <p className="text-muted-foreground text-sm">
                   {isReview
                     ? <>Starting your recall review of <strong className="text-foreground">{subtopic?.title}</strong>…</>
-                    : <>Start your session. Ask Jarvis anything about <strong className="text-foreground">{subtopic?.title}</strong>.</>}
+                    : <>Start your session on <strong className="text-foreground">{subtopic?.title}</strong> — pick a way in, or just ask.</>}
                 </p>
+                {!isReview && (
+                  <div className="mt-5 flex flex-col items-stretch gap-2 max-w-xs mx-auto">
+                    {STARTER_PROMPTS.map((s) => (
+                      <button
+                        key={s.send}
+                        onClick={() => sendMessage(s.send)}
+                        className="px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors"
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {messages.map((msg, i) => {
@@ -420,6 +539,7 @@ export default function SessionPage() {
             <div ref={bottomRef} />
           </div>
 
+          {!isReview && messages.length > 0 && <CompletionGoal selfExplained={selfExplained} />}
           {!isReview && <IntensitySelector intensity={intensity} onChange={changeIntensity} />}
 
           <InteractionPanel
@@ -445,6 +565,132 @@ export default function SessionPage() {
           />
         </div>
       </div>
+
+      {summary && (
+        <SessionSummary
+          summary={summary}
+          isReview={isReview}
+          subtopicTitle={subtopic?.title}
+          sessionTime={formatTime(sessionTime)}
+          onClose={goBack}
+        />
+      )}
+    </div>
+  );
+}
+
+const CONFIDENCE_META: Record<AssessSummary["confidence"], { label: string; cls: string }> = {
+  high: { label: "High confidence", cls: "bg-success/15 text-success" },
+  medium: { label: "Medium confidence", cls: "bg-warning/15 text-warning" },
+  low: { label: "Low confidence", cls: "bg-muted text-muted-foreground" },
+};
+
+function SessionSummary({
+  summary,
+  isReview,
+  subtopicTitle,
+  sessionTime,
+  onClose,
+}: {
+  summary: AssessSummary;
+  isReview: boolean;
+  subtopicTitle?: string;
+  sessionTime: string;
+  onClose: () => void;
+}) {
+  const { complete, confidence, xp_earned, notes_to_save, concepts_taught } = summary;
+  const conf = CONFIDENCE_META[confidence] ?? CONFIDENCE_META.low;
+  const heading = complete ? (isReview ? "Recall confirmed" : "Subtopic complete") : "Progress saved";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className={`px-6 py-5 flex items-center gap-3 ${complete ? "bg-success/10" : "bg-accent"}`}>
+          {complete
+            ? <CheckCircle2 className="h-8 w-8 text-success shrink-0" />
+            : <Sparkles className="h-8 w-8 text-muted-foreground shrink-0" />}
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-foreground leading-tight">{heading}</h2>
+            {subtopicTitle && <p className="text-sm text-muted-foreground truncate">{subtopicTitle}</p>}
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xp font-semibold"><Zap className="h-4 w-4" />+{xp_earned} XP</div>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${conf.cls}`}>{conf.label}</span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{sessionTime}</span>
+          </div>
+
+          {!complete && (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {isReview
+                ? "Not every recall check landed this time, so this stays on your review schedule — you'll get another pass at it soon."
+                : "Jarvis marks a subtopic complete once you've explained the why in your own words and solved a novel problem largely unaided. Your progress and XP are saved — pick this back up whenever you like."}
+            </p>
+          )}
+
+          {complete && !isReview && concepts_taught.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Concepts banked</p>
+              <div className="flex flex-wrap gap-1.5">
+                {concepts_taught.map((c, i) => (
+                  <span key={i} className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium">{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {complete && notes_to_save.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Saved to your notes</p>
+              <ul className="space-y-1">
+                {notes_to_save.map((n, i) => (
+                  <li key={i} className="text-sm text-foreground flex items-start gap-1.5">
+                    <span className="text-primary mt-0.5 shrink-0">•</span>
+                    <span className="leading-snug">{n.title}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-border">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Back to track
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// First-turn on-ramps for a cold session so the student never faces a blank "ask anything" prompt.
+const STARTER_PROMPTS: { label: string; send: string }[] = [
+  { label: "Teach me from the start", send: "Teach me this from the start." },
+  { label: "I'm shaky — go slow", send: "I'm shaky on the basics here — go slow and build up carefully." },
+  { label: "Skip ahead and quiz me", send: "I think I know this — skip ahead and quiz me to find my gaps." },
+];
+
+// A concept is only marked complete once the student explains a 'why' in their own words AND solves a
+// novel problem unaided. Showing the bar mid-session keeps "Progress saved" from being a surprise. Only
+// the self-explanation half is observable client-side; the novel-problem half is the AI's call at the end.
+function CompletionGoal({ selfExplained }: { selfExplained: boolean }) {
+  return (
+    <div className="px-4 pt-2 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
+      <span className="shrink-0 font-medium">To complete:</span>
+      <span className={`flex items-center gap-1 ${selfExplained ? "text-success" : ""}`}>
+        {selfExplained ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+        explain a “why” in your own words
+      </span>
+      <span className="flex items-center gap-1">
+        <Circle className="h-3 w-3" />
+        solve a novel problem unaided
+      </span>
     </div>
   );
 }
