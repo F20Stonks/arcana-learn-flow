@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp } from "lucide-react";
+import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 import BrandLogo from "@/components/BrandLogo";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number };
+type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number; archived_at?: string | null };
 
 export default function Dashboard() {
   const { user, profile, signOut } = useAuth();
@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -66,6 +67,25 @@ export default function Dashboard() {
   };
 
   const pct = (t: Track) => (t.subtopicCount > 0 ? Math.round((t.completedCount / t.subtopicCount) * 100) : 0);
+
+  const activeTracks = tracks.filter((t) => !t.archived_at);
+  const archivedTracks = tracks.filter((t) => t.archived_at);
+
+  // Soft archive/restore. Reversible, so no confirm dialog — just an optimistic update + an undo toast.
+  const setArchived = async (track: Track, archived: boolean) => {
+    const archived_at = archived ? new Date().toISOString() : null;
+    const { error } = await supabase.from("learning_tracks").update({ archived_at } as never).eq("id", track.id);
+    if (error) {
+      toast.error(archived ? "Couldn't archive track" : "Couldn't restore track");
+      return;
+    }
+    setTracks((prev) => prev.map((t) => (t.id === track.id ? { ...t, archived_at } : t)));
+    if (archived) {
+      toast.success("Track archived", { action: { label: "Undo", onClick: () => setArchived(track, false) } });
+    } else {
+      toast.success("Track restored");
+    }
+  };
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
@@ -104,11 +124,11 @@ export default function Dashboard() {
         {/* Hero */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h2 className="text-xl font-semibold text-foreground mb-1">Welcome back, {profile?.display_name || "learner"}</h2>
-          <p className="text-sm text-muted-foreground mb-4">{tracks.length > 0 ? "Keep up the momentum." : "Create your first learning track to get started."}</p>
+          <p className="text-sm text-muted-foreground mb-4">{activeTracks.length > 0 ? "Keep up the momentum." : "Create your first learning track to get started."}</p>
           <div className="flex items-center gap-2 flex-wrap">
-            {tracks.length > 0 && (
+            {activeTracks.length > 0 && (
               <button
-                onClick={() => navigate(`/track/${tracks[0].id}`)}
+                onClick={() => navigate(`/track/${activeTracks[0].id}`)}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
               >
                 Continue learning
@@ -143,16 +163,18 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {tracks.length === 0 ? (
+          {activeTracks.length === 0 ? (
             <div className="bg-card border border-border rounded-xl p-8 text-center">
-              <p className="text-muted-foreground text-sm mb-4">No tracks yet. Let Jarvis build one for you.</p>
+              <p className="text-muted-foreground text-sm mb-4">
+                {archivedTracks.length > 0 ? "No active tracks — restore one below, or let Jarvis build a new one." : "No tracks yet. Let Jarvis build one for you."}
+              </p>
               <button onClick={() => navigate("/onboarding?new=1")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
                 Create a track
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tracks.map((t) => (
+              {activeTracks.map((t) => (
                 <div key={t.id} className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" onClick={() => navigate(`/track/${t.id}`)}>
                   <div className="flex items-start justify-between mb-3">
                     <SubjectIcon subject={t.subject} />
@@ -171,8 +193,15 @@ export default function Dashboard() {
                       <Target className="h-3 w-3" /> Questions
                     </button>
                     <button
+                      onClick={(e) => { e.stopPropagation(); setArchived(t, true); }}
+                      className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      title="Archive track"
+                    >
+                      <Archive className="h-3 w-3" />
+                    </button>
+                    <button
                       onClick={(e) => { e.stopPropagation(); setPendingDelete(t); }}
-                      className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
                       title="Delete track"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -183,6 +212,50 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Archived tracks — collapsed by default */}
+        {archivedTracks.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+            >
+              {showArchived ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5 rotate-180" />}
+              Archived ({archivedTracks.length})
+            </button>
+
+            {showArchived && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {archivedTracks.map((t) => (
+                  <div key={t.id} className="bg-card/60 border border-border rounded-xl p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <SubjectIcon subject={t.subject} className="opacity-70" />
+                      <span className="text-xs text-muted-foreground">{pct(t)}%</span>
+                    </div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-1">{t.title}</h4>
+                    <p className="text-xs text-muted-foreground mb-3">{t.topicCount} topics · {t.subtopicCount} subtopics</p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        onClick={() => setArchived(t, false)}
+                        className="flex items-center gap-1 text-xs text-primary hover:underline transition-colors"
+                        title="Restore track"
+                      >
+                        <ArchiveRestore className="h-3 w-3" /> Restore
+                      </button>
+                      <button
+                        onClick={() => setPendingDelete(t)}
+                        className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        title="Delete track"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
