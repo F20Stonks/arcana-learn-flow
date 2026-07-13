@@ -10,6 +10,14 @@ const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Spaced-repetition scheduling bounds + confidence-scaled expansion. Expanding intervals beat fixed
+// ones (Landauer–Bjork); how far a PASSED review pushes the next one depends on how solid the recall
+// was, and a FAILED review CONTRACTS the interval instead of freezing it (a lapse must shorten, not stall).
+const MIN_INTERVAL_DAYS = 3;
+const MAX_INTERVAL_DAYS = 365;
+const REVIEW_GROWTH: Record<"low" | "medium" | "high", number> = { low: 1.3, medium: 1.6, high: 2.5 };
+const REVIEW_LAPSE_FACTOR = 0.4; // failed recall → pull the next interval back in
+
 type ExtractedConcept = { name: string; type?: string; definition?: string; aliases?: string[] };
 type ConceptRow = { id: string; name: string; type: string; definition: string | null; aliases: string[] | null };
 
@@ -250,6 +258,8 @@ Respond ONLY with valid JSON:
     }
 
     const complete = result.complete === true;
+    const confidence: "low" | "medium" | "high" =
+      result.confidence === "high" || result.confidence === "medium" ? result.confidence : "low";
     const xpEarned = Math.max(10, Math.min(100, Math.round(Number(result.xp_earned) || 10)));
     const notes: { title: string; content: string }[] = Array.isArray(result.notes_to_save) ? result.notes_to_save : [];
     const conceptsTaught: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_taught) ? result.concepts_taught : []);
@@ -296,15 +306,20 @@ Respond ONLY with valid JSON:
           }
         }
 
-        // Review session that succeeded → advance the fixed-doubling schedule (§6).
-        if (isReview && complete && userId && realSubtopicId) {
+        // Review session → reschedule with confidence-modulated expanding intervals, contracting on a
+        // failed recall. Runs on EVERY review (pass or fail), not only completions, so a lapse actually
+        // shortens the interval instead of leaving the item frozen and permanently overdue.
+        if (isReview && userId && realSubtopicId) {
           const { data: row } = await supabase.from("subtopic_reviews").select("id, interval_days").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
           if (row) {
-            const newInterval = ((row as any).interval_days || 7) * 2;
+            const current = (row as any).interval_days || 7;
+            const next = complete ? current * REVIEW_GROWTH[confidence] : current * REVIEW_LAPSE_FACTOR;
+            const newInterval = Math.max(MIN_INTERVAL_DAYS, Math.min(MAX_INTERVAL_DAYS, Math.round(next)));
             await supabase.from("subtopic_reviews").update({
               interval_days: newInterval,
               next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
-              last_completed_at: nowIso,
+              // Only a passed review counts as "completed"; a lapse reschedules but isn't a completion.
+              ...(complete ? { last_completed_at: nowIso } : {}),
             }).eq("id", (row as any).id);
           }
         }
@@ -322,7 +337,7 @@ Respond ONLY with valid JSON:
 
     return new Response(JSON.stringify({
       complete,
-      confidence: result.confidence || "low",
+      confidence,
       xp_earned: xpEarned,
       notes_to_save: notes,
       concepts_taught: conceptsTaught.map((c) => c.name),
