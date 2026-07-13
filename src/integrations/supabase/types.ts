@@ -138,6 +138,7 @@ export type Database = {
       }
       learning_tracks: {
         Row: {
+          archived_at: string | null
           created_at: string
           emoji: string | null
           exam_board: string | null
@@ -149,6 +150,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           emoji?: string | null
           exam_board?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           emoji?: string | null
           exam_board?: string | null
