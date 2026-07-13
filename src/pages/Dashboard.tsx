@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore } from "lucide-react";
+import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore, FileText } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 import BrandLogo from "@/components/BrandLogo";
@@ -191,6 +191,9 @@ export default function Dashboard() {
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/questions`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                       <Target className="h-3 w-3" /> Questions
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/papers`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <FileText className="h-3 w-3" /> Papers
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setArchived(t, true); }}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 import {
@@ -125,6 +125,9 @@ export default function TrackOverview() {
           </button>
           <button onClick={() => navigate(`/track/${trackId}/questions`)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-accent text-xs text-muted-foreground hover:text-foreground transition-colors">
             <Target className="h-3.5 w-3.5" /> Questions
+          </button>
+          <button onClick={() => navigate(`/track/${trackId}/papers`)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-accent text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <FileText className="h-3.5 w-3.5" /> Papers
           </button>
         </div>
 
