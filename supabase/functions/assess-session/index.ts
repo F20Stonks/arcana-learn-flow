@@ -155,6 +155,78 @@ Respond ONLY with JSON: {"decisions":[{"index":number,"concept_id":string|null,"
   return resolved;
 }
 
+type SpecItemRow = {
+  id: string; text: string; rigor: string; evidence_requirements: string[]; subtopic_ids: string[]; ticked: boolean;
+};
+
+// Auto-ticks spec_checklist_items mapped to a just-completed subtopic. "Simple" items are a pure
+// computation (all their mapped subtopics complete → tick, no AI call). "Complex" items bundle multiple
+// distinct requirements read off the spec's own wording (e.g. a derivation + a named method + a
+// calculation) — those get checked against the FULL session transcript (not a compressed summary), since
+// judging "was this specific method actually used" needs the real evidence, not a lossy note.
+async function tickMatchingSpecItems(
+  supabase: ReturnType<typeof createClient>,
+  subtopicId: string,
+  messages: { role: string; content: string }[],
+  lovableApiKey: string,
+) {
+  const { data: itemsRaw } = await supabase
+    .from("spec_checklist_items")
+    .select("id, text, rigor, evidence_requirements, subtopic_ids, ticked")
+    .contains("subtopic_ids", [subtopicId])
+    .eq("ticked", false);
+  const items = (itemsRaw || []) as unknown as SpecItemRow[];
+  if (items.length === 0) return;
+
+  // Resolve current status for every subtopic these items reference (an item can span more than one).
+  const allSubIds = [...new Set(items.flatMap((i) => i.subtopic_ids))];
+  const { data: subs } = await supabase.from("subtopics").select("id, status").in("id", allSubIds);
+  const statusById = new Map(((subs || []) as { id: string; status: string }[]).map((s) => [s.id, s.status]));
+  const fullyCovered = items.filter((i) => i.subtopic_ids.every((id) => statusById.get(id) === "complete"));
+  if (fullyCovered.length === 0) return;
+
+  const simple = fullyCovered.filter((i) => i.rigor !== "complex");
+  const complex = fullyCovered.filter((i) => i.rigor === "complex");
+
+  const toTick: string[] = simple.map((i) => i.id);
+
+  if (complex.length > 0) {
+    const transcript = messages.map((m) => `${m.role}: ${m.content}`).join("\n\n");
+    const payload = complex.map((i, idx) => ({ index: idx, requirement: i.text, evidenceRequirements: i.evidence_requirements }));
+    try {
+      const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You check a session transcript against specification requirements that each bundle multiple distinct pieces of evidence. For EACH requirement, decide if the transcript shows ALL of its "evidenceRequirements" were genuinely demonstrated (not just mentioned in passing) — be strict, a requirement naming a derivation needs the derivation actually shown, not just the result stated. Respond ONLY with JSON: {"results":[{"index":number,"satisfied":boolean}]}`,
+            },
+            { role: "user", content: `Requirements:\n${JSON.stringify(payload)}\n\nSession transcript:\n${transcript}` },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+        const results: { index: number; satisfied: boolean }[] = parsed.results || [];
+        for (const r of results) {
+          if (r.satisfied && complex[r.index]) toTick.push(complex[r.index].id);
+        }
+      }
+    } catch (e) {
+      console.error("complex spec item check failed (leaving unticked):", e);
+    }
+  }
+
+  if (toTick.length > 0) {
+    await supabase.from("spec_checklist_items").update({ ticked: true, ticked_at: new Date().toISOString() }).in("id", toTick);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -297,6 +369,12 @@ Respond ONLY with valid JSON:
 
           // Mark subtopic complete + schedule first review if not already scheduled (§4/§6).
           await supabase.from("subtopics").update({ status: "complete", completed_at: nowIso }).eq("id", realSubtopicId);
+
+          // Tick any specification checklist items this subtopic satisfies (best-effort — a failure
+          // here should never block the rest of the completion pipeline).
+          try { await tickMatchingSpecItems(supabase, realSubtopicId, messages, LOVABLE_API_KEY); }
+          catch (e) { console.error("tickMatchingSpecItems failed:", e); }
+
           const { data: existingReview } = await supabase.from("subtopic_reviews").select("id").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
           if (!existingReview) {
             await supabase.from("subtopic_reviews").insert({
