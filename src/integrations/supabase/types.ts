@@ -89,6 +89,59 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_papers: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          created_at: string
+          difficulty: string
+          id: string
+          questions: Json
+          score: number | null
+          title: string
+          topics: Json
+          total_marks: number
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          created_at?: string
+          difficulty: string
+          id?: string
+          questions: Json
+          score?: number | null
+          title: string
+          topics?: Json
+          total_marks?: number
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          created_at?: string
+          difficulty?: string
+          id?: string
+          questions?: Json
+          score?: number | null
+          title?: string
+          topics?: Json
+          total_marks?: number
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_papers_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "learning_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights: {
         Row: {
           created_at: string
@@ -245,6 +298,45 @@ export type Database = {
           },
         ]
       }
+      past_papers: {
+        Row: {
+          board: string
+          created_at: string
+          id: string
+          level: string | null
+          paper_label: string | null
+          source_url: string
+          storage_path: string | null
+          subject: string
+          title: string
+          year: string | null
+        }
+        Insert: {
+          board: string
+          created_at?: string
+          id?: string
+          level?: string | null
+          paper_label?: string | null
+          source_url: string
+          storage_path?: string | null
+          subject: string
+          title: string
+          year?: string | null
+        }
+        Update: {
+          board?: string
+          created_at?: string
+          id?: string
+          level?: string | null
+          paper_label?: string | null
+          source_url?: string
+          storage_path?: string | null
+          subject?: string
+          title?: string
+          year?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -321,6 +413,66 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: false
             referencedRelation: "subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spec_checklist_items: {
+        Row: {
+          code: string | null
+          created_at: string
+          evidence_requirements: Json
+          id: string
+          rigor: string
+          source_url: string | null
+          subtopic_ids: string[]
+          text: string
+          ticked: boolean
+          ticked_at: string | null
+          topic_id: string | null
+          track_id: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          evidence_requirements?: Json
+          id?: string
+          rigor?: string
+          source_url?: string | null
+          subtopic_ids?: string[]
+          text: string
+          ticked?: boolean
+          ticked_at?: string | null
+          topic_id?: string | null
+          track_id: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          evidence_requirements?: Json
+          id?: string
+          rigor?: string
+          source_url?: string | null
+          subtopic_ids?: string[]
+          text?: string
+          ticked?: boolean
+          ticked_at?: string | null
+          topic_id?: string | null
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_checklist_items_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spec_checklist_items_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "learning_tracks"
             referencedColumns: ["id"]
           },
         ]
