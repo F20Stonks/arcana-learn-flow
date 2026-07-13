@@ -67,8 +67,13 @@ async function searchPastPapers(
   subject: string,
   level: string | null,
   tavilyApiKey: string,
+  examHint?: string | null,
 ): Promise<ResolvedPaper[]> {
-  const query = `${board} ${level || ""} ${subject} past papers pdf official`.replace(/\s+/g, " ").trim();
+  // The board/administering-body name alone is often ambiguous in general web search (e.g. "UAT" is
+  // dominated by "User Acceptance Testing" results, not the exam board of the same acronym) — the exam's
+  // actual well-known common name (e.g. "TMUA"), when available, disambiguates far better than the formal
+  // board name does. examHint carries that — typically derived from the track's title, not the board field.
+  const query = `${examHint || ""} ${board} ${level || ""} ${subject} past papers pdf official`.replace(/\s+/g, " ").trim();
 
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST",
@@ -108,13 +113,14 @@ export async function resolvePastPapers(
   board: string,
   subject: string,
   level: string | null,
+  examHint?: string | null,
 ): Promise<ResolvedPaper[]> {
   const tavilyApiKey = Deno.env.get("TAVILY_API_KEY");
   if (!tavilyApiKey) return [];
 
   try {
     return await Promise.race([
-      searchPastPapers(board, subject, level, tavilyApiKey),
+      searchPastPapers(board, subject, level, tavilyApiKey, examHint),
       new Promise<ResolvedPaper[]>((resolve) => setTimeout(() => resolve([]), OVERALL_TIMEOUT_MS)),
     ]);
   } catch (e) {

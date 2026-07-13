@@ -120,7 +120,7 @@ export default function TrackPapers() {
     setSearching(true);
     try {
       const resp = await supabase.functions.invoke("resolve-past-papers", {
-        body: { board: track.exam_board, subject: track.subject, level: track.level },
+        body: { board: track.exam_board, subject: track.subject, level: track.level, examHint: track.title },
       });
       setPastPapers((resp.data?.papers || []) as PastPaper[]);
     } catch (e) {

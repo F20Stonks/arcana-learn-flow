@@ -17,7 +17,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { board, subject, level } = await req.json();
+    const { board, subject, level, examHint } = await req.json();
     if (!board || !subject) {
       return new Response(JSON.stringify({ error: "board and subject are required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -41,7 +41,10 @@ serve(async (req) => {
     }
 
     // Nothing cached yet — resolve now (Tavily search + mirror-eligibility check per candidate).
-    const resolved = await resolvePastPapers(board, subject, level || null);
+    // examHint (typically the track's title) disambiguates board names that are ambiguous in general
+    // web search on their own (e.g. "UAT" is dominated by "User Acceptance Testing" results) — the exam's
+    // actual well-known common name, e.g. "TMUA", usually only lives in the title, not the board field.
+    const resolved = await resolvePastPapers(board, subject, level || null, examHint || null);
     if (resolved.length === 0) {
       return new Response(JSON.stringify({ papers: [], fromCache: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
