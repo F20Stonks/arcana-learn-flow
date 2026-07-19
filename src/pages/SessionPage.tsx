@@ -101,6 +101,14 @@ export default function SessionPage() {
   const [knownConceptNames, setKnownConceptNames] = useState<string[]>([]);
   const [prerequisites, setPrerequisites] = useState<{ name: string; known: boolean }[]>([]);
 
+  // Pre-flight prerequisite gate (failure-mode #1: never build a lesson on foundations the student
+  // lacks). On a fresh session we ask the AI what 3-5 ideas/notations this subtopic ASSUMES, show them
+  // as a tick-list, and feed anything left un-ticked to the teaching AI as gaps to shore up first.
+  // Generated live so it works from day one, before the concept graph is populated.
+  const [gateItems, setGateItems] = useState<{ name: string; note: string }[] | null>(null);
+  const [gateTicks, setGateTicks] = useState<boolean[]>([]);
+  const [gateLoading, setGateLoading] = useState(false);
+
   // Student-facing teaching intensity (persisted). Scales how hard the loop pushes self-explanation and
   // novel-problem solving; also the seam a future model-routing engine will read.
   const [intensity, setIntensity] = useState<Intensity>(() => {
@@ -146,16 +154,89 @@ export default function SessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subtopicId, user?.id]);
 
+  // Keep the teaching context's `prerequisites` in lockstep with the gate ticks: un-ticked items are
+  // flagged NOT-known so the AI shores them up first. This is the whole point of the gate.
+  useEffect(() => {
+    if (!gateItems) return;
+    setPrerequisites(gateItems.map((it, i) => ({ name: it.name, known: !!gateTicks[i] })));
+  }, [gateItems, gateTicks]);
+
+  // Ask the (already-deployed) chat function, via systemOverride, for the prerequisites this subtopic
+  // assumes. Non-teaching one-shot: we accumulate the stream and parse a small JSON list. Fails soft —
+  // any error just skips the gate and the student starts as before.
+  const generateGate = async (subtopicTitle: string, topicTitle: string, subj: string) => {
+    setGateLoading(true);
+    try {
+      const sys = `You are a curriculum prerequisite analyst. A student is about to learn the subtopic "${subtopicTitle}"${topicTitle ? ` (within the topic "${topicTitle}")` : ""}${subj ? ` in ${subj}` : ""}.
+List the 3-5 specific prerequisite ideas, notations, or skills this subtopic ASSUMES the student already holds — the things that, if missing, would make the lesson incomprehensible. Prefer concrete notation/terms (e.g. "the ⇒ implication arrow", "negation (¬)", "what a factor is") over broad topic names. Order them from most to least foundational.
+Return ONLY a JSON object — no prose, no markdown fences:
+{"prereqs":[{"name":"short label","note":"plain description, 8 words max"}]}`;
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "Generate the prerequisite list now." }],
+          systemOverride: sys,
+        }),
+      });
+      if (!resp.ok || !resp.body) throw new Error("gate generation failed");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const j = line.slice(6).trim();
+          if (j === "[DONE]") break;
+          try {
+            const d = JSON.parse(j).choices?.[0]?.delta?.content;
+            if (d) acc += d;
+          } catch { /* skip non-content events */ }
+        }
+      }
+
+      const match = acc.match(/\{[\s\S]*\}/);
+      if (match) {
+        const items = (JSON.parse(match[0]).prereqs || [])
+          .filter((x: { name?: string }) => x && x.name)
+          .slice(0, 5)
+          .map((x: { name: string; note?: string }) => ({ name: x.name, note: x.note || "" }));
+        if (items.length) {
+          setGateItems(items);
+          setGateTicks(new Array(items.length).fill(false));
+        }
+      }
+    } catch (e) {
+      console.warn("prerequisite gate skipped:", e);
+    } finally {
+      setGateLoading(false);
+    }
+  };
+
   const loadContext = async () => {
     const { data: sub } = await supabase.from("subtopics").select("*").eq("id", subtopicId!).single();
     setSubtopic(sub);
     if (!sub) return;
 
+    let trSubject = "";
     const { data: t } = await supabase.from("topics").select("*").eq("id", sub.topic_id).single();
     setTopic(t);
     if (t) {
       const { data: tr } = await supabase.from("learning_tracks").select("*").eq("id", t.track_id).single();
       setTrack(tr);
+      trSubject = tr?.subject || "";
     }
 
     // Resume an in-progress learn session for this subtopic if one exists — its transcript is already
@@ -281,6 +362,13 @@ export default function SessionPage() {
         const unknown = prereqs.filter((p) => !p.known).map((p) => p.name);
         if (unknown.length > 0) setPrereqNudge(unknown);
       }
+    }
+
+    // Fresh learn session (not a review, not a resumed transcript) → generate the pre-flight
+    // prerequisite gate so the student can flag gaps before the lesson relies on them.
+    const resumed = !!(activeSessionId && priorMsgs && priorMsgs.length);
+    if (!isReview && !resumed) {
+      generateGate(sub.title, t?.title || "", trSubject);
     }
   };
 
@@ -493,6 +581,34 @@ export default function SessionPage() {
                     ? <>Starting your recall review of <strong className="text-foreground">{subtopic?.title}</strong>…</>
                     : <>Start your session on <strong className="text-foreground">{subtopic?.title}</strong> — pick a way in, or just ask.</>}
                 </p>
+                {!isReview && gateLoading && !gateItems && (
+                  <p className="mt-6 text-xs text-muted-foreground animate-pulse">Checking what this lesson builds on…</p>
+                )}
+                {!isReview && gateItems && gateItems.length > 0 && (
+                  <div className="mt-6 max-w-sm mx-auto text-left rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs font-semibold text-foreground">Before we start — tick what you're already solid on</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 mb-3">Anything you leave unticked, I'll build up first so nothing catches you out.</p>
+                    <div className="flex flex-col gap-1">
+                      {gateItems.map((it, i) => (
+                        <label
+                          key={i}
+                          className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 cursor-pointer hover:bg-accent transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={gateTicks[i] || false}
+                            onChange={() => setGateTicks((prev) => prev.map((v, j) => (j === i ? !v : v)))}
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                          />
+                          <span className="text-sm text-foreground leading-tight">
+                            {it.name}
+                            {it.note && <span className="block text-[11px] text-muted-foreground">{it.note}</span>}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {!isReview && (
                   <div className="mt-5 flex flex-col items-stretch gap-2 max-w-xs mx-auto">
                     {STARTER_PROMPTS.map((s) => (

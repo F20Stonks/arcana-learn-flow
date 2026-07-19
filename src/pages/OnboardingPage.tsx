@@ -32,6 +32,82 @@ export default function OnboardingPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Grain-refinement pass (pillar A: tracks must be correctly sized). jarvis-director produces a
+  // spec-grounded track, but its subtopics are often too broad to be one self-contained session
+  // (e.g. "Complex Number Arithmetic" is really 4-5 sittings). This takes the generated topics and,
+  // via the ALREADY-DEPLOYED chat function's systemOverride, splits any over-broad subtopic into
+  // session-grain ones — preserving the grounded topic structure. Returns subtopic-arrays aligned by
+  // topic index, or null on any problem (caller then keeps the original, unrefined subtopics).
+  const refineTrackGrain = async (track: { topics: { title: string; subtopics: string[] }[] }): Promise<string[][] | null> => {
+    try {
+      const sys = `You are a curriculum editor. You are given a track's topics with their subtopics. Your ONE job is GRANULARITY: every subtopic must be a single SELF-CONTAINED lesson — one core idea plus its immediate practice, fully learnable in one ~20-30 minute sitting.
+Rules:
+- If a subtopic is too broad for one sitting (it bundles several distinct ideas, e.g. "Complex Number Arithmetic", "Differentiation", "Trigonometry"), SPLIT it into ordered session-grain subtopics.
+- Leave already-well-sized subtopics exactly as they are.
+- Do NOT add, remove, or reorder TOPICS — return exactly the same number of topics, in the same order, with the same titles.
+- Order subtopics so prerequisites come before what depends on them.
+- Do not invent material beyond the track's evident scope; only split what is already there. Cap each topic at 10 subtopics.
+This applies to ALL of mathematics and physics, from high-school (GCSE / A-level) to undergraduate. Adapt the grain to whatever material you are given — never to a fixed template. Judge "one sitting" relative to the track's own level.
+Good grain (one idea each): "Argand diagrams: plotting a complex number", "Resolving a projectile's velocity into components", "Gauss's law for a single point charge", "Solving a linear equation in one variable".
+Too coarse (bundles many distinct ideas — must be split): "Complex Numbers", "Calculus", "Electromagnetism", "Forces and Motion".
+Return ONLY JSON — no prose, no markdown fences:
+{"topics":[{"title":"<unchanged title>","subtopics":["...","..."]}]}`;
+      const payload = { topics: track.topics.map((t) => ({ title: t.title, subtopics: t.subtopics })) };
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: `Refine the granularity of this track:\n${JSON.stringify(payload)}` }],
+          systemOverride: sys,
+        }),
+      });
+      if (!resp.ok || !resp.body) return null;
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const j = line.slice(6).trim();
+          if (j === "[DONE]") break;
+          try {
+            const d = JSON.parse(j).choices?.[0]?.delta?.content;
+            if (d) acc += d;
+          } catch { /* skip non-content events */ }
+        }
+      }
+
+      const match = acc.match(/\{[\s\S]*\}/);
+      if (!match) return null;
+      const refinedTopics = JSON.parse(match[0]).topics;
+      // Must align 1:1 with the grounded topics; otherwise discard and keep the original.
+      if (!Array.isArray(refinedTopics) || refinedTopics.length !== track.topics.length) return null;
+      const result: string[][] = [];
+      for (const rt of refinedTopics) {
+        const subs = Array.isArray(rt?.subtopics)
+          ? rt.subtopics.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 10)
+          : [];
+        if (subs.length === 0) return null; // a topic lost all subtopics → unsafe, fall back
+        result.push(subs);
+      }
+      return result;
+    } catch {
+      return null;
+    }
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading || !user) return;
     const userMsg: Message = { role: "user", content: text };
@@ -61,8 +137,12 @@ export default function OnboardingPage() {
         }).select().single();
 
         if (track) {
+          // Split over-broad subtopics into session-grain ones before saving. Falls back to the
+          // original subtopics for any topic if the refinement is unavailable or malformed.
+          const refinedGrain = await refineTrackGrain(data.track);
           for (let ti = 0; ti < data.track.topics.length; ti++) {
             const t = data.track.topics[ti];
+            const subtopics = (refinedGrain && refinedGrain[ti]) || t.subtopics;
             const { data: topic } = await supabase.from("topics").insert({
               track_id: track.id,
               title: t.title,
@@ -71,10 +151,10 @@ export default function OnboardingPage() {
             }).select().single();
 
             if (topic) {
-              for (let si = 0; si < t.subtopics.length; si++) {
+              for (let si = 0; si < subtopics.length; si++) {
                 await supabase.from("subtopics").insert({
                   topic_id: topic.id,
-                  title: t.subtopics[si],
+                  title: subtopics[si],
                   order_index: si,
                   status: "unlocked",
                   estimated_minutes: 30,
