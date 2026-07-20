@@ -178,7 +178,7 @@ export default function TrackOverview() {
 
       {/* Main content */}
       <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
-        <div className="max-w-3xl">
+        <div className={view === "map" ? "max-w-none" : "max-w-3xl"}>
           <div className="flex items-center gap-3 mb-6">
             <SubjectIcon subject={track?.subject} size="lg" />
             <div className="flex-1">
@@ -253,6 +253,7 @@ export default function TrackOverview() {
               topics={topics}
               trackTitle={track?.title}
               onSubtopicClick={(id) => navigate(`/session/${id}`)}
+              onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
             />
           ) : (
             <SpecChecklist trackId={trackId!} topics={topics} hasExamBoard={!!track?.exam_board} />
