@@ -19,10 +19,28 @@ export interface SliderSpec {
   default: number;
 }
 
+/** A named stage in a step-by-step scene (constructions, proofs, builds). */
+export interface StepSpec {
+  /** short imperative headline for this stage ("Drop the perpendicular from A") */
+  title: string;
+  /** optional one-sentence explanation shown under the title */
+  caption?: string;
+}
+
+/**
+ * Every primitive may carry `step: n` (1-based) — it becomes visible from the
+ * n-th step onward, entering with a draw-on / grow animation. Primitives
+ * without a step are always visible. Only meaningful when the scene declares
+ * a `steps` array.
+ */
+export interface Staged {
+  step?: number;
+}
+
 /** Plain colour string (hex, rgb, hsl, or a named CSS colour). */
 export type Color = string;
 
-export interface PointPrim {
+export interface PointPrim extends Staged {
   kind: "point";
   /** literal numbers OR mathjs expressions */
   at: [number | string, number | string, number | string];
@@ -34,11 +52,35 @@ export interface PointPrim {
    * the point's dragged (x, y) position — usable in every other expression.
    * Pair with `at: ["a", "b", 0]` and (ideally) sliders declaring a and b;
    * undeclared keys are seeded from the point's initial position.
+   * To CONSTRAIN a drag (e.g. keep the point on a circle), project inside
+   * `at`: drag writes raw (a,b), and `at: ["2*cos(atan2(b,a))",
+   * "2*sin(atan2(b,a))", 0]` snaps the rendered point onto radius 2.
    */
   drag?: [string, string];
 }
 
-export interface CurvePrim {
+/**
+ * Bulk indexed point cloud — lattices, sieves, samples, datasets.
+ * Expressions receive `i` = 0 … count−1 (plus sliders/time as usual).
+ */
+export interface PointsPrim extends Staged {
+  kind: "points";
+  count: number;
+  /** position of point i */
+  x: string;
+  y: string;
+  z?: string;
+  size?: number;
+  color?: Color;
+  /**
+   * Optional palette selector: a mathjs expression in `i` evaluated per point,
+   * floored and taken mod the theme palette length. Lets residue classes /
+   * categories colour themselves, e.g. "mod(i, 3)".
+   */
+  colorBy?: string;
+}
+
+export interface CurvePrim extends Staged {
   kind: "curve";
   /** parametric: each component is a mathjs expr in (t, sliders, time) */
   x: string;
@@ -50,9 +92,54 @@ export interface CurvePrim {
   color?: Color;
   width?: number;
   label?: string;
+  /** dashed stroke — the construction-line / auxiliary-object convention */
+  dash?: boolean;
 }
 
-export interface SurfacePrim {
+/** Straight segment between two points — the plane-geometry workhorse. */
+export interface SegmentPrim extends Staged {
+  kind: "segment";
+  from: [number | string, number | string, (number | string)?];
+  to: [number | string, number | string, (number | string)?];
+  color?: Color;
+  width?: number;
+  dash?: boolean;
+  label?: string;
+  /** equal-length tick marks drawn at the midpoint (1, 2, or 3) */
+  marks?: number;
+}
+
+/** Circular arc in the XY plane (use inside groups for other planes). */
+export interface ArcPrim extends Staged {
+  kind: "arc";
+  center: [number | string, number | string, (number | string)?];
+  radius: number | string;
+  /** start/end angles in radians (mathjs exprs allowed) */
+  from: number | string;
+  to: number | string;
+  color?: Color;
+  width?: number;
+  dash?: boolean;
+}
+
+/**
+ * Marks the angle at vertex `at`, between the rays toward `from` and `to`.
+ * Renders a small arc (or a square when `right`), with an optional label at
+ * the bisector.
+ */
+export interface AngleMarkPrim extends Staged {
+  kind: "angleMark";
+  at: [number | string, number | string, (number | string)?];
+  from: [number | string, number | string, (number | string)?];
+  to: [number | string, number | string, (number | string)?];
+  radius?: number; // default 0.45
+  color?: Color;
+  label?: string;
+  /** draw the right-angle square instead of an arc */
+  right?: boolean;
+}
+
+export interface SurfacePrim extends Staged {
   kind: "surface";
   /** parametric over (u, v) */
   x: string;
@@ -71,7 +158,7 @@ export interface SurfacePrim {
   colormap?: "height" | "none";
 }
 
-export interface VectorFieldPrim {
+export interface VectorFieldPrim extends Staged {
   kind: "vectorField";
   /** components fx(x,y,z), fy(x,y,z), fz(x,y,z) — z optional */
   fx: string;
@@ -86,7 +173,7 @@ export interface VectorFieldPrim {
   normalize?: boolean;
 }
 
-export interface ArrowPrim {
+export interface ArrowPrim extends Staged {
   kind: "arrow";
   from: [number | string, number | string, number | string];
   to: [number | string, number | string, number | string];
@@ -94,7 +181,7 @@ export interface ArrowPrim {
   label?: string;
 }
 
-export interface PolygonPrim {
+export interface PolygonPrim extends Staged {
   kind: "polygon";
   /** ordered vertices, each [x,y,z] (z optional) */
   vertices: Array<[number | string, number | string, (number | string)?]>;
@@ -103,7 +190,7 @@ export interface PolygonPrim {
   outline?: Color;
 }
 
-export interface GridPrim {
+export interface GridPrim extends Staged {
   kind: "grid";
   /** plane the grid lies on */
   plane?: "xy" | "xz" | "yz"; // default "xy"
@@ -112,7 +199,7 @@ export interface GridPrim {
   color?: Color;
 }
 
-export interface AxesPrim {
+export interface AxesPrim extends Staged {
   kind: "axes";
   size?: number; // default 4
   labels?: [string, string, string]; // default ["x","y","z"]
@@ -120,16 +207,18 @@ export interface AxesPrim {
   ticks?: boolean;
 }
 
-export interface TextPrim {
+export interface TextPrim extends Staged {
   kind: "text";
   at: [number | string, number | string, number | string];
   content: string;
   color?: Color;
   size?: number; // default 0.3
+  /** render content as LaTeX (KaTeX) instead of plain text — use for any math notation */
+  latex?: boolean;
 }
 
 /** Apply a 4x4 affine transform (column-major) to a sub-tree. */
-export interface GroupPrim {
+export interface GroupPrim extends Staged {
   kind: "group";
   /** optional 4x4 column-major matrix (16 numbers OR mathjs exprs) */
   matrix?: Array<number | string>;
@@ -138,7 +227,11 @@ export interface GroupPrim {
 
 export type Primitive =
   | PointPrim
+  | PointsPrim
   | CurvePrim
+  | SegmentPrim
+  | ArcPrim
+  | AngleMarkPrim
   | SurfacePrim
   | VectorFieldPrim
   | ArrowPrim
@@ -163,6 +256,12 @@ export interface SceneSpec {
   camera?: [number, number, number];
   /** sliders the student can manipulate; their values are injected into every expression */
   sliders?: SliderSpec[];
+  /**
+   * Step-by-step staging (constructions, proofs). Primitives tagged
+   * `step: n` appear from the n-th step (1-based); untagged primitives are
+   * always visible. The player shows ◀ ▶ controls with each step's title.
+   */
+  steps?: StepSpec[];
   /** the scene-graph itself */
   objects: Primitive[];
 }
@@ -198,6 +297,9 @@ const isTriple = (v: unknown): boolean =>
 function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
   if (!p || typeof p !== "object") return null;
   const prim = p as Record<string, unknown>;
+  if (prim.step !== undefined && (!Number.isFinite(prim.step as number) || (prim.step as number) < 1)) {
+    delete prim.step;
+  }
   switch (prim.kind) {
     case "point":
       if (!isTriple(prim.at)) return null;
@@ -207,6 +309,22 @@ function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
           delete prim.drag;
         }
       }
+      return prim as unknown as Primitive;
+    case "points":
+      if (!isExpr(prim.x) || !isExpr(prim.y)) return null;
+      prim.count = clamp(num(prim.count, 100), 1, 400);
+      if (prim.colorBy !== undefined && !isExpr(prim.colorBy)) delete prim.colorBy;
+      return prim as unknown as Primitive;
+    case "segment":
+      if (!isTriple(prim.from) || !isTriple(prim.to)) return null;
+      if (prim.marks !== undefined) prim.marks = clamp(num(prim.marks, 1), 1, 3);
+      return prim as unknown as Primitive;
+    case "arc":
+      if (!isTriple(prim.center) || !isExpr(prim.radius) || !isExpr(prim.from) || !isExpr(prim.to)) return null;
+      return prim as unknown as Primitive;
+    case "angleMark":
+      if (!isTriple(prim.at) || !isTriple(prim.from) || !isTriple(prim.to)) return null;
+      if (prim.radius !== undefined) prim.radius = clamp(num(prim.radius, 0.45), 0.1, 2);
       return prim as unknown as Primitive;
     case "curve": {
       if (!isExpr(prim.x) || !isExpr(prim.y)) return null;
@@ -278,6 +396,12 @@ export function sanitizeScene(spec: SceneSpec): SceneSpec {
     if (!Array.isArray(spec.camera) || spec.camera.length !== 3 || !spec.camera.every((c) => Number.isFinite(c))) {
       delete spec.camera;
     }
+  }
+  if (spec.steps !== undefined) {
+    spec.steps = (Array.isArray(spec.steps) ? spec.steps : [])
+      .filter((s): s is StepSpec => !!s && typeof s === "object" && typeof s.title === "string")
+      .slice(0, 12);
+    if (spec.steps.length === 0) delete spec.steps;
   }
   spec.sliders = (Array.isArray(spec.sliders) ? spec.sliders : [])
     .filter(

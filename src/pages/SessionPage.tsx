@@ -11,6 +11,7 @@ import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulati
 import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
 import { isSceneSpec } from "@/lib/sceneSpec";
+import { directScene } from "@/lib/sceneDirector";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -52,10 +53,16 @@ function extractChoices(raw: string): { text: string; choices: ChoiceBlock | nul
   return { text, choices: { type, options } };
 }
 
+const SCENE_REQUEST_RE = /<scene-request>\s*([\s\S]*?)\s*<\/scene-request>/i;
+
 function cleanAssistantText(raw: string): string {
-  // strip <viz> first, then <choices>
+  // strip <viz>/<scene> first, then scene requests (closed or still streaming), then <choices>
   const { text: noViz } = extractViz(raw);
-  return extractChoices(noViz).text;
+  const noReq = noViz
+    .replace(SCENE_REQUEST_RE, "")
+    .replace(/<scene(?:-request)?>[\s\S]*$/i, "") // unclosed tag mid-stream
+    .trim();
+  return extractChoices(noReq).text;
 }
 
 interface VizHistoryEntry {
@@ -461,7 +468,11 @@ Return ONLY a JSON object — no prose, no markdown fences:
       }
 
       if (assistantContent) {
-        await supabase.from("messages").insert({ session_id: sessionId, role: "assistant", content: assistantContent });
+        const { data: savedMsg } = await supabase
+          .from("messages")
+          .insert({ session_id: sessionId, role: "assistant", content: assistantContent })
+          .select("id")
+          .single();
         const { viz } = extractViz(assistantContent);
         if (viz) {
           const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -473,6 +484,41 @@ Return ONLY a JSON object — no prose, no markdown fences:
             { id, payload: viz, preview, messageIndex: newMessages.length },
           ]);
           setActiveVizId(id);
+        }
+
+        // Scene-request path: the tutor asked the Scene Director for a scene
+        // instead of authoring one inline. Fire it without blocking the turn;
+        // the canvas updates (and the message row gains the <scene> JSON so
+        // reloads rebuild it) whenever the director returns.
+        const reqMatch = assistantContent.match(SCENE_REQUEST_RE);
+        if (!viz && reqMatch) {
+          const recent = newMessages
+            .slice(-2)
+            .map((m) => `${m.role}: ${cleanAssistantText(m.content).slice(0, 400)}`)
+            .join("\n");
+          void (async () => {
+            const scene = await directScene({
+              request: reqMatch[1].trim(),
+              subject: track?.subject,
+              topic: topic?.title,
+              subtopic: subtopic?.title,
+              level: track?.level ?? undefined,
+              recentTranscript: recent,
+            });
+            if (!scene) return;
+            const id = `${Date.now()}-dir`;
+            setVizHistory((prev) => [
+              ...prev,
+              { id, payload: scene, preview: scene.title || "scene", messageIndex: newMessages.length },
+            ]);
+            setActiveVizId(id);
+            if (savedMsg?.id) {
+              await supabase
+                .from("messages")
+                .update({ content: `${assistantContent}\n<scene>${JSON.stringify(scene)}</scene>` })
+                .eq("id", savedMsg.id);
+            }
+          })();
         }
       }
     } catch {

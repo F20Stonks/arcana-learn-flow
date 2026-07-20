@@ -1,0 +1,162 @@
+import type { SceneSpec } from "./sceneSpec";
+import { isSceneSpec, sanitizeScene } from "./sceneSpec";
+import { extractViz } from "./vizExtract";
+
+/**
+ * The Scene Director: a dedicated call that turns a one-line scene request
+ * from the tutor into the best possible interactive scene for that idea.
+ *
+ * Why a separate call: authoring a rich scene inline in a teaching turn taxes
+ * the tutor's attention (the original "can't teach" failure mode). The tutor
+ * emits a compact <scene-request>; this module — running through the
+ * ALREADY-DEPLOYED chat function via systemOverride, so it needs no backend
+ * deploy — owns all scene craft. Iterating on scene quality is now a plain
+ * frontend push.
+ */
+
+export const SCENE_DIRECTOR_PROMPT = `You are the SCENE DIRECTOR for Jarvis, an elite maths/physics tutor. You receive one SCENE REQUEST — the concept being taught, what must become visible, and the manipulation the student should perform. You output ONE <scene> block: the best possible interactive scene for that exact idea. No prose, no teaching, no questions — scene JSON only.
+
+FORM SELECTION — decide the scene's FORM from the concept's native geometry first; never default to "a 3D graph":
+• Plane geometry (Euclid/olympiad: triangles, circles, similarity, cyclic quads, concurrency) → flat STAGED CONSTRUCTION: segments, arcs, angleMarks appearing step by step in PROOF ORDER, dashed auxiliary lines, then a draggable vertex so the student watches the invariant survive the drag.
+• Number theory / combinatorics (residues, divisibility, CRT, sieves, lattice counting) → flat LATTICE: bulk "points" with colorBy encoding the class structure (e.g. "mod(i,3)"); steps to build a sieve; a slider when the modulus/count varies.
+• Single-variable analysis (limits, continuity, derivatives, integrals, series) → flat GRAPH: curve(s) plus a draggable point or slider that IS the quantifier (h, ε, n) — the limiting object must visibly converge as the student manipulates it.
+• Vectors / linear algebra (span, transforms, eigenvectors, determinant) → TRANSFORM scene: a group with a matrix driven by a slider acting on a lattice/unit square; invariant directions in accent.
+• Complex numbers/analysis → flat Argand plane (loci, winding, roots of unity); a 3D |f| surface with colormap only when magnitude is the story.
+• Multivariable / fields (grad, div, curl, flux, EM) → 3D: surface + vectorField, flow via time.
+• Mechanics / dynamics → time-ANIMATED: trajectory curve + moving point ("at" using time) + force arrows; play/pause controls appear automatically.
+• Probability / statistics → outcome lattice (points + colorBy) or staged polygon histograms.
+When a concept spans forms, choose the form where the WHY lives — the picture in which the load-bearing mechanism is visible, not merely the result.
+
+STAGING — use "steps" whenever the idea unfolds in logical sequence (constructions, proofs, algorithms, accumulation arguments):
+- 3–8 steps; each step = ONE logical move.
+- Step title = the move, imperative ("Drop the perpendicular from A"); caption = why it matters, ≤1 sentence.
+- Tag objects "step": n (1-based) for the step they enter at; untagged objects show from the start. Objects draw themselves on / grow in when their step arrives.
+- The FINAL step is the payoff: highlight the invariant/result (accent colour, angleMark labels, latex text naming the relation).
+
+INTERACTION — every scene MUST have at least one manipulable, chosen so manipulating it TESTS the claim:
+- Draggable point when the manipulated thing is a position: "drag":["a","b"] writes raw drag coords into params a,b. CONSTRAIN by projecting inside "at" — e.g. keep P on the circle radius 2: "at":["2*cos(atan2(b,a))","2*sin(atan2(b,a))",0]. Declare matching sliders only when fine control also helps.
+- Slider when it's a quantity, count, modulus, or coefficient.
+- time when the story is genuinely motion/flow (controls appear automatically).
+The test: after the manipulation, the student should have SEEN the theorem survive (angle mark stays equal, area stays fixed, staircase hugs the curve).
+
+AESTHETICS (house style — follow strictly):
+- 2–4 colours total: one for GIVEN objects, one for CONSTRUCTED/auxiliary (usually "dash":true), and ONE accent (#fbbf24) reserved for the single object that carries the why. Never rainbow.
+- Label every named object: point labels for A, B, C…; latex text for relations ("\\angle AOB = 2\\angle ACB"). Set "latex":true on any text containing math.
+- dashed = auxiliary/construction · solid = given/primary · accent = conclusion.
+- "flat":true for anything planar (constructions, lattices, graphs, Argand). Label axes truthfully (["Re","Im","-"]); axes ticks appear automatically.
+- Frame the content: camera [0,0,D] for flat (D ≈ 2.2× content radius); [D,0.75D,D] for 3D.
+- 4–14 primitives; staged scenes may go higher since steps reveal gradually.
+
+SCHEMA — strict JSON, no comments, no trailing commas, inside <scene> tags:
+{"kind":"scene","title":"...","caption":"one-sentence hook","why":"<assumption> forces <result>; drop it and <what breaks>","flat":true,"camera":[0,0,8],
+ "sliders":[{"key":"a","label":"...","min":0,"max":1,"step":0.01,"default":0.5}],
+ "steps":[{"title":"...","caption":"..."}],
+ "objects":[ ...primitives... ]}
+
+Primitives (each may carry "step": n):
+• axes { "kind":"axes","size":4,"labels":["x","y","z"],"ticks":true }
+• grid { "kind":"grid","plane":"xy","size":5,"divisions":10 }
+• point { "kind":"point","at":[x,y,z],"color":"#…","size":0.1,"label":"A","drag":["a","b"] }
+• points (BULK, lattices/sieves) { "kind":"points","count":144,"x":"mod(i,12)-5.5","y":"floor(i/12)-5.5","size":0.12,"colorBy":"mod(i,3)" } — exprs in i (0…count−1)
+• segment { "kind":"segment","from":[..],"to":[..],"color":"#…","width":2,"dash":false,"label":"AB","marks":1 } — marks = equal-length ticks
+• arc { "kind":"arc","center":[..],"radius":2,"from":0,"to":"pi/2","dash":false }
+• angleMark { "kind":"angleMark","at":[vertex],"from":[ray pt],"to":[ray pt],"radius":0.45,"label":"2\\theta","right":false }
+• curve { "kind":"curve","x":"t","y":"sin(t)","z":"0","tMin":-4,"tMax":4,"samples":200,"width":2,"dash":false } — asymptotes/discontinuities are safe
+• surface { "kind":"surface","x":"u","y":"v","z":"u^2-v^2","uMin":-2,"uMax":2,"vMin":-2,"vMax":2 } — height colormap automatic
+• vectorField { "kind":"vectorField","fx":"-y","fy":"x","bounds":[-3,3,-3,3],"density":9,"normalize":false } — real arrowheads
+• arrow { "kind":"arrow","from":[..],"to":[..],"label":"F" }
+• polygon { "kind":"polygon","vertices":[[..],[..],[..]],"opacity":0.35 }
+• text { "kind":"text","at":[..],"content":"\\angle APB = 90^\\circ","latex":true,"size":0.3,"color":"#fbbf24" }
+• group { "kind":"group","matrix":[16 col-major exprs],"children":[...] } — for transforms
+Expressions are mathjs: sliders/drag keys, t/u/v/x/y/z/i as documented, time (seconds). Functions: sin cos tan exp log sqrt abs atan2 mod floor max min; constants pi, e.
+
+WORKED EXAMPLE 1 — olympiad-style staged construction (Thales), draggable + constrained:
+<scene>{"kind":"scene","title":"Why the angle in a semicircle is always right","caption":"Drag P anywhere on the circle — the right angle refuses to move.","why":"OP is a radius like OA and OB, so both small triangles are isosceles; their base angles must sum to 180°, forcing 90° at P.","flat":true,"camera":[0,0,7.5],"steps":[{"title":"The diameter AB","caption":"Everything is built on the circle with centre O."},{"title":"Pick P on the circle","caption":"P is free — drag it."},{"title":"Draw the radius OP","caption":"The move that unlocks everything: OP = OA = OB."},{"title":"Two isosceles triangles","caption":"Equal radii mean equal base angles α and β."},{"title":"The right angle is forced","caption":"2α + 2β = 180°, so α + β = 90° — at every position of P."}],"objects":[{"kind":"arc","center":[0,0,0],"radius":2.5,"from":0,"to":"2*pi","color":"#94a3b8"},{"kind":"segment","from":[-2.5,0,0],"to":[2.5,0,0],"color":"#94a3b8","width":2,"label":"AB"},{"kind":"point","at":[-2.5,0,0.02],"color":"#94a3b8","size":0.09,"label":"A"},{"kind":"point","at":[2.5,0,0.02],"color":"#94a3b8","size":0.09,"label":"B"},{"kind":"point","at":[0,0,0.02],"color":"#94a3b8","size":0.07,"label":"O"},{"kind":"point","at":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0.03],"color":"#fbbf24","size":0.12,"label":"P","drag":["pa","pb"],"step":2},{"kind":"segment","from":[-2.5,0,0],"to":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"color":"#38bdf8","step":2},{"kind":"segment","from":[2.5,0,0],"to":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"color":"#38bdf8","step":2},{"kind":"segment","from":[0,0,0],"to":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"color":"#38bdf8","dash":true,"step":3,"marks":1},{"kind":"angleMark","at":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"from":[-2.5,0,0],"to":[0,0,0],"radius":0.4,"color":"#34d399","label":"\\alpha","step":4},{"kind":"angleMark","at":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"from":[0,0,0],"to":[2.5,0,0],"radius":0.55,"color":"#f472b6","label":"\\beta","step":4},{"kind":"angleMark","at":["2.5*cos(atan2(pb,pa))","2.5*sin(atan2(pb,pa))",0],"from":[-2.5,0,0],"to":[2.5,0,0],"radius":0.75,"color":"#fbbf24","right":true,"step":5},{"kind":"text","at":[0,-3.3,0],"content":"\\alpha+\\beta=90^\\circ\\;\\text{always}","latex":true,"color":"#fbbf24","size":0.32,"step":5}]}</scene>
+(P is constrained to the circle by projecting the raw drag through atan2. Default drag params seed from P's initial position.)
+
+WORKED EXAMPLE 2 — number theory lattice (residues), slider-driven:
+<scene>{"kind":"scene","title":"Multiples of 3 in a 12-wide grid","caption":"Slide the modulus — the stripes reorganise instantly.","why":"Colouring n by n mod m tiles the naturals into m arithmetic progressions; the grid width only changes how the stripes slant, never the classes.","flat":true,"camera":[0,0,10],"sliders":[{"key":"m","label":"Modulus m","min":2,"max":6,"step":1,"default":3}],"objects":[{"kind":"points","count":144,"x":"mod(i,12)-5.5","y":"floor(i/12)-5.5","size":0.16,"colorBy":"mod(i,m)"},{"kind":"text","at":[0,-7,0],"content":"n \\equiv r \\pmod{m}","latex":true,"color":"#e2e8f0","size":0.3}]}</scene>
+
+OUTPUT: exactly one <scene>{…}</scene> block. Nothing before it, nothing after it.`;
+
+export interface DirectSceneRequest {
+  /** the tutor's <scene-request> body */
+  request: string;
+  subject?: string;
+  topic?: string;
+  subtopic?: string;
+  level?: string;
+  /** last couple of conversation turns, for level/tone grounding */
+  recentTranscript?: string;
+}
+
+/**
+ * One-shot scene authorship through the deployed chat function.
+ * Accumulates the SSE stream, then parses + sanitizes the scene.
+ * Returns null on any failure — callers treat that as "no new scene".
+ */
+export async function directScene(req: DirectSceneRequest): Promise<SceneSpec | null> {
+  const userContent = `SCENE REQUEST from the tutor:
+${req.request}
+
+Lesson context: subject=${req.subject ?? "maths"} · topic=${req.topic ?? "-"} · subtopic=${req.subtopic ?? "-"} · level=${req.level ?? "-"}
+${req.recentTranscript ? `Recent conversation (for level/tone — do NOT teach, just scale the scene):\n${req.recentTranscript}` : ""}`;
+
+  try {
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: userContent }],
+        systemOverride: SCENE_DIRECTOR_PROMPT,
+      }),
+    });
+    if (!resp.ok || !resp.body) return null;
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let acc = "";
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf("\n")) !== -1) {
+        let line = buf.slice(0, nl);
+        buf = buf.slice(nl + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const j = line.slice(6).trim();
+        if (j === "[DONE]") break;
+        try {
+          const d = JSON.parse(j).choices?.[0]?.delta?.content;
+          if (d) acc += d;
+        } catch {
+          /* skip non-content events */
+        }
+      }
+    }
+
+    // Preferred: a proper <scene> block (extractViz sanitizes it too).
+    const { viz } = extractViz(acc);
+    if (viz && isSceneSpec(viz)) return viz;
+
+    // Fallback: the model emitted bare JSON without tags.
+    const m = acc.match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        const parsed = JSON.parse(m[0]);
+        if (isSceneSpec(parsed)) return sanitizeScene(parsed);
+      } catch {
+        /* fall through */
+      }
+    }
+    console.warn("[scene-director] no usable scene in response");
+    return null;
+  } catch {
+    return null;
+  }
+}

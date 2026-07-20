@@ -11,12 +11,16 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Line, Text, Html } from "@react-three/drei";
 import { parse, type EvalFunction } from "mathjs";
 import * as THREE from "three";
-import { ZoomIn, ZoomOut, RotateCcw, Play, Pause, SkipBack } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Play, Pause, SkipBack, ChevronLeft, ChevronRight } from "lucide-react";
 import type {
   SceneSpec,
   Primitive,
   PointPrim,
+  PointsPrim,
   CurvePrim,
+  SegmentPrim,
+  ArcPrim,
+  AngleMarkPrim,
   SurfacePrim,
   VectorFieldPrim,
   ArrowPrim,
@@ -27,6 +31,7 @@ import type {
   GroupPrim,
 } from "@/lib/sceneSpec";
 import { buildColorMap, type VizTheme } from "@/lib/vizThemes";
+import MathRenderer from "@/components/MathRenderer";
 
 /* ---------------- theming helpers ---------------- */
 
@@ -158,9 +163,60 @@ interface SceneCtxType {
 
 const SceneCtx = createContext<SceneCtxType>({ setParam: () => {}, setDragging: () => {} });
 
+/* ---------------- staging: step visibility + entrance animation ----------------
+ *
+ * A primitive tagged `step: n` renders from the n-th step onward. Whenever a
+ * primitive BECOMES visible (scene mount or step advance), it animates in:
+ * line-like primitives draw themselves on, points/marks/text grow, surfaces
+ * and fields fade. `progress` (0→1, eased) drives all of it.
+ */
+
+function useEntrance(visible: boolean): number {
+  const [progress, setProgress] = useState(0);
+  const prevVisible = useRef(false);
+  useEffect(() => {
+    if (visible && !prevVisible.current) {
+      prevVisible.current = true;
+      const t0 = performance.now();
+      let raf = 0;
+      const tick = (now: number) => {
+        const p = Math.min(1, (now - t0) / 700);
+        setProgress(1 - Math.pow(1 - p, 3));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(raf);
+    }
+    if (!visible && prevVisible.current) {
+      prevVisible.current = false;
+      setProgress(0);
+    }
+  }, [visible]);
+  return visible ? progress : 0;
+}
+
+function StagedPrim({
+  prim,
+  stepIdx,
+  scope,
+  style,
+  theme,
+}: {
+  prim: Primitive;
+  stepIdx: number;
+  scope: Scope;
+  style: Style;
+  theme: VizTheme;
+}) {
+  const visible = (prim.step ?? 1) - 1 <= stepIdx;
+  const progress = useEntrance(visible);
+  if (!visible) return null;
+  return <PrimitiveR prim={prim} scope={scope} style={style} theme={theme} progress={progress} />;
+}
+
 /* ---------------- primitive renderers ---------------- */
 
-function PointR({ p, scope, style }: { p: PointPrim; scope: Scope; style: Style }) {
+function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; style: Style; progress: number }) {
   const ctx = useContext(SceneCtx);
   const [hover, setHover] = useState(false);
   const draggingRef = useRef(false);
@@ -175,7 +231,7 @@ function PointR({ p, scope, style }: { p: PointPrim; scope: Scope; style: Style 
   const size = (p.size ?? 0.08) * (draggable && hover ? 1.35 : 1);
 
   return (
-    <group position={pos}>
+    <group position={pos} scale={Math.max(progress, 0.001)}>
       <mesh
         onPointerOver={draggable ? (e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "grab"; } : undefined}
         onPointerOut={draggable ? () => { setHover(false); if (!draggingRef.current) document.body.style.cursor = ""; } : undefined}
@@ -238,7 +294,7 @@ function PointR({ p, scope, style }: { p: PointPrim; scope: Scope; style: Style 
 const CURVE_EXCLUDE = ["t"] as const;
 const CLIP = 50; // coordinates beyond this are treated as "off to infinity"
 
-function CurveR({ p, scope, style }: { p: CurvePrim; scope: Scope; style: Style }) {
+function CurveR({ p, scope, style, progress }: { p: CurvePrim; scope: Scope; style: Style; progress: number }) {
   const samples = p.samples ?? 200;
   const fx = useMemo(() => compileExpr(p.x), [p.x]);
   const fy = useMemo(() => compileExpr(p.y), [p.y]);
@@ -269,24 +325,224 @@ function CurveR({ p, scope, style }: { p: CurvePrim; scope: Scope; style: Style 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx, fy, fz, p.tMin, p.tMax, samples, key]);
 
-  if (pieces.length === 0) return null;
+  // draw-on entrance: reveal the polyline point-by-point as progress rises
+  const drawn = useMemo(() => {
+    if (progress >= 1) return pieces;
+    const total = pieces.reduce((n, pc) => n + pc.length, 0);
+    let budget = Math.max(2, Math.floor(total * progress));
+    const out: THREE.Vector3[][] = [];
+    for (const pc of pieces) {
+      if (budget < 2) break;
+      if (pc.length <= budget) {
+        out.push(pc);
+        budget -= pc.length;
+      } else {
+        out.push(pc.slice(0, budget));
+        break;
+      }
+    }
+    return out;
+  }, [pieces, progress]);
+
+  if (drawn.length === 0) return null;
   const color = resolveColor(p.color, "#38bdf8", style);
   const width = p.width ?? 2;
   return (
     <>
-      {pieces.map((pts, i) => (
+      {drawn.map((pts, i) => (
         <group key={i}>
-          {style.glow && <Line points={pts} color={color} lineWidth={width + 7} transparent opacity={0.25} />}
-          <Line points={pts} color={color} lineWidth={width} />
+          {style.glow && !p.dash && (
+            <Line points={pts} color={color} lineWidth={width + 7} transparent opacity={0.25} />
+          )}
+          <Line
+            points={pts}
+            color={color}
+            lineWidth={width}
+            dashed={!!p.dash}
+            dashSize={0.16}
+            gapSize={0.1}
+          />
         </group>
       ))}
     </>
   );
 }
 
+/* ----- plane-geometry primitives: segment, arc, angle mark ----- */
+
+function SegmentR({ p, scope, style, progress }: { p: SegmentPrim; scope: Scope; style: Style; progress: number }) {
+  const from = vec3At(p.from, scope);
+  const to = vec3At(p.to, scope);
+  if (!from || !to) return null;
+  const color = resolveColor(p.color, "#38bdf8", style);
+  const end = progress < 1 ? from.clone().lerp(to, Math.max(progress, 0.02)) : to;
+
+  // equal-length tick marks at the midpoint, perpendicular in the XY plane
+  const marks: THREE.Vector3[][] = [];
+  if (p.marks && progress > 0.6) {
+    const dir = to.clone().sub(from).normalize();
+    const perp = new THREE.Vector3(-dir.y, dir.x, 0).multiplyScalar(0.12);
+    const mid = from.clone().add(to).multiplyScalar(0.5);
+    const n = Math.min(p.marks, 3);
+    for (let i = 0; i < n; i++) {
+      const c = mid.clone().addScaledVector(dir, (i - (n - 1) / 2) * 0.09);
+      marks.push([c.clone().sub(perp), c.clone().add(perp)]);
+    }
+  }
+
+  return (
+    <>
+      <Line points={[from, end]} color={color} lineWidth={p.width ?? 2} dashed={!!p.dash} dashSize={0.16} gapSize={0.1} />
+      {marks.map((m, i) => (
+        <Line key={i} points={m} color={color} lineWidth={1.5} />
+      ))}
+      {p.label && (
+        <Html position={from.clone().add(to).multiplyScalar(0.5)} distanceFactor={10} style={{ pointerEvents: "none" }}>
+          <span className="text-[10px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+        </Html>
+      )}
+    </>
+  );
+}
+
+function ArcR({ p, scope, style, progress }: { p: ArcPrim; scope: Scope; style: Style; progress: number }) {
+  const center = vec3At(p.center, scope);
+  const radius = compileExprCached(p.radius).fn(scope);
+  const a0 = compileExprCached(p.from).fn(scope);
+  const a1 = compileExprCached(p.to).fn(scope);
+  if (!center || !Number.isFinite(radius) || !Number.isFinite(a0) || !Number.isFinite(a1)) return null;
+  const sweep = (a1 - a0) * Math.min(progress, 1);
+  const pts: THREE.Vector3[] = [];
+  const n = Math.max(8, Math.ceil(Math.abs(sweep) * 24));
+  for (let i = 0; i <= n; i++) {
+    const a = a0 + (i / n) * sweep;
+    pts.push(new THREE.Vector3(center.x + radius * Math.cos(a), center.y + radius * Math.sin(a), center.z));
+  }
+  if (pts.length < 2) return null;
+  const color = resolveColor(p.color, "#38bdf8", style);
+  return (
+    <Line points={pts} color={color} lineWidth={p.width ?? 2} dashed={!!p.dash} dashSize={0.16} gapSize={0.1} />
+  );
+}
+
+function AngleMarkR({ p, scope, style, progress }: { p: AngleMarkPrim; scope: Scope; style: Style; progress: number }) {
+  const at = vec3At(p.at, scope);
+  const from = vec3At(p.from, scope);
+  const to = vec3At(p.to, scope);
+  if (!at || !from || !to) return null;
+  const a0 = Math.atan2(from.y - at.y, from.x - at.x);
+  let a1 = Math.atan2(to.y - at.y, to.x - at.x);
+  // take the sweep on the short way round so the mark sits inside the angle
+  while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI;
+  while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+  const r = p.radius ?? 0.45;
+  const color = resolveColor(p.color, "#fbbf24", style);
+  const mid = (a0 + a1) / 2;
+
+  let markPts: THREE.Vector3[];
+  if (p.right) {
+    // right-angle square: corner at distance r along both rays
+    const c1 = new THREE.Vector3(at.x + r * Math.cos(a0), at.y + r * Math.sin(a0), at.z);
+    const c2 = new THREE.Vector3(at.x + r * Math.cos(a1), at.y + r * Math.sin(a1), at.z);
+    const corner = c1.clone().add(c2).sub(at);
+    markPts = [c1, corner, c2];
+  } else {
+    markPts = [];
+    const sweep = (a1 - a0) * Math.min(progress, 1);
+    const n = Math.max(6, Math.ceil(Math.abs(sweep) * 16));
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + (i / n) * sweep;
+      markPts.push(new THREE.Vector3(at.x + r * Math.cos(a), at.y + r * Math.sin(a), at.z));
+    }
+  }
+
+  return (
+    <group scale={p.right ? Math.max(progress, 0.001) : 1}>
+      <Line points={markPts} color={color} lineWidth={1.8} />
+      {p.label && progress > 0.5 && (
+        <Html
+          position={[at.x + r * 1.75 * Math.cos(mid), at.y + r * 1.75 * Math.sin(mid), at.z]}
+          center
+          distanceFactor={10}
+          style={{ pointerEvents: "none" }}
+        >
+          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>
+            <MathRenderer content={`$${p.label}$`} />
+          </span>
+        </Html>
+      )}
+    </group>
+  );
+}
+
+/* ----- bulk indexed points: lattices, sieves, samples ----- */
+
+const POINTS_EXCLUDE = ["i"] as const;
+
+function PointsR({ p, scope, style, theme, progress }: { p: PointsPrim; scope: Scope; style: Style; theme: VizTheme; progress: number }) {
+  const fx = useMemo(() => compileExpr(p.x), [p.x]);
+  const fy = useMemo(() => compileExpr(p.y), [p.y]);
+  const fz = useMemo(() => compileExpr(p.z ?? "0"), [p.z]);
+  const fc = useMemo(() => (p.colorBy ? compileExpr(p.colorBy) : null), [p.colorBy]);
+  const key = depKey(fc ? [fx, fy, fz, fc] : [fx, fy, fz], scope, POINTS_EXCLUDE);
+  const imRef = useRef<THREE.InstancedMesh>(null);
+  const baseColor = resolveColor(p.color, theme.palette[0] ?? "#60a5fa", style);
+
+  const data = useMemo(() => {
+    const out: { pos: THREE.Vector3; palette: number }[] = [];
+    const s: Scope = { ...scope, i: 0 };
+    for (let i = 0; i < p.count; i++) {
+      s.i = i;
+      const x = fx.fn(s), y = fy.fn(s), z = fz.fn(s);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+      let palette = -1;
+      if (fc) {
+        const c = fc.fn(s);
+        if (Number.isFinite(c)) palette = ((Math.floor(c) % theme.palette.length) + theme.palette.length) % theme.palette.length;
+      }
+      out.push({ pos: new THREE.Vector3(x, y, z), palette });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fx, fy, fz, fc, p.count, theme, key]);
+
+  useEffect(() => {
+    const mesh = imRef.current;
+    if (!mesh) return;
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+    data.forEach((d, i) => {
+      dummy.position.copy(d.pos);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      col.set(d.palette >= 0 ? theme.palette[d.palette] : baseColor);
+      mesh.setColorAt(i, col);
+    });
+    mesh.count = data.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [data, theme, baseColor]);
+
+  if (data.length === 0) return null;
+  const size = p.size ?? 0.07;
+  return (
+    <group scale={Math.max(progress, 0.001)}>
+      <instancedMesh
+        key={data.length}
+        ref={imRef}
+        args={[undefined as unknown as THREE.BufferGeometry, undefined as unknown as THREE.Material, data.length]}
+      >
+        <sphereGeometry args={[size, 10, 10]} />
+        <meshBasicMaterial />
+      </instancedMesh>
+    </group>
+  );
+}
+
 const SURFACE_EXCLUDE = ["u", "v"] as const;
 
-function SurfaceR({ p, scope, style }: { p: SurfacePrim; scope: Scope; style: Style }) {
+function SurfaceR({ p, scope, style, progress }: { p: SurfacePrim; scope: Scope; style: Style; progress: number }) {
   const us = p.uSamples ?? 48;
   const vs = p.vSamples ?? 48;
   const fx = useMemo(() => compileExpr(p.x), [p.x]);
@@ -357,8 +613,8 @@ function SurfaceR({ p, scope, style }: { p: SurfacePrim; scope: Scope; style: St
       <meshStandardMaterial
         color={useColormap ? "#ffffff" : color}
         vertexColors={useColormap}
-        opacity={p.opacity ?? 0.75}
-        transparent={(p.opacity ?? 0.75) < 1}
+        opacity={(p.opacity ?? 0.75) * (0.15 + 0.85 * progress)}
+        transparent={(p.opacity ?? 0.75) * (0.15 + 0.85 * progress) < 1}
         wireframe={!!p.wireframe}
         side={THREE.DoubleSide}
         emissive={color}
@@ -377,7 +633,7 @@ interface FieldArrow {
   len: number;
 }
 
-function VectorFieldR({ p, scope, style }: { p: VectorFieldPrim; scope: Scope; style: Style }) {
+function VectorFieldR({ p, scope, style, progress }: { p: VectorFieldPrim; scope: Scope; style: Style; progress: number }) {
   const [xMin, xMax, yMin, yMax, zMin = 0, zMax = 0] = p.bounds;
   const d = p.density ?? 8;
   const scale = p.scale ?? 0.3;
@@ -454,7 +710,7 @@ function VectorFieldR({ p, scope, style }: { p: VectorFieldPrim; scope: Scope; s
   return (
     <group>
       <lineSegments geometry={shaftGeom}>
-        <lineBasicMaterial color={color} transparent opacity={0.85} />
+        <lineBasicMaterial color={color} transparent opacity={0.85 * progress} />
       </lineSegments>
       <instancedMesh
         key={arrows.length}
@@ -462,16 +718,17 @@ function VectorFieldR({ p, scope, style }: { p: VectorFieldPrim; scope: Scope; s
         args={[undefined as unknown as THREE.BufferGeometry, undefined as unknown as THREE.Material, arrows.length]}
       >
         <coneGeometry args={[0.5, 1, 6]} />
-        <meshBasicMaterial color={color} />
+        <meshBasicMaterial color={color} transparent opacity={progress} />
       </instancedMesh>
     </group>
   );
 }
 
-function ArrowR({ p, scope, style }: { p: ArrowPrim; scope: Scope; style: Style }) {
+function ArrowR({ p, scope, style, progress }: { p: ArrowPrim; scope: Scope; style: Style; progress: number }) {
   const from = vec3At(p.from, scope);
-  const to = vec3At(p.to, scope);
-  if (!from || !to) return null;
+  const fullTo = vec3At(p.to, scope);
+  if (!from || !fullTo) return null;
+  const to = progress < 1 ? from.clone().lerp(fullTo, Math.max(progress, 0.02)) : fullTo;
   const dir = to.clone().sub(from);
   const length = dir.length();
   if (length < 1e-6) return null;
@@ -488,7 +745,7 @@ function ArrowR({ p, scope, style }: { p: ArrowPrim; scope: Scope; style: Style 
   );
 }
 
-function PolygonR({ p, scope, style }: { p: PolygonPrim; scope: Scope; style: Style }) {
+function PolygonR({ p, scope, style, progress }: { p: PolygonPrim; scope: Scope; style: Style; progress: number }) {
   const verts: THREE.Vector3[] = [];
   let bad = false;
   for (const v of p.vertices) {
@@ -523,12 +780,12 @@ function PolygonR({ p, scope, style }: { p: PolygonPrim; scope: Scope; style: St
       <mesh geometry={geom}>
         <meshStandardMaterial
           color={color}
-          opacity={p.opacity ?? 0.35}
+          opacity={(p.opacity ?? 0.35) * progress}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
-      <Line points={outline} color={outlineColor} lineWidth={1.5} />
+      <Line points={outline} color={outlineColor} lineWidth={1.5} transparent opacity={Math.max(progress, 0.05)} />
     </>
   );
 }
@@ -601,17 +858,36 @@ function AxesR({ p, style }: { p: AxesPrim; style: Style }) {
   );
 }
 
-function TextR({ p, scope }: { p: TextPrim; scope: Scope }) {
+function TextR({ p, scope, progress }: { p: TextPrim; scope: Scope; progress: number }) {
   const pos = vec3At(p.at, scope);
   if (!pos) return null;
+  if (p.latex) {
+    return (
+      <Html position={pos} center distanceFactor={10} style={{ pointerEvents: "none", opacity: progress }}>
+        <span
+          className="whitespace-nowrap select-none"
+          style={{ color: p.color ?? "#e2e8f0", fontSize: `${(p.size ?? 0.3) * 46}px` }}
+        >
+          <MathRenderer content={`$${p.content}$`} />
+        </span>
+      </Html>
+    );
+  }
   return (
-    <Text position={pos} fontSize={p.size ?? 0.3} color={p.color ?? "#e2e8f0"} anchorX="center" anchorY="middle">
+    <Text
+      position={pos}
+      fontSize={p.size ?? 0.3}
+      color={p.color ?? "#e2e8f0"}
+      anchorX="center"
+      anchorY="middle"
+      fillOpacity={progress}
+    >
       {p.content}
     </Text>
   );
 }
 
-function GroupR({ p, scope, style, theme }: { p: GroupPrim; scope: Scope; style: Style; theme: VizTheme }) {
+function GroupR({ p, scope, style, theme, progress }: { p: GroupPrim; scope: Scope; style: Style; theme: VizTheme; progress: number }) {
   let m: THREE.Matrix4 | null = null;
   if (p.matrix && p.matrix.length === 16) {
     const vals = p.matrix.map((e) => compileExprCached(e).fn(scope));
@@ -619,23 +895,29 @@ function GroupR({ p, scope, style, theme }: { p: GroupPrim; scope: Scope; style:
   }
   return (
     <group matrixAutoUpdate={!m} matrix={m ?? undefined}>
-      {p.children.map((c, i) => <PrimitiveR key={i} prim={c} scope={scope} style={style} theme={theme} />)}
+      {p.children.map((c, i) => (
+        <PrimitiveR key={i} prim={c} scope={scope} style={style} theme={theme} progress={progress} />
+      ))}
     </group>
   );
 }
 
-function PrimitiveR({ prim, scope, style, theme }: { prim: Primitive; scope: Scope; style: Style; theme: VizTheme }) {
+function PrimitiveR({ prim, scope, style, theme, progress = 1 }: { prim: Primitive; scope: Scope; style: Style; theme: VizTheme; progress?: number }) {
   switch (prim.kind) {
-    case "point": return <PointR p={prim} scope={scope} style={style} />;
-    case "curve": return <CurveR p={prim} scope={scope} style={style} />;
-    case "surface": return <SurfaceR p={prim} scope={scope} style={style} />;
-    case "vectorField": return <VectorFieldR p={prim} scope={scope} style={style} />;
-    case "arrow": return <ArrowR p={prim} scope={scope} style={style} />;
-    case "polygon": return <PolygonR p={prim} scope={scope} style={style} />;
+    case "point": return <PointR p={prim} scope={scope} style={style} progress={progress} />;
+    case "points": return <PointsR p={prim} scope={scope} style={style} theme={theme} progress={progress} />;
+    case "curve": return <CurveR p={prim} scope={scope} style={style} progress={progress} />;
+    case "segment": return <SegmentR p={prim} scope={scope} style={style} progress={progress} />;
+    case "arc": return <ArcR p={prim} scope={scope} style={style} progress={progress} />;
+    case "angleMark": return <AngleMarkR p={prim} scope={scope} style={style} progress={progress} />;
+    case "surface": return <SurfaceR p={prim} scope={scope} style={style} progress={progress} />;
+    case "vectorField": return <VectorFieldR p={prim} scope={scope} style={style} progress={progress} />;
+    case "arrow": return <ArrowR p={prim} scope={scope} style={style} progress={progress} />;
+    case "polygon": return <PolygonR p={prim} scope={scope} style={style} progress={progress} />;
     case "grid": return <GridR p={prim} theme={theme} />;
     case "axes": return <AxesR p={prim} style={style} />;
-    case "text": return <TextR p={prim} scope={scope} />;
-    case "group": return <GroupR p={prim} scope={scope} style={style} theme={theme} />;
+    case "text": return <TextR p={prim} scope={scope} progress={progress} />;
+    case "group": return <GroupR p={prim} scope={scope} style={style} theme={theme} progress={progress} />;
     default: return null;
   }
 }
@@ -692,16 +974,26 @@ interface Props {
   params: Record<string, number>;
   onParam: (key: string, value: number) => void;
   theme: VizTheme;
+  /** height (px) of any panel overlaying the canvas bottom (e.g. sliders) */
+  bottomInset?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OrbitControlsImpl = any;
 
-export default function Scene3D({ spec, params, onParam, theme }: Props) {
+let specSeq = 0;
+
+export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 }: Props) {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [resetNonce, setResetNonce] = useState(0);
+
+  const steps = spec.steps ?? [];
+  const hasSteps = steps.length > 0;
+  const [stepIdx, setStepIdx] = useState(0);
+  // remount primitives per scene so entrance animations replay
+  const specKey = useMemo(() => ++specSeq, [spec]);
 
   const usesTime = useMemo(() => sceneUsesTime(spec), [spec]);
   const scope: Scope = { ...params, time };
@@ -714,6 +1006,7 @@ export default function Scene3D({ spec, params, onParam, theme }: Props) {
   // (next scene in a session), honour its designed viewpoint explicitly.
   useEffect(() => {
     initialCam.current = cam;
+    setStepIdx(0);
     const controls = controlsRef.current;
     if (controls) {
       controls.object.position.set(...cam);
@@ -738,25 +1031,6 @@ export default function Scene3D({ spec, params, onParam, theme }: Props) {
     }),
     [onParam],
   );
-
-  // Seed params for draggable points whose keys weren't declared as sliders.
-  useEffect(() => {
-    const missing: Record<string, number> = {};
-    const visit = (p: Primitive) => {
-      if (p.kind === "point" && Array.isArray(p.drag)) {
-        const pos = vec3At(p.at, { ...params, time: 0 });
-        p.drag.slice(0, 2).forEach((k, i) => {
-          if (params[k] === undefined && missing[k] === undefined) {
-            missing[k] = pos ? (i === 0 ? pos.x : pos.y) : 0;
-          }
-        });
-      }
-      if (p.kind === "group") p.children.forEach(visit);
-    };
-    spec.objects.forEach(visit);
-    Object.entries(missing).forEach(([k, v]) => onParam(k, v));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec]);
 
   const zoomBy = (factor: number) => {
     const controls = controlsRef.current;
@@ -795,7 +1069,7 @@ export default function Scene3D({ spec, params, onParam, theme }: Props) {
         <SceneCtx.Provider value={sceneCtx}>
           <Suspense fallback={null}>
             {spec.objects.map((o, i) => (
-              <PrimitiveR key={i} prim={o} scope={scope} style={style} theme={theme} />
+              <StagedPrim key={`${specKey}-${i}`} prim={o} stepIdx={stepIdx} scope={scope} style={style} theme={theme} />
             ))}
           </Suspense>
         </SceneCtx.Provider>
@@ -827,7 +1101,7 @@ export default function Scene3D({ spec, params, onParam, theme }: Props) {
       </div>
 
       {usesTime && (
-        <div className="absolute left-3 bottom-3 flex items-center gap-1.5 z-10">
+        <div className="absolute left-3 flex items-center gap-1.5 z-10" style={{ bottom: 12 + bottomInset }}>
           <button onClick={() => setPlaying((v) => !v)} title={playing ? "Pause" : "Play"} className={btnCls}>
             {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
           </button>
@@ -840,6 +1114,55 @@ export default function Scene3D({ spec, params, onParam, theme }: Props) {
           <span className="text-[10px] font-mono text-slate-400 bg-black/40 border border-white/10 rounded-md px-1.5 py-1 backdrop-blur-sm">
             t = {time.toFixed(1)}s
           </span>
+        </div>
+      )}
+
+      {/* step player — constructions & proofs advance one logical move at a time */}
+      {hasSteps && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 max-w-[78%]"
+          style={{ bottom: 12 + bottomInset }}
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
+              disabled={stepIdx === 0}
+              title="Previous step"
+              className={`${btnCls} disabled:opacity-30 disabled:pointer-events-none`}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <div className="text-center px-3 py-1.5 rounded-md bg-black/50 border border-white/10 backdrop-blur-sm min-w-[180px]">
+              <div className="text-[11px] font-semibold text-slate-100">
+                {stepIdx + 1}/{steps.length} · {steps[stepIdx]?.title}
+              </div>
+              {steps[stepIdx]?.caption && (
+                <div className="text-[10px] text-slate-400 mt-0.5">{steps[stepIdx].caption}</div>
+              )}
+            </div>
+            <button
+              onClick={() => setStepIdx((i) => Math.min(steps.length - 1, i + 1))}
+              disabled={stepIdx === steps.length - 1}
+              title="Next step"
+              className={`${btnCls} disabled:opacity-30 disabled:pointer-events-none ${
+                stepIdx < steps.length - 1 ? "border-sky-400/50" : ""
+              }`}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-1">
+            {steps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setStepIdx(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === stepIdx ? "w-4 bg-sky-400" : i < stepIdx ? "w-1.5 bg-sky-400/50" : "w-1.5 bg-white/20"
+                }`}
+                title={steps[i].title}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

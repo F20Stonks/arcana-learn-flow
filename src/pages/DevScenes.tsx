@@ -2,6 +2,7 @@ import { useState } from "react";
 import MathTheater from "@/components/workspace/MathTheater";
 import type { SceneSpec } from "@/lib/sceneSpec";
 import { sanitizeScene } from "@/lib/sceneSpec";
+import { directScene } from "@/lib/sceneDirector";
 
 /**
  * DEV-ONLY scene bench (route registered only when import.meta.env.DEV).
@@ -112,6 +113,58 @@ const SCENES: { name: string; spec: SceneSpec }[] = [
     },
   },
   {
+    // Verbatim worked example 1 from SCENE_DIRECTOR_PROMPT — if this breaks,
+    // the model is being taught to imitate broken JSON.
+    name: "Thales construction (steps + constrained drag)",
+    spec: {
+      kind: "scene",
+      title: "Why the angle in a semicircle is always right",
+      caption: "Drag P anywhere on the circle — the right angle refuses to move.",
+      why: "OP is a radius like OA and OB, so both small triangles are isosceles; their base angles must sum to 180°, forcing 90° at P.",
+      flat: true,
+      camera: [0, 0, 7.5],
+      steps: [
+        { title: "The diameter AB", caption: "Everything is built on the circle with centre O." },
+        { title: "Pick P on the circle", caption: "P is free — drag it." },
+        { title: "Draw the radius OP", caption: "The move that unlocks everything: OP = OA = OB." },
+        { title: "Two isosceles triangles", caption: "Equal radii mean equal base angles α and β." },
+        { title: "The right angle is forced", caption: "2α + 2β = 180°, so α + β = 90° — at every position of P." },
+      ],
+      objects: [
+        { kind: "arc", center: [0, 0, 0], radius: 2.5, from: 0, to: "2*pi", color: "#94a3b8" },
+        { kind: "segment", from: [-2.5, 0, 0], to: [2.5, 0, 0], color: "#94a3b8", width: 2, label: "AB" },
+        { kind: "point", at: [-2.5, 0, 0.02], color: "#94a3b8", size: 0.09, label: "A" },
+        { kind: "point", at: [2.5, 0, 0.02], color: "#94a3b8", size: 0.09, label: "B" },
+        { kind: "point", at: [0, 0, 0.02], color: "#94a3b8", size: 0.07, label: "O" },
+        { kind: "point", at: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0.03], color: "#fbbf24", size: 0.12, label: "P", drag: ["pa", "pb"], step: 2 },
+        { kind: "segment", from: [-2.5, 0, 0], to: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], color: "#38bdf8", step: 2 },
+        { kind: "segment", from: [2.5, 0, 0], to: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], color: "#38bdf8", step: 2 },
+        { kind: "segment", from: [0, 0, 0], to: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], color: "#38bdf8", dash: true, step: 3, marks: 1 },
+        { kind: "angleMark", at: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], from: [-2.5, 0, 0], to: [0, 0, 0], radius: 0.4, color: "#34d399", label: "\\alpha", step: 4 },
+        { kind: "angleMark", at: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], from: [0, 0, 0], to: [2.5, 0, 0], radius: 0.55, color: "#f472b6", label: "\\beta", step: 4 },
+        { kind: "angleMark", at: ["2.5*cos(atan2(pb,pa))", "2.5*sin(atan2(pb,pa))", 0], from: [-2.5, 0, 0], to: [2.5, 0, 0], radius: 0.75, color: "#fbbf24", right: true, step: 5 },
+        { kind: "text", at: [0, -3.3, 0], content: "\\alpha+\\beta=90^\\circ\\;\\text{always}", latex: true, color: "#fbbf24", size: 0.32, step: 5 },
+      ],
+    },
+  },
+  {
+    // Verbatim worked example 2 from SCENE_DIRECTOR_PROMPT.
+    name: "Residue lattice (bulk points + colorBy + slider)",
+    spec: {
+      kind: "scene",
+      title: "Multiples of 3 in a 12-wide grid",
+      caption: "Slide the modulus — the stripes reorganise instantly.",
+      why: "Colouring n by n mod m tiles the naturals into m arithmetic progressions; the grid width only changes how the stripes slant, never the classes.",
+      flat: true,
+      camera: [0, 0, 10],
+      sliders: [{ key: "m", label: "Modulus m", min: 2, max: 6, step: 1, default: 3 }],
+      objects: [
+        { kind: "points", count: 144, x: "mod(i,12)-5.5", y: "floor(i/12)-5.5", size: 0.16, colorBy: "mod(i,m)" },
+        { kind: "text", at: [0, -7, 0], content: "n \\equiv r \\pmod{m}", latex: true, color: "#e2e8f0", size: 0.3 },
+      ],
+    },
+  },
+  {
     name: "Sanitizer stress (bad prims, huge density)",
     spec: sanitizeScene({
       kind: "scene",
@@ -134,8 +187,37 @@ const SCENES: { name: string; spec: SceneSpec }[] = [
   },
 ];
 
+const DIRECTOR_TEST_REQUEST = `concept: the derivative as the limit of secant slopes
+show: a curve with a fixed point A and a second point B sliding toward it; the secant line visibly becoming the tangent
+manipulate: drag or slide B toward A and watch the secant slope converge to the tangent slope
+form: graph`;
+
 export default function DevScenes() {
   const [idx, setIdx] = useState(0);
+  const [directed, setDirected] = useState<SceneSpec | null>(null);
+  const [directing, setDirecting] = useState(false);
+
+  const runDirector = async () => {
+    setDirecting(true);
+    setDirected(null);
+    const scene = await directScene({
+      request: DIRECTOR_TEST_REQUEST,
+      subject: "Mathematics",
+      topic: "Differentiation",
+      subtopic: "The derivative as a limit",
+      level: "A-Level",
+    });
+    setDirecting(false);
+    if (scene) {
+      setDirected(scene);
+    } else {
+      // surfaced in the console by directScene; make it obvious on the bench too
+      alert("Director returned no usable scene — check console.");
+    }
+  };
+
+  const payload = directed ?? SCENES[idx].spec;
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto shrink-0">
@@ -143,9 +225,9 @@ export default function DevScenes() {
         {SCENES.map((s, i) => (
           <button
             key={s.name}
-            onClick={() => setIdx(i)}
+            onClick={() => { setIdx(i); setDirected(null); }}
             className={`shrink-0 px-2.5 py-1 rounded-md text-xs border transition-colors ${
-              i === idx
+              i === idx && !directed
                 ? "bg-primary/20 border-primary/60 text-foreground"
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
@@ -153,9 +235,20 @@ export default function DevScenes() {
             {i + 1}. {s.name}
           </button>
         ))}
+        <button
+          onClick={runDirector}
+          disabled={directing}
+          className={`shrink-0 px-2.5 py-1 rounded-md text-xs border transition-colors ${
+            directed
+              ? "bg-primary/20 border-primary/60 text-foreground"
+              : "border-amber-500/50 text-amber-300 hover:text-amber-100"
+          } ${directing ? "opacity-60" : ""}`}
+        >
+          {directing ? "Directing… (live AI call)" : directed ? `Directed: ${directed.title}` : "▶ Direct a scene (live AI call)"}
+        </button>
       </div>
       <div className="flex-1 min-h-0">
-        <MathTheater payload={SCENES[idx].spec} />
+        <MathTheater payload={payload} />
       </div>
     </div>
   );

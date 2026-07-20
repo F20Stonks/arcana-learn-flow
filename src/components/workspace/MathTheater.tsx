@@ -80,6 +80,28 @@ export default function MathTheater({
       ? payload.sliders ?? []
       : (payload.config as { sliders?: { key: string; default: number }[] }).sliders ?? [];
     for (const s of sliders) out[s.key] = s.default;
+    // Seed drag keys that aren't declared as sliders, so expressions that
+    // reference them evaluate from the first render. Numeric literals in
+    // `at` seed their own key; projected/expression positions seed 0
+    // (e.g. atan2(0,0)=0 puts a circle-constrained point at angle 0).
+    if (isSceneSpec(payload)) {
+      const visit = (prims: typeof payload.objects) => {
+        for (const p of prims) {
+          if (p.kind === "point" && Array.isArray(p.drag)) {
+            p.drag.slice(0, 2).forEach((key, i) => {
+              if (out[key] === undefined) {
+                const c = p.at[i];
+                // literal coords seed themselves; projected/expression coords
+                // seed 1 so idioms like atan2(b,a) start at a healthy 45°
+                out[key] = typeof c === "number" && Number.isFinite(c) ? c : 1;
+              }
+            });
+          }
+          if (p.kind === "group") visit(p.children);
+        }
+      };
+      visit(payload.objects);
+    }
     return out;
   }, [payload]);
 
@@ -231,6 +253,7 @@ export default function MathTheater({
               params={params}
               onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
               theme={vizTheme}
+              bottomInset={sliders.length > 0 ? 92 : 0}
             />
           </SceneErrorBoundary>
         ) : (

@@ -120,93 +120,26 @@ Where TYPE is one of: mcq | truefalse | match | freeform.
 - match: 2-4 options the student picks the structurally matching one.
 - freeform: use ONLY if a numeric/symbolic answer is required. Provide a single placeholder option like "Type your answer".
 
-VISUALIZATION DIRECTIVE — A BESPOKE 3D SCENE, BUT ONLY WHEN IT EARNS ITS PLACE.
-Emit a <scene>...</scene> JSON block ONLY when a fresh picture makes the CURRENT idea's "why" more
-inevitable — in practice, when the structural idea has just changed. Do NOT emit a scene every turn:
-consolidation, quizzing, and remediation turns usually need NO new scene, and the canvas keeps showing
-the last one on its own. A forced or perfunctory scene steals your attention from the actual teaching —
-when in doubt, skip it and teach. When you DO emit one, you are NOT picking from a fixed list of
-templates. You COMPOSE a scene from primitives, the same way a Cambridge supervisor would draw a
-custom picture for each concept.
+VISUALIZATION — REQUEST, DON'T AUTHOR.
+A dedicated Scene Director turns your requests into rich interactive scenes (staged constructions,
+lattices, live graphs, fields — with draggable points, sliders and step-by-step animation). You NEVER
+write scene JSON yourself — describing the pedagogical intent is your whole job, and it costs you a
+few lines at most, so your attention stays on teaching.
 
-The scene is rendered in 3D with full orbit / zoom / pan via OrbitControls.
-Set "flat": true whenever the idea lives natively in a 2D plane — a tilted 3D camera on inherently planar
-content is MISLEADING, not impressive. This includes (non-exhaustive): the complex/Argand plane, the
-Cartesian (x,y) plane, unit-circle trigonometry, 2D vector geometry, polar coordinates, any single-variable
-function graph y=f(x). When flat, label axes for what they actually are (e.g. ["Re","Im"] on the Argand
-plane, not ["x","y","z"]) and drop the unused third axis label entirely. Only use full 3D when the object
-being shown is genuinely 3-dimensional (surfaces, 3D vector fields, solids of revolution, R^3 geometry).
+When a fresh picture would make the CURRENT idea's "why" more inevitable — in practice when the
+structural idea has just changed — emit ONE compact request:
+<scene-request>
+concept: <the precise idea, e.g. "inscribed angle theorem: central angle = 2 x inscribed angle">
+show: <what must become VISIBLE for the why to feel undeniable>
+manipulate: <what the student should drag or slide, and what they should watch survive or converge>
+form: <construction | lattice | graph | transform | argand | field-3d | animated — your best guess; the Director may override>
+</scene-request>
 
-Schema (strict JSON, no comments, no trailing commas):
-<scene>
-{
-  "kind": "scene",
-  "title": "Short headline (e.g. Why every odd-degree polynomial has a real root)",
-  "caption": "One-sentence pedagogical hook.",
-  "why": "The causal chain, not a label: <assumption> forces <result>; remove <assumption> and <what breaks>.",
-  "flat": false,
-  "camera": [6,6,6],
-  "sliders": [{ "key": "r", "label": "Radius", "min": 0.1, "max": 4, "step": 0.05, "default": 2 }],
-  "objects": [ ...primitives... ]
-}
-</scene>
+Do NOT emit one every turn: consolidation, quizzing, and remediation turns usually need none — the
+canvas keeps showing the last scene on its own. A perfunctory scene steals attention from the actual
+teaching; when in doubt, skip it and teach.
 
-Available primitives (mix and match freely — most scenes use 3–8):
-
-• axes:        { "kind":"axes", "size": 4, "labels": ["Re","Im","|P|"] }
-                 — numeric tick marks are drawn automatically (prefer integer sizes); "ticks":false to disable.
-• grid:        { "kind":"grid", "plane":"xy"|"xz"|"yz", "size":5, "divisions":10 }
-• point:       { "kind":"point", "at":[x,y,z], "color":"#fbbf24", "size":0.1, "label":"P" }
-                 — add "drag":["a","b"] to make it DRAGGABLE: the student drags it and its (x,y)
-                 position is written into params a,b, usable in every other expression. Pair with
-                 "at":["a","b",0] and declare sliders for a,b (drag and slider become one control).
-                 Prefer a draggable point over a slider whenever the manipulated thing IS a position.
-• curve:       { "kind":"curve", "x":"cos(t)", "y":"sin(t)", "z":"0",
-                 "tMin":0, "tMax":"2*pi", "samples":200, "color":"#38bdf8", "width":2 }
-                 — discontinuities are handled: the plot auto-breaks at asymptotes/undefined regions,
-                 so tan, 1/x, log are safe to plot directly.
-• surface:     { "kind":"surface", "x":"u", "y":"v", "z":"sqrt(u^2+v^2)",
-                 "uMin":-3,"uMax":3,"vMin":-3,"vMax":3, "uSamples":48,"vSamples":48,
-                 "color":"#3b82f6", "opacity":0.6 }
-                 — rendered with a height-gradient colormap by default; "colormap":"none" for flat colour.
-• vectorField: { "kind":"vectorField", "fx":"-y","fy":"x","fz":"0",
-                 "bounds":[-3,3,-3,3,0,0], "density":8, "scale":0.3, "color":"#60a5fa" }
-                 — arrows have real heads and are auto-clamped to the grid; "normalize":true draws
-                 direction only (uniform length), right for direction fields.
-• arrow:       { "kind":"arrow", "from":[0,0,0], "to":[1,1,0], "color":"#fbbf24", "label":"v" }
-• polygon:     { "kind":"polygon", "vertices":[[0,0,0],[1,0,0],[0.5,1,0]], "color":"#38bdf8", "opacity":0.4 }
-• text:        { "kind":"text", "at":[0,0,2], "content":"P(z) winds twice", "color":"#e2e8f0", "size":0.3 }
-• group:       { "kind":"group", "matrix":[a,b,c,d,...16 col-major nums or exprs], "children":[...] }
-
-EXPRESSIONS:
-- All "x","y","z","fx","fy","term" fields are mathjs strings.
-- Variables in scope: any slider "key", any drag key, t (curve parameter), u/v (surface), x/y/z (vectorField), time (seconds).
-- Use mathjs functions: sin, cos, tan, exp, log, sqrt, abs, atan2, factorial, etc. pi, e are constants.
-- Scenes that reference `time` automatically get play/pause/speed/restart controls — use time for motion
-  that CARRIES MEANING (flow along a field, accumulation, rotation), not decoration.
-
-DESIGN HEURISTICS — pick the picture that makes the WHY visually inevitable:
-- Fundamental theorem of algebra → surface z=|P(x+iy)|, plus a curve of P(re^{it}) winding round the origin; slider r shrinks → curve must cross origin.
-- Circle theorems → a circle (curve) + draggable points + an arc (curve) showing the inscribed angle stays invariant.
-- Chinese remainder theorem → a grid (lattice) with two coloured rulers wrapping (curves stepping mod m, mod n) hitting every cell exactly once.
-- Riemann integral → many thin polygon "rectangles" under a curve, slider n increasing.
-- Taylor / Maclaurin → target curve + partial-sum curve, slider n controls terms.
-- Path integral / phase sums → many curves (paths) + arrows (phases) summing to a resultant arrow.
-- Gauss/Stokes → a surface with a vectorField piercing it and a boundary curve.
-- Eigenvectors → vectorField + arrow on the eigenvector direction (invariant).
-- Modular arithmetic → torus surface (parametric) + curve winding it.
-- Limits / epsilon-delta → two horizontal lines (curves) + a vertical band (polygon), sliders ε and δ.
-- Number theory / lattice points → grid + many points.
-
-RULES for <scene>:
-- Every expression MUST parse in mathjs. No JS, no comments.
-- Keep "objects" focused — 3 to 10 primitives is usually right.
-- Make the scene MANIPULABLE: a draggable point when the manipulated thing is a position, a slider
-  otherwise. The student should be able to push the idea until they feel where it gives.
-- Default to 3D ("flat": false) unless the idea is genuinely planar.
-- The <scene> block must come BEFORE the <choices> block.
-
-Order in your reply: short prose → <scene>...</scene> → <choices>...</choices>. No prose after <choices>.`;
+Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
