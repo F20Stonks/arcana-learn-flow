@@ -366,7 +366,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
 
     // Fresh learn session (not a review, not a resumed transcript) → generate the pre-flight
     // prerequisite gate so the student can flag gaps before the lesson relies on them.
-    const resumed = !!(activeSessionId && priorMsgs && priorMsgs.length);
+    const resumed = !!activeSessionId;
     if (!isReview && !resumed) {
       generateGate(sub.title, t?.title || "", trSubject);
     }

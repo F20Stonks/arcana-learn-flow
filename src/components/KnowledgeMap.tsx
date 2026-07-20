@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Tables } from "@/integrations/supabase/types";
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Maximize2, Minimize2, Check, ChevronDown, ChevronUp, Sparkles, Zap, Trophy, Flame } from "lucide-react";
 
 type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
@@ -8,31 +8,19 @@ interface KnowledgeMapProps {
   topics: Topic[];
   trackTitle?: string;
   onSubtopicClick: (subtopicId: string) => void;
+  onVerifyClick?: (subtopicId: string) => void;
 }
 
-const STATUS_COLORS: Record<string, { fill: string; ring: string }> = {
-  complete:   { fill: "hsl(142, 71%, 45%)", ring: "hsl(142, 71%, 55%)" },
-  in_progress:{ fill: "hsl(38, 92%, 50%)",  ring: "hsl(38, 92%, 60%)"  },
-  review_due: { fill: "hsl(0, 84%, 60%)",   ring: "hsl(0, 84%, 70%)"   },
-  unlocked:   { fill: "hsl(239, 84%, 67%)", ring: "hsl(239, 84%, 75%)" },
-  locked:     { fill: "hsl(0, 0%, 25%)",    ring: "hsl(0, 0%, 35%)"    },
-};
-
-const TOPIC_PALETTE = [
-  "hsl(239, 84%, 67%)", "hsl(190, 80%, 55%)", "hsl(340, 75%, 60%)",
-  "hsl(150, 60%, 50%)", "hsl(40, 90%, 60%)",  "hsl(280, 70%, 65%)",
-  "hsl(15, 85%, 60%)",  "hsl(210, 70%, 60%)",
-];
-
-export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick }: KnowledgeMapProps) {
+/**
+ * Vertical tech-tree knowledge map. Neon-mint gamified palette.
+ * - Each topic is a collapsible vertical column of subtopic nodes.
+ * - Node states: complete (solid mint + check), frontier (pulsing glow, "next up"), pending (dim).
+ * - Hover a non-complete node → "I know this" button triggers verification flow.
+ * - Fullscreen toggle. Scrolls horizontally when many topics.
+ */
+export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVerifyClick }: KnowledgeMapProps) {
   const [fullscreen, setFullscreen] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
-
-  const layout = useMemo(() => computeRadialLayout(topics), [topics]);
-
-  const reset = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -41,185 +29,243 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick }: Kn
     return () => window.removeEventListener("keydown", onKey);
   }, [fullscreen]);
 
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = -e.deltaY * 0.001;
-    setZoom((z) => Math.max(0.3, Math.min(3, z + delta)));
-  };
+  const stats = useMemo(() => {
+    const total = topics.reduce((a, t) => a + t.subtopics.length, 0);
+    const done = topics.reduce((a, t) => a + t.subtopics.filter(s => s.status === "complete").length, 0);
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    // "Frontier": first non-complete subtopic in the first topic that isn't fully done.
+    let frontierId: string | null = null;
+    for (const t of topics) {
+      const next = t.subtopics.find(s => s.status !== "complete");
+      if (next) { frontierId = next.id; break; }
+    }
+    return { total, done, pct, frontierId };
+  }, [topics]);
 
-  const onMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("[data-node]")) return;
-    dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragRef.current) return;
-    setPan({ x: dragRef.current.px + (e.clientX - dragRef.current.x), y: dragRef.current.py + (e.clientY - dragRef.current.y) });
-  };
-  const onMouseUp = () => { dragRef.current = null; };
+  const toggleCollapse = (id: string) => setCollapsed(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
 
-  const containerClass = fullscreen
-    ? "fixed inset-0 z-50 bg-background"
-    : "relative w-full h-[70vh] min-h-[500px] bg-card border border-border rounded-xl overflow-hidden";
-
-  const total = topics.reduce((a, t) => a + t.subtopics.length, 0);
-  const done = topics.reduce((a, t) => a + t.subtopics.filter(s => s.status === "complete").length, 0);
+  const shell = fullscreen
+    ? "fixed inset-0 z-50 bg-[#0a1520]"
+    : "relative w-full h-[75vh] min-h-[560px] bg-[#0a1520] border border-[#14b892]/20 rounded-2xl overflow-hidden";
 
   return (
-    <div className={containerClass}>
-      {/* Toolbar */}
-      <div className="absolute top-3 right-3 z-10 flex gap-1 bg-card/90 backdrop-blur border border-border rounded-lg p-1">
-        <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground" title="Zoom in"><ZoomIn className="h-3.5 w-3.5" /></button>
-        <button onClick={() => setZoom(z => Math.max(0.3, z - 0.2))} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground" title="Zoom out"><ZoomOut className="h-3.5 w-3.5" /></button>
-        <button onClick={reset} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground" title="Reset view"><RotateCcw className="h-3.5 w-3.5" /></button>
-        <button onClick={() => setFullscreen(f => !f)} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground" title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
-          {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        </button>
+    <div className={shell}>
+      {/* Ambient background glow */}
+      <div className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background: "radial-gradient(ellipse at 20% 0%, rgba(45,212,168,0.15), transparent 55%), radial-gradient(ellipse at 80% 100%, rgba(115,255,184,0.08), transparent 60%)",
+        }}
+      />
+      {/* Grid backdrop */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{ backgroundImage: "linear-gradient(rgba(115,255,184,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(115,255,184,0.6) 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
+
+      {/* HUD: header */}
+      <div className="relative z-10 flex items-center justify-between gap-4 px-5 pt-4 pb-3 border-b border-[#14b892]/15">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#2dd4a8] to-[#0d7a5f] flex items-center justify-center shadow-[0_0_24px_rgba(45,212,168,0.5)] shrink-0">
+            <Trophy className="h-5 w-5 text-[#0a1520]" strokeWidth={2.5} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[#5eead4]/70">Mastery Path</p>
+            <p className="text-sm font-semibold text-[#e6fffa] truncate">{trackTitle || "Learning Track"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* XP bar */}
+          <div className="hidden sm:flex items-center gap-2">
+            <Flame className="h-3.5 w-3.5 text-[#73ffb8]" />
+            <div className="w-40 h-2 rounded-full bg-[#0d1b2a] border border-[#14b892]/25 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#2dd4a8] to-[#73ffb8] transition-all duration-500 shadow-[0_0_10px_rgba(115,255,184,0.6)]" style={{ width: `${stats.pct}%` }} />
+            </div>
+            <span className="text-xs font-mono text-[#73ffb8] tabular-nums">{stats.done}<span className="text-[#5eead4]/50">/{stats.total}</span></span>
+          </div>
+          <button onClick={() => setFullscreen(f => !f)} className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#0d1b2a] border border-[#14b892]/25 text-[#5eead4] hover:text-[#73ffb8] hover:border-[#2dd4a8] transition-colors" title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
+            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {/* Stats overlay */}
-      <div className="absolute top-3 left-3 z-10 bg-card/90 backdrop-blur border border-border rounded-lg px-3 py-2">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Mastery</p>
-        <p className="text-sm font-semibold text-foreground">{done}/{total} <span className="text-xs text-muted-foreground font-normal">subtopics</span></p>
-      </div>
-
-      {/* Canvas */}
-      <div
-        className="w-full h-full cursor-grab active:cursor-grabbing"
-        onWheel={onWheel}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-      >
-        <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
-          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`} style={{ transformOrigin: "center" }}>
-            {/* Topic -> subtopic edges */}
-            {layout.edges.map((e, i) => (
-              <path
-                key={`e-${i}`}
-                d={`M ${e.x1} ${e.y1} C ${e.x1} ${(e.y1 + e.y2) / 2}, ${e.x2} ${(e.y1 + e.y2) / 2}, ${e.x2} ${e.y2}`}
-                stroke={e.color}
-                strokeWidth={2}
-                strokeOpacity={0.4}
-                fill="none"
+      {/* Tech tree canvas */}
+      <div className="relative z-10 h-[calc(100%-64px)] overflow-auto p-6">
+        {topics.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-[#5eead4]/50 text-sm">No topics yet.</div>
+        ) : (
+          <div className="flex gap-6 min-w-max pb-4">
+            {topics.map((topic, i) => (
+              <TopicColumn
+                key={topic.id}
+                topic={topic}
+                index={i}
+                collapsed={collapsed.has(topic.id)}
+                onToggleCollapse={() => toggleCollapse(topic.id)}
+                frontierId={stats.frontierId}
+                onSubtopicClick={onSubtopicClick}
+                onVerifyClick={onVerifyClick}
               />
             ))}
-
-            {/* Center -> topic edges */}
-            {layout.centerEdges.map((e, i) => (
-              <line
-                key={`ce-${i}`}
-                x1={layout.centerX} y1={layout.centerY}
-                x2={e.x} y2={e.y}
-                stroke={e.color}
-                strokeWidth={3}
-                strokeOpacity={0.5}
-              />
-            ))}
-
-            {/* Root node */}
-            <g data-node>
-              <circle cx={layout.centerX} cy={layout.centerY} r={48} fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth={2} />
-              <text x={layout.centerX} y={layout.centerY} textAnchor="middle" dominantBaseline="middle" className="fill-foreground" style={{ fontSize: 13, fontWeight: 600 }}>
-                {truncate(trackTitle || "Track", 12)}
-              </text>
-            </g>
-
-            {/* Topic nodes */}
-            {layout.topicNodes.map((t) => (
-              <g key={t.id} data-node>
-                <circle cx={t.x} cy={t.y} r={32} fill={t.color} fillOpacity={0.15} stroke={t.color} strokeWidth={2} />
-                <text x={t.x} y={t.y} textAnchor="middle" dominantBaseline="middle" className="fill-foreground" style={{ fontSize: 11, fontWeight: 600 }}>
-                  {truncate(t.title, 14)}
-                </text>
-              </g>
-            ))}
-
-            {/* Subtopic nodes */}
-            {layout.subNodes.map((n) => {
-              const c = STATUS_COLORS[n.status] || STATUS_COLORS.unlocked;
-              return (
-                <g key={n.id} data-node className="cursor-pointer" onClick={() => onSubtopicClick(n.id)}>
-                  <circle cx={n.x} cy={n.y} r={22} fill={c.fill} stroke={c.ring} strokeWidth={2} />
-                  {n.status === "complete" && (
-                    <text x={n.x} y={n.y + 1} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 14, fill: "white", fontWeight: 700 }}>✓</text>
-                  )}
-                  <text x={n.x} y={n.y + 38} textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: 10 }}>
-                    {truncate(n.title, 18)}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
+          </div>
+        )}
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-card/90 backdrop-blur border border-border rounded-full px-4 py-1.5 text-xs text-muted-foreground">
-        {[
-          { label: "Complete", color: STATUS_COLORS.complete.fill },
-          { label: "In progress", color: STATUS_COLORS.in_progress.fill },
-          { label: "To do", color: STATUS_COLORS.unlocked.fill },
-        ].map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-            {label}
-          </div>
-        ))}
-        <span className="text-muted-foreground/60 ml-2">· drag · scroll to zoom</span>
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-[#0d1b2a]/90 backdrop-blur border border-[#14b892]/25 rounded-full px-4 py-1.5 text-[11px] text-[#5eead4]/80">
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#73ffb8] shadow-[0_0_6px_#73ffb8]" />Mastered</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#fbbf24] shadow-[0_0_6px_#fbbf24] animate-pulse" />Next up</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#334155]" />Pending</span>
       </div>
     </div>
   );
 }
 
-interface SubNode { id: string; x: number; y: number; title: string; status: string }
-interface TopicNode { id: string; x: number; y: number; title: string; color: string }
-interface Edge { x1: number; y1: number; x2: number; y2: number; color: string }
-interface Layout {
-  centerX: number; centerY: number; width: number; height: number;
-  topicNodes: TopicNode[]; subNodes: SubNode[];
-  edges: Edge[]; centerEdges: { x: number; y: number; color: string }[];
+/* -------------------- Topic column -------------------- */
+
+function TopicColumn({
+  topic, index, collapsed, onToggleCollapse, frontierId, onSubtopicClick, onVerifyClick,
+}: {
+  topic: Topic; index: number; collapsed: boolean; onToggleCollapse: () => void;
+  frontierId: string | null;
+  onSubtopicClick: (id: string) => void;
+  onVerifyClick?: (id: string) => void;
+}) {
+  const done = topic.subtopics.filter(s => s.status === "complete").length;
+  const total = topic.subtopics.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const fullyDone = done === total && total > 0;
+
+  return (
+    <div className="flex flex-col items-center w-[260px] shrink-0">
+      {/* Topic header card */}
+      <button
+        onClick={onToggleCollapse}
+        className={`w-full group relative rounded-xl border px-4 py-3 text-left transition-all ${
+          fullyDone
+            ? "border-[#73ffb8]/50 bg-gradient-to-b from-[#134e3a] to-[#0d1b2a] shadow-[0_0_28px_rgba(115,255,184,0.25)]"
+            : "border-[#14b892]/30 bg-[#0d1b2a] hover:border-[#2dd4a8]/60"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[10px] font-mono text-[#5eead4]/60 tabular-nums">T{String(index + 1).padStart(2, "0")}</span>
+            {fullyDone && <Sparkles className="h-3.5 w-3.5 text-[#73ffb8]" />}
+          </div>
+          {collapsed
+            ? <ChevronDown className="h-4 w-4 text-[#5eead4]/60 group-hover:text-[#73ffb8]" />
+            : <ChevronUp className="h-4 w-4 text-[#5eead4]/60 group-hover:text-[#73ffb8]" />}
+        </div>
+        <p className="text-sm font-semibold text-[#e6fffa] leading-tight line-clamp-2">{topic.title}</p>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="flex-1 h-1 rounded-full bg-[#0a1520] overflow-hidden border border-[#14b892]/15">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#2dd4a8] to-[#73ffb8]" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-[10px] font-mono text-[#5eead4]/70 tabular-nums">{done}/{total}</span>
+        </div>
+      </button>
+
+      {/* Connector spine down */}
+      {!collapsed && total > 0 && (
+        <div className="w-px h-4 bg-gradient-to-b from-[#2dd4a8]/60 to-[#2dd4a8]/20" />
+      )}
+
+      {/* Subtopic chain */}
+      {!collapsed && (
+        <div className="flex flex-col items-center gap-0 w-full">
+          {topic.subtopics.map((sub, i) => {
+            const isComplete = sub.status === "complete";
+            const isFrontier = sub.id === frontierId;
+            return (
+              <div key={sub.id} className="flex flex-col items-center w-full">
+                <SubtopicNode
+                  sub={sub}
+                  isComplete={isComplete}
+                  isFrontier={isFrontier}
+                  onClick={() => onSubtopicClick(sub.id)}
+                  onVerify={onVerifyClick ? () => onVerifyClick(sub.id) : undefined}
+                />
+                {i < topic.subtopics.length - 1 && (
+                  <div className={`w-px h-6 ${isComplete ? "bg-[#73ffb8]/60" : "bg-[#14b892]/25"}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
-function computeRadialLayout(topics: Topic[]): Layout {
-  const W = 1400, H = 1000;
-  const cx = W / 2, cy = H / 2;
-  const topicNodes: TopicNode[] = [];
-  const subNodes: SubNode[] = [];
-  const edges: Edge[] = [];
-  const centerEdges: { x: number; y: number; color: string }[] = [];
+/* -------------------- Subtopic node -------------------- */
 
-  if (topics.length === 0) return { centerX: cx, centerY: cy, width: W, height: H, topicNodes, subNodes, edges, centerEdges };
+function SubtopicNode({
+  sub, isComplete, isFrontier, onClick, onVerify,
+}: {
+  sub: Tables<"subtopics">;
+  isComplete: boolean;
+  isFrontier: boolean;
+  onClick: () => void;
+  onVerify?: () => void;
+}) {
+  const [hover, setHover] = useState(false);
 
-  const topicRadius = 260;
-  const subRadius = 130;
+  const ringColor = isComplete ? "#73ffb8" : isFrontier ? "#fbbf24" : "#334155";
+  const fillGrad = isComplete
+    ? "linear-gradient(135deg,#2dd4a8,#134e3a)"
+    : isFrontier
+      ? "linear-gradient(135deg,#fbbf24,#78350f)"
+      : "linear-gradient(135deg,#1e293b,#0d1b2a)";
+  const glow = isComplete
+    ? "0 0 22px rgba(115,255,184,0.55)"
+    : isFrontier
+      ? "0 0 26px rgba(251,191,36,0.65)"
+      : "0 0 0 rgba(0,0,0,0)";
 
-  topics.forEach((topic, i) => {
-    const angle = (i / topics.length) * Math.PI * 2 - Math.PI / 2;
-    const tx = cx + Math.cos(angle) * topicRadius;
-    const ty = cy + Math.sin(angle) * topicRadius;
-    const color = TOPIC_PALETTE[i % TOPIC_PALETTE.length];
-    topicNodes.push({ id: topic.id, x: tx, y: ty, title: topic.title, color });
-    centerEdges.push({ x: tx, y: ty, color });
+  return (
+    <div
+      className="relative w-full flex items-center gap-3 py-1.5 px-2 rounded-lg group"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {/* Orb */}
+      <button
+        onClick={onClick}
+        className={`relative shrink-0 h-12 w-12 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${isFrontier ? "animate-pulse-slow" : ""}`}
+        style={{ background: fillGrad, boxShadow: glow, border: `2px solid ${ringColor}` }}
+        title={sub.title}
+      >
+        {isComplete ? (
+          <Check className="h-5 w-5 text-[#0a1520]" strokeWidth={3} />
+        ) : isFrontier ? (
+          <Zap className="h-5 w-5 text-[#78350f]" strokeWidth={2.5} />
+        ) : (
+          <span className="text-[11px] font-mono text-[#5eead4]/60">{sub.order_index + 1}</span>
+        )}
+        {isFrontier && (
+          <span className="absolute -top-1 -right-1 text-[8px] font-bold uppercase tracking-wider bg-[#fbbf24] text-[#78350f] px-1.5 py-0.5 rounded-sm shadow">Next</span>
+        )}
+      </button>
 
-    const subs = topic.subtopics;
-    if (subs.length === 0) return;
-
-    // Spread subtopics in an arc on the outside of the topic node
-    const arcSpan = Math.min(Math.PI * 0.9, 0.35 + subs.length * 0.2);
-    const startA = angle - arcSpan / 2;
-    subs.forEach((sub, j) => {
-      const a = subs.length === 1 ? angle : startA + (j / (subs.length - 1)) * arcSpan;
-      const sx = tx + Math.cos(a) * subRadius;
-      const sy = ty + Math.sin(a) * subRadius;
-      subNodes.push({ id: sub.id, x: sx, y: sy, title: sub.title, status: sub.status });
-      edges.push({ x1: tx, y1: ty, x2: sx, y2: sy, color });
-    });
-  });
-
-  return { centerX: cx, centerY: cy, width: W, height: H, topicNodes, subNodes, edges, centerEdges };
-}
-
-function truncate(s: string, max: number) {
-  return s.length > max ? s.slice(0, max - 1) + "…" : s;
+      {/* Label + verify */}
+      <div className="flex-1 min-w-0">
+        <button
+          onClick={onClick}
+          className={`block text-left text-xs leading-tight truncate w-full transition-colors ${
+            isComplete ? "text-[#73ffb8]" : isFrontier ? "text-[#fef3c7]" : "text-[#94a3b8] hover:text-[#e6fffa]"
+          }`}
+        >
+          {sub.title}
+        </button>
+        {!isComplete && onVerify && hover && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onVerify(); }}
+            className="mt-1 text-[10px] uppercase tracking-wider text-[#5eead4] hover:text-[#73ffb8] underline decoration-dotted underline-offset-2"
+          >
+            I already know this — verify me
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
