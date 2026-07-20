@@ -1,196 +1,262 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { MessageCircle, Boxes, GitBranch, RefreshCw, ArrowRight } from "lucide-react";
-import HeroVisual from "@/components/landing/HeroVisual";
+import { MotionConfig, motion } from "framer-motion";
 import Reveal from "@/components/landing/Reveal";
-import BrandLogo from "@/components/BrandLogo";
+import VectorField from "@/components/landing/VectorField";
+import TrackDemo from "@/components/landing/TrackDemo";
+import SessionChat from "@/components/landing/SessionChat";
+import SceneDemo from "@/components/landing/SceneDemo";
+import "@/components/landing/landing.css";
 
-const FEATURES = [
+/**
+ * Editorial landing ("Direction D"). One job: visitor → user.
+ *
+ * The page demonstrates rather than asserts — the hero shows a goal becoming
+ * a complete track (real engine output), the session excerpt shows the
+ * teaching voice. Division of labour: the hero demo owns coverage; the
+ * failure-mode cards own gaps, false mastery, and forgetting; the
+ * capabilities grid is the scannable "what does this do" for visitors who
+ * want the list, not the narrative.
+ */
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+const FAILURE_MODES = [
   {
-    icon: MessageCircle,
-    title: "Tutoring that adapts mid-conversation",
-    body: "Ask anything. Jarvis rebuilds the explanation around exactly where you're stuck — more context, a different angle, a simpler breakdown — instead of just repeating itself louder.",
+    no: "“I was missing something from two chapters ago.”",
+    yes: (
+      <>
+        A <b>readiness check</b> before every session. Gaps get built first.
+      </>
+    ),
   },
   {
-    icon: Boxes,
-    title: "Visualize it until it's obvious",
-    body: "Live, interactive math visualizations generated on demand — because some things only click once you can actually see them move.",
+    no: "“I memorised it — then it fell apart in the exam.”",
+    yes: (
+      <>
+        Nothing counts as learned until you've <b>explained the why</b>,
+        unaided, and used it on a fresh problem.
+      </>
+    ),
   },
   {
-    icon: GitBranch,
-    title: "Personalized, prerequisite-aware sequencing",
-    body: "No buffet. Your path is built from what you actually know, so you're never taught something you're not ready for — or bored re-covering what you've already mastered.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Active recall, fully automated",
-    body: "The spaced-repetition schedule that actually works, run silently in the background. You never have to decide what to review, or when.",
+    no: "“I knew it in October. By the exam it was gone.”",
+    yes: (
+      <>
+        Every idea returns on a <b>schedule timed to memory</b> — automatically,
+        before it fades.
+      </>
+    ),
   },
 ];
 
-const PROBLEMS = [
-  "Endless content, zero personalization — you're on your own to figure out what you actually need next.",
-  "Generic explanations that assume you already have the context to understand them.",
-  "No one manages the boring part — what to review, and when, before you forget it.",
+const CAPABILITIES = [
+  {
+    index: "01 — Visualize",
+    title: "See it, don't just read it",
+    body: (
+      <>
+        Live, interactive scenes render <b>on demand</b> — rotate a field,
+        watch a proof unfold, drag a parameter and see the curve move.
+        Generated for the exact idea you're on. Try one below.
+      </>
+    ),
+  },
+  {
+    index: "02 — Adapt",
+    title: "Ask anything, mid-explanation",
+    body: (
+      <>
+        Stuck? Jarvis <b>rebuilds the explanation</b> around exactly where
+        you are — a different angle, more context, a simpler case — instead
+        of repeating itself louder.
+      </>
+    ),
+  },
+  {
+    index: "03 — Sequence",
+    title: "Never taught out of order",
+    body: (
+      <>
+        Your entire path is <b>generated from what you actually know</b>.
+        Nothing assumed you haven't been taught, nothing repeated you've
+        already mastered.
+      </>
+    ),
+  },
+  {
+    index: "04 — Automate",
+    title: "Runs without you",
+    body: (
+      <>
+        Active recall is scheduled and delivered automatically, timed to
+        memory. You never decide what to review, or when —{" "}
+        <b>log in, engage, leave</b>.
+      </>
+    ),
+  },
 ];
+
+function HeroReveal({
+  delay,
+  children,
+}: {
+  delay: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay, ease: EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      {/* Nav */}
-      <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
-        <BrandLogo className="text-lg tracking-tight" />
-        <Link
-          to="/auth"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Sign in
-        </Link>
-      </header>
+    <MotionConfig reducedMotion="user">
+      <div className="ldg">
+        <VectorField className="field" />
 
-      {/* Hero */}
-      <section className="relative">
-        <div className="absolute inset-0 -z-0">
-          <HeroVisual />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/10 to-transparent" />
-        </div>
-
-        <div className="relative z-[1] px-6 md:px-12 pt-16 pb-40 md:pt-24 md:pb-56 max-w-3xl">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]"
-          >
-            Understanding isn't optional.
-            <br />
-            It's the only thing that's actually tested.
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 text-lg text-muted-foreground max-w-xl"
-          >
-            Jarvis breaks every concept down until it's impossible not to understand it —
-            then runs the entire optimization loop for you: sequencing, prerequisites, and
-            active recall. You show up. It handles the rest.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-9 flex flex-wrap items-center gap-4"
-          >
-            <Link
-              to="/auth?mode=signup"
-              className="group inline-flex items-center gap-2 h-12 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all"
-            >
-              Start learning free
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <div className="page">
+          <nav>
+            <Link to="/" className="brand">
+              Jarvis<i>.</i>
             </Link>
-            <Link
-              to="/auth"
-              className="h-12 px-6 rounded-lg border border-border flex items-center text-sm font-medium text-foreground/80 hover:text-foreground hover:border-foreground/30 transition-colors"
-            >
-              Sign in
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+            <div className="nav-right">
+              <Link to="/auth" className="nav-signin">
+                Sign in
+              </Link>
+              <Link to="/auth?mode=signup" className="nav-cta">
+                Start your track
+              </Link>
+            </div>
+          </nav>
 
-      {/* Problem */}
-      <section className="px-6 md:px-12 py-24 md:py-32">
-        <div className="max-w-3xl">
-          <Reveal>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Most learning tools give up before you do.
-            </h2>
-          </Reveal>
-          <div className="mt-10 space-y-6">
-            {PROBLEMS.map((p, i) => (
-              <Reveal key={p} delay={0.08 * (i + 1)}>
-                <div className="flex gap-4 items-start">
-                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                  <p className="text-lg text-muted-foreground">{p}</p>
+          {/* HERO — the live vector field flows beneath */}
+          <header className="hero">
+            <div>
+              <HeroReveal delay={0}>
+                <div className="eyebrow">Maths &amp; Physics · School to degree</div>
+              </HeroReveal>
+              <HeroReveal delay={0.09}>
+                <h1>
+                  Understand any maths or physics — <i>from first principles.</i>
+                </h1>
+              </HeroReveal>
+              <HeroReveal delay={0.18}>
+                <p className="lede">
+                  Name the goal. Jarvis builds the <b>complete path</b> —{" "}
+                  <b>one idea per session</b>, readiness checked before each,
+                  every result taught from the <b>why</b>.
+                </p>
+              </HeroReveal>
+              <HeroReveal delay={0.27}>
+                <div className="cta-row">
+                  <Link to="/auth?mode=signup" className="cta">
+                    Start your track →
+                  </Link>
+                  <span className="cta-sub">Free · ~30 seconds</span>
                 </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+              </HeroReveal>
+            </div>
 
-      {/* Mechanism */}
-      <section className="px-6 md:px-12 py-24 md:py-32 bg-card/40 border-y border-border">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight max-w-2xl">
-              Built to make misunderstanding impossible.
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-              Every explanation adapts in real time — broken down further, given a new
-              example, or visualized until it clicks. Nothing moves on until it's actually
-              understood.
-            </p>
-          </Reveal>
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
+            >
+              <TrackDemo />
+            </motion.div>
+          </header>
 
-          <div className="mt-14 grid sm:grid-cols-2 gap-6">
-            {FEATURES.map(({ icon: Icon, title, body }, i) => (
-              <Reveal key={title} delay={0.06 * i}>
-                <div className="h-full rounded-xl border border-border bg-card p-6 hover:border-primary/40 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <Icon className="h-5 w-5 text-primary" />
+          {/* WHY IT WORKS */}
+          <section id="why">
+            <Reveal>
+              <div className="sec-eyebrow">Why it works</div>
+              <h2>Every way learning fails — engineered out.</h2>
+            </Reveal>
+            <div className="modes">
+              {FAILURE_MODES.map((m, i) => (
+                <Reveal key={i} delay={0.09 * (i + 1)}>
+                  <div className="mode">
+                    <div className="no">{m.no}</div>
+                    <div className="yes">{m.yes}</div>
                   </div>
-                  <h3 className="font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{body}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+
+          {/* CAPABILITIES */}
+          <section id="what">
+            <Reveal>
+              <div className="sec-eyebrow">What's actually happening</div>
+              <h2>One tutor, doing four things at once.</h2>
+            </Reveal>
+            <div className="capabilities">
+              {CAPABILITIES.map((c, i) => (
+                <Reveal key={c.title} delay={0.07 * (i + 1)}>
+                  <div className="capability">
+                    <div className="cap-index">{c.index}</div>
+                    <h3>{c.title}</h3>
+                    <p>{c.body}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+
+          {/* INSIDE A SESSION */}
+          <section className="teach">
+            <Reveal>
+              <div className="sec-eyebrow">Inside a session</div>
+              <h2>It doesn't tell you the rule. It makes it inevitable.</h2>
+              <p className="teach-lede">
+                Predict → explain → apply. One idea at a time.
+              </p>
+            </Reveal>
+            <SessionChat />
+          </section>
+
+          {/* THE SCENE ENGINE — the conversation above, made touchable */}
+          <section className="scene" id="scene">
+            <Reveal>
+              <div className="sec-eyebrow">The scene engine</div>
+              <h2>Anything it can teach, it can show you.</h2>
+              <p className="teach-lede">
+                No video library — an engine. When seeing it is what makes it
+                click, Jarvis builds a live, interactive scene for the exact
+                idea in front of you — not found, <b>built</b>. This is the
+                skater from the conversation above, as physics.{" "}
+                <b>Pull the mass inward.</b>
+              </p>
+            </Reveal>
+            <Reveal delay={0.12}>
+              <SceneDemo />
+            </Reveal>
+          </section>
+
+          {/* FINAL */}
+          <section className="final" id="start">
+            <Reveal>
+              <h2>Name the goal. The path builds itself.</h2>
+              <Link to="/auth?mode=signup" className="cta">
+                Start your track →
+              </Link>
+              <span className="cta-sub">
+                Free · maths &amp; physics · school to degree
+              </span>
+            </Reveal>
+          </section>
+
+          <footer>
+            Jarvis — an instrument for mathematical &amp; physical understanding.
+          </footer>
         </div>
-      </section>
-
-      {/* Automation statement */}
-      <section className="px-6 md:px-12 py-28 md:py-40">
-        <div className="max-w-3xl mx-auto text-center">
-          <Reveal>
-            <p className="text-sm uppercase tracking-[0.2em] text-primary font-medium">
-              Zero management required
-            </p>
-            <h2 className="mt-4 text-3xl md:text-5xl font-bold tracking-tight">
-              The nutritionist for your brain.
-            </h2>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
-              You don't need to understand the neuroscience of memory or design your own
-              review schedule — that's the job it does for you. Log in, engage, leave. The
-              optimization runs whether you think about it or not.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="px-6 md:px-12 py-24 md:py-32 border-t border-border">
-        <Reveal className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Stop managing your own education.
-          </h2>
-          <Link
-            to="/auth?mode=signup"
-            className="group mt-8 inline-flex items-center gap-2 h-12 px-7 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all"
-          >
-            Start learning free
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </Reveal>
-      </section>
-
-      <footer className="px-6 md:px-12 py-10 text-sm text-muted-foreground border-t border-border">
-        Jarvis
-      </footer>
-    </div>
+      </div>
+    </MotionConfig>
   );
 }
