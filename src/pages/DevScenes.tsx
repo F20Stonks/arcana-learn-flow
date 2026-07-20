@@ -196,10 +196,12 @@ export default function DevScenes() {
   const [idx, setIdx] = useState(0);
   const [directed, setDirected] = useState<SceneSpec | null>(null);
   const [directing, setDirecting] = useState(false);
+  const [directErr, setDirectErr] = useState(false);
 
   const runDirector = async () => {
     setDirecting(true);
     setDirected(null);
+    setDirectErr(false);
     const scene = await directScene({
       request: DIRECTOR_TEST_REQUEST,
       subject: "Mathematics",
@@ -208,12 +210,8 @@ export default function DevScenes() {
       level: "A-Level",
     });
     setDirecting(false);
-    if (scene) {
-      setDirected(scene);
-    } else {
-      // surfaced in the console by directScene; make it obvious on the bench too
-      alert("Director returned no usable scene — check console.");
-    }
+    if (scene) setDirected(scene);
+    else setDirectErr(true); // detail is in the console
   };
 
   const payload = directed ?? SCENES[idx].spec;
@@ -244,7 +242,7 @@ export default function DevScenes() {
               : "border-amber-500/50 text-amber-300 hover:text-amber-100"
           } ${directing ? "opacity-60" : ""}`}
         >
-          {directing ? "Directing… (live AI call)" : directed ? `Directed: ${directed.title}` : "▶ Direct a scene (live AI call)"}
+          {directing ? "Directing… (live AI call)" : directed ? `Directed: ${directed.title}` : directErr ? "✕ No scene — retry" : "▶ Direct a scene (live AI call)"}
         </button>
       </div>
       <div className="flex-1 min-h-0">

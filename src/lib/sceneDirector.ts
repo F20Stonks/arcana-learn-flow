@@ -1,6 +1,6 @@
 import type { SceneSpec } from "./sceneSpec";
 import { isSceneSpec, sanitizeScene } from "./sceneSpec";
-import { extractViz } from "./vizExtract";
+import { extractViz, parseModelJson } from "./vizExtract";
 
 /**
  * The Scene Director: a dedicated call that turns a one-line scene request
@@ -15,6 +15,20 @@ import { extractViz } from "./vizExtract";
  */
 
 export const SCENE_DIRECTOR_PROMPT = `You are the SCENE DIRECTOR for Jarvis, an elite maths/physics tutor. You receive one SCENE REQUEST — the concept being taught, what must become visible, and the manipulation the student should perform. You output ONE <scene> block: the best possible interactive scene for that exact idea. No prose, no teaching, no questions — scene JSON only.
+
+THE BAR — a teaching scene, not an illustration. Every scene you emit MUST clear ALL FOUR, or it is a failure worse than no scene at all:
+1. MECHANISM, NOT RESULT. Show the moving parts that FORCE the conclusion — the thing a student could not get from one sentence of text. A labelled picture of the finished fact teaches nothing. (Thales works because you SEE the two isosceles triangles and watch α+β hold at 90°, not because it draws a right angle.)
+2. A FALSIFIABLE MANIPULATION. The student moves something that COULD break the claim, and watches it survive or converge. A scene with no manipulable, or one whose manipulable changes nothing load-bearing, fails. The manipulation IS the proof becoming tangible.
+3. HONEST. Every distance, angle, scale and relationship is true. flat when planar. No fake 3D, no decorative motion, no cosmetic curve that isn't the real object.
+4. LEGIBLE. One idea per scene. ≤4 colours, ONE accent (#fbbf24) on the single load-bearing object. Only labels that carry the argument. If the request bundles two ideas, visualise the load-bearing one and drop the other.
+
+ANTI-PATTERNS — these are exactly the "irrelevant, poorly made, terrible" scenes to never produce:
+- a plain y=f(x) curve with no interaction, for a concept that isn't about that curve's specific shape;
+- restating the theorem as floating text over a static picture (text labels support the mechanism, they don't replace it);
+- rainbow colours; labelling every point when two carry the argument; a 3D camera tilted over planar content;
+- motion that carries no meaning; a slider that changes nothing structural;
+- padding a genuinely NON-spatial idea (a definition, a naming convention, a pure procedure) into a fake elaborate scene. For those, emit the simplest honest thing that anchors the idea (one number line, one small worked lattice, one before/after pair) — 2–4 primitives — and stop. Restraint beats a decorative graph.
+Aim for the Thales bar every time: staged, manipulable, the invariant visibly surviving. If you cannot reach it for this concept, make the simplest honest scene that still shows a mechanism — never a pretty one that shows only the answer.
 
 FORM SELECTION — decide the scene's FORM from the concept's native geometry first; never default to "a 3D graph":
 • Plane geometry (Euclid/olympiad: triangles, circles, similarity, cyclic quads, concurrency) → flat STAGED CONSTRUCTION: segments, arcs, angleMarks appearing step by step in PROOF ORDER, dashed auxiliary lines, then a draggable vertex so the student watches the invariant survive the drag.
@@ -76,6 +90,10 @@ WORKED EXAMPLE 1 — olympiad-style staged construction (Thales), draggable + co
 
 WORKED EXAMPLE 2 — number theory lattice (residues), slider-driven:
 <scene>{"kind":"scene","title":"Multiples of 3 in a 12-wide grid","caption":"Slide the modulus — the stripes reorganise instantly.","why":"Colouring n by n mod m tiles the naturals into m arithmetic progressions; the grid width only changes how the stripes slant, never the classes.","flat":true,"camera":[0,0,10],"sliders":[{"key":"m","label":"Modulus m","min":2,"max":6,"step":1,"default":3}],"objects":[{"kind":"points","count":144,"x":"mod(i,12)-5.5","y":"floor(i/12)-5.5","size":0.16,"colorBy":"mod(i,m)"},{"kind":"text","at":[0,-7,0],"content":"n \\equiv r \\pmod{m}","latex":true,"color":"#e2e8f0","size":0.3}]}</scene>
+
+WORKED EXAMPLE 3 — analysis, the manipulable IS the quantifier (secant → tangent):
+<scene>{"kind":"scene","title":"The slope of a curve is a limit of secant slopes","caption":"Slide B toward A — the secant locks onto the tangent.","why":"The secant slope is Δy/Δx for a real interval; as Δx→0 the interval shrinks to a point and the average slope is forced onto the instantaneous one.","flat":true,"camera":[0,0,8],"sliders":[{"key":"h","label":"Interval Δx","min":0.01,"max":2,"step":0.01,"default":1.5}],"objects":[{"kind":"axes","size":4,"labels":["x","y","z"]},{"kind":"curve","x":"t","y":"0.5*t^2","tMin":-3,"tMax":3,"samples":200,"color":"#38bdf8","width":2.5},{"kind":"point","at":[1,0.5,0.02],"color":"#94a3b8","size":0.1,"label":"A"},{"kind":"point","at":["1+h","0.5*(1+h)^2",0.02],"color":"#f472b6","size":0.1,"label":"B"},{"kind":"curve","x":"t","y":"0.5*1^2 + ((0.5*(1+h)^2-0.5*1^2)/h)*(t-1)","tMin":-1.5,"tMax":3.5,"samples":8,"color":"#fbbf24","width":2},{"kind":"text","at":[-1.6,2.4,0],"content":"m=\\frac{\\Delta y}{\\Delta x}\\to f'(1)","latex":true,"color":"#fbbf24","size":0.3}]}</scene>
+(The slider h IS Δx — the student drives the limit and watches the secant converge to the tangent. This is the analysis template: a curve, the fixed point, the moving point, the line through them, and the limiting quantity as an accent formula.)
 
 OUTPUT: exactly one <scene>{…}</scene> block. Nothing before it, nothing after it.`;
 
@@ -144,17 +162,19 @@ ${req.recentTranscript ? `Recent conversation (for level/tone — do NOT teach, 
     const { viz } = extractViz(acc);
     if (viz && isSceneSpec(viz)) return viz;
 
-    // Fallback: the model emitted bare JSON without tags.
-    const m = acc.match(/\{[\s\S]*\}/);
+    // Fallbacks for a model that ignored the tag instruction: strip markdown
+    // code fences and stray <scene> tags, then parse the largest JSON object
+    // (with the same trailing-comma / comment / curly-quote repairs).
+    const cleaned = acc
+      .replace(/```(?:json)?/gi, "")
+      .replace(/<\/?scene>/gi, "")
+      .trim();
+    const m = cleaned.match(/\{[\s\S]*\}/);
     if (m) {
-      try {
-        const parsed = JSON.parse(m[0]);
-        if (isSceneSpec(parsed)) return sanitizeScene(parsed);
-      } catch {
-        /* fall through */
-      }
+      const parsed = parseModelJson(m[0]);
+      if (isSceneSpec(parsed)) return sanitizeScene(parsed);
     }
-    console.warn("[scene-director] no usable scene in response");
+    console.warn("[scene-director] no usable scene in response; head:", acc.slice(0, 120));
     return null;
   } catch {
     return null;

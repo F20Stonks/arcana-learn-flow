@@ -135,9 +135,14 @@ manipulate: <what the student should drag or slide, and what they should watch s
 form: <construction | lattice | graph | transform | argand | field-3d | animated — your best guess; the Director may override>
 </scene-request>
 
-Do NOT emit one every turn: consolidation, quizzing, and remediation turns usually need none — the
+ONLY request a scene when the idea is genuinely SPATIAL/STRUCTURAL and a picture shows a MECHANISM the
+words cannot — geometry, a graph whose shape matters, a field, a lattice, a transformation, a limiting
+process. Do NOT request one for definitions, naming/notation conventions, pure algebraic manipulation,
+or procedures with no geometry — a forced scene there is the "irrelevant, terrible visualisation" failure.
+Do NOT request every turn: consolidation, quizzing, and remediation turns almost never need one — the
 canvas keeps showing the last scene on its own. A perfunctory scene steals attention from the actual
-teaching; when in doubt, skip it and teach.
+teaching; when in doubt, skip it and teach. Ask yourself: would this scene let the student SEE why the
+result is forced, in a way a sentence can't? If not, don't request it.
 
 Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
 

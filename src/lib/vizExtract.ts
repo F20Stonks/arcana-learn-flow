@@ -15,7 +15,7 @@ export interface VizExtractResult {
  * commas, // and block comments, and typographic quotes. Repairs are only
  * attempted after a strict parse fails, so well-formed JSON is untouched.
  */
-function parseModelJson(raw: string): unknown | null {
+export function parseModelJson(raw: string): unknown | null {
   try {
     return JSON.parse(raw);
   } catch {

@@ -163,6 +163,131 @@ interface SceneCtxType {
 
 const SceneCtx = createContext<SceneCtxType>({ setParam: () => {}, setDragging: () => {} });
 
+/* ---------------- label de-overlap manager ----------------
+ *
+ * Every text label (point names, segment/arrow labels, angle marks, LaTeX
+ * annotations) registers its world anchor and DOM element here. Each frame
+ * the manager projects all anchors to screen space and nudges colliding
+ * labels apart vertically — higher-priority labels (deliberate formulas)
+ * hold their place, incidental point names move around them. This is what
+ * stops "O" and "B" from mashing into "OB".
+ */
+
+interface LabelReg {
+  worldRef: { current: THREE.Vector3 };
+  elRef: { current: HTMLDivElement | null };
+  baseX: number;
+  baseY: number;
+  w: number;
+  h: number;
+  priority: number;
+}
+
+interface LabelApi {
+  add: (r: LabelReg) => void;
+  remove: (r: LabelReg) => void;
+}
+
+const LabelMgrCtx = createContext<LabelApi | null>(null);
+
+function LabelLayer({ children }: { children: React.ReactNode }) {
+  const regs = useRef<Set<LabelReg>>(new Set());
+  const api = useMemo<LabelApi>(
+    () => ({ add: (r) => regs.current.add(r), remove: (r) => regs.current.delete(r) }),
+    [],
+  );
+  const proj = useRef(new THREE.Vector3());
+
+  useFrame((state) => {
+    if (regs.current.size === 0) return;
+    const cam = state.camera;
+    const W = state.size.width;
+    const H = state.size.height;
+    const items: { r: LabelReg; x: number; y0: number }[] = [];
+    regs.current.forEach((r) => {
+      if (!r.elRef.current) return;
+      proj.current.copy(r.worldRef.current).project(cam);
+      if (proj.current.z > 1) return; // behind the camera
+      const x = (proj.current.x * 0.5 + 0.5) * W + r.baseX;
+      const y0 = (-proj.current.y * 0.5 + 0.5) * H + r.baseY;
+      items.push({ r, x, y0 });
+    });
+    // deliberate labels first (they anchor), then top-to-bottom
+    items.sort((a, b) => b.r.priority - a.r.priority || a.y0 - b.y0);
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    for (const it of items) {
+      let y = it.y0;
+      let guard = 0;
+      let moved = true;
+      while (moved && guard++ < 24) {
+        moved = false;
+        for (const p of placed) {
+          if (Math.abs(it.x - p.x) < (it.r.w + p.w) / 2 && Math.abs(y - p.y) < (it.r.h + p.h) / 2) {
+            y = p.y + (it.r.h + p.h) / 2 + 2;
+            moved = true;
+          }
+        }
+      }
+      placed.push({ x: it.x, y, w: it.r.w, h: it.r.h });
+      const el = it.r.elRef.current;
+      if (el) {
+        const want = `translate(${it.r.baseX}px, ${(it.r.baseY + (y - it.y0)).toFixed(1)}px)`;
+        if (el.style.transform !== want) el.style.transform = want;
+      }
+    }
+  });
+
+  return <LabelMgrCtx.Provider value={api}>{children}</LabelMgrCtx.Provider>;
+}
+
+function SceneLabel({
+  world,
+  children,
+  baseX = 0,
+  baseY = 0,
+  priority = 0,
+  approxChars = 3,
+  fontPx = 11,
+  style,
+}: {
+  world: THREE.Vector3;
+  children: React.ReactNode;
+  baseX?: number;
+  baseY?: number;
+  priority?: number;
+  approxChars?: number;
+  fontPx?: number;
+  style?: React.CSSProperties;
+}) {
+  const mgr = useContext(LabelMgrCtx);
+  const worldRef = useRef(world);
+  worldRef.current = world;
+  const elRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!mgr) return;
+    const reg: LabelReg = {
+      worldRef,
+      elRef,
+      baseX,
+      baseY,
+      w: approxChars * fontPx * 0.62 + 8,
+      h: fontPx * 1.4,
+      priority,
+    };
+    mgr.add(reg);
+    return () => mgr.remove(reg);
+  }, [mgr, baseX, baseY, priority, approxChars, fontPx]);
+
+  return (
+    <Html position={world} center distanceFactor={10} style={{ pointerEvents: "none" }}>
+      <div ref={elRef} style={{ transform: `translate(${baseX}px, ${baseY}px)`, willChange: "transform", ...style }}>
+        {children}
+      </div>
+    </Html>
+  );
+}
+
 /* ---------------- staging: step visibility + entrance animation ----------------
  *
  * A primitive tagged `step: n` renders from the n-th step onward. Whenever a
@@ -231,6 +356,7 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
   const size = (p.size ?? 0.08) * (draggable && hover ? 1.35 : 1);
 
   return (
+    <>
     <group position={pos} scale={Math.max(progress, 0.001)}>
       <mesh
         onPointerOver={draggable ? (e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "grab"; } : undefined}
@@ -282,12 +408,14 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
           <meshBasicMaterial color={color} transparent opacity={hover ? 0.9 : 0.45} side={THREE.DoubleSide} />
         </mesh>
       )}
-      {p.label && (
-        <Html distanceFactor={10} style={{ pointerEvents: "none" }}>
-          <span className="text-[10px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
-        </Html>
-      )}
     </group>
+    {/* label lives at scene root (absolute world pos) so it isn't double-translated by the group */}
+    {p.label && (
+      <SceneLabel world={pos} baseX={11} baseY={-11} priority={0} approxChars={p.label.length} fontPx={11}>
+        <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+      </SceneLabel>
+    )}
+    </>
   );
 }
 
@@ -397,9 +525,9 @@ function SegmentR({ p, scope, style, progress }: { p: SegmentPrim; scope: Scope;
         <Line key={i} points={m} color={color} lineWidth={1.5} />
       ))}
       {p.label && (
-        <Html position={from.clone().add(to).multiplyScalar(0.5)} distanceFactor={10} style={{ pointerEvents: "none" }}>
-          <span className="text-[10px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
-        </Html>
+        <SceneLabel world={from.clone().add(to).multiplyScalar(0.5)} baseX={0} baseY={-11} priority={2} approxChars={p.label.length} fontPx={11}>
+          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+        </SceneLabel>
       )}
     </>
   );
@@ -456,22 +584,20 @@ function AngleMarkR({ p, scope, style, progress }: { p: AngleMarkPrim; scope: Sc
     }
   }
 
+  const labelPos = new THREE.Vector3(at.x + r * 1.75 * Math.cos(mid), at.y + r * 1.75 * Math.sin(mid), at.z);
   return (
-    <group scale={p.right ? Math.max(progress, 0.001) : 1}>
-      <Line points={markPts} color={color} lineWidth={1.8} />
+    <>
+      <group scale={p.right ? Math.max(progress, 0.001) : 1}>
+        <Line points={markPts} color={color} lineWidth={1.8} />
+      </group>
       {p.label && progress > 0.5 && (
-        <Html
-          position={[at.x + r * 1.75 * Math.cos(mid), at.y + r * 1.75 * Math.sin(mid), at.z]}
-          center
-          distanceFactor={10}
-          style={{ pointerEvents: "none" }}
-        >
+        <SceneLabel world={labelPos} priority={6} approxChars={p.label.length + 1} fontPx={13}>
           <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>
             <MathRenderer content={`$${p.label}$`} />
           </span>
-        </Html>
+        </SceneLabel>
       )}
-    </group>
+    </>
   );
 }
 
@@ -737,9 +863,9 @@ function ArrowR({ p, scope, style, progress }: { p: ArrowPrim; scope: Scope; sty
     <>
       <arrowHelper args={[dir.clone().normalize(), from, length, new THREE.Color(color).getHex(), Math.min(0.3, length * 0.2), Math.min(0.15, length * 0.1)]} />
       {p.label && (
-        <Html position={to} distanceFactor={10} style={{ pointerEvents: "none" }}>
-          <span className="text-[10px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
-        </Html>
+        <SceneLabel world={to} baseX={11} baseY={-11} priority={2} approxChars={p.label.length} fontPx={11}>
+          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+        </SceneLabel>
       )}
     </>
   );
@@ -863,14 +989,14 @@ function TextR({ p, scope, progress }: { p: TextPrim; scope: Scope; progress: nu
   if (!pos) return null;
   if (p.latex) {
     return (
-      <Html position={pos} center distanceFactor={10} style={{ pointerEvents: "none", opacity: progress }}>
+      <SceneLabel world={pos} priority={10} approxChars={p.content.length} fontPx={(p.size ?? 0.3) * 46} style={{ opacity: progress }}>
         <span
           className="whitespace-nowrap select-none"
           style={{ color: p.color ?? "#e2e8f0", fontSize: `${(p.size ?? 0.3) * 46}px` }}
         >
           <MathRenderer content={`$${p.content}$`} />
         </span>
-      </Html>
+      </SceneLabel>
     );
   }
   return (
@@ -1067,11 +1193,13 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
         <directionalLight position={[8, 12, 8]} intensity={0.8} />
         <directionalLight position={[-6, -4, -6]} intensity={0.3} color="#60a5fa" />
         <SceneCtx.Provider value={sceneCtx}>
-          <Suspense fallback={null}>
-            {spec.objects.map((o, i) => (
-              <StagedPrim key={`${specKey}-${i}`} prim={o} stepIdx={stepIdx} scope={scope} style={style} theme={theme} />
-            ))}
-          </Suspense>
+          <LabelLayer>
+            <Suspense fallback={null}>
+              {spec.objects.map((o, i) => (
+                <StagedPrim key={`${specKey}-${i}`} prim={o} stepIdx={stepIdx} scope={scope} style={style} theme={theme} />
+              ))}
+            </Suspense>
+          </LabelLayer>
         </SceneCtx.Provider>
         <OrbitControls
           ref={controlsRef}
