@@ -15,6 +15,7 @@ import TrackPapers from "./pages/TrackPapers";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import DevScenes from "./pages/DevScenes";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route path="/track/:trackId/papers" element={<DashboardGuard><TrackPapers /></DashboardGuard>} />
       <Route path="/session/:subtopicId" element={<DashboardGuard><SessionPage /></DashboardGuard>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

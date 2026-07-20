@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2 } from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
+import SceneErrorBoundary from "./SceneErrorBoundary";
 import MathRenderer from "@/components/MathRenderer";
 import { mathTheme, MathMode } from "@/lib/mathTheme";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,6 @@ export default function MathTheater({
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
   const [tab, setTab] = useState<"theater" | "library">("theater");
-  const [time, setTime] = useState(0);
   const [vizTheme, setVizTheme] = useState(loadVizTheme);
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -225,7 +225,14 @@ export default function MathTheater({
       {/* Theater body */}
       <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
         {isScene ? (
-          <Scene3D spec={payload as SceneSpec} params={params} time={time} onTime={setTime} theme={vizTheme} />
+          <SceneErrorBoundary resetKey={payload}>
+            <Scene3D
+              spec={payload as SceneSpec}
+              params={params}
+              onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
+              theme={vizTheme}
+            />
+          </SceneErrorBoundary>
         ) : (
           <SimulationFactory payload={payload as SimulationPayload} params={params} />
         )}
