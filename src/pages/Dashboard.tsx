@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 import BrandLogo from "@/components/BrandLogo";
 import HubSidebar from "@/components/HubSidebar";
 import GeneralChat from "@/components/GeneralChat";
+import NextActionCard from "@/components/NextActionCard";
+import { SubtopicLite, TrackLite } from "@/lib/nextAction";
 import { SubjectIcon } from "@/lib/subjectIcons";
 import {
   AlertDialog,
@@ -21,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number; archived_at?: string | null };
+type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number; subtopicsDetail: SubtopicLite[]; archived_at?: string | null };
 
 export default function Dashboard() {
   const { user, profile, signOut } = useAuth();
@@ -51,16 +53,25 @@ export default function Dashboard() {
 
     const enriched: Track[] = [];
     for (const t of rawTracks) {
-      const { data: topics } = await supabase.from("topics").select("id").eq("track_id", t.id);
+      const { data: topics } = await supabase.from("topics").select("id, order_index").eq("track_id", t.id);
       const topicIds = topics?.map((tp) => tp.id) || [];
+      const topicOrderById = new Map((topics || []).map((tp) => [tp.id, tp.order_index]));
       let subtopicCount = 0;
       let completedCount = 0;
+      let subtopicsDetail: SubtopicLite[] = [];
       if (topicIds.length > 0) {
-        const { data: subs } = await supabase.from("subtopics").select("id, status").in("topic_id", topicIds);
+        const { data: subs } = await supabase.from("subtopics").select("id, title, status, order_index, topic_id").in("topic_id", topicIds);
         subtopicCount = subs?.length || 0;
         completedCount = subs?.filter((s) => s.status === "complete").length || 0;
+        subtopicsDetail = (subs || []).map((s) => ({
+          id: s.id,
+          title: s.title,
+          status: s.status,
+          topicOrder: topicOrderById.get(s.topic_id) ?? 0,
+          order: s.order_index,
+        }));
       }
-      enriched.push({ ...t, topicCount: topicIds.length, subtopicCount, completedCount });
+      enriched.push({ ...t, topicCount: topicIds.length, subtopicCount, completedCount, subtopicsDetail });
     }
     setTracks(enriched);
     setLoading(false);
@@ -70,6 +81,22 @@ export default function Dashboard() {
 
   const activeTracks = tracks.filter((t) => !t.archived_at);
   const archivedTracks = tracks.filter((t) => t.archived_at);
+
+  // Stable inputs for the "what to do next" card — memoized so its data
+  // effect doesn't re-run on unrelated re-renders (chat toggle, dialogs...).
+  const nextActionTracks = useMemo<TrackLite[]>(
+    () =>
+      tracks
+        .filter((t) => !t.archived_at)
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          examDate: t.exam_date,
+          createdAt: t.created_at,
+          subtopics: t.subtopicsDetail,
+        })),
+    [tracks],
+  );
 
   // Soft archive/restore. Reversible, so no confirm dialog — just an optimistic update + an undo toast.
   const setArchived = async (track: Track, archived: boolean) => {
@@ -121,6 +148,9 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* What to do next — deterministic recommendation (renders nothing when there's nothing to say) */}
+        <NextActionCard tracks={nextActionTracks} />
+
         {/* Hero */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h2 className="text-xl font-semibold text-foreground mb-1">Welcome back, {profile?.display_name || "learner"}</h2>
