@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# scene coverage harness run artifacts
+scripts/scene-harness/results/

@@ -165,6 +165,74 @@ const SCENES: { name: string; spec: SceneSpec }[] = [
     },
   },
   {
+    name: "Riemann staircase (bars + live count + regionFill + readout)",
+    spec: {
+      kind: "scene",
+      title: "Area is the limit of a rectangle staircase",
+      caption: "Slide n up — the staircase collapses onto the true area.",
+      why: "Each rectangle is f(x_i)·Δx; as n→∞ the staircase error vanishes and the sum is forced onto 8/3.",
+      flat: true,
+      camera: [0, 0, 7],
+      sliders: [{ key: "n", label: "Rectangles n", min: 1, max: 60, step: 1, default: 6 }],
+      objects: [
+        { kind: "axes", size: 3, labels: ["x", "y", "z"] },
+        { kind: "regionFill", x: "t", yTop: "0.5*t^2", yBottom: "0", tMin: 0, tMax: 2, samples: 80, color: "#334155", opacity: 0.5 },
+        { kind: "bars", count: "n", x: "(i+0.5)*(2/n)", height: "0.5*((i+0.5)*(2/n))^2", base: 0, color: "#38bdf8" },
+        { kind: "curve", x: "t", y: "0.5*t^2", tMin: 0, tMax: 2, samples: 120, color: "#fbbf24", width: 2.5 },
+        { kind: "text", at: [-0.9, 1.9, 0], content: "\\sum f(x_i)\\,\\Delta x \\to \\tfrac{8}{3}", latex: true, color: "#fbbf24", size: 0.28 },
+      ],
+    },
+  },
+  {
+    name: "Binomial distribution (bars, dynamic n & p)",
+    spec: {
+      kind: "scene",
+      title: "The shape of B(n, p)",
+      caption: "Slide n and p — the distribution slides and reshapes; peak near np.",
+      why: "Each bar is P(X=k)=C(n,k)p^k(1-p)^(n-k); the mass concentrates near the mean np.",
+      flat: true,
+      camera: [0, 0, 9],
+      sliders: [
+        { key: "n", label: "Trials n", min: 1, max: 20, step: 1, default: 10 },
+        { key: "p", label: "P(success)", min: 0.05, max: 0.95, step: 0.05, default: 0.5 },
+      ],
+      objects: [
+        { kind: "axes", size: 5, labels: ["k", "P", "z"] },
+        {
+          kind: "bars",
+          count: "n+1",
+          x: "i-n/2",
+          height: "6*combinations(n,i)*p^i*(1-p)^(n-i)",
+          base: 0,
+          colorBy: "abs(i-round(n*p))<0.5?1:0",
+        },
+        { kind: "text", at: [0, -1, 0], content: "\\mu=np=${n*p}", latex: true, color: "#fbbf24", size: 0.3 },
+      ],
+    },
+  },
+  {
+    name: "Probability as area (regionFill, draggable bounds)",
+    spec: {
+      kind: "scene",
+      title: "P(a < X < b) is area under the density",
+      caption: "Drag a and b — the shaded area IS the probability.",
+      why: "For a continuous variable probability is area under the pdf; the whole curve integrates to 1.",
+      flat: true,
+      camera: [0, 0, 7],
+      sliders: [
+        { key: "a", label: "a", min: -3, max: 0, step: 0.05, default: -1 },
+        { key: "b", label: "b", min: 0, max: 3, step: 0.05, default: 1 },
+      ],
+      objects: [
+        { kind: "axes", size: 3, labels: ["x", "y", "z"] },
+        { kind: "curve", x: "t", y: "exp(-t^2/2)/sqrt(2*pi)", tMin: -3.2, tMax: 3.2, samples: 200, color: "#38bdf8", width: 2.5 },
+        { kind: "regionFill", x: "t", yTop: "exp(-t^2/2)/sqrt(2*pi)", yBottom: "0", tMin: "a", tMax: "b", samples: 80, color: "#fbbf24", opacity: 0.4 },
+        { kind: "point", at: ["a", 0, 0.02], color: "#f472b6", size: 0.1, label: "a", drag: ["a", "ay"] },
+        { kind: "point", at: ["b", 0, 0.02], color: "#f472b6", size: 0.1, label: "b", drag: ["b", "by"] },
+      ],
+    },
+  },
+  {
     name: "Sanitizer stress (bad prims, huge density)",
     spec: sanitizeScene({
       kind: "scene",

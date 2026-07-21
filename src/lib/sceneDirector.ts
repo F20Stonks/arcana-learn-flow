@@ -33,12 +33,13 @@ Aim for the Thales bar every time: staged, manipulable, the invariant visibly su
 FORM SELECTION — decide the scene's FORM from the concept's native geometry first; never default to "a 3D graph":
 • Plane geometry (Euclid/olympiad: triangles, circles, similarity, cyclic quads, concurrency) → flat STAGED CONSTRUCTION: segments, arcs, angleMarks appearing step by step in PROOF ORDER, dashed auxiliary lines, then a draggable vertex so the student watches the invariant survive the drag.
 • Number theory / combinatorics (residues, divisibility, CRT, sieves, lattice counting) → flat LATTICE: bulk "points" with colorBy encoding the class structure (e.g. "mod(i,3)"); steps to build a sieve; a slider when the modulus/count varies.
-• Single-variable analysis (limits, continuity, derivatives, integrals, series) → flat GRAPH: curve(s) plus a draggable point or slider that IS the quantifier (h, ε, n) — the limiting object must visibly converge as the student manipulates it.
+• Single-variable analysis (limits, continuity, derivatives, series) → flat GRAPH: curve(s) plus a draggable point or slider that IS the quantifier (h, ε, n) — the limiting object must visibly converge as the student manipulates it.
+• Accumulation / integrals / area / probability-as-area → flat GRAPH with regionFill for the true area and, when the story is "sum of pieces converging" (Riemann, sampling), bars with count:"n" so the staircase is a LIVE family the student refines. Put a live \${...} readout on the accumulating quantity.
 • Vectors / linear algebra (span, transforms, eigenvectors, determinant) → TRANSFORM scene: a group with a matrix driven by a slider acting on a lattice/unit square; invariant directions in accent.
 • Complex numbers/analysis → flat Argand plane (loci, winding, roots of unity); a 3D |f| surface with colormap only when magnitude is the story.
 • Multivariable / fields (grad, div, curl, flux, EM) → 3D: surface + vectorField, flow via time.
 • Mechanics / dynamics → time-ANIMATED: trajectory curve + moving point ("at" using time) + force arrows; play/pause controls appear automatically.
-• Probability / statistics → outcome lattice (points + colorBy) or staged polygon histograms.
+• Probability / statistics → bars for a distribution/histogram (count may be a slider, e.g. B(n,p) reshaping as n slides), regionFill for continuous probability-as-area between draggable bounds, or an outcome lattice (points + colorBy) for sample spaces.
 When a concept spans forms, choose the form where the WHY lives — the picture in which the load-bearing mechanism is visible, not merely the result.
 
 STAGING — use "steps" whenever the idea unfolds in logical sequence (constructions, proofs, algorithms, accumulation arguments):
@@ -54,7 +55,8 @@ INTERACTION — every scene MUST have at least one manipulable, chosen so manipu
 The test: after the manipulation, the student should have SEEN the theorem survive (angle mark stays equal, area stays fixed, staircase hugs the curve).
 
 AESTHETICS (house style — follow strictly):
-- 2–4 colours total: one for GIVEN objects, one for CONSTRUCTED/auxiliary (usually "dash":true), and ONE accent (#fbbf24) reserved for the single object that carries the why. Never rainbow.
+- 2–4 colours total: one for GIVEN objects, one for CONSTRUCTED/auxiliary (usually "dash":true), and ONE accent (#fbbf24) reserved for the single object that carries the why. Never rainbow. The accent is scarce: put #fbbf24 on AT MOST ~2 objects (the load-bearing one + its label). If three or more things are gold, none of them reads as "the point" — recolour the rest to the given/auxiliary greys and blues.
+- EVERY slider and drag param you declare MUST be read by at least one expression in the scene. A control that changes nothing is a broken promise — either wire it into the geometry or delete it. Likewise never declare a manipulable and then not use it: the manipulation IS the proof.
 - Label every named object: point labels for A, B, C…; latex text for relations ("\\angle AOB = 2\\angle ACB"). Set "latex":true on any text containing math.
 - dashed = auxiliary/construction · solid = given/primary · accent = conclusion.
 - "flat":true for anything planar (constructions, lattices, graphs, Argand). Label axes truthfully (["Re","Im","-"]); axes ticks appear automatically.
@@ -71,7 +73,9 @@ Primitives (each may carry "step": n):
 • axes { "kind":"axes","size":4,"labels":["x","y","z"],"ticks":true }
 • grid { "kind":"grid","plane":"xy","size":5,"divisions":10 }
 • point { "kind":"point","at":[x,y,z],"color":"#…","size":0.1,"label":"A","drag":["a","b"] }
-• points (BULK, lattices/sieves) { "kind":"points","count":144,"x":"mod(i,12)-5.5","y":"floor(i/12)-5.5","size":0.12,"colorBy":"mod(i,3)" } — exprs in i (0…count−1)
+• points (BULK, lattices/sieves) { "kind":"points","count":144,"x":"mod(i,12)-5.5","y":"floor(i/12)-5.5","size":0.12,"colorBy":"mod(i,3)" } — exprs in i (0…count−1). count MAY be a slider expression (e.g. "n"), so the NUMBER of points reacts live: n roots of unity, m samples, a growing sequence.
+• regionFill (AREA under/between curves — integrals, probability, work, distance-under-speed) { "kind":"regionFill","x":"t","yTop":"0.5*t^2","yBottom":"0","tMin":0,"tMax":2,"samples":80,"color":"#38bdf8","opacity":0.32 } — fills the column from yBottom to yTop across t. tMin/tMax may be slider/drag exprs, so the student drags the region's edges (P(a<X<b) under a density). Area is a REAL object here, not decoration.
+• bars (HISTOGRAM / distribution / Riemann rectangles) { "kind":"bars","count":"n","x":"a+(i+0.5)*(b-a)/n","height":"f(x_i)","base":0,"colorBy":"i==k?1:0" } — count bars, bar i centred at x(i) with signed height(i). count MAY be a slider expr → live-count (Riemann staircase as n grows, a distribution reshaping). Exprs in i (0…count−1).
 • segment { "kind":"segment","from":[..],"to":[..],"color":"#…","width":2,"dash":false,"label":"AB","marks":1 } — marks = equal-length ticks
 • arc { "kind":"arc","center":[..],"radius":2,"from":0,"to":"pi/2","dash":false }
 • angleMark { "kind":"angleMark","at":[vertex],"from":[ray pt],"to":[ray pt],"radius":0.45,"label":"2\\theta","right":false }
@@ -80,7 +84,7 @@ Primitives (each may carry "step": n):
 • vectorField { "kind":"vectorField","fx":"-y","fy":"x","bounds":[-3,3,-3,3],"density":9,"normalize":false } — real arrowheads
 • arrow { "kind":"arrow","from":[..],"to":[..],"label":"F" }
 • polygon { "kind":"polygon","vertices":[[..],[..],[..]],"opacity":0.35 }
-• text { "kind":"text","at":[..],"content":"\\angle APB = 90^\\circ","latex":true,"size":0.3,"color":"#fbbf24" }
+• text { "kind":"text","at":[..],"content":"\\angle APB = 90^\\circ","latex":true,"size":0.3,"color":"#fbbf24" } — content may embed \${expr} placeholders that show a LIVE computed value tracking the sliders/drag, e.g. "content":"\\text{area}=\${(b-a)}", "content":"\\omega=\${w}", "content":"\\sum\\deg=\${2*E}". Use this to make the invariant/quantity NUMERICALLY visible as the student manipulates.
 • group { "kind":"group","matrix":[16 col-major exprs],"children":[...] } — for transforms
 Expressions are mathjs: sliders/drag keys, t/u/v/x/y/z/i as documented, time (seconds). Functions: sin cos tan exp log sqrt abs atan2 mod floor max min; constants pi, e.
 
@@ -94,6 +98,10 @@ WORKED EXAMPLE 2 — number theory lattice (residues), slider-driven:
 WORKED EXAMPLE 3 — analysis, the manipulable IS the quantifier (secant → tangent):
 <scene>{"kind":"scene","title":"The slope of a curve is a limit of secant slopes","caption":"Slide B toward A — the secant locks onto the tangent.","why":"The secant slope is Δy/Δx for a real interval; as Δx→0 the interval shrinks to a point and the average slope is forced onto the instantaneous one.","flat":true,"camera":[0,0,8],"sliders":[{"key":"h","label":"Interval Δx","min":0.01,"max":2,"step":0.01,"default":1.5}],"objects":[{"kind":"axes","size":4,"labels":["x","y","z"]},{"kind":"curve","x":"t","y":"0.5*t^2","tMin":-3,"tMax":3,"samples":200,"color":"#38bdf8","width":2.5},{"kind":"point","at":[1,0.5,0.02],"color":"#94a3b8","size":0.1,"label":"A"},{"kind":"point","at":["1+h","0.5*(1+h)^2",0.02],"color":"#f472b6","size":0.1,"label":"B"},{"kind":"curve","x":"t","y":"0.5*1^2 + ((0.5*(1+h)^2-0.5*1^2)/h)*(t-1)","tMin":-1.5,"tMax":3.5,"samples":8,"color":"#fbbf24","width":2},{"kind":"text","at":[-1.6,2.4,0],"content":"m=\\frac{\\Delta y}{\\Delta x}\\to f'(1)","latex":true,"color":"#fbbf24","size":0.3}]}</scene>
 (The slider h IS Δx — the student drives the limit and watches the secant converge to the tangent. This is the analysis template: a curve, the fixed point, the moving point, the line through them, and the limiting quantity as an accent formula.)
+
+WORKED EXAMPLE 4 — accumulation, LIVE-COUNT bars + region fill + live readout (Riemann sum):
+<scene>{"kind":"scene","title":"Area is the limit of a rectangle staircase","caption":"Slide n up — the staircase collapses onto the true area.","why":"Each rectangle is f(x_i)·Δx, a real sub-area; as n→∞ the staircase error vanishes and the sum is forced onto the exact area 8/3.","flat":true,"camera":[0,0,7],"sliders":[{"key":"n","label":"Rectangles n","min":1,"max":60,"step":1,"default":6}],"objects":[{"kind":"axes","size":3,"labels":["x","y","z"]},{"kind":"regionFill","x":"t","yTop":"0.5*t^2","yBottom":"0","tMin":0,"tMax":2,"samples":80,"color":"#334155","opacity":0.5},{"kind":"bars","count":"n","x":"(i+0.5)*(2/n)","height":"0.5*((i+0.5)*(2/n))^2","base":0,"color":"#38bdf8"},{"kind":"curve","x":"t","y":"0.5*t^2","tMin":0,"tMax":2,"samples":120,"color":"#fbbf24","width":2.5},{"kind":"text","at":[-0.9,1.9,0],"content":"\\sum f(x_i)\\,\\Delta x \\to \\tfrac{8}{3}","latex":true,"color":"#fbbf24","size":0.28}]}</scene>
+(count:"n" makes the bars a LIVE family driven by the slider; the shaded regionFill is the true area the staircase converges onto; the accent curve is the exact boundary. This is the accumulation template — reuse it for probability-as-area (regionFill under a density between draggable a,b), work, impulse, distance-under-speed.)
 
 OUTPUT: exactly one <scene>{…}</scene> block. Nothing before it, nothing after it.`;
 
@@ -109,10 +117,75 @@ export interface DirectSceneRequest {
 }
 
 /**
+ * Parse a Director response into a sanitized scene. Exported so the
+ * coverage harness (scripts/scene-harness) exercises the EXACT parsing
+ * path production uses — no drift between what we test and what we ship.
+ */
+export function parseDirectorResponse(acc: string): SceneSpec | null {
+  // Preferred: a proper <scene> block (extractViz sanitizes it too).
+  const { viz } = extractViz(acc);
+  if (viz && isSceneSpec(viz)) return viz;
+
+  // Fallbacks for a model that ignored the tag instruction: strip markdown
+  // code fences and stray <scene> tags, then parse the largest JSON object
+  // (with the same trailing-comma / comment / curly-quote repairs).
+  const cleaned = acc
+    .replace(/```(?:json)?/gi, "")
+    .replace(/<\/?scene>/gi, "")
+    .trim();
+  const m = cleaned.match(/\{[\s\S]*\}/);
+  if (m) {
+    const parsed = parseModelJson(m[0]);
+    if (isSceneSpec(parsed)) return sanitizeScene(parsed);
+  }
+  return null;
+}
+
+/**
  * One-shot scene authorship through the deployed chat function.
  * Accumulates the SSE stream, then parses + sanitizes the scene.
  * Returns null on any failure — callers treat that as "no new scene".
  */
+async function streamSceneOnce(userContent: string): Promise<{ acc: string; scene: SceneSpec | null }> {
+  const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: userContent }],
+      systemOverride: SCENE_DIRECTOR_PROMPT,
+    }),
+  });
+  if (!resp.ok || !resp.body) return { acc: "", scene: null };
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let acc = "";
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) !== -1) {
+      let line = buf.slice(0, nl);
+      buf = buf.slice(nl + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (!line.startsWith("data: ")) continue;
+      const j = line.slice(6).trim();
+      if (j === "[DONE]") break;
+      try {
+        const d = JSON.parse(j).choices?.[0]?.delta?.content;
+        if (d) acc += d;
+      } catch {
+        /* skip non-content events */
+      }
+    }
+  }
+  return { acc, scene: parseDirectorResponse(acc) };
+}
+
 export async function directScene(req: DirectSceneRequest): Promise<SceneSpec | null> {
   const userContent = `SCENE REQUEST from the tutor:
 ${req.request}
@@ -120,63 +193,27 @@ ${req.request}
 Lesson context: subject=${req.subject ?? "maths"} · topic=${req.topic ?? "-"} · subtopic=${req.subtopic ?? "-"} · level=${req.level ?? "-"}
 ${req.recentTranscript ? `Recent conversation (for level/tone — do NOT teach, just scale the scene):\n${req.recentTranscript}` : ""}`;
 
-  try {
-    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: userContent }],
-        systemOverride: SCENE_DIRECTOR_PROMPT,
-      }),
-    });
-    if (!resp.ok || !resp.body) return null;
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let acc = "";
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      let nl: number;
-      while ((nl = buf.indexOf("\n")) !== -1) {
-        let line = buf.slice(0, nl);
-        buf = buf.slice(nl + 1);
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line.startsWith("data: ")) continue;
-        const j = line.slice(6).trim();
-        if (j === "[DONE]") break;
-        try {
-          const d = JSON.parse(j).choices?.[0]?.delta?.content;
-          if (d) acc += d;
-        } catch {
-          /* skip non-content events */
-        }
+  // The free gateway intermittently truncates a long scene stream mid-JSON
+  // (measured: a rich scene that opens <scene> but never closes it). That is
+  // NOT a model-competence failure — the same request succeeds on a retry — so
+  // a truncated/empty response is retried with a short backoff before we give
+  // up. Without this, exactly the richest scenes (the ones worth showing) were
+  // the ones silently dropped. Up to 3 attempts.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { acc, scene } = await streamSceneOnce(userContent);
+      if (scene) return scene;
+      const truncated = acc.includes("<scene>") && !acc.includes("</scene>");
+      if (!truncated && acc.trim().length > 0) {
+        // A complete but unparsable response won't improve on retry — stop.
+        console.warn("[scene-director] no usable scene in response; head:", acc.slice(0, 120));
+        return null;
       }
+      console.warn(`[scene-director] ${truncated ? "truncated" : "empty"} stream, attempt ${attempt}/3 — retrying`);
+    } catch {
+      /* network hiccup — fall through to backoff/retry */
     }
-
-    // Preferred: a proper <scene> block (extractViz sanitizes it too).
-    const { viz } = extractViz(acc);
-    if (viz && isSceneSpec(viz)) return viz;
-
-    // Fallbacks for a model that ignored the tag instruction: strip markdown
-    // code fences and stray <scene> tags, then parse the largest JSON object
-    // (with the same trailing-comma / comment / curly-quote repairs).
-    const cleaned = acc
-      .replace(/```(?:json)?/gi, "")
-      .replace(/<\/?scene>/gi, "")
-      .trim();
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) {
-      const parsed = parseModelJson(m[0]);
-      if (isSceneSpec(parsed)) return sanitizeScene(parsed);
-    }
-    console.warn("[scene-director] no usable scene in response; head:", acc.slice(0, 120));
-    return null;
-  } catch {
-    return null;
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 1200 * attempt));
   }
+  return null;
 }

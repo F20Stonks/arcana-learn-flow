@@ -17,6 +17,8 @@ import type {
   Primitive,
   PointPrim,
   PointsPrim,
+  RegionFillPrim,
+  BarsPrim,
   CurvePrim,
   SegmentPrim,
   ArcPrim,
@@ -610,14 +612,17 @@ function PointsR({ p, scope, style, theme, progress }: { p: PointsPrim; scope: S
   const fy = useMemo(() => compileExpr(p.y), [p.y]);
   const fz = useMemo(() => compileExpr(p.z ?? "0"), [p.z]);
   const fc = useMemo(() => (p.colorBy ? compileExpr(p.colorBy) : null), [p.colorBy]);
-  const key = depKey(fc ? [fx, fy, fz, fc] : [fx, fy, fz], scope, POINTS_EXCLUDE);
+  const fcount = useMemo(() => compileExpr(p.count), [p.count]);
+  const key = depKey(fc ? [fx, fy, fz, fc, fcount] : [fx, fy, fz, fcount], scope, POINTS_EXCLUDE);
   const imRef = useRef<THREE.InstancedMesh>(null);
   const baseColor = resolveColor(p.color, theme.palette[0] ?? "#60a5fa", style);
+  // count may depend on a slider — evaluate + clamp each render
+  const count = Math.max(0, Math.min(600, Math.round(fcount.fn(scope)) || 0));
 
   const data = useMemo(() => {
     const out: { pos: THREE.Vector3; palette: number }[] = [];
     const s: Scope = { ...scope, i: 0 };
-    for (let i = 0; i < p.count; i++) {
+    for (let i = 0; i < count; i++) {
       s.i = i;
       const x = fx.fn(s), y = fy.fn(s), z = fz.fn(s);
       if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
@@ -630,7 +635,7 @@ function PointsR({ p, scope, style, theme, progress }: { p: PointsPrim; scope: S
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fx, fy, fz, fc, p.count, theme, key]);
+  }, [fx, fy, fz, fc, count, theme, key]);
 
   useEffect(() => {
     const mesh = imRef.current;
@@ -663,6 +668,153 @@ function PointsR({ p, scope, style, theme, progress }: { p: PointsPrim; scope: S
         <meshBasicMaterial />
       </instancedMesh>
     </group>
+  );
+}
+
+/* ----- region fill: area under / between curves (integrals, probability) ----- */
+
+const REGION_EXCLUDE = ["t"] as const;
+
+function RegionFillR({ p, scope, style, progress }: { p: RegionFillPrim; scope: Scope; style: Style; progress: number }) {
+  const samples = p.samples ?? 64;
+  const fx = useMemo(() => compileExpr(p.x ?? "t"), [p.x]);
+  const fTop = useMemo(() => compileExpr(p.yTop), [p.yTop]);
+  const fBot = useMemo(() => compileExpr(p.yBottom ?? "0"), [p.yBottom]);
+  const fMin = useMemo(() => compileExpr(p.tMin), [p.tMin]);
+  const fMax = useMemo(() => compileExpr(p.tMax), [p.tMax]);
+  const key = depKey([fx, fTop, fBot, fMin, fMax], scope, REGION_EXCLUDE);
+  const color = resolveColor(p.color, "#38bdf8", style);
+  const showOutline = p.outline !== false;
+
+  const { geom, topPts } = useMemo(() => {
+    const tMin = fMin.fn(scope);
+    const tMax = fMax.fn(scope);
+    if (!Number.isFinite(tMin) || !Number.isFinite(tMax) || tMin === tMax) {
+      return { geom: null as THREE.BufferGeometry | null, topPts: [] as THREE.Vector3[] };
+    }
+    const positions: number[] = [];
+    const indices: number[] = [];
+    const top: THREE.Vector3[] = [];
+    const s: Scope = { ...scope, t: 0 };
+    let valid = 0;
+    for (let i = 0; i <= samples; i++) {
+      s.t = tMin + (i / samples) * (tMax - tMin);
+      const x = fx.fn(s);
+      const yt = fTop.fn(s);
+      const yb = fBot.fn(s);
+      if (!Number.isFinite(x) || !Number.isFinite(yt) || !Number.isFinite(yb)) continue;
+      positions.push(x, yb, 0, x, yt, 0); // bottom, top vertex for this column
+      top.push(new THREE.Vector3(x, yt, 0.001));
+      valid++;
+      if (valid >= 2) {
+        const b = (valid - 2) * 2; // previous bottom index
+        // quad (prevBot, prevTop, curBot, curTop) → two triangles
+        indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+      }
+    }
+    if (valid < 2) return { geom: null as THREE.BufferGeometry | null, topPts: [] as THREE.Vector3[] };
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    g.setIndex(indices);
+    g.computeVertexNormals();
+    return { geom: g, topPts: top };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fx, fTop, fBot, fMin, fMax, samples, key]);
+
+  useEffect(() => () => geom?.dispose(), [geom]);
+  if (!geom) return null;
+  const opacity = (p.opacity ?? 0.32) * (0.15 + 0.85 * progress);
+  return (
+    <>
+      <mesh geometry={geom}>
+        <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {showOutline && topPts.length > 1 && (
+        <Line points={topPts} color={color} lineWidth={2} transparent opacity={Math.max(progress, 0.05)} />
+      )}
+    </>
+  );
+}
+
+/* ----- bars: histograms, distributions, Riemann rectangles ----- */
+
+const BARS_EXCLUDE = ["i"] as const;
+
+function BarsR({ p, scope, style, theme, progress }: { p: BarsPrim; scope: Scope; style: Style; theme: VizTheme; progress: number }) {
+  const fx = useMemo(() => compileExpr(p.x), [p.x]);
+  const fh = useMemo(() => compileExpr(p.height), [p.height]);
+  const fcount = useMemo(() => compileExpr(p.count), [p.count]);
+  const fwidth = useMemo(() => (p.width !== undefined ? compileExpr(p.width) : null), [p.width]);
+  const fbase = useMemo(() => compileExpr(p.base ?? "0"), [p.base]);
+  const fc = useMemo(() => (p.colorBy ? compileExpr(p.colorBy) : null), [p.colorBy]);
+  const count = Math.max(0, Math.min(400, Math.round(fcount.fn(scope)) || 0));
+  const key = depKey([fx, fh, fcount, fbase, ...(fwidth ? [fwidth] : []), ...(fc ? [fc] : [])], scope, BARS_EXCLUDE);
+  const imRef = useRef<THREE.InstancedMesh>(null);
+  const baseColor = resolveColor(p.color, "#38bdf8", style);
+
+  const data = useMemo(() => {
+    const out: { cx: number; cy: number; w: number; h: number; palette: number }[] = [];
+    const s: Scope = { ...scope, i: 0 };
+    const base = fbase.fn(scope);
+    const b = Number.isFinite(base) ? base : 0;
+    // infer default width from mean neighbour spacing when not given
+    let autoW = 0.8;
+    if (!fwidth && count > 1) {
+      const x0 = ((s.i = 0), fx.fn(s));
+      const x1 = ((s.i = 1), fx.fn(s));
+      if (Number.isFinite(x0) && Number.isFinite(x1) && x1 !== x0) autoW = Math.abs(x1 - x0) * 0.8;
+    }
+    for (let i = 0; i < count; i++) {
+      s.i = i;
+      const x = fx.fn(s);
+      const hRaw = fh.fn(s);
+      if (!Number.isFinite(x) || !Number.isFinite(hRaw)) continue;
+      const w = fwidth ? fwidth.fn(s) : autoW;
+      if (!Number.isFinite(w) || w <= 0) continue;
+      let palette = -1;
+      if (fc) {
+        const c = fc.fn(s);
+        if (Number.isFinite(c)) palette = ((Math.floor(c) % theme.palette.length) + theme.palette.length) % theme.palette.length;
+      }
+      out.push({ cx: x, cy: b + hRaw / 2, w, h: hRaw, palette });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fx, fh, fwidth, fbase, fc, count, theme, key]);
+
+  useEffect(() => {
+    const mesh = imRef.current;
+    if (!mesh) return;
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+    data.forEach((d, i) => {
+      dummy.position.set(d.cx, d.cy, 0);
+      dummy.scale.set(Math.max(d.w * 0.92, 1e-3), Math.max(Math.abs(d.h) * progress, 1e-3), Math.max(d.w * 0.92, 1e-3));
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      col.set(d.palette >= 0 ? theme.palette[d.palette] : baseColor);
+      mesh.setColorAt(i, col);
+    });
+    mesh.count = data.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [data, theme, baseColor, progress]);
+
+  if (data.length === 0) return null;
+  return (
+    <instancedMesh
+      key={data.length}
+      ref={imRef}
+      args={[undefined as unknown as THREE.BufferGeometry, undefined as unknown as THREE.Material, data.length]}
+    >
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial
+        transparent
+        opacity={0.9}
+        emissiveIntensity={style.glow ? 0.35 : 0.12}
+        roughness={0.5}
+      />
+    </instancedMesh>
   );
 }
 
@@ -984,17 +1136,34 @@ function AxesR({ p, style }: { p: AxesPrim; style: Style }) {
   );
 }
 
+/**
+ * Interpolate ${expr} placeholders in a text label against the live scope, so
+ * a readout can show a computed value that tracks the sliders/drag ("area =
+ * ${...}", "\\omega = ${...}", "\\sum\\deg = ${2*E}"). Non-finite → "?".
+ * Integers print clean; otherwise 2 dp. Everything outside ${...} is untouched,
+ * so it composes with KaTeX ($...$ math) without collision.
+ */
+function interpolateContent(content: string, scope: Scope): string {
+  if (!content.includes("${")) return content;
+  return content.replace(/\$\{([^}]+)\}/g, (_m, e: string) => {
+    const v = compileExprCached(e.trim()).fn(scope);
+    if (!Number.isFinite(v)) return "?";
+    return Number.isInteger(v) ? String(v) : v.toFixed(2);
+  });
+}
+
 function TextR({ p, scope, progress }: { p: TextPrim; scope: Scope; progress: number }) {
   const pos = vec3At(p.at, scope);
   if (!pos) return null;
+  const content = interpolateContent(p.content, scope);
   if (p.latex) {
     return (
-      <SceneLabel world={pos} priority={10} approxChars={p.content.length} fontPx={(p.size ?? 0.3) * 46} style={{ opacity: progress }}>
+      <SceneLabel world={pos} priority={10} approxChars={content.length} fontPx={(p.size ?? 0.3) * 46} style={{ opacity: progress }}>
         <span
           className="whitespace-nowrap select-none"
           style={{ color: p.color ?? "#e2e8f0", fontSize: `${(p.size ?? 0.3) * 46}px` }}
         >
-          <MathRenderer content={`$${p.content}$`} />
+          <MathRenderer content={`$${content}$`} />
         </span>
       </SceneLabel>
     );
@@ -1008,7 +1177,7 @@ function TextR({ p, scope, progress }: { p: TextPrim; scope: Scope; progress: nu
       anchorY="middle"
       fillOpacity={progress}
     >
-      {p.content}
+      {content}
     </Text>
   );
 }
@@ -1032,6 +1201,8 @@ function PrimitiveR({ prim, scope, style, theme, progress = 1 }: { prim: Primiti
   switch (prim.kind) {
     case "point": return <PointR p={prim} scope={scope} style={style} progress={progress} />;
     case "points": return <PointsR p={prim} scope={scope} style={style} theme={theme} progress={progress} />;
+    case "regionFill": return <RegionFillR p={prim} scope={scope} style={style} progress={progress} />;
+    case "bars": return <BarsR p={prim} scope={scope} style={style} theme={theme} progress={progress} />;
     case "curve": return <CurveR p={prim} scope={scope} style={style} progress={progress} />;
     case "segment": return <SegmentR p={prim} scope={scope} style={style} progress={progress} />;
     case "arc": return <ArcR p={prim} scope={scope} style={style} progress={progress} />;

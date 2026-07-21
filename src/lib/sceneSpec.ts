@@ -62,10 +62,14 @@ export interface PointPrim extends Staged {
 /**
  * Bulk indexed point cloud — lattices, sieves, samples, datasets.
  * Expressions receive `i` = 0 … count−1 (plus sliders/time as usual).
+ *
+ * `count` may itself be a mathjs expression in sliders/time — so the NUMBER
+ * of points can react to a control (n roots of unity as n slides, m samples,
+ * a growing sequence). This is the "live-count family" capability.
  */
 export interface PointsPrim extends Staged {
   kind: "points";
-  count: number;
+  count: number | string;
   /** position of point i */
   x: string;
   y: string;
@@ -77,6 +81,57 @@ export interface PointsPrim extends Staged {
    * floored and taken mod the theme palette length. Lets residue classes /
    * categories colour themselves, e.g. "mod(i, 3)".
    */
+  colorBy?: string;
+}
+
+/**
+ * Filled region between two boundaries swept over a parameter t ∈ [tMin,tMax]:
+ * for each t the column from (x, yBottom) up to (x, yTop) is filled. With the
+ * default yBottom "0" this is the area under a curve; give both boundaries for
+ * the area between two curves. tMin/tMax may be expressions (slider/drag), so
+ * the region's edges can be dragged — P(a<X<b) under a density, a Riemann
+ * region, work-as-area-under-F, accumulated distance under a speed-time graph.
+ * This is area-as-a-first-class-object, not a decorative fill.
+ */
+export interface RegionFillPrim extends Staged {
+  kind: "regionFill";
+  /** x-coordinate of the column at parameter t (expr in t, sliders, time); default "t" */
+  x?: string;
+  /** upper boundary height (expr in t, sliders, time) */
+  yTop: string;
+  /** lower boundary height (expr in t, sliders, time); default "0" */
+  yBottom?: string;
+  /** sweep range — numbers OR expressions (draggable/slider edges) */
+  tMin: number | string;
+  tMax: number | string;
+  samples?: number; // default 64
+  color?: Color;
+  opacity?: number; // default 0.32
+  /** outline the top boundary in a solid stroke (default true) */
+  outline?: boolean;
+}
+
+/**
+ * A bar chart / histogram / rectangle family — the discrete-quantity workhorse.
+ * `count` bars (a number OR an expression in sliders → dynamic count), bar i
+ * centred at x(i) with signed height(i), grown from `base`. Unlocks binomial &
+ * discrete distributions, histograms, Markov state masses, AND Riemann-sum
+ * rectangles (count = n slider, height = f(x_i)) — the same primitive, no
+ * template. Expressions receive `i` = 0 … count−1 plus sliders/time.
+ */
+export interface BarsPrim extends Staged {
+  kind: "bars";
+  count: number | string;
+  /** centre x of bar i (expr in i, sliders, time) */
+  x: string;
+  /** signed height of bar i (expr in i, sliders, time) */
+  height: string;
+  /** bar width (number or expr); default = 80% of the mean spacing */
+  width?: number | string;
+  /** baseline the bars grow from (number or expr); default 0 */
+  base?: number | string;
+  color?: Color;
+  /** per-bar palette selector, expr in i (e.g. highlight one bar) */
   colorBy?: string;
 }
 
@@ -228,6 +283,8 @@ export interface GroupPrim extends Staged {
 export type Primitive =
   | PointPrim
   | PointsPrim
+  | RegionFillPrim
+  | BarsPrim
   | CurvePrim
   | SegmentPrim
   | ArcPrim
@@ -312,7 +369,31 @@ function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
       return prim as unknown as Primitive;
     case "points":
       if (!isExpr(prim.x) || !isExpr(prim.y)) return null;
-      prim.count = clamp(num(prim.count, 100), 1, 400);
+      // count may be a number (clamp it) or an expression (evaluated + clamped
+      // at render time so a slider can drive how many points exist).
+      if (typeof prim.count === "string" && prim.count.trim().length > 0) {
+        /* keep expression */
+      } else {
+        prim.count = clamp(num(prim.count, 100), 1, 400);
+      }
+      if (prim.colorBy !== undefined && !isExpr(prim.colorBy)) delete prim.colorBy;
+      return prim as unknown as Primitive;
+    case "regionFill":
+      if (!isExpr(prim.yTop) || !isExpr(prim.tMin) || !isExpr(prim.tMax)) return null;
+      if (prim.x !== undefined && !isExpr(prim.x)) delete prim.x;
+      if (prim.yBottom !== undefined && !isExpr(prim.yBottom)) delete prim.yBottom;
+      if (prim.samples !== undefined) prim.samples = clamp(num(prim.samples, 64), 8, 400);
+      if (prim.opacity !== undefined) prim.opacity = clamp(num(prim.opacity, 0.32), 0.05, 1);
+      return prim as unknown as Primitive;
+    case "bars":
+      if (!isExpr(prim.x) || !isExpr(prim.height)) return null;
+      if (typeof prim.count === "string" && prim.count.trim().length > 0) {
+        /* keep expression */
+      } else {
+        prim.count = clamp(num(prim.count, 10), 1, 400);
+      }
+      if (prim.width !== undefined && !isExpr(prim.width)) delete prim.width;
+      if (prim.base !== undefined && !isExpr(prim.base)) delete prim.base;
       if (prim.colorBy !== undefined && !isExpr(prim.colorBy)) delete prim.colorBy;
       return prim as unknown as Primitive;
     case "segment":
