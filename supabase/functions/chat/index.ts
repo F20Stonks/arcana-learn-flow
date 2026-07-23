@@ -1,15 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { AI_GATEWAY_URL, AI_MODEL_STRONG, getAIKey } from "../_shared/aiGateway.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Model-routing seam. Today every intensity tier runs on Flash (cost/speed). The one place a future
-// routing engine plugs in: e.g. route "rigorous" (or hard reasoning turns) to a stronger gateway model.
-const FLASH_MODEL = "google/gemini-3-flash-preview";
+// Model-routing seam. Teaching + scene generation run on the strong model. This is the one place a
+// future routing engine plugs in: e.g. route "rigorous" (or hard reasoning turns) to an even stronger
+// escalation model. Model ids come from the AI_MODEL_* function secrets (see _shared/aiGateway.ts).
 function pickModel(_intensity: string): string {
-  return FLASH_MODEL;
+  return AI_MODEL_STRONG;
 }
 
 serve(async (req) => {
@@ -17,8 +18,7 @@ serve(async (req) => {
 
   try {
     const { messages, context, systemOverride } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const LOVABLE_API_KEY = getAIKey();
 
     const intensity = context?.intensity === "guided" || context?.intensity === "rigorous"
       ? context.intensity
@@ -146,7 +146,7 @@ result is forced, in a way a sentence can't? If not, don't request it.
 
 Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,

@@ -10,7 +10,9 @@
 // Fails soft to an empty list (no TAVILY_API_KEY, no usable search result, any error) so a topic simply
 // shows no checklist rather than breaking the page.
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+import { AI_GATEWAY_URL, AI_MODEL_CHEAP } from "./aiGateway.ts";
+
+const GATEWAY_URL = AI_GATEWAY_URL;
 const FETCH_TIMEOUT_MS = 8000;
 const OVERALL_TIMEOUT_MS = 18000;
 const MAX_EXCERPT_CHARS = 6000;
@@ -80,7 +82,7 @@ async function segmentIntoItems(
     method: "POST",
     headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: AI_MODEL_CHEAP,
       messages: [
         {
           role: "system",

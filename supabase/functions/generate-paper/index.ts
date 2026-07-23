@@ -1,13 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { AI_GATEWAY_URL, AI_MODEL_STRONG, getAIKey } from "../_shared/aiGateway.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3-flash-preview";
+const GATEWAY_URL = AI_GATEWAY_URL;
+const MODEL = AI_MODEL_STRONG;
 
 // Same difficulty vocabulary as question-attack (easy/medium/hard/exam) rather than the session teaching-
 // intensity tiers (Guided/Balanced/Rigorous) — a "paper" is the same conceptual space as Question Attack's
@@ -24,8 +25,7 @@ serve(async (req) => {
 
   try {
     const { trackId, subject, level, examBoard, topics, difficulty, questionCount } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const LOVABLE_API_KEY = getAIKey();
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");

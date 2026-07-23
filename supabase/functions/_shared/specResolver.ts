@@ -35,7 +35,9 @@ export type ResolvedSpec = {
   level: string | null;
 };
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+import { AI_GATEWAY_URL, AI_MODEL_CHEAP } from "./aiGateway.ts";
+
+const GATEWAY_URL = AI_GATEWAY_URL;
 const OVERALL_TIMEOUT_MS = 15000;
 // A recognised exam family runs up to two Tavily searches (steered, then generic), so it gets a
 // slightly longer guard; the no-family path keeps the original budget.
@@ -141,7 +143,7 @@ async function extractBoardSubjectLevel(
     method: "POST",
     headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: AI_MODEL_CHEAP,
       messages: [
         {
           role: "system",
