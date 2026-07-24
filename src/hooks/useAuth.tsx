@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchProfile = async (nextUser: User) => {
-    const { data, error } = await supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle();
+    const { data } = await supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle();
     if (data) return data;
     return createFallbackProfile(nextUser);
   };
