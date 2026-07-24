@@ -41,6 +41,7 @@ async function resolveConcepts(
   required: ExtractedConcept[],
   apiKey: string,
 ): Promise<Map<string, string>> {
+  const ai = getAIConfig();
   const resolved = new Map<string, string>();
 
   // Unique specs by normalized name (merge taught + required; first spec wins).
