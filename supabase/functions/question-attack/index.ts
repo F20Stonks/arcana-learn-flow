@@ -17,14 +17,14 @@ serve(async (req) => {
     if (body.mode === "assess") {
       const { question, correctAnswer, userAnswer, explanation, subject, level } = body;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(${ai.url}, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${ai.key}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: ai.model,
           messages: [
             {
               role: "system",
@@ -104,14 +104,14 @@ Respond ONLY with valid JSON:
 For open-ended questions, omit the "options" field entirely.
 Distribute questions across the selected topics. Favour questions that require COMBINING more than one concept and TRANSFER to an unfamiliar context (not a re-skin of a standard example); at least some should ask the student to justify WHY a chosen method applies, or where it would fail, rather than only compute. Each "explanation" must show the structural reason the method works, not just the mechanical steps.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(${ai.url}, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${ai.key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: ai.model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Generate ${questionCount} ${difficulty} difficulty ${subject} questions now.` },
