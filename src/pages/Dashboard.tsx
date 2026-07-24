@@ -118,25 +118,6 @@ export default function Dashboard() {
     </header>
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        {renderHeader()}
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-          <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Opening your workspace</h1>
-                <p className="mt-1 text-sm text-muted-foreground">If one data source is slow, Jarvis will still show the dashboard.</p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const pct = (t: Track) => (t.subtopicCount > 0 ? Math.round((t.completedCount / t.subtopicCount) * 100) : 0);
 
   const activeTracks = tracks.filter((t) => !t.archived_at);
@@ -157,6 +138,25 @@ export default function Dashboard() {
         })),
     [tracks],
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        {renderHeader()}
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Opening your workspace</h1>
+                <p className="mt-1 text-sm text-muted-foreground">If one data source is slow, Jarvis will still show the dashboard.</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Soft archive/restore. Reversible, so no confirm dialog — just an optimistic update + an undo toast.
   const setArchived = async (track: Track, archived: boolean) => {
