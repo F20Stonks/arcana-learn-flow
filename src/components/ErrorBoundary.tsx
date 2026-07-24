@@ -1,4 +1,6 @@
 import { Component, ReactNode } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface State { error: Error | null }
 
@@ -16,12 +18,25 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
   render() {
     if (this.state.error) {
       return (
-        <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif" }}>
-          <div style={{ maxWidth: 520, background: "#141414", border: "1px solid #262626", borderRadius: 12, padding: 24 }}>
-            <h1 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Something went wrong</h1>
-            <p style={{ fontSize: 13, color: "#a3a3a3", marginBottom: 16 }}>The app hit an unexpected error. Try reloading — if it keeps happening, the details below will help debug it.</p>
-            <pre style={{ fontSize: 11, color: "#f87171", background: "#0a0a0a", padding: 12, borderRadius: 8, overflow: "auto", maxHeight: 220, whiteSpace: "pre-wrap" }}>{String(this.state.error?.stack || this.state.error?.message || this.state.error)}</pre>
-            <button onClick={() => window.location.reload()} style={{ marginTop: 16, padding: "8px 16px", borderRadius: 8, background: "#6366f1", color: "#fff", fontSize: 13, fontWeight: 500, border: "none", cursor: "pointer" }}>Reload</button>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+          <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Jarvis couldn't finish loading.</h1>
+                <p className="mt-2 text-sm text-muted-foreground">Reload the app or sign in again. The error is visible below instead of leaving the preview black.</p>
+              </div>
+            </div>
+            <pre className="mt-5 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs text-destructive">{String(this.state.error?.stack || this.state.error?.message || this.state.error)}</pre>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button onClick={() => window.location.reload()}>
+                <RefreshCw className="h-4 w-4" />
+                Reload
+              </Button>
+              <Button variant="secondary" onClick={() => { window.location.href = "/auth"; }}>
+                Sign in again
+              </Button>
+            </div>
           </div>
         </div>
       );
