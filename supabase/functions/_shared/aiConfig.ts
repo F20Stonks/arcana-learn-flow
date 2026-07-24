@@ -19,7 +19,7 @@ export async function getAIConfig(): Promise<AIConfig> {
     cached = {
       url: "https://api.x.ai/v1/chat/completions",
       key: envKey,
-      model: "grok-2-1212",
+      model: "grok-4-latest",
       provider: "xai",
     };
     return cached;
@@ -45,7 +45,7 @@ export async function getAIConfig(): Promise<AIConfig> {
   cached = {
     url: "https://api.x.ai/v1/chat/completions",
     key: data.value,
-    model: "grok-2-1212",
+    model: "grok-4-latest",
     provider: "xai",
   };
   return cached;
