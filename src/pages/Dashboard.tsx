@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore, FileText } from "lucide-react";
+import { Settings, Flame, Trophy, Plus, BookOpen, Map as MapIcon, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore, FileText } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
 import BrandLogo from "@/components/BrandLogo";
