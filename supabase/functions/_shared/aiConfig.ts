@@ -14,6 +14,17 @@ let cached: AIConfig | null = null;
 export async function getAIConfig(): Promise<AIConfig> {
   if (cached) return cached;
 
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    cached = {
+      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+      key: lovableKey,
+      model: "google/gemini-3.6-flash",
+      provider: "xai",
+    };
+    return cached;
+  }
+
   const envKey = Deno.env.get("XAI_API_KEY");
   if (envKey) {
     cached = {
