@@ -27,9 +27,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
+  const createFallbackProfile = async (nextUser: User): Promise<Profile | null> => {
+    const displayName =
+      typeof nextUser.user_metadata?.display_name === "string" && nextUser.user_metadata.display_name.trim()
+        ? nextUser.user_metadata.display_name.trim()
+        : nextUser.email?.split("@")[0] || "learner";
+
+    const { data } = await supabase
+      .from("profiles")
+      .insert({ user_id: nextUser.id, display_name: displayName })
+      .select("*")
+      .maybeSingle();
+
     return data;
+  };
+
+  const fetchProfile = async (nextUser: User) => {
+    const { data, error } = await supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle();
+    if (data || !error) return data;
+    return createFallbackProfile(nextUser);
   };
 
   useEffect(() => {
@@ -65,12 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profileUserId === user.id) return; // already loaded (or loading) for this exact user
 
     let cancelled = false;
-    fetchProfile(user.id).then((data) => {
-      if (!cancelled) {
-        setProfile(data);
-        setProfileUserId(user.id);
-      }
-    });
+    fetchProfile(user)
+      .then((data) => {
+        if (!cancelled) {
+          setProfile(data);
+          setProfileUserId(user.id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProfile(null);
+          setProfileUserId(user.id);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -98,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) setProfile(await fetchProfile(user.id));
+    if (user) setProfile(await fetchProfile(user));
   };
 
   const loading = authLoading || (!!user && profileUserId !== user.id);
