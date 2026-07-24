@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getAIConfig } from "../_shared/aiConfig.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -6,8 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3-flash-preview";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Spaced-repetition scheduling bounds + confidence-scaled expansion. Expanding intervals beat fixed
@@ -91,11 +90,11 @@ async function resolveConcepts(
         concept: { name: a.spec.name, type: a.spec.type, definition: a.spec.definition },
         candidates: a.candidates.map((c) => ({ id: c.id, name: c.name, definition: c.definition })),
       }));
-      const res = await fetch(GATEWAY_URL, {
+      const res = await fetch(`${ai.url}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: MODEL,
+          model: ai.model,
           messages: [
             {
               role: "system",
@@ -194,11 +193,11 @@ async function tickMatchingSpecItems(
     const transcript = messages.map((m) => `${m.role}: ${m.content}`).join("\n\n");
     const payload = complex.map((i, idx) => ({ index: idx, requirement: i.text, evidenceRequirements: i.evidence_requirements }));
     try {
-      const res = await fetch(GATEWAY_URL, {
+      const res = await fetch(`${ai.url}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: MODEL,
+          model: ai.model,
           messages: [
             {
               role: "system",
@@ -234,8 +233,8 @@ serve(async (req) => {
 
   try {
     const { sessionId, subtopicId, messages, intensity: rawIntensity } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ai = getAIConfig();
+    const LOVABLE_API_KEY = ai.key;
 
     const intensity = rawIntensity === "guided" || rawIntensity === "rigorous" ? rawIntensity : "balanced";
 
@@ -303,11 +302,11 @@ Respond ONLY with valid JSON:
   "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]
 }`;
 
-    const aiRes = await fetch(GATEWAY_URL, {
+    const aiRes = await fetch(`${ai.url}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
+        model: ai.model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Session conversation:\n${(messages || []).map((m: any) => `${m.role}: ${m.content}`).join("\n\n")}\n\nAssess this session now.` },
