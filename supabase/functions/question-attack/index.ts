@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getAIConfig } from "../_shared/aiConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,14 +11,13 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ai = getAIConfig();
 
     // ASSESS mode — evaluate a single answer
     if (body.mode === "assess") {
       const { question, correctAnswer, userAnswer, explanation, subject, level } = body;
 
-      const response = await fetch(${ai.url}, {
+      const response = await fetch(`${ai.url}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${ai.key}`,
@@ -104,7 +104,7 @@ Respond ONLY with valid JSON:
 For open-ended questions, omit the "options" field entirely.
 Distribute questions across the selected topics. Favour questions that require COMBINING more than one concept and TRANSFER to an unfamiliar context (not a re-skin of a standard example); at least some should ask the student to justify WHY a chosen method applies, or where it would fail, rather than only compute. Each "explanation" must show the structural reason the method works, not just the mechanical steps.`;
 
-    const response = await fetch(${ai.url}, {
+    const response = await fetch(`${ai.url}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${ai.key}`,
