@@ -1255,7 +1255,7 @@ function SceneClock({
 function sceneUsesTime(spec: SceneSpec): boolean {
   const re = /\btime\b/;
   const visit = (p: Primitive): boolean => {
-    for (const v of Object.values(p as Record<string, unknown>)) {
+    for (const v of Object.values(p as unknown as Record<string, unknown>)) {
       if (typeof v === "string" && re.test(v)) return true;
       if (Array.isArray(v) && v.some((e) => typeof e === "string" && re.test(e))) return true;
     }
