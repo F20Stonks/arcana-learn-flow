@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader as Loader2 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
-import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthPage() {
   const { session, profile, loading, signIn, signUp } = useAuth();
@@ -38,11 +38,11 @@ export default function AuthPage() {
   const handleGoogle = async () => {
     setError("");
     setGoogleLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth("google", {
+      redirectTo: window.location.origin,
     });
-    if (result.error) {
-      setError(result.error.message);
+    if (error) {
+      setError(error.message);
       setGoogleLoading(false);
     }
   };

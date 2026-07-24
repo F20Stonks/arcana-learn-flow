@@ -1,18 +1,14 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { resolveTopicSpecChecklist } from "../_shared/specChecklistResolver.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Resolves the specification checklist for an entire track by fanning out ONE resolution per topic in
-// parallel (see specChecklistResolver.ts for why: a single flat excerpt can't cover a whole syllabus).
-// Triggered on demand from the frontend (same pattern as resolve-past-papers), not blocking track
-// creation. Service-role writes only — students never create these rows directly.
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
     const { trackId } = await req.json();
@@ -22,13 +18,11 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error("Required env not configured");
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error("Required env not configured");
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
-    // Already resolved for this track? Return the cache — don't re-search/re-spend on every visit.
     const { data: existing } = await supabase.from("spec_checklist_items").select("*").eq("track_id", trackId);
     if (existing && existing.length > 0) {
       return new Response(JSON.stringify({ items: existing, fromCache: true }), {
@@ -38,7 +32,6 @@ serve(async (req) => {
 
     const { data: track } = await supabase.from("learning_tracks").select("*").eq("id", trackId).single();
     if (!track || !track.exam_board) {
-      // No board on this track (a custom/informal course) — there's no official spec to check against.
       return new Response(JSON.stringify({ items: [], fromCache: false, noSpec: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -58,12 +51,10 @@ serve(async (req) => {
       }),
     );
 
-    // Fan out one resolution per topic, in parallel — bounded per-topic timeout inside the resolver
-    // keeps the total wall-clock close to the slowest single topic, not the sum of all of them.
     const results = await Promise.allSettled(
       topicSubtopics.map(({ topic, subs }) =>
         resolveTopicSpecChecklist(
-          track.exam_board, track.subject, track.level, topic.title, subs.map((s) => s.title), LOVABLE_API_KEY,
+          track.exam_board, track.subject, track.level, topic.title, subs.map((s) => s.title),
         ).then((r) => ({ topic, subs, ...r })),
       ),
     );
@@ -75,7 +66,7 @@ serve(async (req) => {
       const idByTitle = new Map(subs.map((s) => [s.title, s.id]));
       for (const item of items) {
         const subtopicIds = item.subtopicTitles.map((t) => idByTitle.get(t)).filter((id): id is string => !!id);
-        if (subtopicIds.length === 0) continue; // couldn't place it against a real subtopic — skip rather than show an orphaned item
+        if (subtopicIds.length === 0) continue;
         rows.push({
           track_id: trackId, topic_id: topic.id, code: item.code, text: item.text,
           rigor: item.rigor, evidence_requirements: item.evidenceRequirements,
@@ -98,8 +89,6 @@ serve(async (req) => {
       });
     }
 
-    // Simple items may already be satisfied by subtopics completed before the checklist existed —
-    // tick those immediately rather than waiting for the next subtopic completion event.
     await tickSimpleItemsIfComplete(supabase, inserted as SpecItemRow[]);
 
     return new Response(JSON.stringify({ items: inserted, fromCache: false }), {

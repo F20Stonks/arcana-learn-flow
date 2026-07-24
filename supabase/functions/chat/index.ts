@@ -1,23 +1,21 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Model-routing seam. Today every intensity tier runs on Flash (cost/speed). The one place a future
-// routing engine plugs in: e.g. route "rigorous" (or hard reasoning turns) to a stronger gateway model.
 function pickModel(_intensity: string, fallback: string): string {
   return fallback;
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
     const { messages, context, systemOverride } = await req.json();
-    const ai = getAIConfig();
+    const ai = await getAIConfig();
 
     const intensity = context?.intensity === "guided" || context?.intensity === "rigorous"
       ? context.intensity

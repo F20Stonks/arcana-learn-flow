@@ -109,13 +109,27 @@ async function searchPastPapers(
 
 // Best-effort end to end: any failure or missing config returns an empty list so callers fall back
 // cleanly (an empty "no papers found yet" state, not an error).
+async function getTavilyKey(): Promise<string | null> {
+  const envKey = Deno.env.get("TAVILY_API_KEY");
+  if (envKey) return envKey;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  const { createClient } = await import("npm:@supabase/supabase-js@2.45.0");
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const { data } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
+  return data?.value || null;
+}
+
 export async function resolvePastPapers(
   board: string,
   subject: string,
   level: string | null,
   examHint?: string | null,
 ): Promise<ResolvedPaper[]> {
-  const tavilyApiKey = Deno.env.get("TAVILY_API_KEY");
+  const tavilyApiKey = await getTavilyKey();
   if (!tavilyApiKey) return [];
 
   try {

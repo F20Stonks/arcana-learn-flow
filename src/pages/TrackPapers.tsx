@@ -3,18 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import {
-  ArrowLeft, Loader2, FileText, Search, ExternalLink, Sparkles, ChevronRight,
-  CheckCircle2, XCircle, Zap, Brain,
-} from "lucide-react";
+import { ArrowLeft, Loader as Loader2, FileText, Search, ExternalLink, Sparkles, ChevronRight, CircleCheck as CheckCircle2, Circle as XCircle, Zap, Brain } from "lucide-react";
 import MathRenderer from "@/components/MathRenderer";
 import "katex/dist/katex.min.css";
 
 type TopicWithSubs = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 type Difficulty = "easy" | "medium" | "hard" | "exam";
 
-// past_papers / generated_papers aren't in the generated Supabase types yet — they only exist once
-// Lovable applies supabase/migrations/20260713143000_past_papers.sql and regenerates types.ts. Typed
+// past_papers / generated_papers aren't in the generated Supabase types yet. Typed
 // locally in the meantime; supabase calls touching these tables are cast `as never`/`as any` below
 // (same pattern used for learning_tracks.archived_at before its migration landed).
 interface PastPaper {

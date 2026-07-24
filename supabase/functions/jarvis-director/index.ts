@@ -1,22 +1,21 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
     const { messages, userId, mode } = await req.json();
-    const ai = getAIConfig();
-    const LOVABLE_API_KEY = ai.key;
+    const ai = await getAIConfig();
 
     const spec = mode === "onboarding" && Array.isArray(messages) && messages.length > 0
-      ? await resolveOfficialSpec(messages, LOVABLE_API_KEY).catch((e) => {
+      ? await resolveOfficialSpec(messages).catch((e) => {
           console.error("spec resolution failed:", e);
           return null;
         })
@@ -59,7 +58,7 @@ When you're ready to generate the track, respond with a JSON object in your mess
     },
     {
       "title": "Matrices",
-      "subtopics": ["Matrix Operations", "Determinants", "Inverse Matrices", "Linear Transformations", "Eigenvalues and Eigenvectors"]
+      "subtopics": ["Matrix Operations", "Determinants", "Inverse Matrix", "Linear Transformations", "Eigenvalues and Eigenvectors"]
     }
   ]
 }
@@ -100,7 +99,6 @@ IMPORTANT: Only generate the track after you've asked about their timeline/exam 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Check if response contains a track
     const trackMatch = content.match(/<track>([\s\S]*?)<\/track>/);
     if (trackMatch) {
       try {

@@ -1,16 +1,12 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-
-// Same difficulty vocabulary as question-attack (easy/medium/hard/exam) rather than the session teaching-
-// intensity tiers (Guided/Balanced/Rigorous) — a "paper" is the same conceptual space as Question Attack's
-// quizzes (a bigger, more formal one), not the teaching loop, so it reuses that vocabulary for consistency.
 const DIFFICULTY_GUIDE: Record<string, string> = {
   easy: "Foundation level. Test basic recall and straightforward application. Simple calculations and definitions.",
   medium: "Intermediate. Requires understanding and application of concepts. Multi-step problems.",
@@ -18,20 +14,17 @@ const DIFFICULTY_GUIDE: Record<string, string> = {
   exam: "Authentic full-length exam-style paper. Match the exact format, mark scheme style, and difficulty of real past paper questions, including mark allocations per question.",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
     const { trackId, subject, level, examBoard, topics, difficulty, questionCount } = await req.json();
-    const ai = getAIConfig();
-    const LOVABLE_API_KEY = ai.key;
+    const ai = await getAIConfig();
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     if (!SUPABASE_URL || !ANON_KEY) throw new Error("Supabase env not configured");
 
-    // Resolve the calling user from the forwarded JWT (supabase.functions.invoke attaches it
-    // automatically) — never trust a client-supplied user id.
     const authHeader = req.headers.get("Authorization") || "";
     const authedClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
     const { data: userData, error: userErr } = await authedClient.auth.getUser();
@@ -75,7 +68,7 @@ topics and mark values realistically (harder/multi-step questions worth more mar
 require COMBINING more than one concept and TRANSFER to an unfamiliar context, not a re-skin of a standard
 example.`;
 
-    const aiRes = await fetch(`${ai.url}`, {
+    const aiRes = await fetch(ai.url, {
       method: "POST",
       headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -117,7 +110,6 @@ example.`;
     const totalMarks = questions.reduce((sum: number, q: any) => sum + (Number(q.marks) || 1), 0);
     const title = result.title || `${subject || "Practice"} Paper`;
 
-    // Persist so the paper is resumable/reviewable, not ephemeral like Question Attack's quizzes.
     const { data: saved, error: insertErr } = await authedClient
       .from("generated_papers")
       .insert({
@@ -129,8 +121,6 @@ example.`;
 
     if (insertErr || !saved) {
       console.error("generated_papers insert failed:", insertErr);
-      // Still return the generated paper so the student isn't blocked by a save failure — it just
-      // won't be resumable this time.
       return new Response(JSON.stringify({ paper: { title, difficulty, questions, total_marks: totalMarks }, persisted: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

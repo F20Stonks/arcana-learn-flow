@@ -1,21 +1,18 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getAIConfig } from "../_shared/aiConfig.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Spaced-repetition scheduling bounds + confidence-scaled expansion. Expanding intervals beat fixed
-// ones (Landauer–Bjork); how far a PASSED review pushes the next one depends on how solid the recall
-// was, and a FAILED review CONTRACTS the interval instead of freezing it (a lapse must shorten, not stall).
 const MIN_INTERVAL_DAYS = 3;
 const MAX_INTERVAL_DAYS = 365;
 const REVIEW_GROWTH: Record<"low" | "medium" | "high", number> = { low: 1.3, medium: 1.6, high: 2.5 };
-const REVIEW_LAPSE_FACTOR = 0.4; // failed recall → pull the next interval back in
+const REVIEW_LAPSE_FACTOR = 0.4;
 
 type ExtractedConcept = { name: string; type?: string; definition?: string; aliases?: string[] };
 type ConceptRow = { id: string; name: string; type: string; definition: string | null; aliases: string[] | null };
@@ -34,17 +31,14 @@ function jaccard(a: string, b: string): number {
   return inter / (A.size + B.size - inter);
 }
 
-// Search-before-create resolution (framework §5/§7c). Returns norm(name) -> concept id.
 async function resolveConcepts(
   supabase: ReturnType<typeof createClient>,
   taught: ExtractedConcept[],
   required: ExtractedConcept[],
-  apiKey: string,
 ): Promise<Map<string, string>> {
-  const ai = getAIConfig();
+  const ai = getAIConfigSync();
   const resolved = new Map<string, string>();
 
-  // Unique specs by normalized name (merge taught + required; first spec wins).
   const specs = new Map<string, ExtractedConcept>();
   for (const c of [...taught, ...required]) {
     const k = norm(c.name);
@@ -83,7 +77,6 @@ async function resolveConcepts(
     else ambiguous.push({ key, spec, candidates });
   }
 
-  // One AI reconcile call for the ambiguous cases only (§7c: default to LINK on ambiguity).
   if (ambiguous.length > 0) {
     try {
       const payload = ambiguous.map((a, i) => ({
@@ -91,7 +84,7 @@ async function resolveConcepts(
         concept: { name: a.spec.name, type: a.spec.type, definition: a.spec.definition },
         candidates: a.candidates.map((c) => ({ id: c.id, name: c.name, definition: c.definition })),
       }));
-      const res = await fetch(`${ai.url}`, {
+      const res = await fetch(ai.url, {
         method: "POST",
         headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -123,14 +116,12 @@ Respond ONLY with JSON: {"decisions":[{"index":number,"concept_id":string|null,"
             toCreate.push(item.spec);
           }
         }
-        // Any ambiguous item the model didn't return a decision for → link to top candidate (safe default).
         for (const item of ambiguous) {
           if (!resolved.has(item.key) && !toCreate.includes(item.spec)) {
             resolved.set(item.key, item.candidates[0].id);
           }
         }
       } else {
-        // Reconcile call failed → default every ambiguous item to LINK to its top candidate.
         for (const item of ambiguous) resolved.set(item.key, item.candidates[0].id);
       }
     } catch (e) {
@@ -139,7 +130,6 @@ Respond ONLY with JSON: {"decisions":[{"index":number,"concept_id":string|null,"
     }
   }
 
-  // Create the genuinely-new concepts.
   for (const spec of toCreate) {
     const key = norm(spec.name);
     if (resolved.has(key)) continue;
@@ -159,18 +149,12 @@ type SpecItemRow = {
   id: string; text: string; rigor: string; evidence_requirements: string[]; subtopic_ids: string[]; ticked: boolean;
 };
 
-// Auto-ticks spec_checklist_items mapped to a just-completed subtopic. "Simple" items are a pure
-// computation (all their mapped subtopics complete → tick, no AI call). "Complex" items bundle multiple
-// distinct requirements read off the spec's own wording (e.g. a derivation + a named method + a
-// calculation) — those get checked against the FULL session transcript (not a compressed summary), since
-// judging "was this specific method actually used" needs the real evidence, not a lossy note.
 async function tickMatchingSpecItems(
   supabase: ReturnType<typeof createClient>,
   subtopicId: string,
   messages: { role: string; content: string }[],
-  lovableApiKey: string,
 ) {
-  const ai = getAIConfig();
+  const ai = getAIConfigSync();
   const { data: itemsRaw } = await supabase
     .from("spec_checklist_items")
     .select("id, text, rigor, evidence_requirements, subtopic_ids, ticked")
@@ -179,7 +163,6 @@ async function tickMatchingSpecItems(
   const items = (itemsRaw || []) as unknown as SpecItemRow[];
   if (items.length === 0) return;
 
-  // Resolve current status for every subtopic these items reference (an item can span more than one).
   const allSubIds = [...new Set(items.flatMap((i) => i.subtopic_ids))];
   const { data: subs } = await supabase.from("subtopics").select("id, status").in("id", allSubIds);
   const statusById = new Map(((subs || []) as { id: string; status: string }[]).map((s) => [s.id, s.status]));
@@ -195,7 +178,7 @@ async function tickMatchingSpecItems(
     const transcript = messages.map((m) => `${m.role}: ${m.content}`).join("\n\n");
     const payload = complex.map((i, idx) => ({ index: idx, requirement: i.text, evidenceRequirements: i.evidence_requirements }));
     try {
-      const res = await fetch(`${ai.url}`, {
+      const res = await fetch(ai.url, {
         method: "POST",
         headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -228,15 +211,15 @@ async function tickMatchingSpecItems(
   }
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   const fallback = { complete: false, confidence: "low", notes_to_save: [], xp_earned: 10, concepts_taught: [], concepts_required: [] };
 
   try {
     const { sessionId, subtopicId, messages, intensity: rawIntensity } = await req.json();
-    const ai = getAIConfig();
-    const LOVABLE_API_KEY = ai.key;
+    await getAIConfig();
+    const ai = getAIConfigSync();
 
     const intensity = rawIntensity === "guided" || rawIntensity === "rigorous" ? rawIntensity : "balanced";
 
@@ -247,7 +230,6 @@ serve(async (req) => {
       : null;
     if (!supabase) console.error("SERVICE ROLE unavailable — assessment will return but no knowledge will be persisted");
 
-    // Authoritative session facts (never trust the client for user/subtopic/type).
     let userId: string | null = null;
     let realSubtopicId: string | null = subtopicId || null;
     let sessionType = "learn";
@@ -304,7 +286,7 @@ Respond ONLY with valid JSON:
   "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]
 }`;
 
-    const aiRes = await fetch(`${ai.url}`, {
+    const aiRes = await fetch(ai.url, {
       method: "POST",
       headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -338,13 +320,11 @@ Respond ONLY with valid JSON:
     const conceptsTaught: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_taught) ? result.concepts_taught : []);
     const conceptsRequired: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_required) ? result.concepts_required : []);
 
-    // --- Completion pipeline (service role; each step best-effort so a partial failure never 500s) ---
     if (supabase && sessionId) {
       const nowIso = new Date().toISOString();
       try {
         if (!isReview && complete && userId && realSubtopicId) {
-          // Resolve concepts, then write graph edges + knowledge.
-          const idByName = await resolveConcepts(supabase, conceptsTaught, conceptsRequired, LOVABLE_API_KEY);
+          const idByName = await resolveConcepts(supabase, conceptsTaught, conceptsRequired);
           const taughtIds = [...new Set(conceptsTaught.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
           const requiredIds = [...new Set(conceptsRequired.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
 
@@ -361,19 +341,15 @@ Respond ONLY with valid JSON:
             );
           }
 
-          // Notes (moved server-side so they can carry concept links).
           if (notes.length) {
             await supabase.from("notes").insert(
               notes.map((n) => ({ user_id: userId, subtopic_id: realSubtopicId, title: n.title, content: n.content, linked_concept_ids: taughtIds })),
             );
           }
 
-          // Mark subtopic complete + schedule first review if not already scheduled (§4/§6).
           await supabase.from("subtopics").update({ status: "complete", completed_at: nowIso }).eq("id", realSubtopicId);
 
-          // Tick any specification checklist items this subtopic satisfies (best-effort — a failure
-          // here should never block the rest of the completion pipeline).
-          try { await tickMatchingSpecItems(supabase, realSubtopicId, messages, LOVABLE_API_KEY); }
+          try { await tickMatchingSpecItems(supabase, realSubtopicId, messages); }
           catch (e) { console.error("tickMatchingSpecItems failed:", e); }
 
           const { data: existingReview } = await supabase.from("subtopic_reviews").select("id").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
@@ -385,9 +361,6 @@ Respond ONLY with valid JSON:
           }
         }
 
-        // Review session → reschedule with confidence-modulated expanding intervals, contracting on a
-        // failed recall. Runs on EVERY review (pass or fail), not only completions, so a lapse actually
-        // shortens the interval instead of leaving the item frozen and permanently overdue.
         if (isReview && userId && realSubtopicId) {
           const { data: row } = await supabase.from("subtopic_reviews").select("id, interval_days").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
           if (row) {
@@ -397,13 +370,11 @@ Respond ONLY with valid JSON:
             await supabase.from("subtopic_reviews").update({
               interval_days: newInterval,
               next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
-              // Only a passed review counts as "completed"; a lapse reschedules but isn't a completion.
               ...(complete ? { last_completed_at: nowIso } : {}),
             }).eq("id", (row as any).id);
           }
         }
 
-        // Session bookkeeping + XP (both modes).
         await supabase.from("sessions").update({ completed_at: nowIso, xp_earned: xpEarned }).eq("id", sessionId);
         if (xpEarned > 0 && userId) {
           const { data: p } = await supabase.from("profiles").select("total_xp").eq("user_id", userId).maybeSingle();

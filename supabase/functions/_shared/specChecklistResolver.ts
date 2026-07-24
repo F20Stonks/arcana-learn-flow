@@ -10,7 +10,8 @@
 // Fails soft to an empty list (no TAVILY_API_KEY, no usable search result, any error) so a topic simply
 // shows no checklist rather than breaking the page.
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+import { getAIConfig, getAIConfigSync } from "./aiConfig.ts";
+
 const FETCH_TIMEOUT_MS = 8000;
 const OVERALL_TIMEOUT_MS = 18000;
 const MAX_EXCERPT_CHARS = 6000;
@@ -21,8 +22,22 @@ export type SpecChecklistItem = {
   text: string;
   rigor: "simple" | "complex";
   evidenceRequirements: string[];
-  subtopicTitles: string[]; // matched back to subtopic ids by the caller, which knows the real ids
+  subtopicTitles: string[];
 };
+
+async function getTavilyKey(): Promise<string | null> {
+  const envKey = Deno.env.get("TAVILY_API_KEY");
+  if (envKey) return envKey;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  const { createClient } = await import("npm:@supabase/supabase-js@2.45.0");
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const { data } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
+  return data?.value || null;
+}
 
 function looksLikeUsableText(s: string | null | undefined): s is string {
   return !!s && s.replace(/\s/g, "").length >= MIN_USABLE_CHARS;
@@ -74,13 +89,14 @@ async function searchTopicSpecText(
 }
 
 async function segmentIntoItems(
-  specText: string, sourceUrl: string, topicTitle: string, subtopicTitles: string[], lovableApiKey: string,
+  specText: string, sourceUrl: string, topicTitle: string, subtopicTitles: string[],
 ): Promise<{ items: SpecChecklistItem[]; sourceUrl: string } | null> {
-  const res = await fetch(GATEWAY_URL, {
+  const ai = getAIConfigSync();
+  const res = await fetch(ai.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: ai.model,
       messages: [
         {
           role: "system",
@@ -118,20 +134,17 @@ If the excerpt doesn't actually contain real spec requirement content for this t
   }
 }
 
-// Best-effort end to end for ONE topic: any failure/missing config/no-usable-text returns an empty
-// result so the caller's Promise.allSettled fan-out treats it as "nothing found for this topic" rather
-// than failing the whole checklist build.
 export async function resolveTopicSpecChecklist(
   board: string, subject: string, level: string | null, topicTitle: string, subtopicTitles: string[],
-  lovableApiKey: string,
 ): Promise<{ items: SpecChecklistItem[]; sourceUrl: string | null }> {
-  const tavilyApiKey = Deno.env.get("TAVILY_API_KEY");
+  await getAIConfig();
+  const tavilyApiKey = await getTavilyKey();
   if (!tavilyApiKey || subtopicTitles.length === 0) return { items: [], sourceUrl: null };
 
   const run = async (): Promise<{ items: SpecChecklistItem[]; sourceUrl: string | null }> => {
     const found = await searchTopicSpecText(board, subject, level, topicTitle, tavilyApiKey);
     if (!found) return { items: [], sourceUrl: null };
-    const segmented = await segmentIntoItems(found.text, found.sourceUrl, topicTitle, subtopicTitles, lovableApiKey);
+    const segmented = await segmentIntoItems(found.text, found.sourceUrl, topicTitle, subtopicTitles);
     if (!segmented) return { items: [], sourceUrl: found.sourceUrl };
     return { items: segmented.items, sourceUrl: segmented.sourceUrl };
   };

@@ -22,7 +22,8 @@
 //
 // Every step is wrapped to fail soft: if TAVILY_API_KEY isn't configured, or nothing usable is found,
 // resolveOfficialSpec returns null and jarvis-director falls back to its prior ungrounded behaviour.
-// Requires the TAVILY_API_KEY secret (https://tavily.com) to be added to the Supabase project.
+
+import { getAIConfig, getAIConfigSync } from "./aiConfig.ts";
 
 type BoardSubjectLevel = { board: string | null; subject: string | null; level: string | null };
 
@@ -35,31 +36,20 @@ export type ResolvedSpec = {
   level: string | null;
 };
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OVERALL_TIMEOUT_MS = 15000;
-// A recognised exam family runs up to two Tavily searches (steered, then generic), so it gets a
-// slightly longer guard; the no-family path keeps the original budget.
 const FAMILY_OVERALL_TIMEOUT_MS = 20000;
 const MAX_EXCERPT_CHARS = 6000;
 const MIN_USABLE_CHARS = 300;
 
 // --- Exam-family search hints --------------------------------------------------------------------
-// This is a table of SEARCH HINTS, not a registry of hardcoded spec content — extraction still goes
-// through the same Tavily raw_content / HTML-fallback pipeline as every other board, and an
-// unrecognised exam behaves exactly as before. Each entry says only: which official publisher's
-// domains to constrain the first search to, what that body actually calls its syllabus document, and
-// which awarding body to assume when the student named the exam but not the body (nobody prepping for
-// "JEE Mains" ever says "NTA").
 type ExamFamily = {
-  family: string; // canonical exam name — used in the steered query, and as the subject fallback for whole-exam syllabi
-  pattern: RegExp; // matched against the onboarding conversation + extracted board/subject/level
-  officialDomains: string[]; // Tavily include_domains — the official publisher only (subdomains are covered by the parent)
-  queryPhrase: string; // this body's own name for its specification document
-  boardFallback: string; // awarding body to assume when the student didn't name one
+  family: string;
+  pattern: RegExp;
+  officialDomains: string[];
+  queryPhrase: string;
+  boardFallback: string;
 };
 
-// Order matters — first match wins: "JEE Advanced" before the bare "JEE" catch, and JEE/NEET before
-// CBSE so "CBSE class 12, aiming for JEE" grounds in the JEE syllabus (the stated goal), not CBSE's.
 const EXAM_FAMILIES: ExamFamily[] = [
   {
     family: "JEE Advanced",
@@ -70,32 +60,29 @@ const EXAM_FAMILIES: ExamFamily[] = [
   },
   {
     family: "JEE Main",
-    // Bare "JEE" / "IIT JEE" defaults to Main — the more common target; Advanced is matched above.
     pattern: /\b(?:iit[\s-]*)?jee\b/i,
-    officialDomains: ["nta.ac.in", "nta.nic.in"], // jeemain.nta.nic.in is covered by the parent domain
+    officialDomains: ["nta.ac.in", "nta.nic.in"],
     queryPhrase: "official syllabus",
     boardFallback: "NTA",
   },
   {
     family: "NEET",
     pattern: /\bneet\b/i,
-    officialDomains: ["nta.ac.in", "nta.nic.in"], // neet.nta.nic.in is covered by the parent domain
+    officialDomains: ["nta.ac.in", "nta.nic.in"],
     queryPhrase: "official syllabus",
     boardFallback: "NTA",
   },
   {
     family: "AP",
     pattern: /\badvanced placement\b|\bap\s+(?:calc(?:ulus)?|physics|chem(?:istry)?|bio(?:logy)?|stat(?:istics)?|precalc(?:ulus)?|computer science)\b/i,
-    officialDomains: ["collegeboard.org"], // covers apcentral.collegeboard.org
-    queryPhrase: "course and exam description course content", // College Board's name for the spec (the "CED")
+    officialDomains: ["collegeboard.org"],
+    queryPhrase: "course and exam description course content",
     boardFallback: "College Board",
   },
   {
     family: "IB",
     pattern: /\binternational baccalaureate\b|\bib\s+(?:dp|diploma|math|maths|mathematics|physics|chem(?:istry)?|bio(?:logy)?)\b|\bmaths?\s+(?:aa|ai)\b|\banalysis (?:and|&) approaches\b|\bapplications (?:and|&) interpretation\b/i,
     officialDomains: ["ibo.org"],
-    // Full IB guides sit behind the MyIB login; the public "subject brief" PDFs on ibo.org carry the
-    // syllabus outline (components + topic list), which is what this phrasing surfaces.
     queryPhrase: "subject brief syllabus outline",
     boardFallback: "International Baccalaureate",
   },
@@ -115,10 +102,8 @@ const EXAM_FAMILIES: ExamFamily[] = [
   },
   {
     family: "SAT",
-    // Deliberately NOT case-insensitive on the bare acronym: lowercase "sat" is also just a common
-    // English word ("I sat my mocks"), so lowercase only counts right next to an exam word.
     pattern: /\bSAT\b|\b[Dd]igital\s+[Ss][Aa][Tt]\b|\bsat\s+(?:math|exam|test|prep)\b/,
-    officialDomains: ["collegeboard.org"], // covers satsuite.collegeboard.org
+    officialDomains: ["collegeboard.org"],
     queryPhrase: "test specifications assessed skills math domains",
     boardFallback: "College Board",
   },
@@ -131,17 +116,31 @@ function detectExamFamily(haystack: string): ExamFamily | null {
   return null;
 }
 
+async function getTavilyKey(): Promise<string | null> {
+  const envKey = Deno.env.get("TAVILY_API_KEY");
+  if (envKey) return envKey;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  const { createClient } = await import("npm:@supabase/supabase-js@2.45.0");
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const { data } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
+  return data?.value || null;
+}
+
 async function extractBoardSubjectLevel(
   messages: { role: string; content: string }[],
-  lovableApiKey: string,
 ): Promise<BoardSubjectLevel> {
+  const ai = getAIConfigSync();
   const conversation = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
 
-  const res = await fetch(GATEWAY_URL, {
+  const res = await fetch(ai.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: ai.model,
       messages: [
         {
           role: "system",
@@ -182,7 +181,7 @@ async function fetchHtmlFallback(url: string): Promise<string | null> {
       });
       if (!res.ok) return null;
       const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("html")) return null; // don't attempt to read PDF/binary bytes as text
+      if (!contentType.includes("html")) return null;
       const html = await res.text();
       const text = html
         .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -202,9 +201,6 @@ async function fetchHtmlFallback(url: string): Promise<string | null> {
   }
 }
 
-// One Tavily search + the usable-text scan over its results (raw_content first, own-fetch HTML
-// fallback second). include_domains, when given, constrains results to those domains and their
-// subdomains — used for the official-publisher steered attempt.
 async function tavilySearchForSpec(
   query: string,
   tavilyApiKey: string,
@@ -248,9 +244,6 @@ async function searchOfficialSpec(
   tavilyApiKey: string,
   family: ExamFamily | null,
 ): Promise<ResolvedSpec | null> {
-  // Steered attempt first for a recognised family: official publisher's domains + that body's own
-  // document name. Domain-constrained search can also come back empty (indexing gaps on government
-  // portals), so the generic attempt below always remains as the second try.
   if (family) {
     const steeredQuery =
       `${family.family} ${level || ""} ${subject === family.family ? "" : subject} ${family.queryPhrase}`
@@ -260,40 +253,29 @@ async function searchOfficialSpec(
     if (hit) return { ...hit, board, subject, level };
   }
 
-  // Generic attempt — the original behaviour, and the only attempt when no family matched.
   const query = `${board} ${level || ""} ${subject} official specification syllabus content`.replace(/\s+/g, " ").trim();
   const hit = await tavilySearchForSpec(query, tavilyApiKey);
   return hit ? { ...hit, board, subject, level } : null;
 }
 
-// Best-effort end to end: any failure or missing config returns null so callers can fall back cleanly.
 export async function resolveOfficialSpec(
   messages: { role: string; content: string }[],
-  lovableApiKey: string,
 ): Promise<ResolvedSpec | null> {
-  const tavilyApiKey = Deno.env.get("TAVILY_API_KEY");
+  await getAIConfig();
+  const tavilyApiKey = await getTavilyKey();
   if (!tavilyApiKey) return null;
 
   const conversationText = messages.map((m) => m.content).join("\n");
 
   const run = async (): Promise<ResolvedSpec | null> => {
-    const { board, subject, level } = await extractBoardSubjectLevel(messages, lovableApiKey);
-    // Detect against the conversation AND the extracted fields, so "AP Calculus BC" still registers
-    // when the student only typed "calc BC" and the extraction step filled in the rest — and so the
-    // big entrance exams resolve even when extraction failed outright.
+    const { board, subject, level } = await extractBoardSubjectLevel(messages);
     const family = detectExamFamily([conversationText, board, subject, level].filter(Boolean).join("\n"));
-    // Family hints fill the two gaps that used to kill non-UK resolution: no named awarding body
-    // ("preparing for JEE Mains" — board null), and whole-exam syllabi (JEE/NEET/SAT cover all their
-    // subjects in one official document, so a missing subject shouldn't bail either). With no family
-    // matched, the null checks below behave exactly as before.
     const effectiveBoard = board || family?.boardFallback || null;
     const effectiveSubject = subject || family?.family || null;
     if (!effectiveBoard || !effectiveSubject) return null;
     return await searchOfficialSpec(effectiveBoard, effectiveSubject, level, tavilyApiKey, family);
   };
 
-  // Timeout is picked off the conversation alone (extraction hasn't run yet out here) — a family only
-  // detectable from extracted fields just keeps the original budget, worst case cut to null as ever.
   const timeoutMs = detectExamFamily(conversationText) ? FAMILY_OVERALL_TIMEOUT_MS : OVERALL_TIMEOUT_MS;
 
   try {

@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { CheckCircle2, Circle, Loader2, ClipboardList, ExternalLink } from "lucide-react";
+import { CircleCheck as CheckCircle2, Circle, Loader as Loader2, ClipboardList, ExternalLink } from "lucide-react";
 
-// spec_checklist_items isn't in the generated Supabase types yet — only exists once Lovable applies
-// supabase/migrations/20260713150000_spec_checklist.sql and regenerates types.ts. Typed locally in the
-// meantime, same pattern as TrackPapers.tsx before its migration landed.
+// spec_checklist_items isn't in the generated Supabase types yet. Typed locally in the meantime.
 interface SpecItem {
   id: string;
   topic_id: string | null;
