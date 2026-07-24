@@ -5,6 +5,40 @@ import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
 
+const AUTH_TIMEOUT_MS = 6500;
+
+function createLocalProfile(nextUser: User): Profile {
+  const displayName =
+    typeof nextUser.user_metadata?.display_name === "string" && nextUser.user_metadata.display_name.trim()
+      ? nextUser.user_metadata.display_name.trim()
+      : nextUser.email?.split("@")[0] || "learner";
+  const now = new Date().toISOString();
+
+  return {
+    id: nextUser.id,
+    user_id: nextUser.id,
+    display_name: displayName,
+    avatar_url: null,
+    weekly_streak: 0,
+    total_xp: 0,
+    subscription_tier: "free",
+    voice_id: null,
+    onboarding_complete: false,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+async function withTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timeoutId = setTimeout(() => resolve(fallback), AUTH_TIMEOUT_MS);
+  });
+  const result = await Promise.race([promise, timeout]);
+  if (timeoutId) clearTimeout(timeoutId);
+  return result;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -28,24 +62,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
 
   const createFallbackProfile = async (nextUser: User): Promise<Profile | null> => {
-    const displayName =
-      typeof nextUser.user_metadata?.display_name === "string" && nextUser.user_metadata.display_name.trim()
-        ? nextUser.user_metadata.display_name.trim()
-        : nextUser.email?.split("@")[0] || "learner";
+    const localProfile = createLocalProfile(nextUser);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
-      .insert({ user_id: nextUser.id, display_name: displayName })
+      .upsert({ user_id: nextUser.id, display_name: localProfile.display_name }, { onConflict: "user_id" })
       .select("*")
       .maybeSingle();
 
-    return data;
+    if (error) console.warn("Profile fallback creation failed:", error.message);
+    return data || localProfile;
   };
 
   const fetchProfile = async (nextUser: User) => {
-    const { data } = await supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle();
-    if (data) return data;
-    return createFallbackProfile(nextUser);
+    return withTimeout(
+      (async () => {
+        const { data, error } = await supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle();
+        if (error) console.warn("Profile fetch failed:", error.message);
+        if (data) return data;
+        return createFallbackProfile(nextUser);
+      })(),
+      createLocalProfile(nextUser),
+    );
   };
 
   useEffect(() => {
@@ -58,16 +96,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthLoading(false);
     };
 
+    const authTimeout = window.setTimeout(() => {
+      if (!cancelled) setAuthLoading(false);
+    }, AUTH_TIMEOUT_MS);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       applySession(session);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       applySession(session);
+    }).catch((error) => {
+      console.warn("Auth session restore failed:", error?.message || error);
+      applySession(null);
     });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -90,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (!cancelled) {
-          setProfile(null);
+          setProfile(createLocalProfile(user));
           setProfileUserId(user.id);
         }
       });

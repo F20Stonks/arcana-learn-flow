@@ -6,6 +6,7 @@ import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target,
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 import SpecChecklist from "@/components/SpecChecklist";
+import SafeBoundary from "@/components/SafeBoundary";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ export default function TrackOverview() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [view, setView] = useState<View>("overview");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -49,20 +51,31 @@ export default function TrackOverview() {
   }, [trackId, user]);
 
   const loadTrack = async () => {
-    const { data: t } = await supabase.from("learning_tracks").select("*").eq("id", trackId!).single();
-    setTrack(t);
+    if (!trackId) return;
+    setLoading(true);
+    setLoadError("");
+    try {
+      const { data: t, error: trackError } = await supabase.from("learning_tracks").select("*").eq("id", trackId).single();
+      if (trackError) throw trackError;
+      setTrack(t);
 
-    const { data: rawTopics } = await supabase.from("topics").select("*").eq("track_id", trackId!).order("order_index");
-    if (!rawTopics) { setLoading(false); return; }
+      const { data: rawTopics, error: topicsError } = await supabase.from("topics").select("*").eq("track_id", trackId).order("order_index");
+      if (topicsError) throw topicsError;
 
-    const enriched: Topic[] = [];
-    for (const topic of rawTopics) {
-      const { data: subs } = await supabase.from("subtopics").select("*").eq("topic_id", topic.id).order("order_index");
-      enriched.push({ ...topic, subtopics: subs || [] });
+      const enriched: Topic[] = await Promise.all(
+        (rawTopics || []).map(async (topic) => {
+          const { data: subs } = await supabase.from("subtopics").select("*").eq("topic_id", topic.id).order("order_index");
+          return { ...topic, subtopics: subs || [] };
+        }),
+      );
+      setTopics(enriched);
+      if (enriched.length > 0) setExpanded(new Set([enriched[0].id]));
+    } catch (error) {
+      console.error("Track load failed:", error);
+      setLoadError("This track couldn't load. Go back to the dashboard or retry.");
+    } finally {
+      setLoading(false);
     }
-    setTopics(enriched);
-    if (enriched.length > 0) setExpanded(new Set([enriched[0].id]));
-    setLoading(false);
   };
 
   const toggle = (id: string) => setExpanded((prev) => {
@@ -100,7 +113,27 @@ export default function TrackOverview() {
   const completedSubs = topics.reduce((a, t) => a + t.subtopics.filter((s) => s.status === "complete").length, 0);
   const pct = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="bg-card border border-border rounded-xl p-5 flex items-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Opening track…</p>
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-card border border-border rounded-xl p-6">
+        <h1 className="text-lg font-semibold text-foreground">Track unavailable</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+        <div className="mt-5 flex gap-2">
+          <button onClick={() => navigate("/dashboard")} className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80">Dashboard</button>
+          <button onClick={loadTrack} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">Retry</button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -249,14 +282,20 @@ export default function TrackOverview() {
               </div>
             </>
           ) : view === "map" ? (
-            <KnowledgeMap
-              topics={topics}
-              trackTitle={track?.title}
-              onSubtopicClick={(id) => navigate(`/session/${id}`)}
-              onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
-            />
+            <SafeBoundary label="Knowledge map">
+              <KnowledgeMap
+                topics={topics}
+                trackTitle={track?.title}
+                onSubtopicClick={(id) => navigate(`/session/${id}`)}
+                onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
+              />
+            </SafeBoundary>
           ) : (
-            <SpecChecklist trackId={trackId!} topics={topics} hasExamBoard={!!track?.exam_board} />
+            trackId ? (
+              <SafeBoundary label="Specification checklist">
+                <SpecChecklist trackId={trackId} topics={topics} hasExamBoard={!!track?.exam_board} />
+              </SafeBoundary>
+            ) : null
           )}
         </div>
       </main>

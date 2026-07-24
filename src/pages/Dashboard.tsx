@@ -9,6 +9,7 @@ import BrandLogo from "@/components/BrandLogo";
 import HubSidebar from "@/components/HubSidebar";
 import GeneralChat from "@/components/GeneralChat";
 import NextActionCard from "@/components/NextActionCard";
+import SafeBoundary from "@/components/SafeBoundary";
 import { SubtopicLite, TrackLite } from "@/lib/nextAction";
 import { SubjectIcon } from "@/lib/subjectIcons";
 import {
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -43,39 +45,78 @@ export default function Dashboard() {
   useEffect(() => { applyStoredAccent(); }, []);
 
   const loadTracks = async () => {
-    const { data: rawTracks } = await supabase
-      .from("learning_tracks")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false });
+    if (!user) return;
+    const userId = user.id;
+    setLoading(true);
+    setLoadError("");
 
-    if (!rawTracks) { setLoading(false); return; }
+    try {
+      const { data: rawTracks, error } = await supabase
+        .from("learning_tracks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-    const enriched: Track[] = [];
-    for (const t of rawTracks) {
-      const { data: topics } = await supabase.from("topics").select("id, order_index").eq("track_id", t.id);
-      const topicIds = topics?.map((tp) => tp.id) || [];
-      const topicOrderById = new Map((topics || []).map((tp) => [tp.id, tp.order_index]));
-      let subtopicCount = 0;
-      let completedCount = 0;
-      let subtopicsDetail: SubtopicLite[] = [];
-      if (topicIds.length > 0) {
-        const { data: subs } = await supabase.from("subtopics").select("id, title, status, order_index, topic_id").in("topic_id", topicIds);
-        subtopicCount = subs?.length || 0;
-        completedCount = subs?.filter((s) => s.status === "complete").length || 0;
-        subtopicsDetail = (subs || []).map((s) => ({
-          id: s.id,
-          title: s.title,
-          status: s.status,
-          topicOrder: topicOrderById.get(s.topic_id) ?? 0,
-          order: s.order_index,
-        }));
-      }
-      enriched.push({ ...t, topicCount: topicIds.length, subtopicCount, completedCount, subtopicsDetail });
+      if (error) throw error;
+
+      const enriched: Track[] = await Promise.all(
+        (rawTracks || []).map(async (t) => {
+          try {
+            const { data: topics } = await supabase.from("topics").select("id, order_index").eq("track_id", t.id);
+            const topicIds = topics?.map((tp) => tp.id) || [];
+            const topicOrderById = new Map((topics || []).map((tp) => [tp.id, tp.order_index]));
+            let subtopicCount = 0;
+            let completedCount = 0;
+            let subtopicsDetail: SubtopicLite[] = [];
+
+            if (topicIds.length > 0) {
+              const { data: subs } = await supabase.from("subtopics").select("id, title, status, order_index, topic_id").in("topic_id", topicIds);
+              subtopicCount = subs?.length || 0;
+              completedCount = subs?.filter((s) => s.status === "complete").length || 0;
+              subtopicsDetail = (subs || []).map((s) => ({
+                id: s.id,
+                title: s.title,
+                status: s.status,
+                topicOrder: topicOrderById.get(s.topic_id) ?? 0,
+                order: s.order_index,
+              }));
+            }
+
+            return { ...t, topicCount: topicIds.length, subtopicCount, completedCount, subtopicsDetail };
+          } catch (error) {
+            console.warn("Track enrichment failed:", error);
+            return { ...t, topicCount: 0, subtopicCount: 0, completedCount: 0, subtopicsDetail: [] };
+          }
+        }),
+      );
+
+      setTracks(enriched);
+    } catch (error) {
+      console.error("Dashboard track load failed:", error);
+      setTracks([]);
+      setLoadError("Jarvis couldn't load your tracks. You can retry or create a new one.");
+    } finally {
+      setLoading(false);
     }
-    setTracks(enriched);
-    setLoading(false);
   };
+
+  const renderHeader = () => (
+    <header className="border-b border-border bg-background sticky top-0 z-40">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <BrandLogo className="text-lg" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-sm"><Flame className="h-4 w-4 text-streak" /><span className="font-semibold text-foreground">{profile?.weekly_streak || 0}</span></div>
+          <div className="flex items-center gap-1.5 text-sm"><Trophy className="h-4 w-4 text-xp" /><span className="font-semibold text-foreground">{profile?.total_xp || 0}</span></div>
+          <CustomizeMenu />
+          <SafeBoundary label="Hub" compact>
+            <HubSidebar />
+          </SafeBoundary>
+          <button onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground transition-colors"><Settings className="h-5 w-5" /></button>
+          <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors"><LogOut className="h-5 w-5" /></button>
+        </div>
+      </div>
+    </header>
+  );
 
   const pct = (t: Track) => (t.subtopicCount > 0 ? Math.round((t.completedCount / t.subtopicCount) * 100) : 0);
 
@@ -97,6 +138,25 @@ export default function Dashboard() {
         })),
     [tracks],
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        {renderHeader()}
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Opening your workspace</h1>
+                <p className="mt-1 text-sm text-muted-foreground">If one data source is slow, Jarvis will still show the dashboard.</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Soft archive/restore. Reversible, so no confirm dialog — just an optimistic update + an undo toast.
   const setArchived = async (track: Track, archived: boolean) => {
@@ -128,28 +188,25 @@ export default function Dashboard() {
     toast.success("Track deleted");
   };
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-background sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <BrandLogo className="text-lg" />
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-sm"><Flame className="h-4 w-4 text-streak" /><span className="font-semibold text-foreground">{profile?.weekly_streak || 0}</span></div>
-            <div className="flex items-center gap-1.5 text-sm"><Trophy className="h-4 w-4 text-xp" /><span className="font-semibold text-foreground">{profile?.total_xp || 0}</span></div>
-            <CustomizeMenu />
-            <HubSidebar />
-            <button onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground transition-colors"><Settings className="h-5 w-5" /></button>
-            <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors"><LogOut className="h-5 w-5" /></button>
-          </div>
-        </div>
-      </header>
+      {renderHeader()}
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {loadError && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <p className="text-sm font-medium text-foreground">{loadError}</p>
+            <button onClick={loadTracks} className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+              Retry loading tracks
+            </button>
+          </div>
+        )}
+
         {/* What to do next — deterministic recommendation (renders nothing when there's nothing to say) */}
-        <NextActionCard tracks={nextActionTracks} />
+        <SafeBoundary label="Next action">
+          <NextActionCard tracks={nextActionTracks} />
+        </SafeBoundary>
 
         {/* Hero */}
         <div className="bg-card border border-border rounded-xl p-6">
@@ -176,7 +233,9 @@ export default function Dashboard() {
 
           {chatOpen && (
             <div className="mt-5 pt-5 border-t border-border">
-              <GeneralChat />
+              <SafeBoundary label="Jarvis chat">
+                <GeneralChat />
+              </SafeBoundary>
             </div>
           )}
         </div>
