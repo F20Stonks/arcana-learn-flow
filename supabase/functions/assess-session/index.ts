@@ -93,7 +93,7 @@ async function resolveConcepts(
       }));
       const res = await fetch(`${ai.url}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: ai.model,
           messages: [
@@ -170,6 +170,7 @@ async function tickMatchingSpecItems(
   messages: { role: string; content: string }[],
   lovableApiKey: string,
 ) {
+  const ai = getAIConfig();
   const { data: itemsRaw } = await supabase
     .from("spec_checklist_items")
     .select("id, text, rigor, evidence_requirements, subtopic_ids, ticked")
@@ -196,7 +197,7 @@ async function tickMatchingSpecItems(
     try {
       const res = await fetch(`${ai.url}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: ai.model,
           messages: [
