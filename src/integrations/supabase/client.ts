@@ -5,19 +5,42 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+/**
+ * True when the build has no Supabase credentials (the backend env vars were not
+ * injected). createClient() THROWS on an undefined url/key, and because this module
+ * is imported transitively from main.tsx, that throw happens during module
+ * evaluation — before any render code runs. The result is an empty #root on a
+ * styled background: a silent black screen with no error anywhere on the page.
+ *
+ * So instead of throwing, we flag it and fall back to inert placeholders; main.tsx
+ * reads this flag and renders an actionable message telling the user what's wrong.
+ */
+export const supabaseConfigMissing = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY;
+
+if (supabaseConfigMissing) {
+  console.error(
+    "[Jarvis] Missing Supabase environment variables (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY). " +
+      "The app cannot reach its backend. In Lovable this usually means the Cloud backend is not linked to this build.",
+  );
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-    // Bypass the navigator.locks LockManager. Inside a sandboxed iframe (Lovable's
-    // preview) and some incognito contexts, its cold-start acquisition never
-    // resolves, leaving the initial getSession() promise permanently pending —
-    // the app then hangs on the loading screen and renders as a blank/black page.
-    // A single-tab SPA doesn't need cross-tab lock coordination.
-    lock: async (_name, _acquireTimeout, fn) => fn(),
-  }
-});
+export const supabase = createClient<Database>(
+  SUPABASE_URL || "https://unconfigured.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY || "unconfigured",
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      // Bypass the navigator.locks LockManager. Inside a sandboxed iframe (Lovable's
+      // preview) and some incognito contexts, its cold-start acquisition never
+      // resolves, leaving the initial getSession() promise permanently pending —
+      // the app then hangs on the loading screen and renders as a blank/black page.
+      // A single-tab SPA doesn't need cross-tab lock coordination.
+      lock: async (_name, _acquireTimeout, fn) => fn(),
+    },
+  },
+);

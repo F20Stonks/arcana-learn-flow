@@ -1,10 +1,24 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
+
+// componentTagger (lovable-tagger) runs in development mode only — the mode
+// Lovable's in-editor preview serves — and is what the preview harness attaches
+// to. It is loaded OPTIONALLY: a static import would make the whole vite config
+// fail to load anywhere the package isn't installed, which takes the dev server
+// down entirely and renders the preview blank. Missing package => no tagger, and
+// everything else still runs.
+async function optionalComponentTagger(): Promise<PluginOption | null> {
+  try {
+    const mod = await import("lovable-tagger");
+    return mod.componentTagger();
+  } catch {
+    return null;
+  }
+}
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(async ({ mode }) => ({
   server: {
     host: "::",
     port: process.env.PORT ? Number(process.env.PORT) : 8080,
@@ -12,10 +26,10 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  // componentTagger runs in dev mode only — it is what Lovable's in-editor preview
-  // attaches to. Removing it (commit 9150f0d) left the preview with nothing to hook
-  // into, which is why it rendered blank/black. No effect on production builds.
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" ? await optionalComponentTagger() : null,
+  ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
