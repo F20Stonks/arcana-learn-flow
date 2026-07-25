@@ -1,3 +1,4 @@
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { useState, useRef, useEffect } from "react";
 import { Send, Loader2, X, HelpCircle } from "lucide-react";
 import MathRenderer from "./MathRenderer";
@@ -54,11 +55,11 @@ export default function MiniChat({ question, correctAnswer, explanation, context
       : "The student is struggling. Explain the solution step-by-step from first principles in a simple, clear manner. Use simple language. After explaining, suggest they schedule a review of this topic.";
 
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: allMessages,

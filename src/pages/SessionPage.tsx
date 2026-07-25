@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
@@ -178,11 +178,11 @@ export default function SessionPage() {
 List the 3-5 specific prerequisite ideas, notations, or skills this subtopic ASSUMES the student already holds — the things that, if missing, would make the lesson incomprehensible. Prefer concrete notation/terms (e.g. "the ⇒ implication arrow", "negation (¬)", "what a factor is") over broad topic names. Order them from most to least foundational.
 Return ONLY a JSON object — no prose, no markdown fences:
 {"prereqs":[{"name":"short label","note":"plain description, 8 words max"}]}`;
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: "Generate the prerequisite list now." }],
@@ -407,11 +407,11 @@ Return ONLY a JSON object — no prose, no markdown fences:
     await supabase.from("messages").insert({ session_id: sessionId, role: "user", content: text });
 
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: newMessages,

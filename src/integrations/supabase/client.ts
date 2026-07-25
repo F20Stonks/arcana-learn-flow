@@ -23,8 +23,20 @@ const FALLBACK_SUPABASE_URL = "https://gqxwjqulxptyzjjatgbn.supabase.co";
 const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHdqcXVseHB0eXpqamF0Z2JuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5Mzc2NjgsImV4cCI6MjA5MTUxMzY2OH0.RnsaszttvTkAD0BkoJ68NHPhT4fkkRAnpzVCB1wgvNI";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_SUPABASE_PUBLISHABLE_KEY;
+/**
+ * Resolved Supabase URL/key — env var when injected, hardcoded fallback otherwise.
+ *
+ * EXPORTED because several call sites invoke edge functions with a raw fetch()
+ * rather than supabase.functions.invoke(). Those must use these constants, NOT
+ * import.meta.env directly: on a build where the env vars are missing, reading
+ * import.meta.env gives `undefined`, so the request goes to
+ * "undefined/functions/v1/chat" with "Authorization: Bearer undefined" and every
+ * AI feature silently dies while the rest of the app (which goes through the
+ * client below) keeps working.
+ */
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+export const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_SUPABASE_PUBLISHABLE_KEY;
 
 // Kept for main.tsx's diagnostic screen: true only if BOTH the env vars and the
 // fallback above are somehow absent (should not happen in this repo, but a

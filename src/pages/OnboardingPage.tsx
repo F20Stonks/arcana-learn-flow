@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import BrandLogo from "@/components/BrandLogo";
@@ -54,11 +54,11 @@ Too coarse (bundles many distinct ideas — must be split): "Complex Numbers", "
 Return ONLY JSON — no prose, no markdown fences:
 {"topics":[{"title":"<unchanged title>","subtopics":["...","..."]}]}`;
       const payload = { topics: track.topics.map((t) => ({ title: t.title, subtopics: t.subtopics })) };
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: `Refine the granularity of this track:\n${JSON.stringify(payload)}` }],
@@ -113,11 +113,11 @@ Return ONLY JSON — no prose, no markdown fences:
   // non-teaching instruction). Accumulates the SSE stream and parses the first JSON object; null on error.
   const chatJSON = async (systemOverride: string, userContent: string): Promise<any | null> => {
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ messages: [{ role: "user", content: userContent }], systemOverride }),
       });

@@ -1,6 +1,7 @@
 import type { SceneSpec } from "./sceneSpec";
 import { isSceneSpec, sanitizeScene } from "./sceneSpec";
 import { extractViz, parseModelJson } from "./vizExtract";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 
 /**
  * The Scene Director: a dedicated call that turns a one-line scene request
@@ -147,11 +148,11 @@ export function parseDirectorResponse(acc: string): SceneSpec | null {
  * Returns null on any failure — callers treat that as "no new scene".
  */
 async function streamSceneOnce(userContent: string): Promise<{ acc: string; scene: SceneSpec | null }> {
-  const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: userContent }],
