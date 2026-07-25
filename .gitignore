@@ -26,3 +26,7 @@ dist-ssr
 
 # scene coverage harness run artifacts
 scripts/scene-harness/results/
+
+# Vite writes these transient config artifacts when loading vite.config.ts;
+# they have been accidentally committed more than once.
+vite.config.ts.timestamp-*.mjs
