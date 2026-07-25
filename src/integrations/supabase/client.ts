@@ -2,25 +2,39 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Hardcoded fallback for this project's actual Supabase URL and publishable
+// ("anon") key. This is NOT a secret: Supabase's publishable/anon key is
+// explicitly designed to ship inside frontend bundles — every request it makes
+// is still gated by the database's Row Level Security policies, so exposing it
+// is the intended, documented usage (https://supabase.com/docs/guides/api/api-keys).
+//
+// It exists because Lovable's build pipeline was, at least once, observed to
+// build and publish this app WITHOUT injecting VITE_SUPABASE_URL /
+// VITE_SUPABASE_PUBLISHABLE_KEY — confirmed by inspecting the deployed bundle
+// on cortexed.app, which had baked in an "unconfigured" placeholder. When that
+// happens, createClient() throws during module evaluation (this file is
+// imported transitively from main.tsx before any render code runs), so #root
+// stays empty while the stylesheet still paints the page background: a
+// completely black screen with no error visible anywhere on it.
+//
+// env vars still win when present (e.g. a different Supabase project for local
+// dev), so this is a safety net, not a hardcode override.
+const FALLBACK_SUPABASE_URL = "https://gqxwjqulxptyzjjatgbn.supabase.co";
+const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHdqcXVseHB0eXpqamF0Z2JuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5Mzc2NjgsImV4cCI6MjA5MTUxMzY2OH0.RnsaszttvTkAD0BkoJ68NHPhT4fkkRAnpzVCB1wgvNI";
 
-/**
- * True when the build has no Supabase credentials (the backend env vars were not
- * injected). createClient() THROWS on an undefined url/key, and because this module
- * is imported transitively from main.tsx, that throw happens during module
- * evaluation — before any render code runs. The result is an empty #root on a
- * styled background: a silent black screen with no error anywhere on the page.
- *
- * So instead of throwing, we flag it and fall back to inert placeholders; main.tsx
- * reads this flag and renders an actionable message telling the user what's wrong.
- */
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_SUPABASE_PUBLISHABLE_KEY;
+
+// Kept for main.tsx's diagnostic screen: true only if BOTH the env vars and the
+// fallback above are somehow absent (should not happen in this repo, but a
+// fork/redeploy elsewhere without updating the fallback would hit this).
 export const supabaseConfigMissing = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY;
 
-if (supabaseConfigMissing) {
-  console.error(
-    "[Jarvis] Missing Supabase environment variables (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY). " +
-      "The app cannot reach its backend. In Lovable this usually means the Cloud backend is not linked to this build.",
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+  console.warn(
+    "[Jarvis] VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY were not injected by the build " +
+      "environment — falling back to the hardcoded values in client.ts.",
   );
 }
 
@@ -28,8 +42,8 @@ if (supabaseConfigMissing) {
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(
-  SUPABASE_URL || "https://unconfigured.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY || "unconfigured",
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
       storage: localStorage,
