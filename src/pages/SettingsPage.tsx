@@ -49,6 +49,11 @@ export default function SettingsPage() {
         </div>
 
         <PlanCard />
+
+        <button onClick={signOut} className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors">
+          <LogOut className="h-5 w-5" />
+          <span className="text-sm font-medium">Sign out</span>
+        </button>
       </main>
     </div>
   );
@@ -106,19 +111,6 @@ function PlanCard() {
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-// Re-open stub so old JSX below is discarded — legacy tail removed
-function _unused() {
-  return null;
-
-        <button onClick={signOut} className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors">
-          <LogOut className="h-5 w-5" />
-          <span className="text-sm font-medium">Sign out</span>
-        </button>
-      </main>
     </div>
   );
 }
