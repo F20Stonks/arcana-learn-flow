@@ -43,16 +43,7 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Current Plan</h3>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{profile?.subscription_tier === "paid" ? "Pro" : "Free"}</span>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">{profile?.subscription_tier === "paid" ? "Unlimited sessions and all features." : "5 sessions per week. Upgrade for unlimited."}</p>
-          <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity">
-            {profile?.subscription_tier === "paid" ? "Manage Plan" : "Upgrade to Pro"}
-          </button>
-        </div>
+        <PlanCard />
 
         <button onClick={signOut} className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors">
           <LogOut className="h-5 w-5" />
