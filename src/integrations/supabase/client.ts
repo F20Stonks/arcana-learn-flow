@@ -13,5 +13,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Bypass the navigator.locks LockManager. Inside a sandboxed iframe (Lovable's
+    // preview) and some incognito contexts, its cold-start acquisition never
+    // resolves, leaving the initial getSession() promise permanently pending —
+    // the app then hangs on the loading screen and renders as a blank/black page.
+    // A single-tab SPA doesn't need cross-tab lock coordination.
+    lock: async (_name, _acquireTimeout, fn) => fn(),
   }
 });
