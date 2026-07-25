@@ -2,16 +2,40 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Accept the common env var name variants. The Supabase "anon key" was renamed
+// "publishable key"; different Lovable/Supabase versions inject one or the other,
+// so read both — a name mismatch here otherwise blanks the whole app.
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_PROJECT_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// True when the backend connection env vars didn't reach this build. The app root
+// (main.tsx) reads this to render a readable message instead of a black screen.
+export const SUPABASE_CONFIG_MISSING = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY;
+
+if (SUPABASE_CONFIG_MISSING) {
+  console.error(
+    '[supabase] Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY — the ' +
+      'backend env vars did not reach this build. Reconnect the Supabase / Cloud ' +
+      'integration so they are injected, then reload.',
+  );
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+// Fall back to harmless placeholders so importing this module NEVER throws — a
+// throw here blanks the entire page. Real calls just fail until config is fixed.
+export const supabase = createClient<Database>(
+  SUPABASE_URL ?? 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY ?? 'placeholder-key',
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   }
-});
+);
