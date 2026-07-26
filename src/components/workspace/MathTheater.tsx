@@ -242,6 +242,14 @@ export default function MathTheater({
               </PopoverContent>
             </Popover>
             <button
+              onClick={onMinimize}
+              title="Minimize theater"
+              className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              style={{ borderColor: mathTheme.grid }}
+            >
+              <PanelRightClose className="h-3.5 w-3.5" />
+            </button>
+            <button
               onClick={() => setFullscreen((f) => !f)}
               title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
               className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
