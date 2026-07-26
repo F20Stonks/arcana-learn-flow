@@ -31,6 +31,9 @@ interface Props {
   history?: VizHistoryEntry[];
   activeVizId?: string | null;
   onSelectViz?: (id: string) => void;
+  minimized?: boolean;
+  onMinimize?: () => void;
+  onRestore?: () => void;
 }
 
 interface InsightRow {
