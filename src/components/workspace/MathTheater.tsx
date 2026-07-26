@@ -410,6 +410,8 @@ export default function MathTheater({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
