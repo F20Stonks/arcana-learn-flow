@@ -56,6 +56,9 @@ export default function MathTheater({
   history = [],
   activeVizId = null,
   onSelectViz,
+  minimized = false,
+  onMinimize,
+  onRestore,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
