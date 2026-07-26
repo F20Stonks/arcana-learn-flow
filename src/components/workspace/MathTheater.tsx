@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2,
+  PanelRightClose, PanelRightOpen,
+} from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
 import SceneErrorBoundary from "./SceneErrorBoundary";
