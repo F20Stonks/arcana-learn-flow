@@ -140,6 +140,35 @@ export default function SessionPage() {
   }, [mobileView, activeVizId]);
   const hasUnseenViz = mobileView !== "theater" && !!activeVizId && activeVizId !== lastSeenVizId.current;
 
+  // Desktop: resizable + minimizable Math Theater. Width is stored as a percentage
+  // of the workspace and clamped so the chat panel never fully disappears.
+  const [theaterMinimized, setTheaterMinimized] = useState(false);
+  const [theaterWidthPct, setTheaterWidthPct] = useState(() => {
+    const saved = localStorage.getItem("theaterWidthPct");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) ? Math.min(80, Math.max(25, n)) : 60;
+  });
+  useEffect(() => { localStorage.setItem("theaterWidthPct", String(theaterWidthPct)); }, [theaterWidthPct]);
+  const [isResizing, setIsResizing] = useState(false);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e: MouseEvent) => {
+      if (!workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const pct = ((rect.right - e.clientX) / rect.width) * 100;
+      setTheaterWidthPct(Math.min(80, Math.max(25, pct)));
+    };
+    const onUp = () => setIsResizing(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isResizing]);
+
   const goBack = () => {
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
     navigate(dest, { replace: true });
