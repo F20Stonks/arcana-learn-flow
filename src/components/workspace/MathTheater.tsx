@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Bookmark, Library, Trash2, Palette, Check, Maximize2, Minimize2,
+  PanelRightClose, PanelRightOpen,
+} from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
 import SceneErrorBoundary from "./SceneErrorBoundary";
@@ -28,6 +31,9 @@ interface Props {
   history?: VizHistoryEntry[];
   activeVizId?: string | null;
   onSelectViz?: (id: string) => void;
+  minimized?: boolean;
+  onMinimize?: () => void;
+  onRestore?: () => void;
 }
 
 interface InsightRow {
@@ -50,6 +56,9 @@ export default function MathTheater({
   history = [],
   activeVizId = null,
   onSelectViz,
+  minimized = false,
+  onMinimize,
+  onRestore,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
@@ -167,6 +176,22 @@ export default function MathTheater({
       className={fullscreen ? "fixed inset-0 z-[100] flex flex-col" : "h-full w-full flex flex-col"}
       style={{ background: mathTheme.bg }}
     >
+      {minimized && !fullscreen ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 border-l" style={{ borderColor: mathTheme.grid }}>
+          <button
+            onClick={onRestore}
+            title="Restore Math Theater"
+            className="p-2 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            style={{ borderColor: mathTheme.grid }}
+          >
+            <PanelRightOpen className="h-5 w-5" />
+          </button>
+          <span className="text-[10px] uppercase tracking-wider text-slate-400" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+            Math Theater
+          </span>
+        </div>
+      ) : (
+      <>
       {/* Header: tabs + toggle */}
       <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: mathTheme.grid }}>
         <div className="flex items-center gap-1">
@@ -232,6 +257,14 @@ export default function MathTheater({
                 </div>
               </PopoverContent>
             </Popover>
+            <button
+              onClick={onMinimize}
+              title="Minimize theater"
+              className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              style={{ borderColor: mathTheme.grid }}
+            >
+              <PanelRightClose className="h-3.5 w-3.5" />
+            </button>
             <button
               onClick={() => setFullscreen((f) => !f)}
               title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -377,6 +410,8 @@ export default function MathTheater({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

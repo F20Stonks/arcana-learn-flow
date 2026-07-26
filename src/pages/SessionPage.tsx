@@ -140,6 +140,35 @@ export default function SessionPage() {
   }, [mobileView, activeVizId]);
   const hasUnseenViz = mobileView !== "theater" && !!activeVizId && activeVizId !== lastSeenVizId.current;
 
+  // Desktop: resizable + minimizable Math Theater. Width is stored as a percentage
+  // of the workspace and clamped so the chat panel never fully disappears.
+  const [theaterMinimized, setTheaterMinimized] = useState(false);
+  const [theaterWidthPct, setTheaterWidthPct] = useState(() => {
+    const saved = localStorage.getItem("theaterWidthPct");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) ? Math.min(80, Math.max(25, n)) : 60;
+  });
+  useEffect(() => { localStorage.setItem("theaterWidthPct", String(theaterWidthPct)); }, [theaterWidthPct]);
+  const [isResizing, setIsResizing] = useState(false);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e: MouseEvent) => {
+      if (!workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const pct = ((rect.right - e.clientX) / rect.width) * 100;
+      setTheaterWidthPct(Math.min(80, Math.max(25, pct)));
+    };
+    const onUp = () => setIsResizing(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isResizing]);
+
   const goBack = () => {
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
     navigate(dest, { replace: true });
@@ -616,9 +645,12 @@ Return ONLY a JSON object — no prose, no markdown fences:
         </div>
       )}
 
-      <div className="flex-1 flex min-h-0">
-        {/* LEFT — Companion Panel (40%) */}
-        <div className={`w-full lg:w-2/5 flex-col min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
+      <div ref={workspaceRef} className={`flex-1 flex min-h-0 ${isResizing ? "select-none" : ""}`}>
+        {/* LEFT — Companion Panel */}
+        <div
+          className={`min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          style={{ flex: `1 1 ${theaterMinimized ? "100%" : `${100 - theaterWidthPct}%`}` }}
+        >
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
               <div className="text-center py-12">
@@ -713,8 +745,20 @@ Return ONLY a JSON object — no prose, no markdown fences:
           />
         </div>
 
-        {/* RIGHT — Math Theater (60%) */}
-        <div className={`w-full lg:w-3/5 min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex`}>
+        {/* Resize handle */}
+        {!theaterMinimized && (
+          <div
+            className="hidden lg:block w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+            onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+            title="Drag to resize"
+          />
+        )}
+
+        {/* RIGHT — Math Theater */}
+        <div
+          className={`min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          style={{ flex: `0 0 ${theaterMinimized ? "3rem" : `${theaterWidthPct}%`}` }}
+        >
           <MathTheater
             subtopicId={subtopicId}
             payload={
@@ -724,6 +768,9 @@ Return ONLY a JSON object — no prose, no markdown fences:
             history={vizHistory}
             activeVizId={activeVizId}
             onSelectViz={(id) => setActiveVizId(id)}
+            minimized={theaterMinimized}
+            onMinimize={() => setTheaterMinimized(true)}
+            onRestore={() => setTheaterMinimized(false)}
           />
         </div>
       </div>
