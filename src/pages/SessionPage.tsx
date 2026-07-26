@@ -645,9 +645,12 @@ Return ONLY a JSON object — no prose, no markdown fences:
         </div>
       )}
 
-      <div className="flex-1 flex min-h-0">
-        {/* LEFT — Companion Panel (40%) */}
-        <div className={`w-full lg:w-2/5 flex-col min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
+      <div ref={workspaceRef} className={`flex-1 flex min-h-0 ${isResizing ? "select-none" : ""}`}>
+        {/* LEFT — Companion Panel */}
+        <div
+          className={`min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          style={{ flex: `1 1 ${theaterMinimized ? "100%" : `${100 - theaterWidthPct}%`}` }}
+        >
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
               <div className="text-center py-12">
@@ -742,8 +745,20 @@ Return ONLY a JSON object — no prose, no markdown fences:
           />
         </div>
 
-        {/* RIGHT — Math Theater (60%) */}
-        <div className={`w-full lg:w-3/5 min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex`}>
+        {/* Resize handle */}
+        {!theaterMinimized && (
+          <div
+            className="hidden lg:block w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+            onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+            title="Drag to resize"
+          />
+        )}
+
+        {/* RIGHT — Math Theater */}
+        <div
+          className={`min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          style={{ flex: `0 0 ${theaterMinimized ? "3rem" : `${theaterWidthPct}%`}` }}
+        >
           <MathTheater
             subtopicId={subtopicId}
             payload={
@@ -753,6 +768,9 @@ Return ONLY a JSON object — no prose, no markdown fences:
             history={vizHistory}
             activeVizId={activeVizId}
             onSelectViz={(id) => setActiveVizId(id)}
+            minimized={theaterMinimized}
+            onMinimize={() => setTheaterMinimized(true)}
+            onRestore={() => setTheaterMinimized(false)}
           />
         </div>
       </div>
