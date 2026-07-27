@@ -1,4 +1,5 @@
 import { getAIConfig } from "../_shared/aiConfig.ts";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,9 @@ function pickModel(_intensity: string, fallback: string): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
+
+  const userId = await requireUser(req);
+  if (!userId) return unauthorized(corsHeaders);
 
   try {
     const { messages, context, systemOverride } = await req.json();

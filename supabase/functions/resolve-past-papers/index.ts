@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { resolvePastPapers } from "../_shared/pastPaperResolver.ts";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +16,9 @@ const BUCKET = "past-papers";
 // first person to ask for a given combination pays the search cost, everyone after reads the cache.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const userId = await requireUser(req);
+  if (!userId) return unauthorized(corsHeaders);
 
   try {
     const { board, subject, level, examHint } = await req.json();

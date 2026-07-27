@@ -1,5 +1,3 @@
-import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-
 export type AIConfig = {
   url: string;
   key: string;
@@ -36,30 +34,7 @@ export async function getAIConfig(): Promise<AIConfig> {
     return cached;
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("XAI_API_KEY not configured and no service role to fetch it");
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
-  const { data, error } = await supabase
-    .from("app_secrets")
-    .select("value")
-    .eq("key", "XAI_API_KEY")
-    .maybeSingle();
-
-  if (error || !data?.value) {
-    throw new Error("XAI_API_KEY not found in app_secrets or env");
-  }
-
-  cached = {
-    url: "https://api.x.ai/v1/chat/completions",
-    key: data.value,
-    model: "grok-4-latest",
-    provider: "xai",
-  };
-  return cached;
+  throw new Error("No AI provider key configured (LOVABLE_API_KEY or XAI_API_KEY required)");
 }
 
 // Synchronous accessor for code paths that already awaited getAIConfig() once

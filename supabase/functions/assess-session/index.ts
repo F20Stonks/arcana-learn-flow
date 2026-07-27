@@ -1,5 +1,6 @@
 import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -214,6 +215,9 @@ async function tickMatchingSpecItems(
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
+  const callerId = await requireUser(req);
+  if (!callerId) return unauthorized(corsHeaders);
+
   const fallback = { complete: false, confidence: "low", notes_to_save: [], xp_earned: 10, concepts_taught: [], concepts_required: [] };
 
   try {
@@ -236,6 +240,11 @@ Deno.serve(async (req: Request) => {
     if (supabase && sessionId) {
       const { data: sess } = await supabase.from("sessions").select("user_id, subtopic_id, session_type").eq("id", sessionId).maybeSingle();
       if (sess) {
+        if ((sess as any).user_id !== callerId) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         userId = (sess as any).user_id;
         realSubtopicId = (sess as any).subtopic_id || realSubtopicId;
         sessionType = (sess as any).session_type || "learn";
