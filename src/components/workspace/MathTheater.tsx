@@ -43,6 +43,7 @@ interface InsightRow {
   mode: string;
   formulas: string[];
   params: Record<string, number>;
+  payload?: Payload | null;
   created_at: string;
 }
 
@@ -153,7 +154,9 @@ export default function MathTheater({
     const title = isScene
       ? (payload as SceneSpec).title
       : `${meta.title} · ${(meta.subtitle ?? "").replace(/\$/g, "")}`;
-    const { error } = await supabase.from("insights").insert({
+    // `payload` isn't in the generated types yet (see supabase/migrations/20260727180000_insights_payload.sql) —
+    // cast like the other not-yet-typed tables in this codebase (e.g. TrackPapers.tsx's generated_papers).
+    const { error } = await (supabase.from("insights") as any).insert({
       user_id: user.id,
       subtopic_id: subtopicId ?? null,
       title,
@@ -161,6 +164,7 @@ export default function MathTheater({
       mode,
       formulas: meta.formulas,
       params,
+      payload,
     });
     if (error) toast.error("Couldn't save insight");
     else { toast.success("Saved to your Insights Library"); if (tab === "library") loadInsights(); }

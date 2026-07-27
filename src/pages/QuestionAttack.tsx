@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, Brain, HelpCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, Brain, HelpCircle, Search, Check, Minus } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MiniChat from "@/components/MiniChat";
@@ -31,7 +31,9 @@ export default function QuestionAttack() {
   const [loading, setLoading] = useState(true);
 
   // Config
-  const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
+  const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(new Set());
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
+  const [topicQuery, setTopicQuery] = useState("");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "exam">("medium");
   const [questionCount, setQuestionCount] = useState(5);
   const [questionType, setQuestionType] = useState<"mixed" | "mcq" | "open">("mixed");
@@ -83,12 +85,33 @@ export default function QuestionAttack() {
       enriched.push({ ...topic, subtopics: subs || [] });
     }
     setTopics(enriched);
-    setSelectedTopics(new Set(enriched.map(t => t.id)));
+    setSelectedSubtopics(new Set(enriched.flatMap(t => t.subtopics.map(s => s.id))));
+    // Small tracks: open everything so there's nothing to click through. Large tracks: start
+    // collapsed and let search/expand do the work, instead of dumping hundreds of rows at once.
+    const totalSubs = enriched.reduce((n, t) => n + t.subtopics.length, 0);
+    setExpandedTopics(totalSubs <= 20 ? new Set(enriched.map(t => t.id)) : new Set());
     setLoading(false);
   };
 
-  const toggleTopic = (id: string) => {
-    setSelectedTopics(prev => {
+  const toggleSubtopic = (id: string) => {
+    setSelectedSubtopics(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleTopicAll = (t: TopicWithSubs) => {
+    setSelectedSubtopics(prev => {
+      const next = new Set(prev);
+      const allSelected = t.subtopics.every(s => next.has(s.id));
+      t.subtopics.forEach(s => (allSelected ? next.delete(s.id) : next.add(s.id)));
+      return next;
+    });
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedTopics(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -96,11 +119,11 @@ export default function QuestionAttack() {
   };
 
   const startQuiz = async () => {
-    if (selectedTopics.size === 0) return;
+    if (selectedSubtopics.size === 0) return;
     setPhase("loading");
     const selectedTopicNames = topics
-      .filter(t => selectedTopics.has(t.id))
-      .map(t => ({ topic: t.title, subtopics: t.subtopics.map(s => s.title) }));
+      .map(t => ({ topic: t.title, subtopics: t.subtopics.filter(s => selectedSubtopics.has(s.id)).map(s => s.title) }))
+      .filter(t => t.subtopics.length > 0);
 
     try {
       const resp = await supabase.functions.invoke("question-attack", {
@@ -165,6 +188,20 @@ export default function QuestionAttack() {
 
   const currentQ = questions[currentIdx];
 
+  // Topic search matches on the topic's own title or any of its subtopic titles, so finding
+  // "logarithms" surfaces the topic that contains it even if the topic itself is named something
+  // broader like "Functions & Graphs" — this is the thing a flat topic-only list couldn't do.
+  const query = topicQuery.trim().toLowerCase();
+  const topicMatchesQuery = (t: TopicWithSubs) =>
+    !query || t.title.toLowerCase().includes(query) || t.subtopics.some(s => s.title.toLowerCase().includes(query));
+  const visibleTopics = topics.filter(topicMatchesQuery);
+  const isTopicExpanded = (t: TopicWithSubs) => expandedTopics.has(t.id) || (!!query && topicMatchesQuery(t));
+  const topicSelectedCount = (t: TopicWithSubs) => t.subtopics.filter(s => selectedSubtopics.has(s.id)).length;
+
+  const totalSubtopics = topics.reduce((n, t) => n + t.subtopics.length, 0);
+  const visibleSubtopicIds = visibleTopics.flatMap(t => t.subtopics.map(s => s.id));
+  const allVisibleSelected = visibleSubtopicIds.length > 0 && visibleSubtopicIds.every(id => selectedSubtopics.has(id));
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
@@ -204,71 +241,131 @@ export default function QuestionAttack() {
 
             {/* Topic selection */}
             <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-1">
                 <h3 className="text-sm font-medium text-foreground">Topics to test</h3>
                 <button
                   onClick={() => {
-                    if (selectedTopics.size === topics.length) setSelectedTopics(new Set());
-                    else setSelectedTopics(new Set(topics.map(t => t.id)));
+                    setSelectedSubtopics(prev => {
+                      const next = new Set(prev);
+                      visibleSubtopicIds.forEach(id => (allVisibleSelected ? next.delete(id) : next.add(id)));
+                      return next;
+                    });
                   }}
                   className="text-xs text-primary hover:underline"
                 >
-                  {selectedTopics.size === topics.length ? "Deselect all" : "Select all"}
+                  {allVisibleSelected ? "Deselect all" : "Select all"}
                 </button>
               </div>
-              <div className="space-y-2">
-                {topics.map(t => (
-                  <label key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTopics.has(t.id)}
-                      onChange={() => toggleTopic(t.id)}
-                      className="rounded border-border text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm text-foreground">{t.title}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{t.subtopics.length} subtopics</span>
-                  </label>
-                ))}
+              <p className="text-xs text-muted-foreground mb-3">
+                {selectedSubtopics.size} of {totalSubtopics} subtopics selected
+              </p>
+
+              <div className="flex items-center gap-2 bg-accent rounded-lg px-3 py-2 mb-3">
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <input
+                  value={topicQuery}
+                  onChange={(e) => setTopicQuery(e.target.value)}
+                  placeholder="Search topics and subtopics…"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
+                />
+              </div>
+
+              <div className="space-y-0.5">
+                {visibleTopics.map(t => {
+                  const selCount = topicSelectedCount(t);
+                  const state = selCount === 0 ? "none" : selCount === t.subtopics.length ? "all" : "some";
+                  const expanded = isTopicExpanded(t);
+                  return (
+                    <div key={t.id}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleExpand(t.id)}
+                        onKeyDown={(e) => e.key === "Enter" && toggleExpand(t.id)}
+                        className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                      >
+                        <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} />
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={state === "all" ? "true" : state === "none" ? "false" : "mixed"}
+                          onClick={(e) => { e.stopPropagation(); toggleTopicAll(t); }}
+                          className={`h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                            state === "none" ? "border-border" : "border-primary bg-primary/15 text-primary"
+                          }`}
+                        >
+                          {state === "all" && <Check className="h-3 w-3" />}
+                          {state === "some" && <Minus className="h-3 w-3" />}
+                        </button>
+                        <span className="text-sm text-foreground flex-1 truncate">{t.title}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{selCount}/{t.subtopics.length}</span>
+                      </div>
+                      {expanded && (
+                        <div className="pl-9 pb-1 space-y-0.5">
+                          {t.subtopics.map(s => (
+                            <label key={s.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-accent/60 transition-colors cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedSubtopics.has(s.id)}
+                                onChange={() => toggleSubtopic(s.id)}
+                                className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
+                              />
+                              <span className="text-xs text-muted-foreground">{s.title}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {visibleTopics.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No topics match "{topicQuery}".</p>
+                )}
               </div>
             </div>
 
             {/* Difficulty */}
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="text-sm font-medium text-foreground mb-3">Difficulty</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {(["easy", "medium", "hard", "exam"] as const).map(d => (
                   <button
                     key={d}
                     onClick={() => setDifficulty(d)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      difficulty === d ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:text-foreground"
+                    className={`px-3 py-2.5 rounded-control text-sm font-medium leading-snug text-center transition-colors border ${
+                      difficulty === d
+                        ? "bg-surface border-rule-strong text-foreground shadow-xs"
+                        : "bg-accent border-transparent text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {d === "exam" ? `${track?.level || "Exam"} style` : d.charAt(0).toUpperCase() + d.slice(1)}
+                    {d === "exam" ? "Exam style" : d.charAt(0).toUpperCase() + d.slice(1)}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Count, type, timer */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-card border border-border rounded-xl p-4">
-                <h3 className="text-sm font-medium text-foreground mb-3">Questions</h3>
-                <div className="flex gap-2 flex-wrap">
-                  {[5, 10, 15, 20].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setQuestionCount(n)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        questionCount === n ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+            {/* Questions — full width; a count picker needs room to be a slider, not four squeezed chips */}
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground">Questions</h3>
+                <span className="font-mono text-sm font-medium text-foreground tabular-nums">{questionCount}</span>
               </div>
+              <input
+                type="range"
+                min={1}
+                max={20}
+                value={questionCount}
+                onChange={(e) => setQuestionCount(Number(e.target.value))}
+                className="w-full accent-primary cursor-pointer"
+              />
+              <div className="flex justify-between text-[11px] text-muted-foreground mt-1">
+                <span>1</span>
+                <span>20</span>
+              </div>
+            </div>
 
+            {/* Type, timer */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-medium text-foreground mb-3">Type</h3>
                 <div className="flex gap-2">
@@ -276,8 +373,10 @@ export default function QuestionAttack() {
                     <button
                       key={val}
                       onClick={() => setQuestionType(val)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        questionType === val ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:text-foreground"
+                      className={`px-3 py-2 rounded-control text-sm font-medium transition-colors border ${
+                        questionType === val
+                          ? "bg-surface border-rule-strong text-foreground shadow-xs"
+                          : "bg-accent border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {label}
@@ -298,8 +397,10 @@ export default function QuestionAttack() {
                       <button
                         key={s}
                         onClick={() => setTimePerQuestion(s)}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                          timePerQuestion === s ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground"
+                        className={`px-2 py-1 rounded-control text-xs font-medium transition-colors border ${
+                          timePerQuestion === s
+                            ? "bg-surface border-rule-strong text-foreground shadow-xs"
+                            : "bg-accent border-transparent text-muted-foreground"
                         }`}
                       >
                         {s}s
@@ -312,8 +413,8 @@ export default function QuestionAttack() {
 
             <button
               onClick={startQuiz}
-              disabled={selectedTopics.size === 0}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 disabled:opacity-30 transition-opacity flex items-center justify-center gap-2"
+              disabled={selectedSubtopics.size === 0}
+              className="w-full py-3 rounded-control bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 disabled:opacity-30 transition-opacity flex items-center justify-center gap-2"
             >
               <Brain className="h-4 w-4" /> Start Attack ({questionCount} questions)
             </button>

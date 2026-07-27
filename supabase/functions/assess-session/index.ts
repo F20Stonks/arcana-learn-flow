@@ -277,7 +277,7 @@ XP RUBRIC (integer 10-100, be deterministic; reward UNDERSTANDING, not clicks):
 - -15 if abandoned early / ended incomplete (still award for what was shown).
 - Clamp to [10, 100].
 
-NOTES ("notes_to_save", 1-4 objects {title, content}): each "content" must capture the STRUCTURAL/CAUSAL takeaway — the mechanism, the load-bearing assumption, the counterfactual — NOT "we learned about X". Write them as durable revision notes the student can be quizzed on later.
+NOTES ("notes_to_save", 1-4 objects {title, content}): each "content" must capture the STRUCTURAL/CAUSAL takeaway — the mechanism, the load-bearing assumption, the counterfactual — NOT "we learned about X". Write them as durable revision notes the student can be quizzed on later. Math in "content" MUST use LaTeX delimiters — $...$ inline, $$...$$ block — exactly like the transcript itself (e.g. "the discriminant $b^2-4ac$", never "b^2-4ac" or "b²-4ac" as bare text). This is a real typesetting pipeline (KaTeX), not markdown-viewed-as-plaintext — undelimited notation renders as raw, uneven text instead of a proper equation.
 ${isReview ? "" : `
 CONCEPT EXTRACTION (feeds a permanent GLOBAL knowledge tracker — be precise):
 - "concepts_taught": atomic concepts this session actually TAUGHT and the student demonstrated understanding of (only include a concept if the transcript shows they grasped it).

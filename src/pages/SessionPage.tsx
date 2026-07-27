@@ -8,6 +8,7 @@ import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
+import MathSymbolPalette from "@/components/MathSymbolPalette";
 import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
 import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
@@ -592,6 +593,33 @@ Return ONLY a JSON object — no prose, no markdown fences:
     }
   };
 
+  // Saving a visualization is the STUDENT's call, made explicitly at session end — never an AI
+  // decision about which scenes "mattered". `payload` isn't in the generated types yet (see
+  // supabase/migrations/20260727180000_insights_payload.sql), cast like other not-yet-typed tables.
+  const saveVizAsInsight = async (entry: VizHistoryEntry): Promise<string | null> => {
+    if (!user) return null;
+    const scene = isSceneSpec(entry.payload);
+    const { data, error } = await (supabase.from("insights") as any)
+      .insert({
+        user_id: user.id,
+        subtopic_id: subtopicId ?? null,
+        title: entry.preview,
+        environment: scene ? "scene" : (entry.payload as SimulationPayload).archetype,
+        mode: "pure",
+        formulas: [],
+        params: {},
+        payload: entry.payload,
+      })
+      .select()
+      .single();
+    if (error) { console.error("Couldn't save visualization:", error); return null; }
+    return (data as { id: string } | null)?.id ?? null;
+  };
+
+  const removeVizInsight = async (insightId: string) => {
+    await (supabase.from("insights") as any).delete().eq("id", insightId);
+  };
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
@@ -649,7 +677,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
       <div ref={workspaceRef} className={`flex-1 flex min-h-0 ${isResizing ? "select-none" : ""}`}>
         {/* LEFT — Companion Panel */}
         <div
-          className={`min-h-0 border-r border-border ${mobileView === "chat" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          className={`min-h-0 border-r border-border flex-col ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}
           style={{ flex: `1 1 ${theaterMinimized ? "100%" : `${100 - theaterWidthPct}%`}` }}
         >
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
@@ -757,7 +785,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
 
         {/* RIGHT — Math Theater */}
         <div
-          className={`min-h-0 ${mobileView === "theater" ? "flex" : "hidden"} lg:flex lg:flex-col`}
+          className={`min-h-0 flex-col ${mobileView === "theater" ? "flex" : "hidden"} lg:flex`}
           style={{ flex: `0 0 ${theaterMinimized ? "3rem" : `${theaterWidthPct}%`}` }}
         >
           <MathTheater
@@ -783,6 +811,9 @@ Return ONLY a JSON object — no prose, no markdown fences:
           subtopicTitle={subtopic?.title}
           sessionTime={formatTime(sessionTime)}
           onClose={goBack}
+          vizHistory={vizHistory}
+          onSaveViz={saveVizAsInsight}
+          onRemoveViz={removeVizInsight}
         />
       )}
     </div>
@@ -801,16 +832,40 @@ function SessionSummary({
   subtopicTitle,
   sessionTime,
   onClose,
+  vizHistory,
+  onSaveViz,
+  onRemoveViz,
 }: {
   summary: AssessSummary;
   isReview: boolean;
   subtopicTitle?: string;
   sessionTime: string;
   onClose: () => void;
+  vizHistory: VizHistoryEntry[];
+  onSaveViz: (entry: VizHistoryEntry) => Promise<string | null>;
+  onRemoveViz: (insightId: string) => Promise<void>;
 }) {
   const { complete, confidence, xp_earned, notes_to_save, concepts_taught } = summary;
   const conf = CONFIDENCE_META[confidence] ?? CONFIDENCE_META.low;
   const heading = complete ? (isReview ? "Recall confirmed" : "Subtopic complete") : "Progress saved";
+
+  // entryId -> the insights.id it was saved as, once saved. Nothing pre-checked — the student
+  // picks, the AI never decides "which scenes mattered" on their behalf.
+  const [savedInsightIds, setSavedInsightIds] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const toggleViz = async (entry: VizHistoryEntry) => {
+    setSavingId(entry.id);
+    const existing = savedInsightIds[entry.id];
+    if (existing) {
+      await onRemoveViz(existing);
+      setSavedInsightIds((prev) => { const next = { ...prev }; delete next[entry.id]; return next; });
+    } else {
+      const insightId = await onSaveViz(entry);
+      if (insightId) setSavedInsightIds((prev) => ({ ...prev, [entry.id]: insightId }));
+    }
+    setSavingId(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
@@ -862,6 +917,37 @@ function SessionSummary({
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {vizHistory.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Save a visualization to your notes?
+              </p>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {vizHistory.map((v) => {
+                  const saved = !!savedInsightIds[v.id];
+                  const busy = savingId === v.id;
+                  return (
+                    <label
+                      key={v.id}
+                      className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2 cursor-pointer hover:border-primary/30 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={saved}
+                        disabled={busy}
+                        onChange={() => toggleViz(v)}
+                        className="h-3.5 w-3.5 shrink-0 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <Box className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground truncate flex-1">{v.preview}</span>
+                      {busy && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground shrink-0" />}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -958,6 +1044,16 @@ function InteractionPanel({
       : null;
 
   const [showText, setShowText] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow with content instead of a fixed single line — a self-explanation or a worked
+  // derivation needs more than one row to type into, let alone read back before sending.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
   if (choices && choices.options.length > 0 && choices.type !== "freeform" && !showText) {
     return (
@@ -985,19 +1081,23 @@ function InteractionPanel({
   }
 
   return (
-    <div className="p-4 border-t border-border">
-      <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
-        <input
+    <div className="p-4 border-t border-border space-y-2">
+      <MathSymbolPalette targetRef={textareaRef} value={input} onChange={setInput} />
+      <div className="flex items-end gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
+        <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
               onSend(input);
               setShowText(false);
             }
           }}
           placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Cortexed…"}
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
+          rows={1}
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden resize-none max-h-40 overflow-y-auto py-1"
           disabled={isStreaming}
           autoFocus
         />
@@ -1007,7 +1107,7 @@ function InteractionPanel({
             setShowText(false);
           }}
           disabled={!input.trim() || isStreaming}
-          className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
+          className="h-8 w-8 shrink-0 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
         >
           <Send className="h-4 w-4" />
         </button>
