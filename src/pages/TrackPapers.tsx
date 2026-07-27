@@ -530,7 +530,7 @@ export default function TrackPapers() {
                           aria-checked={state === "all" ? "true" : state === "none" ? "false" : "mixed"}
                           onClick={(e) => { e.stopPropagation(); toggleTopicAll(t); }}
                           className={`h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors ${
-                            state === "none" ? "border-border" : "border-primary bg-primary/15 text-primary"
+                            state === "none" ? "border-rule-strong" : "border-primary bg-primary/15 text-primary"
                           }`}
                         >
                           {state === "all" && <Check className="h-3 w-3" />}
