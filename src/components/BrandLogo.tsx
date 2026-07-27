@@ -13,7 +13,7 @@ interface Props {
 export default function BrandLogo({ className }: Props) {
   return (
     <Link to="/" className={cn("font-bold text-foreground hover:opacity-80 transition-opacity", className)}>
-      Jarvis
+      Cortexed
     </Link>
   );
 }

@@ -229,7 +229,7 @@ export default function MathTheater({
                 </div>
                 {!isScene && (
                   <div className="text-[10px] text-slate-500 px-1 pb-2 leading-relaxed">
-                    Applies once Jarvis draws a scene — pick now and it'll be ready.
+                    Applies once Cortexed draws a scene — pick now and it'll be ready.
                   </div>
                 )}
                 <div className="space-y-1">

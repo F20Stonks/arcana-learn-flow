@@ -23,7 +23,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
               <div>
-                <h1 className="text-lg font-semibold text-foreground">Jarvis couldn't finish loading.</h1>
+                <h1 className="text-lg font-semibold text-foreground">Cortexed couldn't finish loading.</h1>
                 <p className="mt-2 text-sm text-muted-foreground">Reload the app or sign in again. The error is visible below instead of leaving the preview black.</p>
               </div>
             </div>

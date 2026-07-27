@@ -31,7 +31,7 @@ function Bubble({
 
 export default function SessionChat() {
   return (
-    <div className="chat" aria-label="Excerpt of a Jarvis teaching session">
+    <div className="chat" aria-label="Excerpt of a Cortexed teaching session">
       <Bubble side="ai" delay={0.1}>
         You know momentum is conserved when no external force acts. Angular
         momentum works the <span className="why">same way</span> — so: an ice

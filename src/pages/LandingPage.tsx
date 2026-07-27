@@ -66,7 +66,7 @@ const CAPABILITIES = [
     title: "Ask anything, mid-explanation",
     body: (
       <>
-        Stuck? Jarvis <b>rebuilds the explanation</b> around exactly where
+        Stuck? Cortexed <b>rebuilds the explanation</b> around exactly where
         you are — a different angle, more context, a simpler case — instead
         of repeating itself louder.
       </>
@@ -123,7 +123,7 @@ export default function LandingPage() {
         <div className="page">
           <nav>
             <Link to="/" className="brand">
-              Jarvis<i>.</i>
+              Cortexed<i>.</i>
             </Link>
             <div className="nav-right">
               <Link to="/auth" className="nav-signin">
@@ -148,7 +148,7 @@ export default function LandingPage() {
               </HeroReveal>
               <HeroReveal delay={0.18}>
                 <p className="lede">
-                  Name the goal. Jarvis builds the <b>complete path</b> —{" "}
+                  Name the goal. Cortexed builds the <b>complete path</b> —{" "}
                   <b>one idea per session</b>, readiness checked before each,
                   every result taught from the <b>why</b>.
                 </p>
@@ -228,7 +228,7 @@ export default function LandingPage() {
               <h2>Anything it can teach, it can show you.</h2>
               <p className="teach-lede">
                 No video library — an engine. When seeing it is what makes it
-                click, Jarvis builds a live, interactive scene for the exact
+                click, Cortexed builds a live, interactive scene for the exact
                 idea in front of you — not found, <b>built</b>. This is the
                 skater from the conversation above, as physics.{" "}
                 <b>Pull the mass inward.</b>
@@ -253,7 +253,7 @@ export default function LandingPage() {
           </section>
 
           <footer>
-            Jarvis — an instrument for mathematical &amp; physical understanding.
+            Cortexed — an instrument for mathematical &amp; physical understanding.
           </footer>
         </div>
       </div>

@@ -52,7 +52,7 @@ rule — lead with the mechanism that forces the result, not a restatement of it
 the notes, then say explicitly that the review is complete and stop posing new challenges.`
       : "";
 
-    const systemPrompt = systemOverride || `You are Jarvis, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
+    const systemPrompt = systemOverride || `You are Cortexed, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
 ${reviewBlock}
 
 Context:

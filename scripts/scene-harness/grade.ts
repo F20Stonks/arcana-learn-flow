@@ -41,7 +41,7 @@ export interface Grade {
   note: string;
 }
 
-const GRADER_PROMPT = `You are the SCENE QUALITY AUDITOR for Jarvis, an elite maths/physics tutor whose Scene Director composes interactive teaching scenes from a primitive language. You receive one scene request (what the tutor wanted taught), the exact scene JSON that will render, and mechanical validator stats. You judge whether this scene TEACHES.
+const GRADER_PROMPT = `You are the SCENE QUALITY AUDITOR for Cortexed, an elite maths/physics tutor whose Scene Director composes interactive teaching scenes from a primitive language. You receive one scene request (what the tutor wanted taught), the exact scene JSON that will render, and mechanical validator stats. You judge whether this scene TEACHES.
 
 THE FOUR BARS (the Director's own contract — judge against these and nothing else):
 1. MECHANISM (0-3): does the scene show the moving parts that FORCE the conclusion, or just a picture of the finished fact? 3 = the why is visibly forced; 2 = mechanism present but partly told-not-shown; 1 = mostly result/decoration; 0 = no mechanism at all or wrong concept.

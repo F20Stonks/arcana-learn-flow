@@ -35,7 +35,7 @@ ${spec.text}
 You MUST base the track's topics and subtopics on this real content — cover every topic area listed here, in the terminology it uses. Do not invent top-level topics absent from this excerpt. Use your own judgment only to break each real topic down into reasonable subtopics, and to fill in any minor gaps left by truncation.`
       : "";
 
-    const systemPrompt = `You are Jarvis, an AI learning director. You help students plan their learning journey.
+    const systemPrompt = `You are Cortexed, an AI learning director. You help students plan their learning journey.
 
 ${mode === "onboarding" ? `ONBOARDING MODE:
 Your job is to understand what the student wants to learn and create a structured learning track.

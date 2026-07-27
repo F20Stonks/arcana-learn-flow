@@ -835,7 +835,7 @@ function SessionSummary({
             <p className="text-sm text-muted-foreground leading-relaxed">
               {isReview
                 ? "Not every recall check landed this time, so this stays on your review schedule — you'll get another pass at it soon."
-                : "Jarvis marks a subtopic complete once you've explained the why in your own words and solved a novel problem largely unaided. Your progress and XP are saved — pick this back up whenever you like."}
+                : "Cortexed marks a subtopic complete once you've explained the why in your own words and solved a novel problem largely unaided. Your progress and XP are saved — pick this back up whenever you like."}
             </p>
           )}
 
@@ -915,7 +915,7 @@ function IntensitySelector({ intensity, onChange }: { intensity: Intensity; onCh
     <div className="px-4 pt-2 pb-1 flex items-center gap-2 border-t border-border">
       <span
         className="text-[11px] text-muted-foreground shrink-0"
-        title="How hard Jarvis pushes you to explain the why and solve novel problems yourself"
+        title="How hard Cortexed pushes you to explain the why and solve novel problems yourself"
       >
         Depth
       </span>
@@ -995,7 +995,7 @@ function InteractionPanel({
               setShowText(false);
             }
           }}
-          placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Jarvis…"}
+          placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Cortexed…"}
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
           disabled={isStreaming}
           autoFocus

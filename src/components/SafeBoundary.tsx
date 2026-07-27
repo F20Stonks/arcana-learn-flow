@@ -32,7 +32,7 @@ export default class SafeBoundary extends Component<SafeBoundaryProps, SafeBound
           <AlertTriangle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground">{this.props.label || "This panel"} couldn't load.</p>
-            <p className="mt-1 text-xs text-muted-foreground">The rest of Jarvis is still available.</p>
+            <p className="mt-1 text-xs text-muted-foreground">The rest of Cortexed is still available.</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => this.setState({ error: null })}>
             Retry

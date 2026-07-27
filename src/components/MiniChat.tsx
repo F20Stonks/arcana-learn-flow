@@ -68,7 +68,7 @@ export default function MiniChat({ question, correctAnswer, explanation, context
             subtopic: "Question Help",
             topic: "Review",
           },
-          systemOverride: `You are Jarvis helping a student who got a question wrong. Be concise (2-4 sentences max).
+          systemOverride: `You are Cortexed helping a student who got a question wrong. Be concise (2-4 sentences max).
 
 Question: ${question}
 Correct answer: ${correctAnswer}

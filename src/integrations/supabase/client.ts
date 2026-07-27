@@ -45,7 +45,7 @@ export const supabaseConfigMissing = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY;
 
 if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
   console.warn(
-    "[Jarvis] VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY were not injected by the build " +
+    "[Cortexed] VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY were not injected by the build " +
       "environment — falling back to the hardcoded values in client.ts.",
   );
 }

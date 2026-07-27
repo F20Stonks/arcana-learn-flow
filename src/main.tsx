@@ -24,7 +24,7 @@ const CONFIG_ERROR_HTML = `
         Backend not connected
       </div>
       <h1 style="font-size:22px;line-height:1.3;margin:10px 0 12px;font-weight:600">
-        Jarvis can't reach its backend, so the app didn't start.
+        Cortexed can't reach its backend, so the app didn't start.
       </h1>
       <p style="font-size:14px;line-height:1.6;color:#a1a1aa;margin:0 0 16px">
         This build has no Supabase credentials
@@ -41,12 +41,12 @@ const CONFIG_ERROR_HTML = `
 `;
 
 if (!rootElement) {
-  document.body.textContent = "Jarvis could not start because the app root is missing.";
+  document.body.textContent = "Cortexed could not start because the app root is missing.";
 } else if (supabaseConfigMissing) {
   rootElement.innerHTML = CONFIG_ERROR_HTML;
 } else {
   rootElement.innerHTML =
-    '<div class="min-h-screen bg-background text-foreground flex items-center justify-center"><div class="text-sm text-muted-foreground">Starting Jarvis…</div></div>';
+    '<div class="min-h-screen bg-background text-foreground flex items-center justify-center"><div class="text-sm text-muted-foreground">Starting Cortexed…</div></div>';
   createRoot(rootElement).render(
     <ErrorBoundary>
       <App />

@@ -21,7 +21,7 @@ export default function OnboardingPage() {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hey, I'm Jarvis. Tell me what you want to master and I'll build your personal learning track." },
+    { role: "assistant", content: "Hey, I'm Cortexed. Tell me what you want to master and I'll build your personal learning track." },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -351,7 +351,7 @@ Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-              placeholder="Tell Jarvis what you want to learn…"
+              placeholder="Tell Cortexed what you want to learn…"
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
               disabled={isLoading}
             />

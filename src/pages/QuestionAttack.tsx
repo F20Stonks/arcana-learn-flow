@@ -199,7 +199,7 @@ export default function QuestionAttack() {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-1">Configure your attack</h2>
-              <p className="text-sm text-muted-foreground">Pick topics and difficulty, then Jarvis generates questions tailored to your level.</p>
+              <p className="text-sm text-muted-foreground">Pick topics and difficulty, then Cortexed generates questions tailored to your level.</p>
             </div>
 
             {/* Topic selection */}
@@ -324,7 +324,7 @@ export default function QuestionAttack() {
         {phase === "loading" && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted-foreground">Jarvis is generating your questions...</p>
+            <p className="text-sm text-muted-foreground">Cortexed is generating your questions...</p>
           </div>
         )}
 
