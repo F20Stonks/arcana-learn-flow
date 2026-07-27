@@ -1,5 +1,6 @@
 import { resolveTopicSpecChecklist } from "../_shared/specChecklistResolver.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,9 @@ const corsHeaders = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
+
+  const userId = await requireUser(req);
+  if (!userId) return unauthorized(corsHeaders);
 
   try {
     const { trackId } = await req.json();
@@ -22,6 +26,13 @@ Deno.serve(async (req: Request) => {
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error("Required env not configured");
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+    const { data: ownerCheck } = await supabase.from("learning_tracks").select("user_id").eq("id", trackId).maybeSingle();
+    if (!ownerCheck || (ownerCheck as { user_id: string }).user_id !== userId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: existing } = await supabase.from("spec_checklist_items").select("*").eq("track_id", trackId);
     if (existing && existing.length > 0) {
