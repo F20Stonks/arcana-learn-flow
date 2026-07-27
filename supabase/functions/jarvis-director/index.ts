@@ -1,5 +1,6 @@
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,9 @@ const corsHeaders = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
+
+  const authedUserId = await requireUser(req);
+  if (!authedUserId) return unauthorized(corsHeaders);
 
   try {
     const { messages, userId, mode } = await req.json();
