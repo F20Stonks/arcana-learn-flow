@@ -2,21 +2,34 @@ import { useEffect, useState } from "react";
 import { Palette, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ACCENTS: { name: string; hsl: string }[] = [
-  { name: "Indigo", hsl: "239 84% 67%" },
-  { name: "Emerald", hsl: "152 76% 44%" },
-  { name: "Amber", hsl: "38 95% 58%" },
-  { name: "Rose", hsl: "346 84% 61%" },
-  { name: "Sky", hsl: "199 89% 58%" },
-  { name: "Violet", hsl: "270 84% 67%" },
+  { name: "Indigo", hsl: "hsl(239 84% 67%)" },
+  { name: "Emerald", hsl: "hsl(152 76% 44%)" },
+  { name: "Amber", hsl: "hsl(38 95% 58%)" },
+  { name: "Rose", hsl: "hsl(346 84% 61%)" },
+  { name: "Sky", hsl: "hsl(199 89% 58%)" },
+  { name: "Violet", hsl: "hsl(270 84% 67%)" },
 ];
 
 const EMOJIS = ["🧠", "🚀", "🦊", "🐙", "🪐", "⚡", "🌱", "🔥", "🌙", "🎯"];
 
+/**
+ * Tailwind v4 moved the design tokens from bare HSL triplets ("239 84% 67%", wrapped by the
+ * config as `hsl(var(--primary))`) to complete colour values. Accents saved under the old
+ * scheme are still in localStorage and would now be written verbatim into `--primary`, where
+ * a bare triplet is not a valid colour — every `bg-primary` surface would fail to paint.
+ * Normalising on read keeps existing users on the exact accent they chose.
+ */
+function normalizeAccent(value: string): string {
+  const v = value.trim();
+  return v.startsWith("hsl(") ? v : `hsl(${v})`;
+}
+
 export function applyStoredAccent() {
   const stored = localStorage.getItem("jarvis_accent");
-  if (stored) document.documentElement.style.setProperty("--primary", stored);
+  if (stored) document.documentElement.style.setProperty("--primary", normalizeAccent(stored));
 }
 
 export default function CustomizeMenu() {
@@ -24,7 +37,10 @@ export default function CustomizeMenu() {
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [emoji, setEmoji] = useState(profile?.avatar_url || "🧠");
-  const [accent, setAccent] = useState<string>(localStorage.getItem("jarvis_accent") || ACCENTS[0].hsl);
+  const [accent, setAccent] = useState<string>(() => {
+    const stored = localStorage.getItem("jarvis_accent");
+    return stored ? normalizeAccent(stored) : ACCENTS[0].hsl;
+  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -52,13 +68,18 @@ export default function CustomizeMenu() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Customize"
-      >
-        <Palette className="h-5 w-5" />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+            aria-label="Customize"
+          >
+            <Palette className="h-[17px] w-[17px]" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Appearance</TooltipContent>
+      </Tooltip>
 
       {open && (
         <div
@@ -83,7 +104,7 @@ export default function CustomizeMenu() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-hidden focus:border-primary"
                 />
               </div>
 
@@ -114,7 +135,7 @@ export default function CustomizeMenu() {
                       className={`h-10 w-10 rounded-lg border-2 flex items-center justify-center transition-transform ${
                         accent === a.hsl ? "border-foreground scale-105" : "border-transparent hover:scale-105"
                       }`}
-                      style={{ background: `hsl(${a.hsl})` }}
+                      style={{ background: a.hsl }}
                       title={a.name}
                     >
                       {accent === a.hsl && <Check className="h-4 w-4 text-white" />}

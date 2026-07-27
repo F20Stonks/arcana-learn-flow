@@ -294,7 +294,7 @@ export default function TrackPapers() {
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder="Type your answer…"
                   rows={4}
-                  className="w-full bg-card border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/30 resize-none"
+                  className="w-full bg-card border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground outline-hidden focus:border-primary/30 resize-none"
                 />
               )}
 

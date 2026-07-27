@@ -926,7 +926,7 @@ function IntensitySelector({ intensity, onChange }: { intensity: Intensity; onCh
             onClick={() => onChange(lvl)}
             title={INTENSITY_META[lvl].hint}
             className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              intensity === lvl ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              intensity === lvl ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {INTENSITY_META[lvl].label}
@@ -996,7 +996,7 @@ function InteractionPanel({
             }
           }}
           placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Jarvis…"}
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
           disabled={isStreaming}
           autoFocus
         />

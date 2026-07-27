@@ -1,5 +1,6 @@
 import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // componentTagger (lovable-tagger) runs in development mode only — the mode
@@ -28,6 +29,7 @@ export default defineConfig(async ({ mode }) => ({
   },
   plugins: [
     react(),
+    tailwindcss(),
     mode === "development" ? await optionalComponentTagger() : null,
   ].filter(Boolean) as PluginOption[],
   resolve: {

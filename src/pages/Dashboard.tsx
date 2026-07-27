@@ -1,17 +1,35 @@
+/**
+ * OBSIDIAN INSTRUMENT — Cortexed dashboard.
+ * Near-black canvas, luminance hierarchy, cyan reserved for live elements,
+ * hairline glass cards, calm staggered reveals. One idea per region.
+ *
+ * Shell ported from the Manus mockup (client/src/pages/Home.tsx). Manus's file rendered
+ * fixed mock data with every interactive element a toast() stub; this wires it to the real
+ * Supabase-backed tracks/profile/auth and adds what the mock didn't need to handle because
+ * its data never changed shape:
+ *  - loading and error states (loadTracks can fail or take a moment; Manus's fixed array
+ *    never did either)
+ *  - an empty state for a brand-new user with zero tracks (Manus always had 5)
+ *  - real archive/delete, with the existing destructive-action confirmation dialog
+ *  - the GeneralChat panel "Ask Cortexed" opens, and the Hub/Customize/Settings/Sign-out
+ *    icons in CommandBar actually do something (see that file)
+ * The tracks grid, ghost "new track" card, and archived toggle are otherwise Manus's exact
+ * markup — only the data feeding them is real.
+ */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus, ChevronRight, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Flame, Trophy, Plus, BookOpen, Map as MapIcon, LogOut, Loader2, Target, Trash2, MessageCircle, ChevronUp, ChevronDown, Archive, ArchiveRestore, FileText } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import CustomizeMenu, { applyStoredAccent } from "@/components/CustomizeMenu";
-import BrandLogo from "@/components/BrandLogo";
-import HubSidebar from "@/components/HubSidebar";
+import CommandBar from "@/components/CommandBar";
+import UpNextCard from "@/components/UpNextCard";
+import TrackCard from "@/components/TrackCard";
 import GeneralChat from "@/components/GeneralChat";
-import NextActionCard from "@/components/NextActionCard";
 import SafeBoundary from "@/components/SafeBoundary";
 import { SubtopicLite, TrackLite } from "@/lib/nextAction";
-import { SubjectIcon } from "@/lib/subjectIcons";
+import { useNextAction } from "@/hooks/useNextAction";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +40,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
-type Track = Tables<"learning_tracks"> & { topicCount: number; subtopicCount: number; completedCount: number; subtopicsDetail: SubtopicLite[]; archived_at?: string | null };
+type Track = Tables<"learning_tracks"> & {
+  topicCount: number;
+  subtopicCount: number;
+  completedCount: number;
+  subtopicsDetail: SubtopicLite[];
+  archived_at?: string | null;
+};
 
 export default function Dashboard() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,28 +58,24 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     loadTracks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  useEffect(() => { applyStoredAccent(); }, []);
 
   const loadTracks = async () => {
     if (!user) return;
-    const userId = user.id;
     setLoading(true);
     setLoadError("");
-
     try {
       const { data: rawTracks, error } = await supabase
         .from("learning_tracks")
         .select("*")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
 
       const enriched: Track[] = await Promise.all(
@@ -68,9 +87,11 @@ export default function Dashboard() {
             let subtopicCount = 0;
             let completedCount = 0;
             let subtopicsDetail: SubtopicLite[] = [];
-
             if (topicIds.length > 0) {
-              const { data: subs } = await supabase.from("subtopics").select("id, title, status, order_index, topic_id").in("topic_id", topicIds);
+              const { data: subs } = await supabase
+                .from("subtopics")
+                .select("id, title, status, order_index, topic_id, estimated_minutes")
+                .in("topic_id", topicIds);
               subtopicCount = subs?.length || 0;
               completedCount = subs?.filter((s) => s.status === "complete").length || 0;
               subtopicsDetail = (subs || []).map((s) => ({
@@ -79,86 +100,26 @@ export default function Dashboard() {
                 status: s.status,
                 topicOrder: topicOrderById.get(s.topic_id) ?? 0,
                 order: s.order_index,
+                estimatedMinutes: s.estimated_minutes,
               }));
             }
-
             return { ...t, topicCount: topicIds.length, subtopicCount, completedCount, subtopicsDetail };
-          } catch (error) {
-            console.warn("Track enrichment failed:", error);
+          } catch (err) {
+            console.warn("Track enrichment failed:", err);
             return { ...t, topicCount: 0, subtopicCount: 0, completedCount: 0, subtopicsDetail: [] };
           }
         }),
       );
-
       setTracks(enriched);
-    } catch (error) {
-      console.error("Dashboard track load failed:", error);
+    } catch (err) {
+      console.error("Dashboard track load failed:", err);
       setTracks([]);
-      setLoadError("Jarvis couldn't load your tracks. You can retry or create a new one.");
+      setLoadError("Cortexed couldn't load your tracks. You can retry or create a new one.");
     } finally {
       setLoading(false);
     }
   };
 
-  const renderHeader = () => (
-    <header className="border-b border-border bg-background sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <BrandLogo className="text-lg" />
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-sm"><Flame className="h-4 w-4 text-streak" /><span className="font-semibold text-foreground">{profile?.weekly_streak || 0}</span></div>
-          <div className="flex items-center gap-1.5 text-sm"><Trophy className="h-4 w-4 text-xp" /><span className="font-semibold text-foreground">{profile?.total_xp || 0}</span></div>
-          <CustomizeMenu />
-          <SafeBoundary label="Hub" compact>
-            <HubSidebar />
-          </SafeBoundary>
-          <button onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground transition-colors"><Settings className="h-5 w-5" /></button>
-          <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors"><LogOut className="h-5 w-5" /></button>
-        </div>
-      </div>
-    </header>
-  );
-
-  const pct = (t: Track) => (t.subtopicCount > 0 ? Math.round((t.completedCount / t.subtopicCount) * 100) : 0);
-
-  const activeTracks = tracks.filter((t) => !t.archived_at);
-  const archivedTracks = tracks.filter((t) => t.archived_at);
-
-  // Stable inputs for the "what to do next" card — memoized so its data
-  // effect doesn't re-run on unrelated re-renders (chat toggle, dialogs...).
-  const nextActionTracks = useMemo<TrackLite[]>(
-    () =>
-      tracks
-        .filter((t) => !t.archived_at)
-        .map((t) => ({
-          id: t.id,
-          title: t.title,
-          examDate: t.exam_date,
-          createdAt: t.created_at,
-          subtopics: t.subtopicsDetail,
-        })),
-    [tracks],
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        {renderHeader()}
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-          <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Opening your workspace</h1>
-                <p className="mt-1 text-sm text-muted-foreground">If one data source is slow, Jarvis will still show the dashboard.</p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Soft archive/restore. Reversible, so no confirm dialog — just an optimistic update + an undo toast.
   const setArchived = async (track: Track, archived: boolean) => {
     const archived_at = archived ? new Date().toISOString() : null;
     const { error } = await supabase.from("learning_tracks").update({ archived_at } as never).eq("id", track.id);
@@ -188,166 +149,200 @@ export default function Dashboard() {
     toast.success("Track deleted");
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      {renderHeader()}
+  const activeTracks = useMemo(() => tracks.filter((t) => !t.archived_at), [tracks]);
+  const archivedTracks = useMemo(() => tracks.filter((t) => t.archived_at), [tracks]);
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+  const nextActionTracks = useMemo<TrackLite[]>(
+    () =>
+      activeTracks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        examDate: t.exam_date,
+        createdAt: t.created_at,
+        subtopics: t.subtopicsDetail,
+      })),
+    [activeTracks],
+  );
+
+  const plan = useNextAction(nextActionTracks);
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen bg-[#0A0A0C]">
+        <CommandBar />
+        <main className="relative mx-auto flex max-w-6xl items-center gap-3 px-5 pb-24 pt-24 sm:px-8">
+          <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+          <p className="text-[14px] text-zinc-500">Opening your workspace…</p>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#0A0A0C]">
+      {/* Ambient canvas glow — depth without noise */}
+      <div
+        className="pointer-events-none fixed inset-0"
+        aria-hidden
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 45% at 50% -10%, rgb(56 189 248 / 0.06), transparent 65%), radial-gradient(ellipse 45% 35% at 88% 68%, rgb(139 92 246 / 0.035), transparent 70%)",
+        }}
+      />
+
+      <CommandBar />
+
+      <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         {loadError && (
-          <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-sm font-medium text-foreground">{loadError}</p>
-            <button onClick={loadTracks} className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+          <div className="glass-card reveal mb-8 rounded-2xl p-5">
+            <p className="text-[14px] font-medium text-zinc-200">{loadError}</p>
+            <button
+              onClick={loadTracks}
+              className="mt-3 rounded-full bg-sky-400 px-4 py-2 text-[13px] font-semibold text-[#062033] transition-colors hover:bg-sky-300"
+            >
               Retry loading tracks
             </button>
           </div>
         )}
 
-        {/* What to do next — deterministic recommendation (renders nothing when there's nothing to say) */}
-        <SafeBoundary label="Next action">
-          <NextActionCard tracks={nextActionTracks} />
-        </SafeBoundary>
-
-        {/* Hero */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-1">Welcome back, {profile?.display_name || "learner"}</h2>
-          <p className="text-sm text-muted-foreground mb-4">{activeTracks.length > 0 ? "Keep up the momentum." : "Create your first learning track to get started."}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {activeTracks.length > 0 && (
-              <button
-                onClick={() => navigate(`/track/${activeTracks[0].id}`)}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Continue learning
-              </button>
-            )}
-            <button
-              onClick={() => setChatOpen((v) => !v)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-foreground text-sm font-medium hover:bg-accent/70 transition-colors"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Ask Jarvis
-              <ChevronUp className={`h-3.5 w-3.5 transition-transform ${chatOpen ? "" : "rotate-180"}`} />
-            </button>
-          </div>
-
-          {chatOpen && (
-            <div className="mt-5 pt-5 border-t border-border">
-              <SafeBoundary label="Jarvis chat">
-                <GeneralChat />
-              </SafeBoundary>
-            </div>
-          )}
-        </div>
-
-        {/* Tracks */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Learning Tracks</h3>
+        {plan ? (
+          <UpNextCard plan={plan} displayName={profile?.display_name || "learner"} onToggleChat={() => setChatOpen((v) => !v)} />
+        ) : (
+          <section className="reveal" style={{ animationDelay: "60ms" }}>
+            <h1 className="font-display text-[28px] font-semibold leading-tight text-zinc-50 sm:text-[32px]">
+              Welcome, <span className="font-serif-accent font-normal text-zinc-300">{profile?.display_name || "learner"}</span>
+            </h1>
+            <p className="mt-1 text-[15px] text-zinc-500">
+              {activeTracks.length > 0 ? "Every session is complete — add something new whenever you're ready." : "Choose what you're studying and a complete path is built for you."}
+            </p>
             <button
               onClick={() => navigate("/onboarding?new=1")}
-              className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+              className="glow-cyan mt-6 flex h-12 items-center gap-2.5 rounded-full bg-sky-400 px-7 text-[15px] font-semibold text-[#062033] transition-all hover:bg-sky-300 hover:shadow-[0_0_36px_-6px_rgb(56_189_248/0.7)]"
             >
-              <Plus className="h-3.5 w-3.5" /> New track
+              <Plus className="h-4 w-4" />
+              New track
+            </button>
+          </section>
+        )}
+
+        {chatOpen && (
+          <section className="glass-card reveal mt-6 rounded-2xl p-6">
+            <SafeBoundary label="Cortexed chat">
+              <GeneralChat />
+            </SafeBoundary>
+          </section>
+        )}
+
+        {/* Learning tracks */}
+        <section className="mt-16">
+          <div className="reveal mb-6 flex items-center justify-between" style={{ animationDelay: "180ms" }}>
+            <div className="flex items-baseline gap-3">
+              <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-zinc-100">
+                Learning <span className="font-serif-accent font-normal">tracks</span>
+              </h2>
+              <span className="readout text-[11px] uppercase tracking-[0.1em] text-zinc-600">
+                {activeTracks.length} active
+              </span>
+            </div>
+            <button
+              onClick={() => navigate("/onboarding?new=1")}
+              className="flex items-center gap-1.5 text-[13px] font-medium text-sky-400 transition-colors hover:text-sky-300">
+              <Plus className="h-3.5 w-3.5" />
+              New track
             </button>
           </div>
 
           {activeTracks.length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-8 text-center">
-              <p className="text-muted-foreground text-sm mb-4">
-                {archivedTracks.length > 0 ? "No active tracks — restore one below, or let Jarvis build a new one." : "No tracks yet. Let Jarvis build one for you."}
+            <div className="glass-card reveal rounded-2xl p-10 text-center" style={{ animationDelay: "220ms" }}>
+              <p className="text-[14px] text-zinc-500">
+                {archivedTracks.length > 0 ? "No active tracks — restore one below, or start a new one." : "No tracks yet."}
               </p>
-              <button onClick={() => navigate("/onboarding?new=1")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
-                Create a track
-              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activeTracks.map((t) => (
-                <div key={t.id} className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" onClick={() => navigate(`/track/${t.id}`)}>
-                  <div className="flex items-start justify-between mb-3">
-                    <SubjectIcon subject={t.subject} />
-                    <span className="text-xs text-muted-foreground">{pct(t)}%</span>
-                  </div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{t.title}</h4>
-                  <p className="text-xs text-muted-foreground mb-3">{t.topicCount} topics · {t.subtopicCount} subtopics</p>
-                  <div className="w-full h-1.5 rounded-full bg-secondary">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct(t)}%` }} />
-                  </div>
-                  <div className="flex items-center gap-2 mt-3">
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/notes`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <BookOpen className="h-3 w-3" /> Notes
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/questions`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <Target className="h-3 w-3" /> Questions
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/track/${t.id}/papers`); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <FileText className="h-3 w-3" /> Papers
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setArchived(t, true); }}
-                      className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      title="Archive track"
-                    >
-                      <Archive className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setPendingDelete(t); }}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                      title="Delete track"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {activeTracks.map((t, i) => (
+                <TrackCard
+                  key={t.id}
+                  track={{
+                    id: t.id,
+                    title: t.title,
+                    subject: t.subject,
+                    topicCount: t.topicCount,
+                    subtopicCount: t.subtopicCount,
+                    completedCount: t.completedCount,
+                  }}
+                  delay={220 + i * 70}
+                  onArchive={() => setArchived(t, true)}
+                  onDelete={() => setPendingDelete(t)}
+                />
               ))}
+
+              {/* Ghost "new track" card */}
+              <button
+                onClick={() => navigate("/onboarding?new=1")}
+                className="reveal group flex min-h-[210px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.1] text-zinc-600 transition-colors hover:border-sky-400/40 hover:text-zinc-300"
+                style={{ animationDelay: `${220 + activeTracks.length * 70}ms` }}>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.02] transition-colors group-hover:border-sky-400/30 group-hover:text-sky-400">
+                  <Plus className="h-5 w-5" />
+                </span>
+                <span className="text-[14px] font-medium">Start a new track</span>
+                <span className="px-8 text-center text-[12px] text-zinc-700">
+                  Name the goal. The path builds itself.
+                </span>
+              </button>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Archived tracks — collapsed by default */}
+        {/* Archived */}
         {archivedTracks.length > 0 && (
-          <div>
+          <section className="reveal mt-12" style={{ animationDelay: "600ms" }}>
             <button
-              onClick={() => setShowArchived((v) => !v)}
-              className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-            >
-              {showArchived ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5 rotate-180" />}
-              Archived ({archivedTracks.length})
+              onClick={() => setArchivedOpen((v) => !v)}
+              aria-expanded={archivedOpen}
+              className="flex w-full items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.015] px-4 py-3 text-left transition-colors hover:border-white/[0.1]">
+              <ChevronRight
+                className={`h-4 w-4 text-zinc-600 transition-transform duration-200 ${
+                  archivedOpen ? "rotate-90" : ""
+                }`}
+              />
+              <span className="micro-label !text-zinc-500">Archived</span>
+              <span className="readout text-[12px] text-zinc-600">({archivedTracks.length})</span>
             </button>
-
-            {showArchived && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {archivedOpen && (
+              /* Manus's exact box (client/src/pages/Home.tsx) held static placeholder text —
+                 there was no per-track markup to port, since the mockup never had real archived
+                 tracks to render. Same container, same type scale; each row is plain text plus
+                 two inline actions so it reads as one box, not a second component style. */
+              <div className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.05] bg-white/[0.01] px-5 py-2 text-[13px] text-zinc-600">
                 {archivedTracks.map((t) => (
-                  <div key={t.id} className="bg-card/60 border border-border rounded-xl p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <SubjectIcon subject={t.subject} className="opacity-70" />
-                      <span className="text-xs text-muted-foreground">{pct(t)}%</span>
-                    </div>
-                    <h4 className="text-sm font-semibold text-muted-foreground mb-1">{t.title}</h4>
-                    <p className="text-xs text-muted-foreground mb-3">{t.topicCount} topics · {t.subtopicCount} subtopics</p>
-                    <div className="flex items-center gap-2 mt-3">
-                      <button
-                        onClick={() => setArchived(t, false)}
-                        className="flex items-center gap-1 text-xs text-primary hover:underline transition-colors"
-                        title="Restore track"
-                      >
-                        <ArchiveRestore className="h-3 w-3" /> Restore
-                      </button>
-                      <button
-                        onClick={() => setPendingDelete(t)}
-                        className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                        title="Delete track"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
+                  <div key={t.id} className="flex items-center gap-3 py-3">
+                    <span className="min-w-0 flex-1 truncate text-left">{t.title}</span>
+                    <button
+                      onClick={() => setArchived(t, false)}
+                      className="shrink-0 font-medium text-sky-400 transition-colors hover:text-sky-300"
+                    >
+                      Restore
+                    </button>
+                    <button
+                      onClick={() => setPendingDelete(t)}
+                      className="shrink-0 text-zinc-600 transition-colors hover:text-red-400"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
+
+        <footer className="mt-20 border-t border-white/[0.05] pt-6 text-center">
+          <p className="text-[12px] text-zinc-700">
+            Cortexed — an instrument for mathematical &amp; physical understanding.
+          </p>
+        </footer>
       </main>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>

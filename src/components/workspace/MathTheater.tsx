@@ -173,7 +173,7 @@ export default function MathTheater({
 
   return (
     <div
-      className={fullscreen ? "fixed inset-0 z-[100] flex flex-col" : "h-full w-full flex flex-col"}
+      className={fullscreen ? "fixed inset-0 z-100 flex flex-col" : "h-full w-full flex flex-col"}
       style={{ background: mathTheme.bg }}
     >
       {minimized && !fullscreen ? (

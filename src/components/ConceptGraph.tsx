@@ -83,7 +83,7 @@ export default function ConceptGraph() {
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full select-none" style={{ aspectRatio: "1 / 1" }}>
           <defs>
             <marker id="cg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--muted-foreground))" opacity="0.5" />
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-foreground)" opacity="0.5" />
             </marker>
           </defs>
           {edges.map((e, i) => {
@@ -94,7 +94,7 @@ export default function ConceptGraph() {
               <line
                 key={i}
                 x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} strokeWidth={1.2}
+                stroke="var(--muted-foreground)" strokeOpacity={0.3} strokeWidth={1.2}
                 markerEnd="url(#cg-arrow)"
               />
             );
@@ -103,7 +103,7 @@ export default function ConceptGraph() {
             <g key={n.id}>
               <circle
                 cx={n.x} cy={n.y} r={n.known ? 8 : 6}
-                fill={n.known ? TYPE_COLOR[n.type] || TYPE_COLOR.terminology : "hsl(var(--card))"}
+                fill={n.known ? TYPE_COLOR[n.type] || TYPE_COLOR.terminology : "var(--card)"}
                 stroke={TYPE_COLOR[n.type] || TYPE_COLOR.terminology}
                 strokeWidth={n.known ? 0 : 1.5}
                 strokeOpacity={n.known ? 1 : 0.6}

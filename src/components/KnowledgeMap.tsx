@@ -65,7 +65,7 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
       {/* HUD: header */}
       <div className="relative z-10 flex items-center justify-between gap-4 px-5 pt-4 pb-3 border-b border-[#14b892]/15">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#2dd4a8] to-[#0d7a5f] flex items-center justify-center shadow-[0_0_24px_rgba(45,212,168,0.5)] shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-linear-to-br from-[#2dd4a8] to-[#0d7a5f] flex items-center justify-center shadow-[0_0_24px_rgba(45,212,168,0.5)] shrink-0">
             <Trophy className="h-5 w-5 text-[#0a1520]" strokeWidth={2.5} />
           </div>
           <div className="min-w-0">
@@ -79,7 +79,7 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
           <div className="hidden sm:flex items-center gap-2">
             <Flame className="h-3.5 w-3.5 text-[#73ffb8]" />
             <div className="w-40 h-2 rounded-full bg-[#0d1b2a] border border-[#14b892]/25 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-[#2dd4a8] to-[#73ffb8] transition-all duration-500 shadow-[0_0_10px_rgba(115,255,184,0.6)]" style={{ width: `${stats.pct}%` }} />
+              <div className="h-full rounded-full bg-linear-to-r from-[#2dd4a8] to-[#73ffb8] transition-all duration-500 shadow-[0_0_10px_rgba(115,255,184,0.6)]" style={{ width: `${stats.pct}%` }} />
             </div>
             <span className="text-xs font-mono text-[#73ffb8] tabular-nums">{stats.done}<span className="text-[#5eead4]/50">/{stats.total}</span></span>
           </div>
@@ -143,7 +143,7 @@ function TopicColumn({
         onClick={onToggleCollapse}
         className={`w-full group relative rounded-xl border px-4 py-3 text-left transition-all ${
           fullyDone
-            ? "border-[#73ffb8]/50 bg-gradient-to-b from-[#134e3a] to-[#0d1b2a] shadow-[0_0_28px_rgba(115,255,184,0.25)]"
+            ? "border-[#73ffb8]/50 bg-linear-to-b from-[#134e3a] to-[#0d1b2a] shadow-[0_0_28px_rgba(115,255,184,0.25)]"
             : "border-[#14b892]/30 bg-[#0d1b2a] hover:border-[#2dd4a8]/60"
         }`}
       >
@@ -159,7 +159,7 @@ function TopicColumn({
         <p className="text-sm font-semibold text-[#e6fffa] leading-tight line-clamp-2">{topic.title}</p>
         <div className="mt-3 flex items-center gap-2">
           <div className="flex-1 h-1 rounded-full bg-[#0a1520] overflow-hidden border border-[#14b892]/15">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#2dd4a8] to-[#73ffb8]" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-linear-to-r from-[#2dd4a8] to-[#73ffb8]" style={{ width: `${pct}%` }} />
           </div>
           <span className="text-[10px] font-mono text-[#5eead4]/70 tabular-nums">{done}/{total}</span>
         </div>
@@ -167,7 +167,7 @@ function TopicColumn({
 
       {/* Connector spine down */}
       {!collapsed && total > 0 && (
-        <div className="w-px h-4 bg-gradient-to-b from-[#2dd4a8]/60 to-[#2dd4a8]/20" />
+        <div className="w-px h-4 bg-linear-to-b from-[#2dd4a8]/60 to-[#2dd4a8]/20" />
       )}
 
       {/* Subtopic chain */}

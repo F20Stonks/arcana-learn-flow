@@ -18,6 +18,8 @@ export interface SubtopicLite {
   topicOrder: number;
   /** order_index of the subtopic within its topic */
   order: number;
+  /** subtopics.estimated_minutes, when set */
+  estimatedMinutes?: number | null;
 }
 
 export interface TrackLite {
@@ -65,6 +67,12 @@ export interface NextAction {
   to: string;
   /** Button text. */
   cta: string;
+  /** The track this action belongs to. "" only for the track-less "new_track" fallback. */
+  trackTitle: string;
+  /** Days until that track's exam, or null if none / already past. */
+  daysToExam: number | null;
+  /** subtopics.estimated_minutes for the target subtopic, when set. */
+  estimatedMinutes: number | null;
 }
 
 export interface NextActionPlan {
@@ -168,6 +176,9 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
           : `Review "${title}" — due today`,
       to: `/session/${r.subtopicId}?mode=review`,
       cta: "Start review",
+      trackTitle: resolved!.track.title,
+      daysToExam: examDaysAway(resolved!.track, now),
+      estimatedMinutes: resolved!.sub.estimatedMinutes ?? null,
     });
   }
 
@@ -193,6 +204,9 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
       reason,
       to: `/session/${next.id}`,
       cta: next.status === "in_progress" ? "Continue session" : "Start session",
+      trackTitle: t.title,
+      daysToExam,
+      estimatedMinutes: next.estimatedMinutes ?? null,
     });
   }
 
@@ -208,6 +222,9 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
         reason: `All caught up — next review "${title}" ${inDays === 1 ? "is tomorrow" : `is in ${plural(inDays, "day")}`}`,
         to: `/session/${upcoming.r.subtopicId}?mode=review`,
         cta: "Review early",
+        trackTitle: upcoming.resolved!.track.title,
+        daysToExam: examDaysAway(upcoming.resolved!.track, now),
+        estimatedMinutes: upcoming.resolved!.sub.estimatedMinutes ?? null,
       });
     } else {
       candidates.push({
@@ -216,6 +233,9 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
         reason: "All caught up — every subtopic complete and nothing due for review",
         to: "/onboarding?new=1",
         cta: "Start a new track",
+        trackTitle: "",
+        daysToExam: null,
+        estimatedMinutes: null,
       });
     }
   }

@@ -174,7 +174,7 @@ Use $...$ for inline math and $$...$$ for block math. Keep responses SHORT.`,
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send(input)}
             placeholder="Explain your thinking..."
-            className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+            className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-hidden"
             disabled={streaming}
           />
           <button

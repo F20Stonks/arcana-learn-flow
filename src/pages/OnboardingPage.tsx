@@ -352,7 +352,7 @@ Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
               placeholder="Tell Jarvis what you want to learn…"
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
               disabled={isLoading}
             />
             <button

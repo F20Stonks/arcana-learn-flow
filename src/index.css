@@ -1,77 +1,362 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@custom-variant dark (&:is(.dark *));
 
-@layer base {
-  :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 100%;
+/*
+  OBSIDIAN INSTRUMENT — the design system for every authenticated surface.
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 100%;
+  Four rules, in priority order:
+    1. Luminance hierarchy, not colour hierarchy. Importance is a brightness step on a near-black
+       canvas (white → zinc-400 → zinc-600). Colour is never how you say "this matters".
+    2. Cyan is reserved for things that are ALIVE — primary actions, progress, live data. Its
+       scarcity is the whole point; spend it twice on a screen and it stops meaning anything.
+    3. Hairline precision. 1px borders at ~8% white, exact optical alignment. Depth comes from
+       faint radial glows and glass blur, never from drop shadows (they turn to mud on black).
+    4. Calm motion. Slow physical ease-out, nothing bounces, nothing flashes, all under 700ms,
+       all gated behind prefers-reduced-motion.
+*/
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 100%;
+/*
+  Tailwind v4 theme.
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 0 0% 100%;
+  `inline` matters here and is not cosmetic: it makes utilities emit `var(--primary)` directly
+  instead of a build-time copy of its value. CustomizeMenu overrides `--primary` on <html> at
+  runtime, and only the inline form lets that override reach `bg-primary`, `text-primary`, etc.
+  A plain `@theme` block would bake the default cyan into the utility and the accent picker
+  would silently stop working.
+*/
+@theme inline {
+  /* Instrument Sans/Serif are Manus's actual choice, not the app's pre-Obsidian Inter
+     default — main.tsx already loads both. Inter stays as a metric-compatible fallback. */
+  --font-sans: "Instrument Sans Variable", "Instrument Sans", "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
 
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 0 0% 53%;
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-    --muted: 0 0% 9%;
-    --muted-foreground: 0 0% 53%;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-    --accent: 0 0% 11%;
-    --accent-foreground: 0 0% 90%;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
+  --color-status-green: var(--status-green);
+  --color-status-yellow: var(--status-yellow);
+  --color-status-red: var(--status-red);
 
-    --border: 0 0% 13%;
-    --input: 0 0% 13%;
-    --ring: 239 84% 67%;
+  --color-streak: var(--streak-flame);
+  --color-xp: var(--xp-gold);
+  --color-surface: var(--surface-raised);
+  --color-rule: var(--border);
+  --color-rule-strong: var(--rule-strong);
+  --color-tick: var(--tick);
 
-    --radius: 0.75rem;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-control: 0.625rem;
+  --radius-chip: 0.25rem;
+}
 
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 53%;
-    --sidebar-primary: 239 84% 67%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 9%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 0 0% 13%;
-    --sidebar-ring: 239 84% 67%;
+@theme {
+  /* Weighted physical easing — things with mass never move linearly. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
 
-    --status-green: 142 71% 45%;
-    --status-yellow: 38 92% 50%;
-    --status-red: 0 84% 60%;
-    --surface-chat: 0 0% 5%;
-    --surface-input: 0 0% 8%;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-pulse-slow: glow-pulse 2.4s ease-in-out infinite;
+}
 
-    --streak-flame: 25 95% 55%;
-    --xp-gold: 45 100% 60%;
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(251, 191, 36, 0.45); transform: scale(1); }
+  50% { box-shadow: 0 0 32px rgba(251, 191, 36, 0.85); transform: scale(1.06); }
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= 1400px) {
+    max-width: 1400px;
   }
 }
 
+:root {
+  /* ── Ground & elevation ─────────────────────────────────────────── */
+  /* #0A0A0C — near-black with a breath of blue. Dimmed lecture hall, not "edgy". */
+  --background: hsl(240 9% 4%);
+  --foreground: hsl(240 10% 96%);
+
+  --card: hsl(240 7% 8%);
+  --card-foreground: hsl(240 10% 96%);
+
+  --popover: hsl(240 8% 7%);
+  --popover-foreground: hsl(240 10% 96%);
+
+  /* One step above --card, for panels that sit on top of panels. */
+  --surface-raised: hsl(240 6% 11%);
+
+  --secondary: hsl(240 6% 13%);
+  --secondary-foreground: hsl(240 5% 72%);
+
+  --muted: hsl(240 6% 13%);
+  --muted-foreground: hsl(240 5% 65%);
+
+  --accent: hsl(240 6% 14%);
+  --accent-foreground: hsl(240 8% 94%);
+
+  /* ── Accent (scarce; CustomizeMenu may override --primary at runtime) ── */
+  /* #38BDF8 "Cortexed cyan" — only where the product is alive. */
+  --primary: hsl(198 93% 60%);
+  --primary-foreground: hsl(203 79% 11%);
+
+  /* ── Lines ──────────────────────────────────────────────────────── */
+  /* ≈ white/8 over the canvas — the hairline the whole system is built on. */
+  --border: hsl(240 6% 15%);
+  --input: hsl(240 6% 18%);
+  --ring: hsl(198 93% 60%);
+  /* A brighter rule for structural separation vs. incidental hairlines. */
+  --rule-strong: hsl(240 6% 21%);
+  --tick: hsl(240 5% 32%);
+
+  /* ── Semantics (deliberately muted — they report state, they don't shout) ── */
+  --destructive: hsl(358 62% 58%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(152 58% 46%);
+  --warning: hsl(38 92% 56%);
+
+  --status-green: hsl(152 58% 46%);
+  --status-yellow: hsl(38 92% 56%);
+  --status-red: hsl(358 62% 58%);
+
+  /* Progress signals, demoted from "the point" to quiet honest readouts. */
+  --streak-flame: hsl(24 70% 52%);
+  --xp-gold: hsl(42 68% 56%);
+
+  --surface-chat: hsl(240 8% 7%);
+  --surface-input: hsl(240 7% 10%);
+
+  /* ── Radius discipline: stop rounding everything to the same 12px ── */
+  --radius: 1rem;
+
+  --sidebar-background: hsl(240 8% 5%);
+  --sidebar-foreground: hsl(240 5% 65%);
+  --sidebar-primary: hsl(198 93% 60%);
+  --sidebar-primary-foreground: hsl(203 79% 11%);
+  --sidebar-accent: hsl(240 6% 13%);
+  --sidebar-accent-foreground: hsl(240 8% 94%);
+  --sidebar-border: hsl(240 6% 15%);
+  --sidebar-ring: hsl(198 93% 60%);
+}
+
 @layer base {
+  /*
+    v3 defaulted `border-*` to gray-200 and shadcn neutralised that with `@apply border-border`
+    on every element. v4 defaults to currentColor instead, so this rule is what preserves the
+    previous appearance — it is load-bearing, not boilerplate.
+  */
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Inter's optical sizing + slightly tightened tracking at UI sizes. */
+    font-optical-sizing: auto;
+    letter-spacing: -0.011em;
   }
+
+  /* Digits that share a column must not dance when they change. */
+  .tabular,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 28%, transparent);
+    color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--ring) 75%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+    Hairline highlight along a panel's top edge — how light actually falls on a raised
+    surface. Replaces drop shadows, which turn to mud on a near-black ground.
+  */
+  .panel-lit {
+    position: relative;
+  }
+  .panel-lit::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--foreground) 7%, transparent) 18%,
+      color-mix(in oklab, var(--foreground) 7%, transparent) 82%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  /* Uppercase micro-label. Tracking is what makes small caps legible, not size. */
+  .eyebrow {
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    letter-spacing: 0.14em;
+  }
+}
+
+/*
+  ── Obsidian Instrument utility layer ─────────────────────────────────
+  Ported verbatim from the Manus mockup's @layer utilities block (client/src/index.css),
+  same class names and values, so components built against it (CommandBar, UpNextCard,
+  TrackCard, ProgressRing, Dashboard) render exactly as designed. `.eyebrow` above is this
+  app's pre-existing equivalent of `.micro-label`, kept for NextActionCard/others; the two
+  are intentionally near-duplicates rather than merged, so nothing outside this port shifts.
+*/
+@layer utilities {
+  .font-display {
+    font-family: var(--font-sans);
+    letter-spacing: -0.025em;
+  }
+  .font-serif-accent {
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+  .micro-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: oklch(0.55 0.01 270);
+  }
+  .glass-card {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.02));
+    border: 1px solid rgb(255 255 255 / 0.08);
+    backdrop-filter: blur(12px);
+    transition:
+      border-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .glass-card-hover:hover {
+    border-color: rgb(255 255 255 / 0.16);
+  }
+  .glow-cyan {
+    box-shadow: 0 0 24px -6px rgb(56 189 248 / 0.45);
+  }
+  .readout {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Calm entrance reveal */
+@media (prefers-reduced-motion: no-preference) {
+  /*
+    `backwards`, not `forwards`, and the keyframe runs FROM hidden rather than TO visible.
+    Manus's version sets opacity:0 as the resting style and animates up to 1, which renders
+    blank in any context where animations don't run (prerender, restored background tab,
+    embedded webviews) — verified while building the design mockup: every .reveal section
+    sat at opacity 0 there. This way the resting state is correct and the fade is pure
+    enhancement; `backwards` still applies the hidden state during the stagger delay, so
+    nothing flashes in. Everything else in this rule is Manus's file unchanged.
+  */
+  .reveal {
+    animation: reveal-up 640ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  }
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+  .ambient-drift {
+    animation: ambient-drift 22s ease-in-out infinite alternate;
+  }
+  @keyframes ambient-drift {
+    from {
+      transform: translate3d(-2%, -1%, 0) scale(1);
+      opacity: 0.5;
+    }
+    to {
+      transform: translate3d(2%, 1.5%, 0) scale(1.06);
+      opacity: 0.8;
+    }
+  }
+}
+
+button:active {
+  transform: scale(0.97);
+}
+button {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(0 0% 20%); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(0 0% 28%); }
+::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tick); }
 
 /* KaTeX overrides for dark theme */
 .katex { color: inherit !important; }
 .katex .mord, .katex .mbin, .katex .mrel, .katex .mopen, .katex .mclose, .katex .mpunct, .katex .mop { color: inherit !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network } from "lucide-react";
@@ -71,14 +72,22 @@ export default function HubSidebar() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button className="relative text-muted-foreground hover:text-foreground transition-colors" title="Knowledge hub">
-          <LayoutGrid className="h-5 w-5" />
-          {dueReviewCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-destructive" title={`${dueReviewCount} review${dueReviewCount === 1 ? "" : "s"} due`} />
-          )}
-        </button>
-      </SheetTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SheetTrigger asChild>
+            <button
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+              aria-label="Knowledge hub"
+            >
+              <LayoutGrid className="h-[17px] w-[17px]" />
+              {dueReviewCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" title={`${dueReviewCount} review${dueReviewCount === 1 ? "" : "s"} due`} />
+              )}
+            </button>
+          </SheetTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Hub</TooltipContent>
+      </Tooltip>
       <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle>Hub</SheetTitle>
@@ -154,7 +163,7 @@ function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConc
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search everything you know…"
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
             />
           </div>
 

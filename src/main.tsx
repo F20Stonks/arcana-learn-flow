@@ -1,5 +1,13 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+// Self-hosted typefaces. tailwind.config.ts has always declared Inter/JetBrains Mono, but nothing ever
+// loaded them — every surface was silently falling back to system-ui and the default monospace. Variable
+// fonts, bundled (no CDN, no FOUT, no layout shift).
+import "@fontsource-variable/instrument-sans";
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/instrument-serif/400-italic.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { supabaseConfigMissing } from "./integrations/supabase/client";
