@@ -253,7 +253,13 @@ export default function LandingPage() {
           </section>
 
           <footer>
-            Cortexed — an instrument for mathematical &amp; physical understanding.
+            <div>Cortexed — an instrument for mathematical &amp; physical understanding.</div>
+            <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>
+              © {new Date().getFullYear()} Pranit Singh Chhabra ·{" "}
+              <Link to="/terms">Terms</Link> ·{" "}
+              <Link to="/privacy">Privacy</Link> ·{" "}
+              <Link to="/refund">Refunds</Link>
+            </div>
           </footer>
         </div>
       </div>

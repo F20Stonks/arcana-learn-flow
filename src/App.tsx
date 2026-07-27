@@ -17,6 +17,9 @@ import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 import PricingPage from "./pages/PricingPage";
+import TermsPage from "./pages/legal/TermsPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import RefundPage from "./pages/legal/RefundPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -66,6 +69,9 @@ function AppRoutes() {
       <Route path="/session/:subtopicId" element={<DashboardGuard><SessionPage /></DashboardGuard>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/refund" element={<RefundPage />} />
       {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
