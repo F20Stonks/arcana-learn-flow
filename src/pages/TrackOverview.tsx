@@ -261,25 +261,6 @@ export default function TrackOverview() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
               </div>
-
-              <div className="bg-card border border-border rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Topics</h3>
-                <div className="space-y-2">
-                  {topics.map((t) => {
-                    const tc = t.subtopics.filter(s => s.status === "complete").length;
-                    const tp = t.subtopics.length > 0 ? Math.round((tc / t.subtopics.length) * 100) : 0;
-                    return (
-                      <div key={t.id} className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[t.status]}`} />
-                          <span className="text-sm text-foreground">{t.title}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{tp}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             </>
           ) : view === "map" ? (
             <SafeBoundary label="Knowledge map">
