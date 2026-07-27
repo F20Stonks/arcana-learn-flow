@@ -1,3 +1,4 @@
+import { getBearerToken } from "@/lib/authHeader";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { Send, Loader2 } from "lucide-react";
@@ -32,7 +33,7 @@ export default function GeneralChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({
           messages: allMessages,

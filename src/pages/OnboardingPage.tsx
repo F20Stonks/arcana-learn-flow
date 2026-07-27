@@ -1,3 +1,4 @@
+import { getBearerToken } from "@/lib/authHeader";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -58,7 +59,7 @@ Return ONLY JSON — no prose, no markdown fences:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: `Refine the granularity of this track:\n${JSON.stringify(payload)}` }],
@@ -117,7 +118,7 @@ Return ONLY JSON — no prose, no markdown fences:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({ messages: [{ role: "user", content: userContent }], systemOverride }),
       });

@@ -1,3 +1,4 @@
+import { getBearerToken } from "@/lib/authHeader";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -211,7 +212,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: "Generate the prerequisite list now." }],
@@ -440,7 +441,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({
           messages: newMessages,
