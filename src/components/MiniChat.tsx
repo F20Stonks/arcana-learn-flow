@@ -1,3 +1,4 @@
+import { getBearerToken } from "@/lib/authHeader";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { useState, useRef, useEffect } from "react";
 import { Send, Loader2, X, HelpCircle } from "lucide-react";
@@ -59,7 +60,7 @@ export default function MiniChat({ question, correctAnswer, explanation, context
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getBearerToken()}`,
         },
         body: JSON.stringify({
           messages: allMessages,

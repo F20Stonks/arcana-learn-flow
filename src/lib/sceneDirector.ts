@@ -1,3 +1,4 @@
+import { getBearerToken } from "@/lib/authHeader";
 import type { SceneSpec } from "./sceneSpec";
 import { isSceneSpec, sanitizeScene } from "./sceneSpec";
 import { extractViz, parseModelJson } from "./vizExtract";
@@ -152,7 +153,7 @@ async function streamSceneOnce(userContent: string): Promise<{ acc: string; scen
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${await getBearerToken()}`,
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: userContent }],
