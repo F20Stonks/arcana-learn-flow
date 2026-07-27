@@ -8,6 +8,7 @@
 // curl) when the scan surfaces a real duplicate. The optional atomic SQL merge_concepts() function is a
 // deferred migration; TypeScript repointing is sufficient for v1.
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +41,13 @@ Deno.serve(async (req: Request) => {
 
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+  const userId = await requireUser(req);
+  if (!userId) return unauthorized(corsHeaders);
+  const adminList = (Deno.env.get("RECONCILE_ADMIN_USER_IDS") || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (adminList.length === 0 || !adminList.includes(userId)) {
+    return json({ error: "Forbidden: admin only" }, 403);
+  }
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
