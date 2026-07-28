@@ -9,6 +9,7 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
 import MathSymbolPalette from "@/components/MathSymbolPalette";
+import RichMathField, { type RichMathFieldHandle } from "@/components/RichMathField";
 import MatrixInput from "@/components/session/MatrixInput";
 import NumericUnitInput from "@/components/session/NumericUnitInput";
 import MultiSelectInput from "@/components/session/MultiSelectInput";
@@ -1121,19 +1122,10 @@ function InteractionPanel({
       : null;
 
   const [showText, setShowText] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fieldRef = useRef<RichMathFieldHandle>(null);
 
   // A fresh structured prompt should never inherit the previous turn's "type instead" escape.
   useEffect(() => { setShowText(false); }, [choices?.type]);
-
-  // Auto-grow with content instead of a fixed single line — a self-explanation or a worked
-  // derivation needs more than one row to type into, let alone read back before sending.
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [input]);
 
   if (choices && !showText) {
     if (choices.type === "matrix") {
@@ -1232,22 +1224,18 @@ function InteractionPanel({
 
   return (
     <div className="p-4 border-t border-border space-y-2">
-      <MathSymbolPalette targetRef={textareaRef} value={input} onChange={setInput} />
+      <MathSymbolPalette onInsert={(latex) => fieldRef.current?.insertLatex(latex)} />
       <div className="flex items-end gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
-        <textarea
-          ref={textareaRef}
+        <RichMathField
+          ref={fieldRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              onSend(input);
-              setShowText(false);
-            }
+          onChange={setInput}
+          onEnter={() => {
+            onSend(input);
+            setShowText(false);
           }}
           placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Cortexed…"}
-          rows={1}
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden resize-none max-h-40 overflow-y-auto py-1"
+          className="flex-1 bg-transparent text-sm text-foreground outline-hidden max-h-40 overflow-y-auto py-1 whitespace-pre-wrap break-words"
           disabled={isStreaming}
           autoFocus
         />

@@ -7,6 +7,7 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import InsightPreview from "@/components/workspace/InsightPreview";
 import MathSymbolPalette from "@/components/MathSymbolPalette";
+import RichMathField, { type RichMathFieldHandle } from "@/components/RichMathField";
 import type { SimulationPayload } from "@/lib/simulationPayload";
 import type { SceneSpec } from "@/lib/sceneSpec";
 
@@ -285,7 +286,7 @@ function EditableNoteSection({
   const [editingContent, setEditingContent] = useState(false);
   const [titleDraft, setTitleDraft] = useState(note.title);
   const [contentDraft, setContentDraft] = useState(note.content);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const contentFieldRef = useRef<RichMathFieldHandle>(null);
 
   const commitTitle = () => {
     setEditingTitle(false);
@@ -324,17 +325,24 @@ function EditableNoteSection({
 
       <div className="pl-4 border-l border-border/50">
         {editingContent ? (
-          <div className="space-y-2">
-            <MathSymbolPalette targetRef={contentRef} value={contentDraft} onChange={setContentDraft} />
-            <textarea
-              ref={contentRef}
+          <div
+            className="space-y-2"
+            // Blur-commits only when focus leaves this whole group, not just the field —
+            // opening the math composer (new insertion or re-editing an existing chip) moves
+            // focus onto its <math-field>, which lives inside this same div, so that no longer
+            // looks like "the student clicked away."
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) commitContent();
+            }}
+            onKeyDown={(e) => { if (e.key === "Escape") { setContentDraft(note.content); setEditingContent(false); } }}
+          >
+            <MathSymbolPalette onInsert={(latex) => contentFieldRef.current?.insertLatex(latex)} />
+            <RichMathField
+              ref={contentFieldRef}
               autoFocus
               value={contentDraft}
-              onChange={(e) => setContentDraft(e.target.value)}
-              onBlur={commitContent}
-              onKeyDown={(e) => { if (e.key === "Escape") { setContentDraft(note.content); setEditingContent(false); } }}
-              rows={Math.max(3, contentDraft.split("\n").length + 1)}
-              className="w-full bg-transparent outline-hidden text-sm text-foreground leading-relaxed resize-none"
+              onChange={setContentDraft}
+              className="w-full bg-transparent outline-hidden text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words"
             />
           </div>
         ) : (

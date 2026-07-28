@@ -1,81 +1,103 @@
-import { RefObject } from "react";
+import { useState } from "react";
+import MathComposerPanel from "@/components/MathComposerPanel";
 
-interface MathSymbol {
+interface AtomicSymbol {
   label: string;
-  /** Self-contained — always its own $...$ span, so it never depends on whether the cursor
-   * happens to already be "inside" math mode elsewhere in the text. */
-  template: string;
-  /** Character range (relative to the start of `template`) to select after insertion, so typing
-   * immediately replaces the placeholder instead of the student having to hunt for it. */
-  selectFrom?: number;
-  selectTo?: number;
+  /** Pure LaTeX, no $ wrapper — inserted as a chip directly, no composer needed since there's
+   * nothing internal to fill in. */
+  latex: string;
 }
 
-const SYMBOLS: MathSymbol[] = [
-  { label: "a⁄b", template: "$\\frac{a}{b}$", selectFrom: 7, selectTo: 8 },
-  { label: "x²", template: "$x^{2}$", selectFrom: 1, selectTo: 2 },
-  { label: "x₁", template: "$x_{1}$", selectFrom: 1, selectTo: 2 },
-  { label: "√", template: "$\\sqrt{x}$", selectFrom: 7, selectTo: 8 },
-  { label: "2×2", template: "$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$", selectFrom: 17, selectTo: 18 },
-  { label: "vec", template: "$\\begin{pmatrix} a \\\\ b \\end{pmatrix}$", selectFrom: 17, selectTo: 18 },
-  { label: "π", template: "$\\pi$" },
-  { label: "θ", template: "$\\theta$" },
-  { label: "Δ", template: "$\\Delta$" },
-  { label: "∞", template: "$\\infty$" },
-  { label: "≤", template: "$\\le$" },
-  { label: "≥", template: "$\\ge$" },
-  { label: "±", template: "$\\pm$" },
-  { label: "→", template: "$\\to$" },
-  { label: "∑", template: "$\\sum$" },
-  { label: "∫", template: "$\\int$" },
+const SYMBOLS: AtomicSymbol[] = [
+  { label: "π", latex: "\\pi" },
+  { label: "θ", latex: "\\theta" },
+  { label: "Δ", latex: "\\Delta" },
+  { label: "∞", latex: "\\infty" },
+  { label: "≤", latex: "\\le" },
+  { label: "≥", latex: "\\ge" },
+  { label: "±", latex: "\\pm" },
+  { label: "→", latex: "\\to" },
+  { label: "∑", latex: "\\sum" },
+  { label: "∫", latex: "\\int" },
+];
+
+interface Template {
+  label: string;
+  /** Pure LaTeX with \placeholder{} marking each blank — MathLive renders these as fillable
+   * boxes and lets Tab hop between them, so the student edits a real fraction bar / real matrix
+   * grid instead of raw backslash syntax. */
+  seed: string;
+}
+
+const TEMPLATES: Template[] = [
+  { label: "a⁄b", seed: "\\frac{\\placeholder{}}{\\placeholder{}}" },
+  { label: "x²", seed: "x^{\\placeholder{}}" },
+  { label: "x₁", seed: "x_{\\placeholder{}}" },
+  { label: "√", seed: "\\sqrt{\\placeholder{}}" },
+  { label: "2×2", seed: "\\begin{pmatrix}\\placeholder{}&\\placeholder{}\\\\\\placeholder{}&\\placeholder{}\\end{pmatrix}" },
+  { label: "vec", seed: "\\begin{pmatrix}\\placeholder{}\\\\\\placeholder{}\\end{pmatrix}" },
 ];
 
 interface Props {
-  targetRef: RefObject<HTMLTextAreaElement | HTMLInputElement | null>;
-  value: string;
-  onChange: (next: string) => void;
+  /** Called with the finished LaTeX (no $ wrapper) whenever a symbol should be inserted. */
+  onInsert: (latex: string) => void;
 }
 
 /**
- * Inserts real LaTeX at the cursor so a student never has to know `\frac` or `\begin{pmatrix}`
- * exists — click a symbol, the placeholder inside it is pre-selected, type to replace. Shared
- * between the session chat input and Notes editing, since both are raw-LaTeX text fields.
+ * Toolbar for building math visually instead of typing LaTeX source. Atomic symbols (π, ≤, ∑…)
+ * insert directly since there's nothing to edit. Structural shapes (fractions, matrices…) and the
+ * open-ended "Custom" button open an inline MathLive field — a real fraction bar / real grid you
+ * click and fill in, Desmos-style — and only the finished LaTeX ever reaches `onInsert`.
  */
-export default function MathSymbolPalette({ targetRef, value, onChange }: Props) {
-  const insert = (sym: MathSymbol) => {
-    const el = targetRef.current;
-    const start = el?.selectionStart ?? value.length;
-    const end = el?.selectionEnd ?? value.length;
-    const next = value.slice(0, start) + sym.template + value.slice(end);
-    onChange(next);
-    // The DOM value hasn't caught up with `next` yet on this tick (React commits async) — wait a
-    // beat before touching selection, or setSelectionRange clamps against the stale, shorter value.
-    setTimeout(() => {
-      if (!el) return;
-      el.focus();
-      const from = start + (sym.selectFrom ?? sym.template.length);
-      const to = start + (sym.selectTo ?? sym.template.length);
-      el.setSelectionRange(from, to);
-    }, 0);
-  };
+export default function MathSymbolPalette({ onInsert }: Props) {
+  const [composerSeed, setComposerSeed] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-wrap gap-1">
-      {SYMBOLS.map((s) => (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1">
+        {SYMBOLS.map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => onInsert(s.latex)}
+            title={s.latex}
+            className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+        <span className="w-px my-0.5 bg-border" aria-hidden="true" />
+        {TEMPLATES.map((t) => (
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => setComposerSeed(t.seed)}
+            title="Open visual math editor"
+            className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+          >
+            {t.label}
+          </button>
+        ))}
         <button
-          key={s.label}
           type="button"
-          // Without this, the mousedown shifts focus to the button before the click fires,
-          // which for a click-to-edit field (Notes) would blur-and-commit the textarea —
-          // closing edit mode a beat before the insertion ever happens.
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => insert(s)}
-          title={s.template.replace(/\$/g, "")}
-          className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+          onClick={() => setComposerSeed("")}
+          title="Build a custom expression visually"
+          className="px-2 py-1 rounded-control text-xs text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
         >
-          {s.label}
+          + Custom
         </button>
-      ))}
+      </div>
+
+      {composerSeed !== null && (
+        <MathComposerPanel
+          seed={composerSeed}
+          onCommit={(latex) => {
+            onInsert(latex);
+            setComposerSeed(null);
+          }}
+          onCancel={() => setComposerSeed(null)}
+        />
+      )}
     </div>
   );
 }
