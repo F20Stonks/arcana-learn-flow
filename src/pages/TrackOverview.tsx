@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText, ClipboardList } from "lucide-react";
+import { ArrowLeft, Check, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText, ClipboardList, MoreHorizontal } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 import SpecChecklist from "@/components/SpecChecklist";
@@ -17,20 +17,58 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { SubjectIcon } from "@/lib/subjectIcons";
 
 type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
-const STATUS_COLORS: Record<string, string> = {
-  complete: "bg-status-green",
-  in_progress: "bg-status-yellow",
-  review_due: "bg-status-red",
-  unlocked: "bg-primary",
-  locked: "bg-muted",
-};
-
 type View = "overview" | "map" | "spec";
+
+/**
+ * Replaces the old chevron + static status-dot pair with one signal: a ring showing REAL
+ * completion (topics.status is set once at track creation and never updated again — see
+ * OnboardingPage.tsx — so it was always the same color regardless of actual progress). Filled
+ * solid green once every subtopic is done, otherwise an arc proportional to completed/total,
+ * colored to flag whether a subtopic in this topic is actively in progress.
+ */
+function TopicProgressRing({ pct, active }: { pct: number; active: boolean }) {
+  const size = 18;
+  const stroke = 2.5;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+
+  if (pct >= 1) {
+    return (
+      <div className="h-[18px] w-[18px] shrink-0 rounded-full bg-status-green flex items-center justify-center">
+        <Check className="h-2.5 w-2.5 text-background" strokeWidth={3} />
+      </div>
+    );
+  }
+  return (
+    <svg width={size} height={size} className="shrink-0 -rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-secondary" />
+      {pct > 0 && (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          strokeLinecap="round"
+          className={active ? "stroke-status-yellow" : "stroke-primary"}
+        />
+      )}
+    </svg>
+  );
+}
 
 export default function TrackOverview() {
   const { trackId } = useParams();
@@ -69,7 +107,13 @@ export default function TrackOverview() {
         }),
       );
       setTopics(enriched);
-      if (enriched.length > 0) setExpanded(new Set([enriched[0].id]));
+      if (enriched.length > 0) {
+        // Resume where the student actually left off, not always the first topic — a subtopic
+        // stuck mid-session (see SessionPage.tsx's status write) is a much stronger signal of
+        // "where to look" than track order.
+        const resumeTopic = enriched.find((t) => t.subtopics.some((s) => s.status === "in_progress"));
+        setExpanded(new Set([(resumeTopic ?? enriched[0]).id]));
+      }
     } catch (error) {
       console.error("Track load failed:", error);
       setLoadError("This track couldn't load. Go back to the dashboard or retry.");
@@ -144,11 +188,30 @@ export default function TrackOverview() {
             <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" /> Dashboard
             </button>
-            <button onClick={() => setConfirmingDelete(true)} className="text-muted-foreground hover:text-destructive transition-colors" title="Delete track">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1 transition-colors" title="Track options" aria-label="Track options">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={(e) => {
+                    // Opening the AlertDialog in the SAME tick as the dropdown's own close/focus-
+                    // return fights over Radix's focus-scope/body-lock, leaving the dropdown's
+                    // overlay stuck intercepting clicks underneath the new dialog. Deferring a tick
+                    // lets the dropdown fully unmount first — the standard fix for this combination.
+                    e.preventDefault();
+                    setTimeout(() => setConfirmingDelete(true), 0);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete track
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <h2 className="text-sm font-semibold text-foreground">{track?.title}</h2>
+          <h2 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug" title={track?.title}>{track?.title}</h2>
           <p className="text-xs text-muted-foreground mt-1">{track?.subject} {track?.level && `· ${track.level}`}</p>
         </div>
 
@@ -166,21 +229,30 @@ export default function TrackOverview() {
         </div>
 
         <div className="p-2">
-          {topics.map((topic) => (
+          {topics.map((topic) => {
+            const total = topic.subtopics.length;
+            const done = topic.subtopics.filter((s) => s.status === "complete").length;
+            const active = topic.subtopics.some((s) => s.status === "in_progress");
+            const pct = total > 0 ? done / total : 0;
+            return (
             <div key={topic.id}>
               <button
                 onClick={() => toggle(topic.id)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors text-left"
               >
-                {expanded.has(topic.id) ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                <div className={`h-2 w-2 rounded-full shrink-0 ${STATUS_COLORS[topic.status]}`} />
-                <span className="text-sm text-foreground truncate">{topic.title}</span>
+                <TopicProgressRing pct={pct} active={active} />
+                <span className="text-sm text-foreground line-clamp-2 leading-snug" title={topic.title}>{topic.title}</span>
               </button>
 
               {expanded.has(topic.id) && (
                 <div className="ml-6 pl-3 border-l border-border space-y-0.5 mb-1">
-                  {topic.subtopics.map((sub) => (
-                    <div key={sub.id} className="group flex items-center gap-1 pr-2 rounded-lg hover:bg-accent transition-colors">
+                  {topic.subtopics.map((sub) => {
+                    const isResuming = sub.status === "in_progress";
+                    return (
+                    <div
+                      key={sub.id}
+                      className={`group flex items-center gap-1 pr-2 rounded-lg border-l-2 transition-colors ${isResuming ? "border-primary bg-primary/5" : "border-transparent hover:bg-accent"}`}
+                    >
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleComplete(sub); }}
                         className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-secondary transition-colors"
@@ -196,16 +268,22 @@ export default function TrackOverview() {
                       </button>
                       <button
                         onClick={() => navigate(`/session/${sub.id}`)}
-                        className="flex-1 text-left py-2 text-xs text-muted-foreground hover:text-foreground transition-colors truncate"
+                        className="flex-1 text-left py-2 text-xs text-muted-foreground hover:text-foreground transition-colors line-clamp-2 leading-snug"
+                        title={sub.title}
                       >
                         {sub.title}
                       </button>
+                      {isResuming && (
+                        <span className="shrink-0 text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10">
+                          Resume
+                        </span>
+                      )}
                     </div>
-                  ))}
+                  );})}
                 </div>
               )}
             </div>
-          ))}
+          );})}
         </div>
       </aside>
 
