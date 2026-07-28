@@ -1,4 +1,5 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { Keyboard, KeyboardOff } from "lucide-react";
 
 interface Entry {
   label: string;
@@ -64,8 +65,20 @@ interface Props {
  * same as "+ Custom" without leaving the keyboard.
  */
 export default function MathSymbolPalette({ onInsert }: Props) {
+  // Mirrors MathLive's own global virtual-keyboard visibility so the button's icon stays correct
+  // no matter what toggled it (this button, or the small native toggle MathLive renders inside a
+  // focused chip itself) — a plain document-level click listener sidesteps `window.mathVirtualKeyboard`
+  // not existing yet until the first chip has ever mounted, and re-reads the true state after
+  // whatever handler (ours or MathLive's own) already ran on the same click.
+  const [kbdVisible, setKbdVisible] = useState(false);
+  useEffect(() => {
+    const sync = () => setKbdVisible(!!window.mathVirtualKeyboard?.visible);
+    document.addEventListener("click", sync);
+    return () => document.removeEventListener("click", sync);
+  }, []);
+
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1 items-center">
       {GROUPS.map((group, i) => (
         <Fragment key={i}>
           {i > 0 && <span className="w-px my-0.5 bg-border" aria-hidden="true" />}
@@ -90,6 +103,20 @@ export default function MathSymbolPalette({ onInsert }: Props) {
         className="px-2 py-1 rounded-control text-xs text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
       >
         + Custom
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const kbd = window.mathVirtualKeyboard;
+          if (!kbd) return;
+          if (kbd.visible) kbd.hide();
+          else kbd.show({ animate: true });
+        }}
+        title={kbdVisible ? "Hide keyboard" : "Show keyboard"}
+        aria-label={kbdVisible ? "Hide keyboard" : "Show keyboard"}
+        className="ml-auto px-2 py-1 rounded-control text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+      >
+        {kbdVisible ? <KeyboardOff className="h-3.5 w-3.5" /> : <Keyboard className="h-3.5 w-3.5" />}
       </button>
     </div>
   );
