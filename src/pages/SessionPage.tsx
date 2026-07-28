@@ -1,5 +1,5 @@
 import { getBearerToken } from "@/lib/authHeader";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
@@ -160,8 +160,18 @@ export default function SessionPage() {
 
   // The currently-displayed payload — same fallback chain the Math Theater renders, hoisted here
   // so both the theater AND the point-on-plane answer control (which needs to know if a flat
-  // scene is actually on screen right now) read the same value.
-  const currentPayload = vizHistory.find((v) => v.id === activeVizId)?.payload ?? resolveSimulationPayload({ subtopic, topic, track });
+  // scene is actually on screen right now) read the same value. Memoized: `resolveSimulationPayload`
+  // builds a fresh object every call, and without memoizing, every 1-second session-timer re-render
+  // would hand MathTheater a brand-new payload reference — which resets ALL scene params (sliders,
+  // dragged points) back to defaults every second. This was a real, pre-existing bug, not just a
+  // theoretical one: it would have made the new point-on-plane marker snap back to the origin
+  // every second too.
+  const activeViz = vizHistory.find((v) => v.id === activeVizId)?.payload;
+  const currentPayload = useMemo(
+    () => activeViz ?? resolveSimulationPayload({ subtopic, topic, track }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeViz, subtopic, topic, track],
+  );
 
   // Live (x, y) of the point-on-plane answer marker, reported by MathTheater while the student
   // drags it. Null until the marker's first position is reported.
