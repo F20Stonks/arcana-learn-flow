@@ -8,6 +8,17 @@ import { MathfieldElement } from "mathlive";
 MathfieldElement.fontsDirectory = "/mathlive-fonts";
 MathfieldElement.soundsDirectory = null;
 
+// Gaps in MathLive's default inline-shortcut dictionary found by actually writing a physics
+// derivation with it (Schrödinger equation) — `psi`, `omega`, `theta` etc. are all built in, but
+// `hbar` isn't, despite being in nearly every line of any quantum mechanics note. `hat`/`vec` seed
+// their own #? placeholder the same way the built-in `sum`/`int` shortcuts do, so typing "hat" or
+// "vec" mid-expression drops a fillable accent instead of requiring the toolbar.
+export const EXTRA_INLINE_SHORTCUTS: Record<string, string> = {
+  hbar: "\\hbar",
+  hat: "\\hat{#?}",
+  vec: "\\vec{#?}",
+};
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {

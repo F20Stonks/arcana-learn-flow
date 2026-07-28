@@ -1,12 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import katex from "katex";
-import "katex/dist/katex.min.css";
+import "@/lib/mathliveSetup";
+import { EXTRA_INLINE_SHORTCUTS, type MathfieldElement } from "@/lib/mathliveSetup";
 import { parseMathSpans } from "@/lib/mathSpans";
-import MathComposerPanel from "@/components/MathComposerPanel";
 
 export interface RichMathFieldHandle {
-  /** Inserts a chip at the last known cursor position (falls back to end-of-content). */
-  insertLatex: (latex: string, display?: boolean) => void;
+  /** Creates a new live math chip at the last known cursor position (falls back to end-of-content)
+   * and focuses it — the student types directly into it, no popup involved. */
+  insertLatex: (seed: string) => void;
   focus: () => void;
 }
 
@@ -14,7 +14,8 @@ interface Props {
   value: string;
   onChange: (next: string) => void;
   /** Plain Enter fires this instead of inserting a newline (chat send). Omit for free multi-line
-   * editing (Notes) — Shift+Enter always inserts a newline regardless. */
+   * editing (Notes) — Shift+Enter always inserts a newline regardless. Ignored while focus is
+   * inside a math chip (MathLive owns Enter there). */
   onEnter?: () => void;
   placeholder?: string;
   disabled?: boolean;
@@ -23,42 +24,46 @@ interface Props {
 }
 
 // Chromium (and others) can't reliably host a real text caret in the "no man's land" immediately
-// beside a contenteditable=false island — typing right after one can silently land somewhere else
-// entirely. A zero-width space gives the browser a real, stable text-node anchor to place the
-// caret in; it's stripped back out in serializeDom so it never reaches the saved value.
+// beside an embedded custom element — a zero-width space gives it a real, stable text-node anchor
+// to place the caret in; it's stripped back out in serializeDom so it never reaches the saved value.
 const ZWSP = "​";
 const ZWSP_RE = new RegExp(ZWSP, "g");
 
-const CHIP_CLASS_INLINE =
-  "math-chip inline-flex items-baseline px-1 mx-px rounded-sm bg-accent/70 hover:bg-accent cursor-pointer align-baseline";
-const CHIP_CLASS_DISPLAY =
-  "math-chip block my-1 px-2 py-1.5 rounded-md bg-accent/70 hover:bg-accent cursor-pointer text-center";
+const CHIP_CLASS_INLINE = "math-chip inline-block align-baseline mx-px";
+const CHIP_CLASS_DISPLAY = "math-chip block my-1";
 
-function renderChipHtml(latex: string, display: boolean): string {
-  try {
-    return katex.renderToString(latex, { throwOnError: false, displayMode: display });
-  } catch {
-    return display ? `$$${latex}$$` : `$${latex}$`;
-  }
-}
-
-function createChip(latex: string, display: boolean, onClick: (node: HTMLElement) => void): HTMLElement {
-  const chip = document.createElement(display ? "div" : "span");
-  chip.contentEditable = "false";
-  chip.dataset.latex = latex;
+// `.inlineShortcuts`/`.value`/`.mathVirtualKeyboardPolicy` all touch MathLive's internal model,
+// which throws "Mathfield not mounted" if accessed before the element is connected to the DOM —
+// createChip only sets generic, connection-independent DOM properties; callers must append the
+// returned element to a live container first, then call mountChip.
+function createChip(display: boolean, onMoveOut: (direction: string, chip: HTMLElement) => void) {
+  const chip = document.createElement("math-field") as MathfieldElement;
   chip.dataset.display = String(display);
   chip.className = display ? CHIP_CLASS_DISPLAY : CHIP_CLASS_INLINE;
-  chip.innerHTML = renderChipHtml(latex, display);
-  chip.title = "Click to edit";
-  chip.addEventListener("mousedown", (e) => e.preventDefault());
-  chip.addEventListener("click", (e) => {
-    e.preventDefault();
-    onClick(chip);
-  });
+  if (display) chip.style.fontSize = "1.15em";
+  // MathLive's host box has no background of its own, but leaving it unset renders whatever the
+  // browser's own light-mode form-control default is — this app is dark-only, so pin every theme
+  // knob explicitly rather than let it drift with the OS color-scheme.
+  chip.style.backgroundColor = "transparent";
+  chip.style.color = "var(--foreground)";
+  chip.style.setProperty("--caret-color", "var(--primary)");
+  chip.style.setProperty("--placeholder-color", "var(--muted-foreground)");
+  chip.style.setProperty("--selection-color", "var(--primary-foreground)");
+  chip.style.setProperty("--selection-background-color", "var(--primary)");
+  chip.style.setProperty("--primary", "var(--primary)");
+  chip.addEventListener("move-out", ((e: CustomEvent<{ direction: string }>) => {
+    onMoveOut(e.detail.direction, chip);
+  }) as EventListener);
   return chip;
 }
 
-function buildDom(container: HTMLElement, value: string, onChipClick: (node: HTMLElement) => void) {
+function mountChip(chip: MathfieldElement, seed: string) {
+  chip.inlineShortcuts = { ...chip.inlineShortcuts, ...EXTRA_INLINE_SHORTCUTS };
+  chip.mathVirtualKeyboardPolicy = "manual";
+  chip.value = seed;
+}
+
+function buildDom(container: HTMLElement, value: string, onMoveOut: (direction: string, chip: HTMLElement) => void) {
   container.innerHTML = "";
   for (const span of parseMathSpans(value)) {
     if (span.type === "text") {
@@ -69,7 +74,9 @@ function buildDom(container: HTMLElement, value: string, onChipClick: (node: HTM
         if (line) container.appendChild(document.createTextNode(line));
       });
     } else {
-      container.appendChild(createChip(span.latex, span.display, onChipClick));
+      const chip = createChip(span.display, onMoveOut);
+      container.appendChild(chip);
+      mountChip(chip, span.latex);
       container.appendChild(document.createTextNode(ZWSP));
     }
   }
@@ -80,8 +87,14 @@ function serializeDom(container: HTMLElement): string {
   for (const node of Array.from(container.childNodes)) {
     if (node.nodeType === Node.TEXT_NODE) {
       out += (node.textContent ?? "").replace(ZWSP_RE, "");
-    } else if (node instanceof HTMLElement && node.classList.contains("math-chip")) {
-      const latex = node.dataset.latex ?? "";
+    } else if (node instanceof HTMLElement && node.tagName === "MATH-FIELD") {
+      // Two chips sitting directly next to each other (their only DOM separator, a ZWSP, is
+      // stripped above) would otherwise butt their $ delimiters together — "...4ac$$$hbar$" is
+      // ambiguous and remark-math fails to parse the whole rest of the paragraph as a result.
+      if (out.endsWith("$")) out += " ";
+      // A blank never filled in (student sent/clicked away before tabbing to it) shouldn't survive
+      // as literal "\placeholder{}" — KaTeX renders that as the visible word "placeholder" forever.
+      const latex = (node as MathfieldElement).value.replace(/\\placeholder\{\}/g, "");
       out += node.dataset.display === "true" ? `$$${latex}$$` : `$${latex}$`;
     } else if (node instanceof HTMLBRElement) {
       out += "\n";
@@ -93,11 +106,10 @@ function serializeDom(container: HTMLElement): string {
 }
 
 /**
- * Rich text field where inserted math renders live as a KaTeX chip, never as raw LaTeX source —
- * the underlying stored value is still a plain "$...$"-delimited string (same format MathRenderer
- * already reads, same format the AI already writes), so nothing downstream of onChange needs to
- * change. Chips are non-editable atomic islands (click reopens the visual composer); everything
- * else is native contentEditable text.
+ * Rich text field where math is a permanently-live MathLive chip, never a static render you have
+ * to reopen a popup to edit — click directly into one and it's instantly editable in place. The
+ * underlying stored value is still a plain "$...$"-delimited string (same format MathRenderer
+ * already reads, same format the AI already writes); only the editing widget changed.
  */
 const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathField(
   { value, onChange, onEnter, placeholder, disabled, autoFocus, className },
@@ -107,11 +119,6 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
   const lastEmittedRef = useRef<string | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
   const [focused, setFocused] = useState(false);
-  const [editingChip, setEditingChip] = useState<{ node: HTMLElement; latex: string; display: boolean } | null>(null);
-
-  const openChipEditor = (node: HTMLElement) => {
-    setEditingChip({ node, latex: node.dataset.latex ?? "", display: node.dataset.display === "true" });
-  };
 
   const emitChange = () => {
     const container = containerRef.current;
@@ -121,14 +128,30 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
     onChange(serialized);
   };
 
+  // Arrow/Tab past a chip's edge with nowhere left to go inside it — MathLive's cue that focus
+  // should move back out to the surrounding prose, right before or after the chip.
+  const handleMoveOut = (direction: string, chip: HTMLElement) => {
+    const container = containerRef.current;
+    if (!container || (direction !== "forward" && direction !== "backward")) return;
+    const range = document.createRange();
+    if (direction === "forward") range.setStartAfter(chip);
+    else range.setStartBefore(chip);
+    range.collapse(true);
+    container.focus();
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    savedRangeRef.current = range.cloneRange();
+  };
+
   // Rebuild the DOM from `value` only on mount and when it changes for reasons OTHER than our own
   // typing (switching notes, clearing after send) — rebuilding on every keystroke would blow away
-  // the live cursor position.
+  // the live cursor position and any chip currently being edited.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     if (value === lastEmittedRef.current) return;
-    buildDom(container, value, openChipEditor);
+    buildDom(container, value, handleMoveOut);
     lastEmittedRef.current = value;
   }, [value]);
 
@@ -137,8 +160,19 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // contentEditable={false} on the container blocks prose typing but has no effect on the
+  // independent focusable chips inside it — each MathfieldElement's own readOnly has to be kept
+  // in sync explicitly, since `disabled` (e.g. isStreaming) can flip after chips already exist.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.querySelectorAll("math-field").forEach((el) => {
+      (el as MathfieldElement).readOnly = !!disabled;
+    });
+  }, [disabled, value]);
+
   // Track the live cursor position while this field has focus, so a palette click (which moves
-  // focus to a toolbar button or composer) still knows where to insert afterward.
+  // focus to a toolbar button) still knows where to insert afterward.
   useEffect(() => {
     const handler = () => {
       const container = containerRef.current;
@@ -175,29 +209,7 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
     emitChange();
   };
 
-  // Focus BEFORE restoring a selection — focusing an element that doesn't already hold focus
-  // resets its caret to a default position, which would silently discard whatever range we set
-  // beforehand. Always focus first, then place the caret just after the ZWSP anchor that follows
-  // `chip` (landing the caret directly on the chip boundary is unreliable in Chromium — see ZWSP).
-  const focusAfterNode = (chip: HTMLElement) => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.focus();
-    let anchor = chip.nextSibling;
-    if (!(anchor instanceof Text) || !anchor.data.startsWith(ZWSP)) {
-      anchor = document.createTextNode(ZWSP);
-      chip.after(anchor);
-    }
-    const range = document.createRange();
-    range.setStart(anchor, 1);
-    range.collapse(true);
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
-    savedRangeRef.current = range.cloneRange();
-  };
-
-  const insertLatex = (latex: string, display = false) => {
+  const insertLatex = (seed: string) => {
     const container = containerRef.current;
     if (!container) return;
     let range = savedRangeRef.current;
@@ -207,11 +219,14 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
       range.collapse(false);
     }
     range.deleteContents();
-    const chip = createChip(latex, display, openChipEditor);
+    const chip = createChip(false, handleMoveOut);
     range.insertNode(chip);
-    chip.after(document.createTextNode(ZWSP));
-    focusAfterNode(chip);
+    mountChip(chip, seed);
+    const zwsp = document.createTextNode(ZWSP);
+    chip.after(zwsp);
     emitChange();
+    chip.focus();
+    if (seed.includes("#?")) chip.executeCommand("moveToNextPlaceholder");
   };
 
   useImperativeHandle(ref, () => ({
@@ -236,6 +251,14 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onKeyDown={(e) => {
+          // MathLive owns keystrokes originating from inside a chip — let it handle its own Enter,
+          // Tab, arrow navigation, etc. entirely undisturbed.
+          if ((e.target as HTMLElement).tagName === "MATH-FIELD") return;
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "m") {
+            e.preventDefault();
+            insertLatex("");
+            return;
+          }
           if (e.key === "Enter") {
             if (e.shiftKey || !onEnter) {
               e.preventDefault();
@@ -251,24 +274,6 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
           "text-sm text-foreground outline-hidden leading-relaxed whitespace-pre-wrap break-words min-h-[1.5em]"
         }
       />
-      {editingChip && (
-        <div className="mt-2">
-          <MathComposerPanel
-            seed={editingChip.latex}
-            onCommit={(latex) => {
-              editingChip.node.dataset.latex = latex;
-              editingChip.node.innerHTML = renderChipHtml(latex, editingChip.display);
-              setEditingChip(null);
-              emitChange();
-              focusAfterNode(editingChip.node);
-            }}
-            onCancel={() => {
-              setEditingChip(null);
-              focusAfterNode(editingChip.node);
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 });

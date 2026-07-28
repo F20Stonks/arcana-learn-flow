@@ -1,103 +1,96 @@
-import { useState } from "react";
-import MathComposerPanel from "@/components/MathComposerPanel";
+import { Fragment } from "react";
 
-interface AtomicSymbol {
+interface Entry {
   label: string;
-  /** Pure LaTeX, no $ wrapper — inserted as a chip directly, no composer needed since there's
-   * nothing internal to fill in. */
-  latex: string;
-}
-
-const SYMBOLS: AtomicSymbol[] = [
-  { label: "π", latex: "\\pi" },
-  { label: "θ", latex: "\\theta" },
-  { label: "Δ", latex: "\\Delta" },
-  { label: "∞", latex: "\\infty" },
-  { label: "≤", latex: "\\le" },
-  { label: "≥", latex: "\\ge" },
-  { label: "±", latex: "\\pm" },
-  { label: "→", latex: "\\to" },
-  { label: "∑", latex: "\\sum" },
-  { label: "∫", latex: "\\int" },
-];
-
-interface Template {
-  label: string;
-  /** Pure LaTeX with \placeholder{} marking each blank — MathLive renders these as fillable
-   * boxes and lets Tab hop between them, so the student edits a real fraction bar / real matrix
-   * grid instead of raw backslash syntax. */
+  /** Pure LaTeX (no $ wrapper). `#?` marks a fillable blank — MathLive's own placeholder token
+   * (the same one its built-in "sum"/"int" shortcuts use), so Tab hops between them. */
   seed: string;
 }
 
-const TEMPLATES: Template[] = [
-  { label: "a⁄b", seed: "\\frac{\\placeholder{}}{\\placeholder{}}" },
-  { label: "x²", seed: "x^{\\placeholder{}}" },
-  { label: "x₁", seed: "x_{\\placeholder{}}" },
-  { label: "√", seed: "\\sqrt{\\placeholder{}}" },
-  { label: "2×2", seed: "\\begin{pmatrix}\\placeholder{}&\\placeholder{}\\\\\\placeholder{}&\\placeholder{}\\end{pmatrix}" },
-  { label: "vec", seed: "\\begin{pmatrix}\\placeholder{}\\\\\\placeholder{}\\end{pmatrix}" },
+// Greek + basics — the ones with no internal structure insert and are done; a student can also
+// just type these names directly into a live chip (MathLive recognizes them natively), these
+// buttons are for discoverability/mouse-preference, not the only way to get them.
+const BASICS: Entry[] = [
+  { label: "π", seed: "\\pi" },
+  { label: "θ", seed: "\\theta" },
+  { label: "Δ", seed: "\\Delta" },
+  { label: "ħ", seed: "\\hbar" },
+  { label: "∞", seed: "\\infty" },
+  { label: "≤", seed: "\\le" },
+  { label: "≥", seed: "\\ge" },
+  { label: "±", seed: "\\pm" },
+  { label: "→", seed: "\\to" },
 ];
 
+// Calculus — found to matter most by actually writing a physics derivation with this tool:
+// partial/total derivatives recur constantly and previously needed 4-5 chained keystrokes with no
+// dedicated shortcut.
+const CALCULUS: Entry[] = [
+  { label: "a⁄b", seed: "\\frac{#?}{#?}" },
+  { label: "∂f/∂x", seed: "\\frac{\\partial #?}{\\partial #?}" },
+  { label: "∂²f/∂x²", seed: "\\frac{\\partial^2 #?}{\\partial #?^2}" },
+  { label: "df/dx", seed: "\\frac{d#?}{d#?}" },
+  { label: "∑", seed: "\\sum_{#?}^{#?}" },
+  { label: "∫", seed: "\\int_{#?}^{#?}" },
+  { label: "lim", seed: "\\lim_{#?\\to#?}#?" },
+  { label: "√", seed: "\\sqrt{#?}" },
+  { label: "ⁿ√", seed: "\\sqrt[#?]{#?}" },
+];
+
+// Structures
+const STRUCTURES: Entry[] = [
+  { label: "x²", seed: "x^{#?}" },
+  { label: "x₁", seed: "x_{#?}" },
+  { label: "|x|", seed: "\\left|#?\\right|" },
+  { label: "x̂", seed: "\\hat{#?}" },
+  { label: "x⃗", seed: "\\vec{#?}" },
+  { label: "2×2", seed: "\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}" },
+  { label: "vec", seed: "\\begin{pmatrix}#?\\\\#?\\end{pmatrix}" },
+];
+
+const GROUPS = [BASICS, CALCULUS, STRUCTURES];
+
 interface Props {
-  /** Called with the finished LaTeX (no $ wrapper) whenever a symbol should be inserted. */
-  onInsert: (latex: string) => void;
+  /** Called with a LaTeX seed (may contain #? placeholders) whenever a new expression should be
+   * dropped in as a live, editable chip at the current cursor position. */
+  onInsert: (seed: string) => void;
 }
 
 /**
- * Toolbar for building math visually instead of typing LaTeX source. Atomic symbols (π, ≤, ∑…)
- * insert directly since there's nothing to edit. Structural shapes (fractions, matrices…) and the
- * open-ended "Custom" button open an inline MathLive field — a real fraction bar / real grid you
- * click and fill in, Desmos-style — and only the finished LaTeX ever reaches `onInsert`.
+ * Toolbar for starting math without knowing any LaTeX vocabulary up front — every button drops a
+ * live, directly-editable chip at the cursor (Tab hops between any blanks). This is the visible,
+ * mouse-driven entry point; once inside a chip, typing shorthand (theta, sum, 1/2, x^2, hbar…) is
+ * faster and MathLive's own autocomplete teaches the vocabulary as you go. Ctrl/Cmd+M does the
+ * same as "+ Custom" without leaving the keyboard.
  */
 export default function MathSymbolPalette({ onInsert }: Props) {
-  const [composerSeed, setComposerSeed] = useState<string | null>(null);
-
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1">
-        {SYMBOLS.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => onInsert(s.latex)}
-            title={s.latex}
-            className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
-          >
-            {s.label}
-          </button>
-        ))}
-        <span className="w-px my-0.5 bg-border" aria-hidden="true" />
-        {TEMPLATES.map((t) => (
-          <button
-            key={t.label}
-            type="button"
-            onClick={() => setComposerSeed(t.seed)}
-            title="Open visual math editor"
-            className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
-          >
-            {t.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setComposerSeed("")}
-          title="Build a custom expression visually"
-          className="px-2 py-1 rounded-control text-xs text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
-        >
-          + Custom
-        </button>
-      </div>
-
-      {composerSeed !== null && (
-        <MathComposerPanel
-          seed={composerSeed}
-          onCommit={(latex) => {
-            onInsert(latex);
-            setComposerSeed(null);
-          }}
-          onCancel={() => setComposerSeed(null)}
-        />
-      )}
+    <div className="flex flex-wrap gap-1">
+      {GROUPS.map((group, i) => (
+        <Fragment key={i}>
+          {i > 0 && <span className="w-px my-0.5 bg-border" aria-hidden="true" />}
+          {group.map((e) => (
+            <button
+              key={e.label}
+              type="button"
+              onClick={() => onInsert(e.seed)}
+              title={e.seed.replace(/#\?/g, "▢")}
+              className="px-2 py-1 rounded-control text-xs font-mono text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+            >
+              {e.label}
+            </button>
+          ))}
+        </Fragment>
+      ))}
+      <span className="w-px my-0.5 bg-border" aria-hidden="true" />
+      <button
+        type="button"
+        onClick={() => onInsert("")}
+        title="New expression (Ctrl+M / ⌘M)"
+        className="px-2 py-1 rounded-control text-xs text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent hover:border-border transition-colors"
+      >
+        + Custom
+      </button>
     </div>
   );
 }
