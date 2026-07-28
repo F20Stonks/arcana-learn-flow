@@ -414,7 +414,9 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
     {/* label lives at scene root (absolute world pos) so it isn't double-translated by the group */}
     {p.label && (
       <SceneLabel world={pos} baseX={11} baseY={-11} priority={0} approxChars={p.label.length} fontPx={11}>
-        <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+        <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>
+          <MathRenderer content={`$${p.label}$`} />
+        </span>
       </SceneLabel>
     )}
     </>
@@ -528,7 +530,9 @@ function SegmentR({ p, scope, style, progress }: { p: SegmentPrim; scope: Scope;
       ))}
       {p.label && (
         <SceneLabel world={from.clone().add(to).multiplyScalar(0.5)} baseX={0} baseY={-11} priority={2} approxChars={p.label.length} fontPx={11}>
-          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>
+            <MathRenderer content={`$${p.label}$`} />
+          </span>
         </SceneLabel>
       )}
     </>
@@ -1016,7 +1020,9 @@ function ArrowR({ p, scope, style, progress }: { p: ArrowPrim; scope: Scope; sty
       <arrowHelper args={[dir.clone().normalize(), from, length, new THREE.Color(color).getHex(), Math.min(0.3, length * 0.2), Math.min(0.15, length * 0.1)]} />
       {p.label && (
         <SceneLabel world={to} baseX={11} baseY={-11} priority={2} approxChars={p.label.length} fontPx={11}>
-          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>{p.label}</span>
+          <span className="text-[11px] whitespace-nowrap select-none" style={{ color }}>
+            <MathRenderer content={`$${p.label}$`} />
+          </span>
         </SceneLabel>
       )}
     </>

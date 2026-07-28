@@ -274,9 +274,12 @@ export default function TrackOverview() {
                         {sub.title}
                       </button>
                       {isResuming && (
-                        <span className="shrink-0 text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10">
+                        <button
+                          onClick={() => navigate(`/session/${sub.id}`)}
+                          className="shrink-0 text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10 hover:bg-primary/20 transition-colors"
+                        >
                           Resume
-                        </span>
+                        </button>
                       )}
                     </div>
                   );})}

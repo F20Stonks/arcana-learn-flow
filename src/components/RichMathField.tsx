@@ -224,6 +224,14 @@ const RichMathField = forwardRef<RichMathFieldHandle, Props>(function RichMathFi
     mountChip(chip, seed);
     const zwsp = document.createTextNode(ZWSP);
     chip.after(zwsp);
+    // Re-anchor explicitly to right after what we just inserted. MathLive's internal focus
+    // handling on the new chip doesn't reliably produce a real document `selectionchange` the
+    // listener above can pick up, so without this, a second rapid palette click would reuse
+    // whatever stale position was last saved and insert BEFORE this chip instead of after it.
+    const after = document.createRange();
+    after.setStartAfter(zwsp);
+    after.collapse(true);
+    savedRangeRef.current = after;
     emitChange();
     chip.focus();
     if (seed.includes("#?")) chip.executeCommand("moveToNextPlaceholder");

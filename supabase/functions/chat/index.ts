@@ -149,6 +149,12 @@ canvas keeps showing the last scene on its own. A perfunctory scene steals atten
 teaching; when in doubt, skip it and teach. Ask yourself: would this scene let the student SEE why the
 result is forced, in a way a sentence can't? If not, don't request it.
 
+NEVER approximate a diagram, graph, or spatial picture using text/ASCII characters (box-drawing lines,
+arrows made of dashes and slashes, hand-drawn axes, etc.) — this is not a lightweight substitute for a
+scene, it renders as broken, illegible clutter and is worse than no picture at all. If the idea is worth
+a picture, request a real scene via <scene-request>. If it isn't worth a real scene, describe it in
+prose instead — never sketch it in characters.
+
 Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
 
     const response = await fetch(ai.url, {
