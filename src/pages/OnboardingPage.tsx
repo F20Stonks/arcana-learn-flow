@@ -167,6 +167,7 @@ Goal: "${meta.userGoal}"
 Title: ${meta.title} | Subject: ${meta.subject} | Level: ${meta.level || "unspecified"}${meta.examBoard ? ` | Exam/Board: ${meta.examBoard}` : ""}
 A draft that is likely INCOMPLETE — keep what's right, add everything missing: ${JSON.stringify(draftTopics)}
 Be exhaustive: a full multi-subject exam (e.g. JEE across Physics+Chemistry+Maths) legitimately needs 40-60 topics; a single-subject A-level 15-30; a focused module 6-12. Cover EVERY subject and area completely — never clip the last subject to save space. Order foundational → advanced. Topic TITLES ONLY, no subtopics.
+GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two; "Newton's Laws" and "Forces" likewise). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere in the final list — grouping changes which topic it's filed under, never whether it's covered.
 Return ONLY JSON: {"topics":["Topic 1","Topic 2", ...]}`;
     const skelData = await chatJSON(skeletonSys, "Produce the exhaustive topic list now.");
     const skeleton: string[] = Array.isArray(skelData?.topics)

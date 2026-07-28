@@ -68,7 +68,8 @@ When you're ready to generate the track, respond with a JSON object in your mess
 }
 </track>
 
-Include a friendly message before the track data. Create 4-8 topics with 3-7 subtopics each, ordered logically from foundational to advanced — sequence them so each subtopic's prerequisites come before the ideas that depend on them, letting a student build every result from its underlying mechanism rather than memorise it in isolation. Be specific to the student's exam board and level if mentioned.
+Include a friendly message before the track data. Create 4-8 topics with 3-10 subtopics each, ordered logically from foundational to advanced — sequence them so each subtopic's prerequisites come before the ideas that depend on them, letting a student build every result from its underlying mechanism rather than memorise it in isolation. Be specific to the student's exam board and level if mentioned.
+GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two; "Newton's Laws" and "Forces" likewise). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere — grouping changes which topic it's filed under, never whether it's covered.
 ${groundingBlock}
 
 IMPORTANT: Only generate the track after you've asked about their timeline/exam date. If they haven't mentioned timing, ask about it first.` : "Help the student with their learning goals."}`;
