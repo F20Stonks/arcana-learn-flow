@@ -126,6 +126,9 @@ export default function LandingPage() {
               Cortexed<i>.</i>
             </Link>
             <div className="nav-right">
+              <Link to="/pricing" className="nav-signin">
+                Pricing
+              </Link>
               <Link to="/auth" className="nav-signin">
                 Sign in
               </Link>
@@ -256,6 +259,7 @@ export default function LandingPage() {
             <div>Cortexed — an instrument for mathematical &amp; physical understanding.</div>
             <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>
               © {new Date().getFullYear()} Pranit Singh Chhabra ·{" "}
+              <Link to="/pricing">Pricing</Link> ·{" "}
               <Link to="/terms">Terms</Link> ·{" "}
               <Link to="/privacy">Privacy</Link> ·{" "}
               <Link to="/refund">Refunds</Link>
