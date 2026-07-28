@@ -110,6 +110,17 @@ export default function MathTheater({
     return [...objects, marker];
   }, [isScene, payload, answerRequest]);
 
+  // Scene3D resets its own step-player/camera state whenever its `spec` prop changes IDENTITY
+  // (a new scene arrived). Building that object inline in JSX via spread allocates a fresh
+  // reference on every render regardless of whether the data actually changed — and the
+  // session's 1s timer re-renders this component constantly — so an inline spread here would
+  // silently snap a multi-step construction back to step 1 every second. Memoize on the real
+  // underlying data instead.
+  const scene3dSpec = useMemo<SceneSpec>(
+    () => ({ ...(payload as SceneSpec), objects: sceneObjects }),
+    [payload, sceneObjects],
+  );
+
   // Build initial slider params from payload — fully data-driven.
   const initialParams = useMemo<Record<string, number>>(() => {
     const out: Record<string, number> = {};
@@ -329,7 +340,7 @@ export default function MathTheater({
         {isScene ? (
           <SceneErrorBoundary resetKey={payload}>
             <Scene3D
-              spec={{ ...(payload as SceneSpec), objects: sceneObjects }}
+              spec={scene3dSpec}
               params={params}
               onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
               theme={vizTheme}
