@@ -333,6 +333,18 @@ export function isSceneSpec(x: unknown): x is SceneSpec {
   );
 }
 
+/**
+ * Validate + sanitize an untrusted, possibly-absent value that MAY be a scene
+ * (e.g. a `scene`/`option_scenes[i]` field on an AI-generated exam question —
+ * unlike a teaching-turn scene, this never goes through the Scene Director's
+ * own parse/sanitize path, so nothing upstream has cleaned it). Returns null
+ * for anything that isn't shaped like a scene, so callers can render it
+ * exactly like "no diagram was attached" instead of crashing.
+ */
+export function coerceScene(x: unknown): SceneSpec | null {
+  return isSceneSpec(x) ? sanitizeScene(x) : null;
+}
+
 /* ---------------- sanitizer ----------------
  * The spec arrives from a language model. Rather than rejecting a whole
  * scene for one bad primitive (the old behaviour: silently keep the stale

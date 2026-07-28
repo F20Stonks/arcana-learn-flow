@@ -1,4 +1,5 @@
 import { getAIConfig } from "../_shared/aiConfig.ts";
+import { DIAGRAM_CAPABILITY } from "../_shared/diagramCapability.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -66,7 +67,9 @@ Respond ONLY with valid JSON:
 For open-ended questions, omit the "options" field entirely. Distribute questions across the selected
 topics and mark values realistically (harder/multi-step questions worth more marks). Favour questions that
 require COMBINING more than one concept and TRANSFER to an unfamiliar context, not a re-skin of a standard
-example.`;
+example.
+
+${DIAGRAM_CAPABILITY}`;
 
     const aiRes = await fetch(ai.url, {
       method: "POST",
