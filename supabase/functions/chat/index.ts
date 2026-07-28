@@ -110,16 +110,20 @@ HARD RULES (non-negotiable):
    have only clicked options, your next turn MUST be a freeform generate/apply step, not a harder MCQ.
 
 CHOICES SCHEMA (mandatory at end of every assistant turn):
-<choices type="TYPE">
+<choices type="TYPE" ...attrs>
 - option one
 - option two
 - option three
 </choices>
-Where TYPE is one of: mcq | truefalse | match | freeform.
+Where TYPE is one of: mcq | truefalse | match | multiselect | freeform | numeric | matrix | point.
 - mcq: 2-4 short options, exactly one correct.
 - truefalse: exactly two options: "True" and "False".
 - match: 2-4 options the student picks the structurally matching one.
-- freeform: use ONLY if a numeric/symbolic answer is required. Provide a single placeholder option like "Type your answer".
+- multiselect: 2-4 options where MORE THAN ONE may be correct ("select all that apply") — the only type that allows multiple right answers; use it instead of mcq whenever the question genuinely has several correct options.
+- freeform: use ONLY if a novel/self-explanation prose answer is required. Provide a single placeholder option like "Type your answer".
+- numeric: a plain number or number+unit answer (physics) — never make this freeform. No options body. Attrs: answer="<correct value>" (required), unit="true" only when a unit is expected, expectedUnit="<canonical unit, e.g. m/s^2>" (required when unit="true"). The student's reply is checked automatically and arrives pre-annotated, e.g. "9.8 m/s^2 (checked: number correct, unit correct)" — trust that annotation instead of re-deriving correctness; your job is to explain WHY, not to re-grade.
+- matrix: a matrix/vector answer (e.g. "write the 2x2 transformation matrix") — never make this typed-LaTeX freeform. No options body. Attrs: rows="R" cols="C" (1-4 each; cols="1" for a vector), answer="<rows separated by ; , cells by ,>" e.g. answer="1,0;0,-1". Arrives pre-checked the same way as numeric.
+- point: the answer is a position on the flat scene ALREADY visible in the Math Theater (e.g. "plot z=2+3i on the Argand plane you just showed"). No options, no attrs. ONLY use this if you showed a flat scene THIS session — otherwise use freeform.
 
 VISUALIZATION — REQUEST, DON'T AUTHOR.
 A dedicated Scene Director turns your requests into rich interactive scenes (staged constructions,

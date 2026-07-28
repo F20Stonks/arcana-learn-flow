@@ -9,6 +9,9 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MathTheater from "@/components/workspace/MathTheater";
 import MathSymbolPalette from "@/components/MathSymbolPalette";
+import MatrixInput from "@/components/session/MatrixInput";
+import NumericUnitInput from "@/components/session/NumericUnitInput";
+import MultiSelectInput from "@/components/session/MultiSelectInput";
 import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
 import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
@@ -20,7 +23,8 @@ interface ChatMessage {
   content: string;
 }
 
-type ChoiceType = "mcq" | "truefalse" | "match" | "freeform";
+type ChoiceType = "mcq" | "truefalse" | "match" | "freeform" | "numeric" | "matrix" | "point" | "multiselect";
+const CHOICE_TYPES: ChoiceType[] = ["mcq", "truefalse", "match", "freeform", "numeric", "matrix", "point", "multiselect"];
 type Intensity = "guided" | "balanced" | "rigorous";
 
 // Shape returned by the assess-session edge function — the session's payoff, surfaced in the
@@ -37,13 +41,30 @@ interface AssessSummary {
 interface ChoiceBlock {
   type: ChoiceType;
   options: string[];
+  /** Arbitrary tag attributes beyond `type` — rows/cols for matrix, answer/expectedUnit for
+   * numeric, etc. Generic so a future answer shape is one new type + its own attrs, not a new
+   * regex. */
+  attrs: Record<string, string>;
+}
+
+function parseTagAttrs(raw: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  const re = /(\w+)="([^"]*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw))) attrs[m[1]] = m[2];
+  return attrs;
 }
 
 function extractChoices(raw: string): { text: string; choices: ChoiceBlock | null } {
-  const re = /<choices\s+type="(mcq|truefalse|match|freeform)"\s*>([\s\S]*?)<\/choices>/i;
+  const re = /<choices\s+([^>]*)>([\s\S]*?)<\/choices>/i;
   const m = raw.match(re);
   if (!m) return { text: raw, choices: null };
-  const type = m[1].toLowerCase() as ChoiceType;
+  const text = raw.replace(re, "").trim();
+  const attrs = parseTagAttrs(m[1]);
+  const type = (attrs.type || "").toLowerCase();
+  // Unknown/malformed type — never render a broken control; fall through as if there were no
+  // structured choices at all (plain freeform textarea).
+  if (!CHOICE_TYPES.includes(type as ChoiceType)) return { text, choices: null };
   const body = m[2];
   const options = body
     .split("\n")
@@ -51,11 +72,15 @@ function extractChoices(raw: string): { text: string; choices: ChoiceBlock | nul
     .filter((l) => l.startsWith("-"))
     .map((l) => l.replace(/^[-*]\s*/, "").trim())
     .filter(Boolean);
-  const text = raw.replace(re, "").trim();
-  return { text, choices: { type, options } };
+  return { text, choices: { type: type as ChoiceType, options, attrs } };
 }
 
 const SCENE_REQUEST_RE = /<scene-request>\s*([\s\S]*?)\s*<\/scene-request>/i;
+
+// Reserved param keys for the point-on-plane answer marker MathTheater splices into whatever
+// scene is currently on screen. A stable module-level object so passing it as a prop never
+// changes identity across renders (avoids re-triggering MathTheater's answer-report effect).
+const POINT_ANSWER_KEYS = { xKey: "__ansX", yKey: "__ansY" };
 
 function cleanAssistantText(raw: string): string {
   // strip <viz>/<scene> first, then scene requests (closed or still streaming), then <choices>
@@ -132,6 +157,24 @@ export default function SessionPage() {
   // Visualization spec history — AI emits <viz> blocks that drive the canvas
   const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
   const [activeVizId, setActiveVizId] = useState<string | null>(null);
+
+  // The currently-displayed payload — same fallback chain the Math Theater renders, hoisted here
+  // so both the theater AND the point-on-plane answer control (which needs to know if a flat
+  // scene is actually on screen right now) read the same value.
+  const currentPayload = vizHistory.find((v) => v.id === activeVizId)?.payload ?? resolveSimulationPayload({ subtopic, topic, track });
+
+  // Live (x, y) of the point-on-plane answer marker, reported by MathTheater while the student
+  // drags it. Null until the marker's first position is reported.
+  const [answerPoint, setAnswerPoint] = useState<{ x: number; y: number } | null>(null);
+
+  // Whether the tutor's last turn is asking for a point-on-plane answer AND there's actually a
+  // scene on screen to place it on. Defensive: if the AI requests `point` with no scene visible
+  // (it's instructed not to, but model output isn't guaranteed), this stays false and
+  // InteractionPanel falls back to freeform instead of the theater rendering a broken control.
+  const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant");
+  const lastChoices = !isStreaming && lastAssistantMsg ? extractChoices(lastAssistantMsg.content).choices : null;
+  const wantsPointAnswer = lastChoices?.type === "point" && isSceneSpec(currentPayload);
+  useEffect(() => { if (!wantsPointAnswer) setAnswerPoint(null); }, [wantsPointAnswer]);
 
   // Below the lg breakpoint, Chat and Math Theater share the screen via a toggle
   // instead of the theater being hidden outright (it used to just disappear).
@@ -543,12 +586,23 @@ Return ONLY a JSON object — no prose, no markdown fences:
               { id, payload: scene, preview: scene.title || "scene", messageIndex: newMessages.length },
             ]);
             setActiveVizId(id);
+            const updatedContent = `${assistantContent}\n<scene>${JSON.stringify(scene)}</scene>`;
             if (savedMsg?.id) {
-              await supabase
-                .from("messages")
-                .update({ content: `${assistantContent}\n<scene>${JSON.stringify(scene)}</scene>` })
-                .eq("id", savedMsg.id);
+              await supabase.from("messages").update({ content: updatedContent }).eq("id", savedMsg.id);
             }
+            // Also patch local `messages` state — the AI's context for the NEXT turn is built from
+            // this, not the DB row. Without this, the tutor never sees the scene it just asked for
+            // (and can't grade a point-on-plane answer against a frame it doesn't know) until the
+            // page is reloaded, which rebuilds from the DB. Match by content, not index/reference:
+            // the director call is fire-and-forget and the student may have sent another message
+            // (and `isStreaming` reset to false) before this resolves.
+            setMessages((prev) => {
+              const idx = prev.findIndex((m) => m.role === "assistant" && m.content === assistantContent);
+              if (idx === -1) return prev;
+              const updated = [...prev];
+              updated[idx] = { ...updated[idx], content: updatedContent };
+              return updated;
+            });
           })();
         }
       }
@@ -771,6 +825,8 @@ Return ONLY a JSON object — no prose, no markdown fences:
             input={input}
             setInput={setInput}
             onSend={sendMessage}
+            currentPayload={currentPayload}
+            answerPoint={answerPoint}
           />
         </div>
 
@@ -790,16 +846,15 @@ Return ONLY a JSON object — no prose, no markdown fences:
         >
           <MathTheater
             subtopicId={subtopicId}
-            payload={
-              vizHistory.find((v) => v.id === activeVizId)?.payload ??
-              resolveSimulationPayload({ subtopic, topic, track })
-            }
+            payload={currentPayload}
             history={vizHistory}
             activeVizId={activeVizId}
             onSelectViz={(id) => setActiveVizId(id)}
             minimized={theaterMinimized}
             onMinimize={() => setTheaterMinimized(true)}
             onRestore={() => setTheaterMinimized(false)}
+            answerRequest={wantsPointAnswer ? POINT_ANSWER_KEYS : undefined}
+            onAnswerChange={(x, y) => setAnswerPoint({ x, y })}
           />
         </div>
       </div>
@@ -1024,18 +1079,30 @@ function IntensitySelector({ intensity, onChange }: { intensity: Intensity; onCh
   );
 }
 
+// 1-4 inclusive for both dims — matches the bound MathSymbolPalette's own templates use (2x2,
+// 2-vector). Returns null (not NaN) on anything out of range so callers can treat it as "invalid,
+// fall back to freeform" with a single falsy check.
+function clampGridDim(raw: string | undefined): number | null {
+  const n = parseInt(raw ?? "", 10);
+  return Number.isInteger(n) && n >= 1 && n <= 4 ? n : null;
+}
+
 function InteractionPanel({
   messages,
   isStreaming,
   input,
   setInput,
   onSend,
+  currentPayload,
+  answerPoint,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
   input: string;
   setInput: (v: string) => void;
   onSend: (text: string) => void;
+  currentPayload: SimulationPayload | SceneSpec;
+  answerPoint: { x: number; y: number } | null;
 }) {
   const last = messages[messages.length - 1];
   const choices =
@@ -1046,6 +1113,9 @@ function InteractionPanel({
   const [showText, setShowText] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // A fresh structured prompt should never inherit the previous turn's "type instead" escape.
+  useEffect(() => { setShowText(false); }, [choices?.type]);
+
   // Auto-grow with content instead of a fixed single line — a self-explanation or a worked
   // derivation needs more than one row to type into, let alone read back before sending.
   useEffect(() => {
@@ -1055,29 +1125,99 @@ function InteractionPanel({
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [input]);
 
-  if (choices && choices.options.length > 0 && choices.type !== "freeform" && !showText) {
-    return (
-      <div className="p-4 border-t border-border bg-background">
-        <div className="flex flex-wrap gap-2 mb-2">
-          {choices.options.map((opt, idx) => (
-            <button
-              key={idx}
-              onClick={() => onSend(opt)}
-              disabled={isStreaming}
-              className="flex-1 min-w-[140px] px-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors text-left leading-snug disabled:opacity-40"
-            >
-              <MathRenderer content={opt} />
-            </button>
-          ))}
+  if (choices && !showText) {
+    if (choices.type === "matrix") {
+      const rows = clampGridDim(choices.attrs.rows);
+      const cols = clampGridDim(choices.attrs.cols);
+      // Defensive: bad/missing rows|cols, or no embedded answer to check against — never render a
+      // broken grid, fall through to the plain textarea below instead.
+      if (rows && cols && choices.attrs.answer) {
+        return (
+          <MatrixInput
+            rows={rows}
+            cols={cols}
+            expectedAnswer={choices.attrs.answer}
+            disabled={isStreaming}
+            onSend={onSend}
+            onEscape={() => setShowText(true)}
+          />
+        );
+      }
+    } else if (choices.type === "numeric") {
+      if (choices.attrs.answer) {
+        return (
+          <NumericUnitInput
+            withUnit={choices.attrs.unit === "true"}
+            expectedValue={choices.attrs.answer}
+            expectedUnit={choices.attrs.expectedUnit ?? ""}
+            disabled={isStreaming}
+            onSend={onSend}
+            onEscape={() => setShowText(true)}
+          />
+        );
+      }
+    } else if (choices.type === "multiselect") {
+      if (choices.options.length > 0) {
+        return (
+          <MultiSelectInput
+            options={choices.options}
+            disabled={isStreaming}
+            onSend={onSend}
+            onEscape={() => setShowText(true)}
+          />
+        );
+      }
+    } else if (choices.type === "point") {
+      // Only when a flat scene is actually visible right now — otherwise there's nothing to drag
+      // a marker onto, so fall through to freeform (the AI is instructed not to request `point`
+      // without a scene on screen, but model output isn't guaranteed).
+      if (isSceneSpec(currentPayload)) {
+        const x = answerPoint?.x ?? 0;
+        const y = answerPoint?.y ?? 0;
+        return (
+          <div className="p-4 border-t border-border space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Drag the highlighted point on the Math Theater into place, then submit.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onSend(`Placed the point at (${x.toFixed(2)}, ${y.toFixed(2)}) on "${currentPayload.title}".`)}
+                disabled={isStreaming}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-30 transition-opacity"
+              >
+                Submit point
+              </button>
+              <button onClick={() => setShowText(true)} className="text-xs text-muted-foreground hover:text-foreground">
+                Type instead →
+              </button>
+            </div>
+          </div>
+        );
+      }
+    } else if (choices.options.length > 0 && choices.type !== "freeform") {
+      return (
+        <div className="p-4 border-t border-border bg-background">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {choices.options.map((opt, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSend(opt)}
+                disabled={isStreaming}
+                className="flex-1 min-w-[140px] px-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors text-left leading-snug disabled:opacity-40"
+              >
+                <MathRenderer content={opt} />
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowText(true)}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Type instead →
+          </button>
         </div>
-        <button
-          onClick={() => setShowText(true)}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Type instead →
-        </button>
-      </div>
-    );
+      );
+    }
   }
 
   return (

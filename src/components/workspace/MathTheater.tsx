@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { SimulationPayload } from "@/lib/simulationPayload";
-import { isSceneSpec, type SceneSpec } from "@/lib/sceneSpec";
+import { isSceneSpec, type SceneSpec, type Primitive } from "@/lib/sceneSpec";
 import { VIZ_THEMES, loadVizTheme, saveVizTheme } from "@/lib/vizThemes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -34,6 +34,11 @@ interface Props {
   minimized?: boolean;
   onMinimize?: () => void;
   onRestore?: () => void;
+  /** Point-on-plane answer mode: when set (and `payload` is a scene), a synthetic draggable
+   * marker is spliced into the rendered scene bound to these two param keys. */
+  answerRequest?: { xKey: string; yKey: string };
+  /** Reports the marker's live (x, y) while the student drags it. */
+  onAnswerChange?: (x: number, y: number) => void;
 }
 
 interface InsightRow {
@@ -60,6 +65,8 @@ export default function MathTheater({
   minimized = false,
   onMinimize,
   onRestore,
+  answerRequest,
+  onAnswerChange,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
@@ -83,6 +90,26 @@ export default function MathTheater({
 
   const isScene = isSceneSpec(payload);
 
+  // The scene's own objects, plus (in point-on-plane answer mode) one synthetic accent-coloured
+  // draggable marker the student positions as their answer. Seeded at the origin — reasonable for
+  // flat scenes, which are framed camera-centred (see SCENE_DIRECTOR_PROMPT's camera convention).
+  // Zero changes needed inside Scene3D itself: this reuses the same drag-to-position mechanism
+  // every other draggable point already uses.
+  const sceneObjects = useMemo<Primitive[]>(() => {
+    if (!isScene) return [];
+    const objects = (payload as SceneSpec).objects;
+    if (!answerRequest) return objects;
+    const marker: Primitive = {
+      kind: "point",
+      at: [answerRequest.xKey, answerRequest.yKey, 0.03],
+      color: "#fbbf24",
+      size: 0.14,
+      label: "Your answer",
+      drag: [answerRequest.xKey, answerRequest.yKey],
+    };
+    return [...objects, marker];
+  }, [isScene, payload, answerRequest]);
+
   // Build initial slider params from payload — fully data-driven.
   const initialParams = useMemo<Record<string, number>>(() => {
     const out: Record<string, number> = {};
@@ -90,12 +117,12 @@ export default function MathTheater({
       ? payload.sliders ?? []
       : (payload.config as { sliders?: { key: string; default: number }[] }).sliders ?? [];
     for (const s of sliders) out[s.key] = s.default;
-    // Seed drag keys that aren't declared as sliders, so expressions that
-    // reference them evaluate from the first render. Numeric literals in
+    // Seed drag keys that aren't declared as sliders (including the synthetic answer marker's),
+    // so expressions that reference them evaluate from the first render. Numeric literals in
     // `at` seed their own key; projected/expression positions seed 0
     // (e.g. atan2(0,0)=0 puts a circle-constrained point at angle 0).
     if (isSceneSpec(payload)) {
-      const visit = (prims: typeof payload.objects) => {
+      const visit = (prims: Primitive[]) => {
         for (const p of prims) {
           if (p.kind === "point" && Array.isArray(p.drag)) {
             p.drag.slice(0, 2).forEach((key, i) => {
@@ -110,14 +137,30 @@ export default function MathTheater({
           if (p.kind === "group") visit(p.children);
         }
       };
-      visit(payload.objects);
+      visit(sceneObjects);
+    }
+    // The answer marker's `at` is the bare key names themselves ("__ansX"/"__ansY"), which the
+    // generic loop above treats as a non-literal (projected/expression) position and seeds to 1 —
+    // right for circle-constrained points elsewhere, wrong here. Force the origin explicitly.
+    if (answerRequest) {
+      out[answerRequest.xKey] = 0;
+      out[answerRequest.yKey] = 0;
     }
     return out;
-  }, [payload]);
+  }, [payload, sceneObjects, answerRequest]);
 
   const [params, setParams] = useState<Record<string, number>>(initialParams);
   // reset params when payload changes (e.g. lesson switch)
   useEffect(() => { setParams(initialParams); }, [initialParams]);
+
+  // Report the answer marker's live position while the student drags it.
+  useEffect(() => {
+    if (!answerRequest || !onAnswerChange) return;
+    const x = params[answerRequest.xKey];
+    const y = params[answerRequest.yKey];
+    if (typeof x === "number" && typeof y === "number") onAnswerChange(x, y);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answerRequest, params[answerRequest?.xKey ?? ""], params[answerRequest?.yKey ?? ""]]);
 
   const [insights, setInsights] = useState<InsightRow[]>([]);
   const [loadingLib, setLoadingLib] = useState(false);
@@ -286,7 +329,7 @@ export default function MathTheater({
         {isScene ? (
           <SceneErrorBoundary resetKey={payload}>
             <Scene3D
-              spec={payload as SceneSpec}
+              spec={{ ...(payload as SceneSpec), objects: sceneObjects }}
               params={params}
               onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
               theme={vizTheme}
