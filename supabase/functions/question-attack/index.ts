@@ -1,5 +1,6 @@
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { DIAGRAM_CAPABILITY } from "../_shared/diagramCapability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -106,7 +107,9 @@ Respond ONLY with valid JSON:
 }
 
 For open-ended questions, omit the "options" field entirely.
-Distribute questions across the selected topics. Favour questions that require COMBINING more than one concept and TRANSFER to an unfamiliar context (not a re-skin of a standard example); at least some should ask the student to justify WHY a chosen method applies, or where it would fail, rather than only compute. Each "explanation" must show the structural reason the method works, not just the mechanical steps.`;
+Distribute questions across the selected topics. Favour questions that require COMBINING more than one concept and TRANSFER to an unfamiliar context (not a re-skin of a standard example); at least some should ask the student to justify WHY a chosen method applies, or where it would fail, rather than only compute. Each "explanation" must show the structural reason the method works, not just the mechanical steps.
+
+${DIAGRAM_CAPABILITY}`;
 
     const response = await fetch(ai.url, {
       method: "POST",

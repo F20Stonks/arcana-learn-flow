@@ -6,6 +6,8 @@ import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, B
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MiniChat from "@/components/MiniChat";
+import QuestionDiagram from "@/components/workspace/QuestionDiagram";
+import { coerceScene } from "@/lib/sceneSpec";
 import "katex/dist/katex.min.css";
 
 type TopicWithSubs = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
@@ -17,6 +19,10 @@ interface Question {
   explanation: string;
   difficulty: string;
   topic: string;
+  /** optional diagram for the question stem — untrusted AI output, validated with coerceScene() before render */
+  scene?: unknown;
+  /** optional per-option diagrams for graph-matching MCQs; same length/order as `options`, entries may be null */
+  option_scenes?: unknown[];
 }
 
 type Phase = "config" | "loading" | "question" | "feedback" | "results";
@@ -438,28 +444,40 @@ export default function QuestionAttack() {
                 <span className="text-xs text-muted-foreground">{currentQ.difficulty}</span>
               </div>
               <MathRenderer content={currentQ.question} />
+              {(() => {
+                const stemScene = coerceScene(currentQ.scene);
+                return stemScene && (
+                  <div className="mt-4">
+                    <QuestionDiagram scene={stemScene} variant="stem" />
+                  </div>
+                );
+              })()}
             </div>
 
             {currentQ.options ? (
               <div className="space-y-2">
-                {currentQ.options.map((opt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedOption(i)}
-                    className={`w-full text-left p-4 rounded-xl border transition-colors ${
-                      selectedOption === i
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="h-6 w-6 rounded-full border border-current flex items-center justify-center text-xs font-medium shrink-0">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      <MathRenderer content={opt} />
-                    </div>
-                  </button>
-                ))}
+                {currentQ.options.map((opt, i) => {
+                  const optScene = coerceScene(currentQ.option_scenes?.[i]);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedOption(i)}
+                      className={`w-full text-left rounded-xl border transition-colors ${optScene ? "p-3" : "p-4"} ${
+                        selectedOption === i
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      <div className={`flex items-center gap-3 ${optScene ? "mb-2" : ""}`}>
+                        <span className="h-6 w-6 rounded-full border border-current flex items-center justify-center text-xs font-medium shrink-0">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        {opt && <MathRenderer content={opt} />}
+                      </div>
+                      {optScene && <QuestionDiagram scene={optScene} variant="option" />}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <textarea

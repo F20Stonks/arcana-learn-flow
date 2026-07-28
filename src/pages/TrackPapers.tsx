@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { ArrowLeft, Loader as Loader2, FileText, Search, ExternalLink, Sparkles, ChevronRight, CircleCheck as CheckCircle2, Circle as XCircle, Zap, Brain, Check, Minus } from "lucide-react";
 import MathRenderer from "@/components/MathRenderer";
+import QuestionDiagram from "@/components/workspace/QuestionDiagram";
+import { coerceScene } from "@/lib/sceneSpec";
 import "katex/dist/katex.min.css";
 
 type TopicWithSubs = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
@@ -48,6 +50,10 @@ interface PaperQuestion {
   difficulty: string;
   topic: string;
   marks?: number;
+  /** optional diagram for the question stem — untrusted AI output, validated with coerceScene() before render */
+  scene?: unknown;
+  /** optional per-option diagrams for graph-matching MCQs; same length/order as `options`, entries may be null */
+  option_scenes?: unknown[];
 }
 
 type Section = "real" | "generate";
@@ -307,26 +313,38 @@ export default function TrackPapers() {
                   <span className="text-xs text-muted-foreground">{currentQ.marks || 1} mark{(currentQ.marks || 1) === 1 ? "" : "s"}</span>
                 </div>
                 <MathRenderer content={currentQ.question} />
+                {(() => {
+                  const stemScene = coerceScene(currentQ.scene);
+                  return stemScene && (
+                    <div className="mt-4">
+                      <QuestionDiagram scene={stemScene} variant="stem" />
+                    </div>
+                  );
+                })()}
               </div>
 
               {currentQ.options ? (
                 <div className="space-y-2">
-                  {currentQ.options.map((opt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedOption(i)}
-                      className={`w-full text-left p-4 rounded-xl border transition-colors ${
-                        selectedOption === i ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="h-6 w-6 rounded-full border border-current flex items-center justify-center text-xs font-medium shrink-0">
-                          {String.fromCharCode(65 + i)}
-                        </span>
-                        <MathRenderer content={opt} />
-                      </div>
-                    </button>
-                  ))}
+                  {currentQ.options.map((opt, i) => {
+                    const optScene = coerceScene(currentQ.option_scenes?.[i]);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedOption(i)}
+                        className={`w-full text-left rounded-xl border transition-colors ${optScene ? "p-3" : "p-4"} ${
+                          selectedOption === i ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        <div className={`flex items-center gap-3 ${optScene ? "mb-2" : ""}`}>
+                          <span className="h-6 w-6 rounded-full border border-current flex items-center justify-center text-xs font-medium shrink-0">
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                          {opt && <MathRenderer content={opt} />}
+                        </div>
+                        {optScene && <QuestionDiagram scene={optScene} variant="option" />}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <textarea
