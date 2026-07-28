@@ -150,6 +150,7 @@ export type Database = {
           id: string
           mode: string
           params: Json
+          payload: Json | null
           subtopic_id: string | null
           title: string
           updated_at: string
@@ -162,6 +163,7 @@ export type Database = {
           id?: string
           mode?: string
           params?: Json
+          payload?: Json | null
           subtopic_id?: string | null
           title: string
           updated_at?: string
@@ -174,6 +176,7 @@ export type Database = {
           id?: string
           mode?: string
           params?: Json
+          payload?: Json | null
           subtopic_id?: string | null
           title?: string
           updated_at?: string
