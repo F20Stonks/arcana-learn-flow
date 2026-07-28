@@ -2,11 +2,18 @@
 // Pure function over typed inputs — no I/O, no LLM — so it's trivially unit-testable.
 //
 // Priority order (all day-granularity, local time):
-//   1. Overdue review (most overdue first)
-//   2. Review due today
-//   3. Next unfinished subtopic, from the active track with the nearest upcoming
+//   1. Resume an in-progress session (a subtopic the student already started teaching on).
+//      This outranks reviews on purpose: an in-progress session represents a student who
+//      could lose their place/context if they don't resume, whereas a due review has
+//      already survived at least one full spaced-repetition interval and can wait a few
+//      more hours without meaningfully hurting retention. See nextAction.test.ts for the
+//      regression this guards (a due review for an unrelated subtopic was hiding the
+//      "Continue session" CTA entirely).
+//   2. Overdue review (most overdue first)
+//   3. Review due today
+//   4. Next unfinished subtopic, from the active track with the nearest upcoming
 //      exam date (tie-break: weakest spec-checklist coverage %, then oldest track)
-//   4. Everything done & nothing due: earliest upcoming review ("review early"),
+//   5. Everything done & nothing due: earliest upcoming review ("review early"),
 //      else suggest starting a new track.
 
 export interface SubtopicLite {
@@ -162,7 +169,46 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
 
   const candidates: NextAction[] = [];
 
-  // 1 + 2. Reviews due today or earlier, most overdue first.
+  // Build the "next subtopic per track" candidate once (most urgent track first) — same
+  // underlying pick (resume in-progress, else first not-yet-complete) that fed both tiers 1 and
+  // 4 before this fix. Split below so resume candidates can be prioritized ahead of reviews
+  // while fresh-start candidates stay behind them.
+  const nextSubtopicCandidates: { action: NextAction; isResume: boolean }[] = [];
+  for (const t of [...tracks].sort(compareTrackUrgency(now))) {
+    const next = nextSubtopic(t);
+    if (!next) continue;
+    const isResume = next.status === "in_progress";
+    const daysToExam = examDaysAway(t, now);
+    let reason: string;
+    if (daysToExam !== null) {
+      reason =
+        daysToExam === 0
+          ? `Your ${t.title} exam is today — "${next.title}" is next`
+          : `${plural(daysToExam, "day")} to your ${t.title} exam and "${next.title}" is next`;
+    } else if (isResume) {
+      reason = `Pick up "${next.title}" where you left off in ${t.title}`;
+    } else {
+      reason = `"${next.title}" is next up in ${t.title}`;
+    }
+    nextSubtopicCandidates.push({
+      isResume,
+      action: {
+        kind: "next_subtopic",
+        label: next.title,
+        reason,
+        to: `/session/${next.id}`,
+        cta: isResume ? "Continue session" : "Start session",
+        trackTitle: t.title,
+        daysToExam,
+        estimatedMinutes: next.estimatedMinutes ?? null,
+      },
+    });
+  }
+
+  // 1. Resume in-progress sessions first — see the priority-order comment at the top of this file.
+  for (const c of nextSubtopicCandidates) if (c.isResume) candidates.push(c.action);
+
+  // 2 + 3. Reviews due today or earlier, most overdue first.
   for (const { r, resolved } of resolvedReviews) {
     const daysAgo = dayDiff(new Date(r.dueAt), now);
     if (daysAgo < 0) continue; // due on a future day
@@ -182,35 +228,10 @@ export function planNextAction(input: NextActionInput): NextActionPlan | null {
     });
   }
 
-  // 3. Next subtopic per track, most urgent track first.
-  for (const t of [...tracks].sort(compareTrackUrgency(now))) {
-    const next = nextSubtopic(t);
-    if (!next) continue;
-    const daysToExam = examDaysAway(t, now);
-    let reason: string;
-    if (daysToExam !== null) {
-      reason =
-        daysToExam === 0
-          ? `Your ${t.title} exam is today — "${next.title}" is next`
-          : `${plural(daysToExam, "day")} to your ${t.title} exam and "${next.title}" is next`;
-    } else if (next.status === "in_progress") {
-      reason = `Pick up "${next.title}" where you left off in ${t.title}`;
-    } else {
-      reason = `"${next.title}" is next up in ${t.title}`;
-    }
-    candidates.push({
-      kind: "next_subtopic",
-      label: next.title,
-      reason,
-      to: `/session/${next.id}`,
-      cta: next.status === "in_progress" ? "Continue session" : "Start session",
-      trackTitle: t.title,
-      daysToExam,
-      estimatedMinutes: next.estimatedMinutes ?? null,
-    });
-  }
+  // 4. Next unstarted subtopic per track (resume candidates already handled in tier 1).
+  for (const c of nextSubtopicCandidates) if (!c.isResume) candidates.push(c.action);
 
-  // 4. Nothing actionable right now.
+  // 5. Nothing actionable right now.
   if (candidates.length === 0) {
     const upcoming = resolvedReviews[0]; // all remaining reviews are future-dated
     if (upcoming) {

@@ -1,6 +1,7 @@
 import { getBearerToken } from "@/lib/authHeader";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
@@ -228,6 +229,19 @@ export default function SessionPage() {
   const goBack = () => {
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
     navigate(dest, { replace: true });
+  };
+
+  // Explicit "leave without finishing" control (distinct from `endSession`, which grades and
+  // completes the session). Every message is already written to `messages` as it's sent, and
+  // `loadContext` marks the subtopic `in_progress` + resumes this exact session's transcript on
+  // return — so there's genuinely nothing left to flush here. This just gives the student a
+  // labeled, discoverable way to leave (replacing a bare, unlabeled back arrow) and an explicit
+  // confirmation that their place is saved, instead of silent navigation with no reassurance.
+  const pauseAndExit = () => {
+    toast.success("Progress saved", {
+      description: "Come back anytime — this session picks up right where you left off.",
+    });
+    goBack();
   };
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -691,7 +705,15 @@ Return ONLY a JSON object — no prose, no markdown fences:
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={goBack} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
+          <button
+            onClick={pauseAndExit}
+            title="Save & exit — your progress is saved and this session can be resumed later"
+            aria-label="Save and exit session"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Save &amp; exit</span>
+          </button>
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
               {subtopic?.title}

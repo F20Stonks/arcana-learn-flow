@@ -137,6 +137,45 @@ describe("planNextAction", () => {
     expect(plan!.primary.cta).toBe("Continue session");
   });
 
+  it("resuming an in-progress session outranks a due review, even for a different subtopic", () => {
+    // Regression test: previously all due/overdue reviews were pushed as candidates before any
+    // "resume in-progress subtopic" candidate, so a completely unrelated overdue review would hide
+    // the "Continue session" CTA for a subtopic the student had already started teaching on —
+    // reported as "Dashboard shows 'Start review' instead of 'Continue session' after sending a
+    // message mid-session."
+    const reviewedSub = sub({ title: "Chain Rule", status: "complete" });
+    const reviewTrack = track({ title: "Old Track", subtopics: [reviewedSub] });
+
+    const inProgressSub = sub({ title: "Halfway", status: "in_progress" });
+    const activeTrack = track({ title: "Active Track", subtopics: [inProgressSub] });
+
+    const plan = planNextAction({
+      now: NOW,
+      tracks: [reviewTrack, activeTrack],
+      reviews: [review(reviewedSub.id, daysFromNow(-3))], // heavily overdue
+    });
+
+    expect(plan!.primary.kind).toBe("next_subtopic");
+    expect(plan!.primary.cta).toBe("Continue session");
+    expect(plan!.primary.to).toBe(`/session/${inProgressSub.id}`);
+    // The overdue review is still surfaced — just not ahead of the in-progress resume.
+    expect(plan!.secondary.some((s) => s.kind === "overdue_review")).toBe(true);
+  });
+
+  it("resuming an in-progress session in the SAME subtopic as a due review still wins", () => {
+    const s = sub({ title: "Halfway", status: "in_progress" });
+    const t = track({ title: "Maths", subtopics: [s] });
+
+    const plan = planNextAction({
+      now: NOW,
+      tracks: [t],
+      reviews: [review(s.id, daysFromNow(0))],
+    });
+
+    expect(plan!.primary.kind).toBe("next_subtopic");
+    expect(plan!.primary.cta).toBe("Continue session");
+  });
+
   it("orders subtopics by topic order then subtopic order", () => {
     const later = sub({ title: "Later", status: "unlocked", topicOrder: 1, order: 0 });
     const first = sub({ title: "First", status: "unlocked", topicOrder: 0, order: 2 });
