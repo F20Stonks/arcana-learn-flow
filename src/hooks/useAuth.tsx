@@ -24,6 +24,7 @@ function createLocalProfile(nextUser: User): Profile {
     subscription_tier: "free",
     voice_id: null,
     onboarding_complete: false,
+    waitlist_status: "waitlisted",
     created_at: now,
     updated_at: now,
   };
