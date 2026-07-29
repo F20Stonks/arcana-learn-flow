@@ -17,6 +17,7 @@ import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 import PricingPage from "./pages/PricingPage";
+import WaitlistPage from "./pages/WaitlistPage";
 import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import RefundPage from "./pages/legal/RefundPage";
@@ -45,6 +46,7 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
   const { session, profile, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" replace />;
+  if (profile && profile.waitlist_status !== "approved") return <Navigate to="/waitlist" replace />;
   if (!profile?.onboarding_complete) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
@@ -57,9 +59,16 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={
-        session ? (profile?.onboarding_complete ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />) : <LandingPage />
+        session
+          ? (profile && profile.waitlist_status !== "approved"
+              ? <Navigate to="/waitlist" replace />
+              : profile?.onboarding_complete
+                ? <Navigate to="/dashboard" replace />
+                : <Navigate to="/onboarding" replace />)
+          : <LandingPage />
       } />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/waitlist" element={<WaitlistPage />} />
       <Route path="/onboarding" element={<OnboardingGuard><OnboardingPage /></OnboardingGuard>} />
       <Route path="/dashboard" element={<DashboardGuard><Dashboard /></DashboardGuard>} />
       <Route path="/track/:trackId" element={<DashboardGuard><TrackOverview /></DashboardGuard>} />
