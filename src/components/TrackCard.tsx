@@ -39,7 +39,7 @@ export interface TrackCardData {
 function OrbitWatermark() {
   return (
     <svg
-      className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 text-white/[0.04] transition-colors duration-300 group-hover:text-sky-400/[0.09]"
+      className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 text-foreground/[0.04] transition-colors duration-300 group-hover:text-primary/[0.09]"
       viewBox="0 0 160 160"
       fill="none"
       aria-hidden>
@@ -54,7 +54,7 @@ function Chip({ icon, label, onClick }: { icon: React.ReactNode; label: string; 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-zinc-200">
+      className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
       {icon}
       {label}
     </button>
@@ -78,8 +78,8 @@ function HoverAction({
         <button
           onClick={onClick}
           aria-label={label}
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-zinc-600 transition-colors ${
-            danger ? "hover:bg-red-500/10 hover:text-red-400" : "hover:bg-white/[0.07] hover:text-zinc-200"
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors ${
+            danger ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-accent hover:text-foreground"
           }`}>
           {children}
         </button>
@@ -113,22 +113,22 @@ export default function TrackCard({
       <OrbitWatermark />
       <div className="flex items-start justify-between gap-3">
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03] ${
-            isPhysics ? "text-sky-300/80" : "text-zinc-400"
+          className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-accent/50 ${
+            isPhysics ? "text-primary/80" : "text-muted-foreground"
           }`}>
           <SubjectGlyph className="h-5 w-5" />
         </div>
         <ProgressRing value={progress} />
       </div>
 
-      <h3 className="font-display mt-4 line-clamp-2 min-h-[42px] text-[15px] font-medium leading-snug tracking-[-0.01em] text-zinc-200 transition-colors group-hover:text-zinc-50">
+      <h3 className="font-display mt-4 line-clamp-2 min-h-[42px] text-[15px] font-medium leading-snug tracking-[-0.01em] text-foreground/80 transition-colors group-hover:text-foreground">
         {track.title}
       </h3>
-      <p className="readout mt-1.5 text-[11px] uppercase tracking-[0.08em] text-zinc-600">
+      <p className="readout mt-1.5 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {track.topicCount} topics · {track.subtopicCount} subtopics
       </p>
 
-      <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3">
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-0.5 sm:opacity-60 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100">
           <Chip
             icon={<BookOpen className="h-3 w-3" />}

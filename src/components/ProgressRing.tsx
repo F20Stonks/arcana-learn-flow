@@ -28,26 +28,26 @@ export default function ProgressRing({ value, size = 44, stroke = 2.5 }: Progres
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgb(255 255 255 / 0.08)"
           strokeWidth={stroke}
+          style={{ stroke: "var(--border)" }}
         />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={value > 0 ? "#38BDF8" : "rgb(255 255 255 / 0.14)"}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c - (c * display) / 100}
           style={{
+            stroke: value > 0 ? "var(--primary)" : "var(--border)",
             transition: "stroke-dashoffset 900ms cubic-bezier(0.23, 1, 0.32, 1)",
-            filter: value > 0 ? "drop-shadow(0 0 4px rgb(56 189 248 / 0.5))" : undefined,
+            filter: value > 0 ? "drop-shadow(0 0 4px color-mix(in oklab, var(--primary) 50%, transparent))" : undefined,
           }}
         />
       </svg>
-      <span className="readout absolute inset-0 flex items-center justify-center text-[10px] text-zinc-400">
+      <span className="readout absolute inset-0 flex items-center justify-center text-[10px] text-muted-foreground">
         {value}%
       </span>
     </div>

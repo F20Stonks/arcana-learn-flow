@@ -168,25 +168,27 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen bg-[#0A0A0C]">
+      <div className="relative min-h-screen bg-background">
         <CommandBar />
         <main className="relative mx-auto flex max-w-6xl items-center gap-3 px-5 pb-24 pt-24 sm:px-8">
-          <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-          <p className="text-[14px] text-zinc-500">Opening your workspace…</p>
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <p className="text-[14px] text-muted-foreground">Opening your workspace…</p>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-[#0A0A0C]">
-      {/* Ambient canvas glow — depth without noise */}
+    <div className="relative min-h-screen bg-background">
+      {/* Ambient canvas glow — depth without noise. color-mix against the live tokens so this
+          re-tints per theme instead of a fixed cyan/violet blob (which reads oddly on light
+          backgrounds like Light/Paper). */}
       <div
         className="pointer-events-none fixed inset-0"
         aria-hidden
         style={{
           background:
-            "radial-gradient(ellipse 70% 45% at 50% -10%, rgb(56 189 248 / 0.06), transparent 65%), radial-gradient(ellipse 45% 35% at 88% 68%, rgb(139 92 246 / 0.035), transparent 70%)",
+            "radial-gradient(ellipse 70% 45% at 50% -10%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 65%), radial-gradient(ellipse 45% 35% at 88% 68%, color-mix(in oklab, var(--foreground) 5%, transparent), transparent 70%)",
         }}
       />
 
@@ -195,10 +197,10 @@ export default function Dashboard() {
       <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         {loadError && (
           <div className="glass-card reveal mb-8 rounded-2xl p-5">
-            <p className="text-[14px] font-medium text-zinc-200">{loadError}</p>
+            <p className="text-[14px] font-medium text-foreground">{loadError}</p>
             <button
               onClick={loadTracks}
-              className="mt-3 rounded-full bg-sky-400 px-4 py-2 text-[13px] font-semibold text-[#062033] transition-colors hover:bg-sky-300"
+              className="mt-3 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Retry loading tracks
             </button>
@@ -209,15 +211,15 @@ export default function Dashboard() {
           <UpNextCard plan={plan} displayName={profile?.display_name || "learner"} onToggleChat={() => setChatOpen((v) => !v)} />
         ) : (
           <section className="reveal" style={{ animationDelay: "60ms" }}>
-            <h1 className="font-display text-[28px] font-semibold leading-tight text-zinc-50 sm:text-[32px]">
-              Welcome, <span className="font-serif-accent font-normal text-zinc-300">{profile?.display_name || "learner"}</span>
+            <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
+              Welcome, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
             </h1>
-            <p className="mt-1 text-[15px] text-zinc-500">
+            <p className="mt-1 text-[15px] text-muted-foreground">
               {activeTracks.length > 0 ? "Every session is complete — add something new whenever you're ready." : "Choose what you're studying and a complete path is built for you."}
             </p>
             <button
               onClick={() => navigate("/onboarding?new=1")}
-              className="glow-cyan mt-6 flex h-12 items-center gap-2.5 rounded-full bg-sky-400 px-7 text-[15px] font-semibold text-[#062033] transition-all hover:bg-sky-300 hover:shadow-[0_0_36px_-6px_rgb(56_189_248/0.7)]"
+              className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
               New track
@@ -237,16 +239,16 @@ export default function Dashboard() {
         <section className="mt-16">
           <div className="reveal mb-6 flex items-center justify-between" style={{ animationDelay: "180ms" }}>
             <div className="flex items-baseline gap-3">
-              <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-zinc-100">
+              <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                 Learning <span className="font-serif-accent font-normal">tracks</span>
               </h2>
-              <span className="readout text-[11px] uppercase tracking-[0.1em] text-zinc-600">
+              <span className="readout text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
                 {activeTracks.length} active
               </span>
             </div>
             <button
               onClick={() => navigate("/onboarding?new=1")}
-              className="flex items-center gap-1.5 text-[13px] font-medium text-sky-400 transition-colors hover:text-sky-300">
+              className="flex items-center gap-1.5 text-[13px] font-medium text-primary transition-colors hover:text-primary/80">
               <Plus className="h-3.5 w-3.5" />
               New track
             </button>
@@ -254,7 +256,7 @@ export default function Dashboard() {
 
           {activeTracks.length === 0 ? (
             <div className="glass-card reveal rounded-2xl p-10 text-center" style={{ animationDelay: "220ms" }}>
-              <p className="text-[14px] text-zinc-500">
+              <p className="text-[14px] text-muted-foreground">
                 {archivedTracks.length > 0 ? "No active tracks — restore one below, or start a new one." : "No tracks yet."}
               </p>
             </div>
@@ -280,13 +282,13 @@ export default function Dashboard() {
               {/* Ghost "new track" card */}
               <button
                 onClick={() => navigate("/onboarding?new=1")}
-                className="reveal group flex min-h-[210px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.1] text-zinc-600 transition-colors hover:border-sky-400/40 hover:text-zinc-300"
+                className="reveal group flex min-h-[210px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground/80"
                 style={{ animationDelay: `${220 + activeTracks.length * 70}ms` }}>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.02] transition-colors group-hover:border-sky-400/30 group-hover:text-sky-400">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-accent/40 transition-colors group-hover:border-primary/30 group-hover:text-primary">
                   <Plus className="h-5 w-5" />
                 </span>
                 <span className="text-[14px] font-medium">Start a new track</span>
-                <span className="px-8 text-center text-[12px] text-zinc-700">
+                <span className="px-8 text-center text-[12px] text-muted-foreground/70">
                   Name the goal. The path builds itself.
                 </span>
               </button>
@@ -300,33 +302,33 @@ export default function Dashboard() {
             <button
               onClick={() => setArchivedOpen((v) => !v)}
               aria-expanded={archivedOpen}
-              className="flex w-full items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.015] px-4 py-3 text-left transition-colors hover:border-white/[0.1]">
+              className="flex w-full items-center gap-2 rounded-xl border border-border bg-accent/20 px-4 py-3 text-left transition-colors hover:bg-accent/30">
               <ChevronRight
-                className={`h-4 w-4 text-zinc-600 transition-transform duration-200 ${
+                className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
                   archivedOpen ? "rotate-90" : ""
                 }`}
               />
-              <span className="micro-label !text-zinc-500">Archived</span>
-              <span className="readout text-[12px] text-zinc-600">({archivedTracks.length})</span>
+              <span className="micro-label !text-muted-foreground">Archived</span>
+              <span className="readout text-[12px] text-muted-foreground">({archivedTracks.length})</span>
             </button>
             {archivedOpen && (
               /* Manus's exact box (client/src/pages/Home.tsx) held static placeholder text —
                  there was no per-track markup to port, since the mockup never had real archived
                  tracks to render. Same container, same type scale; each row is plain text plus
                  two inline actions so it reads as one box, not a second component style. */
-              <div className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.05] bg-white/[0.01] px-5 py-2 text-[13px] text-zinc-600">
+              <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-accent/10 px-5 py-2 text-[13px] text-muted-foreground">
                 {archivedTracks.map((t) => (
                   <div key={t.id} className="flex items-center gap-3 py-3">
                     <span className="min-w-0 flex-1 truncate text-left">{t.title}</span>
                     <button
                       onClick={() => setArchived(t, false)}
-                      className="shrink-0 font-medium text-sky-400 transition-colors hover:text-sky-300"
+                      className="shrink-0 font-medium text-primary transition-colors hover:text-primary/80"
                     >
                       Restore
                     </button>
                     <button
                       onClick={() => setPendingDelete(t)}
-                      className="shrink-0 text-zinc-600 transition-colors hover:text-red-400"
+                      className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
                       aria-label="Delete"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -338,8 +340,8 @@ export default function Dashboard() {
           </section>
         )}
 
-        <footer className="mt-20 border-t border-white/[0.05] pt-6 text-center">
-          <p className="text-[12px] text-zinc-700">
+        <footer className="mt-20 border-t border-border pt-6 text-center">
+          <p className="text-[12px] text-muted-foreground/70">
             Cortexed — an instrument for mathematical &amp; physical understanding.
           </p>
         </footer>

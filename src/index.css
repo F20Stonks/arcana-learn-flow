@@ -182,6 +182,236 @@
   --sidebar-ring: hsl(198 93% 60%);
 }
 
+/*
+  ── Theme variants ─────────────────────────────────────────────────
+  Registry + picker UI: src/lib/appThemes.ts + CustomizeMenu.tsx. Dark above (bare :root) is
+  the default/original look and is never touched by these — each block here is a *complete*
+  token override activated by [data-theme="<id>"] on <html> (see applyStoredTheme/applyTheme).
+  CustomizeMenu's accent picker may still override --primary on top via inline style, which
+  deliberately wins over these attribute-selector rules (inline > stylesheet) so a custom
+  accent persists independently of theme choice.
+*/
+
+:root[data-theme="light"] {
+  --background: hsl(220 20% 98%);
+  --foreground: hsl(222 20% 12%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 20% 12%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222 20% 12%);
+
+  --surface-raised: hsl(220 20% 95%);
+
+  --secondary: hsl(220 15% 93%);
+  --secondary-foreground: hsl(222 15% 30%);
+
+  --muted: hsl(220 15% 93%);
+  --muted-foreground: hsl(222 10% 38%);
+
+  --accent: hsl(220 15% 92%);
+  --accent-foreground: hsl(222 20% 15%);
+
+  --primary: hsl(217 91% 48%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --border: hsl(220 15% 88%);
+  --input: hsl(220 15% 90%);
+  --ring: hsl(217 91% 48%);
+  --rule-strong: hsl(220 15% 80%);
+  --tick: hsl(220 10% 55%);
+
+  --destructive: hsl(358 70% 45%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(152 60% 32%);
+  --warning: hsl(38 85% 40%);
+
+  --status-green: hsl(152 60% 32%);
+  --status-yellow: hsl(38 85% 40%);
+  --status-red: hsl(358 70% 45%);
+
+  --streak-flame: hsl(24 75% 45%);
+  --xp-gold: hsl(42 70% 40%);
+
+  --surface-chat: hsl(220 20% 96%);
+  --surface-input: hsl(0 0% 100%);
+
+  --sidebar-background: hsl(220 20% 97%);
+  --sidebar-foreground: hsl(222 15% 35%);
+  --sidebar-primary: hsl(217 91% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(220 15% 92%);
+  --sidebar-accent-foreground: hsl(222 20% 15%);
+  --sidebar-border: hsl(220 15% 88%);
+  --sidebar-ring: hsl(217 91% 48%);
+}
+
+:root[data-theme="neon"] {
+  --background: hsl(260 45% 4%);
+  --foreground: hsl(200 20% 95%);
+
+  --card: hsl(262 40% 7%);
+  --card-foreground: hsl(200 20% 95%);
+
+  --popover: hsl(262 40% 6%);
+  --popover-foreground: hsl(200 20% 95%);
+
+  --surface-raised: hsl(262 35% 10%);
+
+  --secondary: hsl(262 30% 13%);
+  --secondary-foreground: hsl(200 15% 75%);
+
+  --muted: hsl(262 30% 13%);
+  --muted-foreground: hsl(260 15% 65%);
+
+  --accent: hsl(262 35% 15%);
+  --accent-foreground: hsl(200 20% 92%);
+
+  --primary: hsl(180 100% 50%);
+  --primary-foreground: hsl(262 60% 8%);
+
+  --border: hsl(262 30% 20%);
+  --input: hsl(262 30% 16%);
+  --ring: hsl(180 100% 50%);
+  --rule-strong: hsl(262 30% 26%);
+  --tick: hsl(262 15% 40%);
+
+  --destructive: hsl(330 100% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(150 100% 45%);
+  --warning: hsl(50 100% 55%);
+
+  --status-green: hsl(150 100% 45%);
+  --status-yellow: hsl(50 100% 55%);
+  --status-red: hsl(330 100% 60%);
+
+  --streak-flame: hsl(20 100% 55%);
+  --xp-gold: hsl(50 100% 55%);
+
+  --surface-chat: hsl(262 40% 6%);
+  --surface-input: hsl(262 35% 9%);
+
+  --sidebar-background: hsl(260 45% 5%);
+  --sidebar-foreground: hsl(260 15% 70%);
+  --sidebar-primary: hsl(180 100% 50%);
+  --sidebar-primary-foreground: hsl(262 60% 8%);
+  --sidebar-accent: hsl(262 35% 15%);
+  --sidebar-accent-foreground: hsl(200 20% 92%);
+  --sidebar-border: hsl(262 30% 20%);
+  --sidebar-ring: hsl(180 100% 50%);
+}
+
+:root[data-theme="midnight"] {
+  --background: hsl(226 45% 6%);
+  --foreground: hsl(220 25% 95%);
+
+  --card: hsl(226 40% 10%);
+  --card-foreground: hsl(220 25% 95%);
+
+  --popover: hsl(226 42% 8%);
+  --popover-foreground: hsl(220 25% 95%);
+
+  --surface-raised: hsl(226 35% 13%);
+
+  --secondary: hsl(226 30% 16%);
+  --secondary-foreground: hsl(220 15% 75%);
+
+  --muted: hsl(226 30% 16%);
+  --muted-foreground: hsl(220 12% 62%);
+
+  --accent: hsl(226 35% 18%);
+  --accent-foreground: hsl(220 20% 92%);
+
+  --primary: hsl(243 85% 67%);
+  --primary-foreground: hsl(240 30% 10%);
+
+  --border: hsl(226 30% 20%);
+  --input: hsl(226 30% 20%);
+  --ring: hsl(243 85% 67%);
+  --rule-strong: hsl(226 30% 26%);
+  --tick: hsl(226 15% 42%);
+
+  --destructive: hsl(358 65% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(160 55% 48%);
+  --warning: hsl(40 90% 58%);
+
+  --status-green: hsl(160 55% 48%);
+  --status-yellow: hsl(40 90% 58%);
+  --status-red: hsl(358 65% 60%);
+
+  --streak-flame: hsl(24 70% 55%);
+  --xp-gold: hsl(45 70% 58%);
+
+  --surface-chat: hsl(226 42% 8%);
+  --surface-input: hsl(226 38% 11%);
+
+  --sidebar-background: hsl(226 45% 7%);
+  --sidebar-foreground: hsl(220 12% 65%);
+  --sidebar-primary: hsl(243 85% 67%);
+  --sidebar-primary-foreground: hsl(240 30% 10%);
+  --sidebar-accent: hsl(226 35% 18%);
+  --sidebar-accent-foreground: hsl(220 20% 92%);
+  --sidebar-border: hsl(226 30% 20%);
+  --sidebar-ring: hsl(243 85% 67%);
+}
+
+:root[data-theme="paper"] {
+  --background: hsl(40 38% 94%);
+  --foreground: hsl(25 30% 18%);
+
+  --card: hsl(40 45% 97%);
+  --card-foreground: hsl(25 30% 18%);
+
+  --popover: hsl(40 45% 97%);
+  --popover-foreground: hsl(25 30% 18%);
+
+  --surface-raised: hsl(38 35% 90%);
+
+  --secondary: hsl(36 30% 88%);
+  --secondary-foreground: hsl(25 25% 30%);
+
+  --muted: hsl(36 30% 88%);
+  --muted-foreground: hsl(25 18% 36%);
+
+  --accent: hsl(36 32% 86%);
+  --accent-foreground: hsl(25 30% 20%);
+
+  --primary: hsl(20 75% 40%);
+  --primary-foreground: hsl(40 45% 97%);
+
+  --border: hsl(36 25% 80%);
+  --input: hsl(36 25% 84%);
+  --ring: hsl(20 75% 40%);
+  --rule-strong: hsl(36 25% 72%);
+  --tick: hsl(30 15% 52%);
+
+  --destructive: hsl(358 60% 42%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(150 45% 32%);
+  --warning: hsl(38 80% 38%);
+
+  --status-green: hsl(150 45% 32%);
+  --status-yellow: hsl(38 80% 38%);
+  --status-red: hsl(358 60% 42%);
+
+  --streak-flame: hsl(20 70% 42%);
+  --xp-gold: hsl(40 60% 38%);
+
+  --surface-chat: hsl(40 40% 95%);
+  --surface-input: hsl(40 45% 97%);
+
+  --sidebar-background: hsl(40 35% 93%);
+  --sidebar-foreground: hsl(25 20% 35%);
+  --sidebar-primary: hsl(20 75% 40%);
+  --sidebar-primary-foreground: hsl(40 45% 97%);
+  --sidebar-accent: hsl(36 32% 86%);
+  --sidebar-accent-foreground: hsl(25 30% 20%);
+  --sidebar-border: hsl(36 25% 80%);
+  --sidebar-ring: hsl(20 75% 40%);
+}
+
 @layer base {
   /*
     v3 defaulted `border-*` to gray-200 and shadcn neutralised that with `@apply border-border`
@@ -280,8 +510,19 @@
     color: oklch(0.55 0.01 270);
   }
   .glass-card {
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.02));
-    border: 1px solid rgb(255 255 255 / 0.08);
+    /*
+      Was hardcoded rgb(255 255 255 / x) — a "lighten" blend that only reads correctly on a
+      near-black canvas. color-mix against --foreground inverts direction automatically per
+      theme: still a faint lightening highlight on Dark/Neon/Midnight (foreground is
+      near-white), but a correct faint *darkening* tint on Light/Paper (foreground is
+      near-black) instead of an invisible/backwards highlight.
+    */
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--foreground) 4.5%, transparent),
+      color-mix(in oklab, var(--foreground) 2%, transparent)
+    );
+    border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
     backdrop-filter: blur(12px);
     transition:
       border-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
@@ -289,10 +530,23 @@
       transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .glass-card-hover:hover {
-    border-color: rgb(255 255 255 / 0.16);
+    border-color: color-mix(in oklab, var(--foreground) 16%, transparent);
   }
   .glow-cyan {
-    box-shadow: 0 0 24px -6px rgb(56 189 248 / 0.45);
+    box-shadow: 0 0 24px -6px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+  .glow-cyan-hover:hover {
+    box-shadow: 0 0 36px -6px color-mix(in oklab, var(--primary) 80%, transparent);
+  }
+  /* Big ambient shadow under the "Up next" hero card — same color-mix treatment as .glow-cyan. */
+  .upnext-glow {
+    box-shadow:
+      0 24px 80px -32px color-mix(in oklab, var(--primary) 18%, transparent),
+      0 2px 0 0 color-mix(in oklab, var(--foreground) 4%, transparent) inset;
+  }
+  /* Small glow behind the "Up next" / micro-label live-status dot. */
+  .dot-glow-primary {
+    box-shadow: 0 0 8px color-mix(in oklab, var(--primary) 80%, transparent);
   }
   .readout {
     font-family: var(--font-mono);

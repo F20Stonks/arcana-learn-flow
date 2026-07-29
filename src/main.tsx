@@ -11,6 +11,17 @@ import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { supabaseConfigMissing } from "./integrations/supabase/client";
+import { applyStoredTheme } from "./lib/appThemes";
+import { applyStoredAccent } from "./components/CustomizeMenu";
+
+// Applied here, before the app renders, so the saved theme/accent are on <html> before first
+// paint — no flash of the default look. Order matters: theme sets the whole palette (incl. a
+// default --primary) via the [data-theme] stylesheet rules, then accent's inline --primary
+// override (if any) is applied on top, since a custom accent persists independently of theme.
+// (applyStoredAccent previously existed but was never called anywhere — the accent picker's
+// choice only "stuck" for the rest of that session, not across a reload. Fixed here too.)
+applyStoredTheme();
+applyStoredAccent();
 
 const rootElement = document.getElementById("root");
 

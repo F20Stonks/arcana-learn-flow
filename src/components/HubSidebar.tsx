@@ -76,7 +76,7 @@ export default function HubSidebar() {
         <TooltipTrigger asChild>
           <SheetTrigger asChild>
             <button
-              className="relative flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               aria-label="Knowledge hub"
             >
               <LayoutGrid className="h-[17px] w-[17px]" />

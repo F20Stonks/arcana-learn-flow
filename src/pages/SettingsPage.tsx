@@ -17,15 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CreditCard, Bell, User, Shield, Palette, ChevronRight, LogOut, Loader2, Clock, Link2, Trash2, Monitor } from "lucide-react";
+import { ArrowLeft, CreditCard, Bell, User, Shield, ChevronRight, LogOut, Loader2, Clock, Link2, Trash2, Monitor } from "lucide-react";
 
-type View = "list" | "account" | "notifications" | "appearance" | "privacy";
+type View = "list" | "account" | "notifications" | "privacy";
 
 const sections: { id: View | "billing"; icon: typeof User; label: string; desc: string }[] = [
   { id: "account", icon: User, label: "Account", desc: "Manage your profile and preferences" },
   { id: "billing", icon: CreditCard, label: "Billing & Subscription", desc: "Manage your plan and payment methods" },
   { id: "notifications", icon: Bell, label: "Notifications", desc: "Configure how Cortexed notifies you" },
-  { id: "appearance", icon: Palette, label: "Appearance", desc: "Theme and display settings" },
   { id: "privacy", icon: Shield, label: "Privacy & Security", desc: "Password, 2FA, and data export" },
 ];
 
@@ -141,7 +140,6 @@ function PlanCard() {
 const SUB_PAGE_TITLES: Record<Exclude<View, "list">, string> = {
   account: "Account",
   notifications: "Notifications",
-  appearance: "Appearance",
   privacy: "Privacy & Security",
 };
 
@@ -164,13 +162,6 @@ function SubPage({ view, onBack }: { view: Exclude<View, "list">; onBack: () => 
             icon={Bell}
             title="Notification preferences aren't live yet"
             body="Cortexed doesn't send emails or push notifications yet, so there's nothing real to configure here — a toggle with no delivery behind it would just be misleading. Once reminders or progress digests ship, their on/off controls will live here."
-          />
-        )}
-        {view === "appearance" && (
-          <ComingSoonPanel
-            icon={Palette}
-            title="Appearance settings aren't live yet"
-            body="Cortexed is dark-mode only for now — there's no theme engine to switch. If a light mode or density options get built, they'll show up here."
           />
         )}
       </main>
