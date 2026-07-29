@@ -38,6 +38,7 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const isNew = params.get("new") === "1";
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" replace />;
+  if (profile && profile.waitlist_status !== "approved") return <Navigate to="/waitlist" replace />;
   if (profile?.onboarding_complete && !isNew) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
