@@ -352,6 +352,7 @@ export type Database = {
           updated_at: string
           user_id: string
           voice_id: string | null
+          waitlist_status: string
           weekly_streak: number
         }
         Insert: {
@@ -365,6 +366,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           voice_id?: string | null
+          waitlist_status?: string
           weekly_streak?: number
         }
         Update: {
@@ -378,6 +380,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           voice_id?: string | null
+          waitlist_status?: string
           weekly_streak?: number
         }
         Relationships: []
