@@ -27,6 +27,25 @@ interface Question {
 
 type Phase = "config" | "loading" | "question" | "feedback" | "results";
 
+// generated_question_sets isn't in the generated Supabase types yet (see
+// supabase/migrations/<its migration>_generated_question_sets.sql) — typed locally and cast
+// `as never`/`as any` at call sites, same pattern TrackPapers.tsx uses for generated_papers.
+interface GeneratedQuestionSet {
+  id: string;
+  user_id: string;
+  track_id: string;
+  title: string;
+  difficulty: "easy" | "medium" | "hard" | "exam";
+  question_type: "mixed" | "mcq" | "open";
+  topics: unknown;
+  questions: unknown;
+  answers: unknown;
+  score: number | null;
+  total_questions: number;
+  completed_at: string | null;
+  created_at: string;
+}
+
 export default function QuestionAttack() {
   const { trackId } = useParams();
   const { user } = useAuth();
@@ -52,11 +71,19 @@ export default function QuestionAttack() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answer, setAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [answersSoFar, setAnswersSoFar] = useState<{ answer: string; correct: boolean }[]>([]);
   const [feedback, setFeedback] = useState<{ correct: boolean; explanation: string } | null>(null);
   const [score, setScore] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [showMiniChat, setShowMiniChat] = useState(false);
   const [timer, setTimer] = useState(0);
+
+  // Persisted quiz row (generated_question_sets) — set once the current attempt's questions have
+  // been saved, so answers/score can be written back to the SAME row as the student progresses,
+  // mirroring TrackPapers.tsx's generated_papers pattern. Null for an attempt that failed to save
+  // (quiz still works locally, it just won't be resumable/recorded).
+  const [activeSetId, setActiveSetId] = useState<string | null>(null);
+  const [savedSets, setSavedSets] = useState<GeneratedQuestionSet[]>([]);
 
   useEffect(() => {
     if (!trackId || !user) return;
@@ -96,6 +123,12 @@ export default function QuestionAttack() {
     // collapsed and let search/expand do the work, instead of dumping hundreds of rows at once.
     const totalSubs = enriched.reduce((n, t) => n + t.subtopics.length, 0);
     setExpandedTopics(totalSubs <= 20 ? new Set(enriched.map(t => t.id)) : new Set());
+
+    const { data: qs } = await (supabase.from("generated_question_sets" as never) as any)
+      .select("*").eq("track_id", trackId!).eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+    setSavedSets((qs || []) as GeneratedQuestionSet[]);
+
     setLoading(false);
   };
 
@@ -139,11 +172,33 @@ export default function QuestionAttack() {
         },
       });
       if (resp.error) throw resp.error;
-      if (resp.data.questions?.length > 0) {
-        setQuestions(resp.data.questions);
+      const generated = resp.data.questions as Question[] | undefined;
+      if (generated && generated.length > 0) {
+        setQuestions(generated);
         setCurrentIdx(0);
         setScore(0);
+        setAnswersSoFar([]);
+        setActiveSetId(null);
         setPhase("question");
+
+        // Persist immediately so even an abandoned quiz is recoverable — mirrors
+        // TrackPapers.tsx's generated_papers row-per-attempt pattern. Best-effort: a save failure
+        // shouldn't block the quiz the student is about to take, it just won't be resumable.
+        const topicLabel = selectedTopicNames.map(t => t.topic).join(", ");
+        const title = topicLabel && topicLabel.length <= 60 ? topicLabel : (track?.title || "Question Attack");
+        const { data: inserted, error: insertError } = await (supabase.from("generated_question_sets" as never) as any)
+          .insert({
+            user_id: user!.id, track_id: trackId!, title,
+            difficulty, question_type: questionType, topics: selectedTopicNames,
+            questions: generated, answers: [], total_questions: generated.length,
+          })
+          .select().single();
+        if (!insertError && inserted) {
+          setActiveSetId((inserted as GeneratedQuestionSet).id);
+          setSavedSets(prev => [inserted as GeneratedQuestionSet, ...prev]);
+        } else if (insertError) {
+          console.error("Couldn't save question set:", insertError);
+        }
       } else throw new Error("No questions");
     } catch (err) {
       console.error("Question generation failed:", err);
@@ -158,6 +213,8 @@ export default function QuestionAttack() {
     if (!userAnswer?.trim()) return;
     setFeedbackLoading(true);
 
+    let isCorrect = false;
+    let explanationText = q.explanation;
     try {
       const resp = await supabase.functions.invoke("question-attack", {
         body: {
@@ -165,23 +222,37 @@ export default function QuestionAttack() {
           userAnswer, explanation: q.explanation, subject: track?.subject, level: track?.level,
         },
       });
-      const isCorrect = resp.data?.correct ?? false;
-      if (isCorrect) setScore(s => s + 1);
-      setFeedback({ correct: isCorrect, explanation: resp.data?.feedback || q.explanation });
+      isCorrect = resp.data?.correct ?? false;
+      explanationText = resp.data?.feedback || q.explanation;
     } catch {
-      const isCorrect = userAnswer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
-      if (isCorrect) setScore(s => s + 1);
-      setFeedback({ correct: isCorrect, explanation: q.explanation });
-    } finally {
-      setFeedbackLoading(false);
-      setPhase("feedback");
-      setShowMiniChat(false);
+      isCorrect = userAnswer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
+    }
+    if (isCorrect) setScore(s => s + 1);
+    setFeedback({ correct: isCorrect, explanation: explanationText });
+    setFeedbackLoading(false);
+    setPhase("feedback");
+    setShowMiniChat(false);
+
+    // Persist progress so an exited/abandoned quiz is genuinely resumable, mirroring
+    // TrackPapers.tsx's answers-in-progress update.
+    const nextAnswers = [...answersSoFar, { answer: userAnswer, correct: isCorrect }];
+    setAnswersSoFar(nextAnswers);
+    if (activeSetId) {
+      await (supabase.from("generated_question_sets" as never) as any).update({ answers: nextAnswers }).eq("id", activeSetId);
     }
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (currentIdx + 1 >= questions.length) {
       setPhase("results");
+      // Persist the final score + completion, mirroring TrackPapers.tsx's finish-of-paper update.
+      if (activeSetId) {
+        const completedAt = new Date().toISOString();
+        await (supabase.from("generated_question_sets" as never) as any)
+          .update({ score, completed_at: completedAt })
+          .eq("id", activeSetId);
+        setSavedSets(prev => prev.map(s => (s.id === activeSetId ? { ...s, score, completed_at: completedAt } : s)));
+      }
     } else {
       setCurrentIdx(i => i + 1);
       setAnswer("");
@@ -190,6 +261,24 @@ export default function QuestionAttack() {
       setShowMiniChat(false);
       setPhase("question");
     }
+  };
+
+  // Resume/review a saved question set from the config screen's history list — reuses the
+  // existing question/feedback/results phases with the saved questions+answers loaded back into
+  // state, same as starting a fresh quiz would from that point on.
+  const startFromSaved = (qs: GeneratedQuestionSet) => {
+    const existingAnswers = ((qs.answers as { answer: string; correct: boolean }[]) || []);
+    const qList = (qs.questions as Question[]) || [];
+    setQuestions(qList);
+    setAnswersSoFar(existingAnswers);
+    setScore(existingAnswers.filter(a => a.correct).length);
+    setCurrentIdx(existingAnswers.length);
+    setAnswer("");
+    setSelectedOption(null);
+    setFeedback(null);
+    setShowMiniChat(false);
+    setActiveSetId(qs.id);
+    setPhase(existingAnswers.length >= qList.length ? "results" : "question");
   };
 
   const currentQ = questions[currentIdx];
@@ -249,18 +338,34 @@ export default function QuestionAttack() {
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-sm font-medium text-foreground">Topics to test</h3>
-                <button
-                  onClick={() => {
-                    setSelectedSubtopics(prev => {
-                      const next = new Set(prev);
-                      visibleSubtopicIds.forEach(id => (allVisibleSelected ? next.delete(id) : next.add(id)));
-                      return next;
-                    });
-                  }}
-                  className="text-xs text-primary hover:underline"
-                >
-                  {allVisibleSelected ? "Deselect all" : "Select all"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      // Additive only, scoped to the current search filter same as "Select all" —
+                      // never deselects anything the student already picked.
+                      setSelectedSubtopics(prev => {
+                        const next = new Set(prev);
+                        visibleTopics.forEach(t => t.subtopics.forEach(s => { if (s.status === "complete") next.add(s.id); }));
+                        return next;
+                      });
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Select completed
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedSubtopics(prev => {
+                        const next = new Set(prev);
+                        visibleSubtopicIds.forEach(id => (allVisibleSelected ? next.delete(id) : next.add(id)));
+                        return next;
+                      });
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    {allVisibleSelected ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
                 {selectedSubtopics.size} of {totalSubtopics} subtopics selected
@@ -424,6 +529,37 @@ export default function QuestionAttack() {
             >
               <Brain className="h-4 w-4" /> Start Attack ({questionCount} questions)
             </button>
+
+            {savedSets.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Your question sets</h3>
+                <div className="space-y-2">
+                  {savedSets.map((s) => {
+                    const qs = (s.questions as Question[]) || [];
+                    const answered = ((s.answers as unknown[]) || []).length;
+                    const done = !!s.completed_at;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => startFromSaved(s)}
+                        className="w-full flex items-center gap-3 bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors text-left"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                          <Brain className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{s.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {done ? `${s.score}/${qs.length} correct` : answered > 0 ? `${answered}/${qs.length} answered — resume` : `${qs.length} questions`}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -556,7 +692,10 @@ export default function QuestionAttack() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setPhase("config"); setQuestions([]); setScore(0); setCurrentIdx(0); setShowMiniChat(false); }}
+                onClick={() => {
+                  setPhase("config"); setQuestions([]); setScore(0); setCurrentIdx(0); setShowMiniChat(false);
+                  setAnswersSoFar([]); setActiveSetId(null);
+                }}
                 className="flex-1 py-3 rounded-xl bg-accent text-foreground text-sm font-medium hover:bg-accent/80 transition-colors"
               >
                 New Attack

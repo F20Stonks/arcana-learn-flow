@@ -39,6 +39,14 @@ interface Props {
   answerRequest?: { xKey: string; yKey: string };
   /** Reports the marker's live (x, y) while the student drags it. */
   onAnswerChange?: (x: number, y: number) => void;
+  /** True while `payload` is a pinned saved-insight snapshot (see onSelectInsight) rather than the
+   * live session view — shows a small "back to session" banner instead of silently looking like
+   * the live teaching scene. */
+  viewingInsight?: boolean;
+  onExitInsight?: () => void;
+  /** Fired when the student clicks a saved insight in the Library tab that has a restorable
+   * payload — the parent decides how to display it (see SessionPage's pinnedInsightPayload). */
+  onSelectInsight?: (payload: Payload) => void;
 }
 
 interface InsightRow {
@@ -67,6 +75,9 @@ export default function MathTheater({
   onRestore,
   answerRequest,
   onAnswerChange,
+  viewingInsight = false,
+  onExitInsight,
+  onSelectInsight,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
@@ -335,6 +346,21 @@ export default function MathTheater({
         )}
       </div>
 
+      {/* Viewing a pinned saved-insight snapshot instead of the live session — a clear, dismissible
+          banner so this never gets mistaken for the live teaching scene. */}
+      {viewingInsight && tab === "theater" && (
+        <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-2 border-b bg-violet-500/10"
+          style={{ borderColor: mathTheme.grid }}>
+          <span className="text-xs text-violet-200">Viewing saved insight — this is a snapshot, not the live session</span>
+          <button
+            onClick={onExitInsight}
+            className="text-xs font-medium text-violet-100 hover:text-white underline underline-offset-2 shrink-0"
+          >
+            Back to session
+          </button>
+        </div>
+      )}
+
       {/* Theater body */}
       <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
         {isScene ? (
@@ -444,27 +470,47 @@ export default function MathTheater({
           <p className="text-xs" style={{ color: mathTheme.textDim }}>No insights yet. Save a snapshot from the Math Theater.</p>
         ) : (
           <div className="space-y-2">
-            {insights.map((it) => (
-              <div key={it.id} className="rounded-lg border p-3" style={{ borderColor: mathTheme.grid, background: "rgba(255,255,255,0.02)" }}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium truncate" style={{ color: mathTheme.text }}>{it.title}</div>
-                    <div className="text-[10px] uppercase tracking-wider" style={{ color: mathTheme.textDim }}>
-                      {it.environment} · {it.mode}
+            {insights.map((it) => {
+              const restorable = !!it.payload;
+              const restore = () => {
+                if (!restorable) return;
+                onSelectInsight?.(it.payload!);
+                setTab("theater");
+              };
+              return (
+                <div
+                  key={it.id}
+                  onClick={restore}
+                  role={restorable ? "button" : undefined}
+                  tabIndex={restorable ? 0 : undefined}
+                  onKeyDown={restorable ? (e) => { if (e.key === "Enter") restore(); } : undefined}
+                  title={restorable ? "Restore this visualization" : "Saved before visuals were included — nothing to restore"}
+                  className={`rounded-lg border p-3 transition-colors ${restorable ? "cursor-pointer hover:border-sky-400/40" : "opacity-50"}`}
+                  style={{ borderColor: mathTheme.grid, background: "rgba(255,255,255,0.02)" }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium truncate" style={{ color: mathTheme.text }}>{it.title}</div>
+                      <div className="text-[10px] uppercase tracking-wider" style={{ color: mathTheme.textDim }}>
+                        {it.environment} · {it.mode}
+                      </div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteInsight(it.id); }}
+                      className="text-slate-500 hover:text-red-400"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <button onClick={() => deleteInsight(it.id)} className="text-slate-500 hover:text-red-400">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="mt-2 space-y-0.5 text-xs" style={{ color: mathTheme.text }}>
+                    {(it.formulas || []).map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
+                  </div>
+                  <div className="mt-1 text-[10px]" style={{ color: mathTheme.textDim }}>
+                    {Object.entries(it.params || {}).map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed?.(2) ?? v : v}`).join(" · ")}
+                  </div>
                 </div>
-                <div className="mt-2 space-y-0.5 text-xs" style={{ color: mathTheme.text }}>
-                  {(it.formulas || []).map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
-                </div>
-                <div className="mt-1 text-[10px]" style={{ color: mathTheme.textDim }}>
-                  {Object.entries(it.params || {}).map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed?.(2) ?? v : v}`).join(" · ")}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

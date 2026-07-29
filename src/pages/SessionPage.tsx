@@ -1,5 +1,5 @@
 import { getBearerToken } from "@/lib/authHeader";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -160,6 +160,11 @@ export default function SessionPage() {
   const [vizHistory, setVizHistory] = useState<VizHistoryEntry[]>([]);
   const [activeVizId, setActiveVizId] = useState<string | null>(null);
 
+  // Set when the student clicks a saved insight in the Math Theater's Library tab — overrides what
+  // the theater displays with that static snapshot instead of the live session view, until
+  // dismissed. Never affects the live teaching state (currentPayload/vizHistory) underneath.
+  const [pinnedInsightPayload, setPinnedInsightPayload] = useState<SimulationPayload | SceneSpec | null>(null);
+
   // The currently-displayed payload — same fallback chain the Math Theater renders, hoisted here
   // so both the theater AND the point-on-plane answer control (which needs to know if a flat
   // scene is actually on screen right now) read the same value. Memoized: `resolveSimulationPayload`
@@ -226,7 +231,66 @@ export default function SessionPage() {
     };
   }, [isResizing]);
 
+  // Virtual math keyboard dock — MathLive's on-screen keyboard defaults to a `position: fixed`
+  // overlay appended to document.body, invisible to normal page layout/scroll. Pointing
+  // `mathVirtualKeyboard.container` at our own element (rendered below, near the input row) makes
+  // MathLive lay the keyboard out inside it instead of floating over content. `kbdHeight` (0 when
+  // closed) drives the dock's own height directly — MathLive's keyboard root (`.ML__keyboard`)
+  // renders its rows/toolbar as absolutely-positioned children, so it has NO natural content height
+  // of its own to auto-size a wrapping block against (confirmed live: `.ML__keyboard` measures 0px
+  // even once the rows are fully rendered at their real size) — a pure CSS "auto height capped by
+  // max-height" approach silently stays collapsed. `mathVirtualKeyboard.boundingRect` is MathLive's
+  // own public, kept-live measurement of its rows area (the "plate"); TOOLBAR_ALLOWANCE covers the
+  // separate toolbar row sitting above it, measured at ~42px live, given a little headroom.
+  const kbdDockRef = useRef<HTMLDivElement>(null);
+  const [kbdHeight, setKbdHeight] = useState(0);
+  const TOOLBAR_ALLOWANCE = 64;
+
+  const syncKbdHeight = useCallback(() => {
+    const kbd = window.mathVirtualKeyboard;
+    setKbdHeight(kbd?.visible ? Math.ceil(kbd.boundingRect.height) + TOOLBAR_ALLOWANCE : 0);
+  }, []);
+
+  useEffect(() => {
+    // window.mathVirtualKeyboard doesn't exist until the first <math-field> chip has ever mounted
+    // (same constraint MathSymbolPalette's own comment documents) — a fresh session's input starts
+    // empty, so poll briefly instead of assuming it's already there on mount. `geometrychange` fires
+    // whenever MathLive's own measurement of its rows area updates (open/close, and switching
+    // layers — e.g. symbols/greek — which can change row count/height).
+    let cancelled = false;
+    const trySetContainer = () => {
+      const kbd = window.mathVirtualKeyboard;
+      if (kbd && kbdDockRef.current) {
+        kbd.container = kbdDockRef.current;
+        kbd.addEventListener("geometrychange", syncKbdHeight);
+        return true;
+      }
+      return false;
+    };
+    if (trySetContainer()) return;
+    const id = setInterval(() => { if (trySetContainer() || cancelled) clearInterval(id); }, 250);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      window.mathVirtualKeyboard?.removeEventListener("geometrychange", syncKbdHeight);
+    };
+  }, [syncKbdHeight]);
+
+  useEffect(() => {
+    // Catches the toggle itself (this document-level listener mirrors MathSymbolPalette's own,
+    // firing after whatever handler — our button, or MathLive's own toggle inside a focused chip —
+    // already ran on the same click) — geometrychange alone only fires once content is already
+    // showing, not at the moment visibility flips.
+    document.addEventListener("click", syncKbdHeight);
+    return () => document.removeEventListener("click", syncKbdHeight);
+  }, [syncKbdHeight]);
+
   const goBack = () => {
+    // Leaving the session — however the student got here (Save & exit, End session's failure
+    // fallback, the summary overlay's "Back to track") — shouldn't leave MathLive's on-screen
+    // keyboard visually stuck open on whatever page loads next; nothing there necessarily has a
+    // math input to reclaim it.
+    window.mathVirtualKeyboard?.hide();
     const dest = topic?.track_id ? `/track/${topic.track_id}` : "/";
     navigate(dest, { replace: true });
   };
@@ -702,7 +766,8 @@ Return ONLY a JSON object — no prose, no markdown fences:
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -879,7 +944,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
         >
           <MathTheater
             subtopicId={subtopicId}
-            payload={currentPayload}
+            payload={pinnedInsightPayload ?? currentPayload}
             history={vizHistory}
             activeVizId={activeVizId}
             onSelectViz={(id) => setActiveVizId(id)}
@@ -888,9 +953,26 @@ Return ONLY a JSON object — no prose, no markdown fences:
             onRestore={() => setTheaterMinimized(false)}
             answerRequest={wantsPointAnswer ? POINT_ANSWER_KEYS : undefined}
             onAnswerChange={(x, y) => setAnswerPoint({ x, y })}
+            viewingInsight={!!pinnedInsightPayload}
+            onExitInsight={() => setPinnedInsightPayload(null)}
+            onSelectInsight={(payload) => setPinnedInsightPayload(payload)}
           />
         </div>
       </div>
+      </div>
+
+      {/* MathLive's on-screen keyboard renders INSIDE this dock (see the container-assignment
+          effect above) instead of as a fixed viewport overlay — collapsed to zero height (not
+          display:none, so MathLive's own layout/geometry reads still resolve correctly) when
+          hidden, so the page above is exactly one viewport tall and the toggle button never needs
+          scrolling to find. Opening it grows the PAGE downward in normal flow: scroll down to reach
+          the keyboard, scroll back up to see the chat + Math Theater with the keyboard just out of
+          view (rather than a disconnected overlay that can cover or orphan other UI). */}
+      <div
+        ref={kbdDockRef}
+        className="shrink-0 overflow-hidden transition-[height] duration-300 ease-in-out bg-card border-t border-border"
+        style={{ height: `${kbdHeight}px` }}
+      />
 
       {summary && (
         <SessionSummary
