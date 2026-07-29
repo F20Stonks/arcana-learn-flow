@@ -11,13 +11,15 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 
+type BillingCycle = "monthly" | "yearly";
+
 const plans = [
   {
     id: "free" as const,
     name: "Free",
-    price: "£0",
     tagline: "Try the workspace",
-    priceId: null as string | null,
+    monthly: { price: "£0", priceId: null as string | null, suffix: "" },
+    yearly: { price: "£0", priceId: null as string | null, suffix: "" },
     features: [
       "Small daily AI usage limits",
       "Chat, notes, and knowledge map",
@@ -28,9 +30,9 @@ const plans = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: "£19",
     tagline: "For serious learners",
-    priceId: "pro_monthly" as string | null,
+    monthly: { price: "£13.99", priceId: "pro_monthly" as string | null, suffix: "/mo" },
+    yearly: { price: "£9.79", priceId: "pro_yearly" as string | null, suffix: "/mo, billed yearly" },
     features: [
       "Generous usage limits",
       "Full question attack + past papers",
@@ -42,9 +44,9 @@ const plans = [
   {
     id: "ultra" as const,
     name: "Ultra",
-    price: "£39",
     tagline: "Unlimited everything",
-    priceId: "ultra_monthly" as string | null,
+    monthly: { price: "£23.99", priceId: "ultra_monthly" as string | null, suffix: "/mo" },
+    yearly: { price: "£16.79", priceId: "ultra_yearly" as string | null, suffix: "/mo, billed yearly" },
     features: [
       "Unlimited AI usage",
       "Access to the strongest models",
@@ -61,6 +63,7 @@ export default function PricingPage() {
   const { tier, isActive, cancelAtPeriodEnd, loading: subLoading, productId } = useSubscription();
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const [portalLoading, setPortalLoading] = useState(false);
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   const handleSelect = async (planId: "free" | "pro" | "ultra", priceId: string | null) => {
     if (!session) {
@@ -105,6 +108,23 @@ export default function PricingPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Choose your plan</h1>
           <p className="text-muted-foreground mt-3">Cancel anytime. Upgrades are prorated instantly.</p>
+          <div className="inline-flex items-center gap-1 mt-6 p-1 rounded-full border border-border bg-muted/40">
+            <button
+              type="button"
+              onClick={() => setCycle("monthly")}
+              className={`px-4 py-1.5 text-sm rounded-full transition ${cycle === "monthly" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setCycle("yearly")}
+              className={`px-4 py-1.5 text-sm rounded-full transition flex items-center gap-2 ${cycle === "yearly" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+            >
+              Yearly
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">Save 30%</span>
+            </button>
+          </div>
         </div>
 
         {isActive && (
@@ -125,6 +145,7 @@ export default function PricingPage() {
           {plans.map((plan) => {
             const isCurrent = isActive && productId === `${plan.id}_plan`;
             const canCheckout = plan.id !== "free" && !isCurrent;
+            const active = plan[cycle];
             return (
               <Card
                 key={plan.id}
@@ -137,8 +158,10 @@ export default function PricingPage() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">{plan.tagline}</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-semibold">{plan.price}</span>
-                  {plan.id !== "free" && <span className="text-muted-foreground">/mo</span>}
+                  <span className="text-4xl font-semibold">{active.price}</span>
+                  {plan.id !== "free" && (
+                    <span className="text-muted-foreground text-sm ml-1">{active.suffix}</span>
+                  )}
                 </div>
                 <ul className="space-y-2 mb-6 flex-1">
                   {plan.features.map((f) => (
@@ -151,7 +174,7 @@ export default function PricingPage() {
                 <Button
                   variant={plan.highlight ? "default" : "outline"}
                   disabled={isCurrent || subLoading || (canCheckout && checkoutLoading)}
-                  onClick={() => handleSelect(plan.id, plan.priceId)}
+                  onClick={() => handleSelect(plan.id, active.priceId)}
                 >
                   {isCurrent
                     ? "Current plan"
