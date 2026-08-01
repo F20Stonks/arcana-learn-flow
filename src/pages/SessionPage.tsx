@@ -243,10 +243,13 @@ export default function SessionPage() {
   // own public, kept-live measurement of its rows area (the "plate"); TOOLBAR_ALLOWANCE covers the
   // separate toolbar row sitting above it, measured at ~42px live, given a little headroom.
   const kbdDockRef = useRef<HTMLDivElement>(null);
+  const kbdDockedRef = useRef(false);
   const [kbdHeight, setKbdHeight] = useState(0);
   const TOOLBAR_ALLOWANCE = 64;
 
   const syncKbdHeight = useCallback(() => {
+    // Only the docked keyboard occupies layout space; the fallback overlay (iframe preview) floats.
+    if (!kbdDockedRef.current) return setKbdHeight(0);
     const kbd = window.mathVirtualKeyboard;
     setKbdHeight(kbd?.visible ? Math.ceil(kbd.boundingRect.height) + TOOLBAR_ALLOWANCE : 0);
   }, []);
@@ -258,10 +261,22 @@ export default function SessionPage() {
     // whenever MathLive's own measurement of its rows area updates (open/close, and switching
     // layers — e.g. symbols/greek — which can change row count/height).
     let cancelled = false;
+    // MathLive refuses to retarget the virtual keyboard container when the document is inside an
+    // iframe (Lovable's preview) and throws "Container inside an iframe cannot be changed", which
+    // took the whole page down via the error boundary. In that case just leave the keyboard as
+    // MathLive's default fixed overlay — it still works, it just isn't docked.
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
     const trySetContainer = () => {
       const kbd = window.mathVirtualKeyboard;
       if (kbd && kbdDockRef.current) {
-        kbd.container = kbdDockRef.current;
+        if (!inIframe) {
+          try {
+            kbd.container = kbdDockRef.current;
+            kbdDockedRef.current = true;
+          } catch {
+            /* keyboard stays as the default overlay */
+          }
+        }
         kbd.addEventListener("geometrychange", syncKbdHeight);
         return true;
       }
