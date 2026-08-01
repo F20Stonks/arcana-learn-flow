@@ -280,9 +280,17 @@ async function fetchLessonPlanForSubtopic(
   }
 }
 
-/** The ids the model claims were demonstrated, restricted to ids the plan actually defines. */
-function metCheckpointIds(raw: unknown, validIds: number[]): number[] {
-  if (!Array.isArray(raw)) return [];
+/**
+ * The ids the model claims were demonstrated, restricted to ids the plan actually defines.
+ *
+ * Returns null when the field is ABSENT rather than empty. That distinction is load-bearing: an
+ * empty array is a judgement ("none were demonstrated") and must gate completion, whereas a missing
+ * field is a FORMATTING failure by the model and says nothing about the student. Collapsing the two
+ * would let one dropped field cost a student their notes, concepts, XP and review schedule — all of
+ * which hang off `complete` below — for work they actually did.
+ */
+function metCheckpointIds(raw: unknown, validIds: number[]): number[] | null {
+  if (!Array.isArray(raw)) return null;
   const valid = new Set(validIds);
   return [...new Set(raw.map((v) => Number(v)).filter((n) => Number.isFinite(n) && valid.has(n)))].sort(
     (a, b) => a - b,
@@ -414,16 +422,31 @@ Respond ONLY with valid JSON:
     }
 
     // With a plan, the checkpoints ARE the completion bar (docs/lesson-plan-layer.md §6). Enforcing
-    // that here rather than trusting the rubric text is what turns it from a hope into a mechanism —
-    // and over-completion is the expensive failure: it permanently marks a subtopic done and
-    // schedules a review for material the session never covered. `unmet` is DERIVED from `met` rather
-    // than taken from the model, so a response that omits the field cannot silently pass the gate.
+    // it here rather than trusting the rubric text is what turns it from a hope into a mechanism —
+    // over-completion is the expensive failure, since it permanently marks a subtopic done and
+    // schedules a review for material the session never covered.
+    //
+    // But the gate applies ONLY when the model actually reported checkpoints. Everything downstream
+    // of `complete` — notes, concept extraction, subtopic status, review scheduling — is lost when it
+    // is false, so a model that simply omits a field it has never been asked for before must not cost
+    // a student the session they earned. Absent field => fall back to the general rubric, and say so
+    // loudly in the logs. An explicitly EMPTY array is a real judgement and still gates.
     const requiredCheckpointIds = plan ? plan.checkpoints.map((c) => c.id) : [];
-    const checkpointsMet = metCheckpointIds(result.checkpoints_met, requiredCheckpointIds);
-    const checkpointsUnmet = requiredCheckpointIds.filter((id) => !checkpointsMet.includes(id));
+    const reportedMet = metCheckpointIds(result.checkpoints_met, requiredCheckpointIds);
+    const checkpointsReported = plan !== null && reportedMet !== null;
+    const checkpointsMet = reportedMet ?? [];
+    const checkpointsUnmet = checkpointsReported
+      ? requiredCheckpointIds.filter((id) => !checkpointsMet.includes(id))
+      : [];
+
+    if (plan && !checkpointsReported) {
+      console.error(
+        "assessment omitted checkpoints_met despite a plan being supplied — falling back to the general completion rubric for this session",
+      );
+    }
 
     const complete = result.complete === true && checkpointsUnmet.length === 0;
-    if (plan && result.complete === true && checkpointsUnmet.length > 0) {
+    if (checkpointsReported && result.complete === true && checkpointsUnmet.length > 0) {
       console.log("completion withheld — checkpoints unmet:", checkpointsUnmet.join(", "));
     }
     const confidence: "low" | "medium" | "high" =

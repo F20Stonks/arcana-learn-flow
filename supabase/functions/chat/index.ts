@@ -20,8 +20,57 @@ const corsHeaders = {
 // waiting on one costs them the whole turn — so the lookup is hard-capped and the turn proceeds.
 const PLAN_LOOKUP_TIMEOUT_MS = 2000;
 
+// Signatures this instance has already asked to be authored. Authoring is idempotent on the server
+// (upsert by signature), so this is only to stop one instance re-firing on every turn of a session
+// that is still waiting for its first plan — not a correctness guarantee across instances.
+const authoringRequested = new Set<string>();
+
 function pickModel(_intensity: string, fallback: string): string {
   return fallback;
+}
+
+/**
+ * Fire-and-forget request to author a plan we just missed on. THIS IS WHAT MAKES THE CACHE FILL:
+ * nothing else in the system ever calls the authoring function, so without this the table stays
+ * empty and every session teaches on the miss path forever.
+ *
+ * Deliberately not awaited. The current turn is already teaching without a plan and must not wait
+ * ~30s for one; the plan lands for a later turn, the next session, and — since plans are global —
+ * for every other student who ever studies this subtopic.
+ */
+function requestAuthoring(context: any, signature: string, authHeader: string): void {
+  if (authoringRequested.has(signature)) return;
+  authoringRequested.add(signature);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  if (!SUPABASE_URL || !authHeader) return;
+
+  const p = fetch(`${SUPABASE_URL}/functions/v1/author-lesson-plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: authHeader },
+    body: JSON.stringify({
+      subject: context?.subject,
+      level: context?.level,
+      board: context?.examBoard,
+      topic: context?.topic,
+      subtopic: context?.subtopic,
+    }),
+  })
+    .then((r) => {
+      // Let a failed attempt be retried by a later turn rather than poisoning this instance.
+      if (!r.ok) authoringRequested.delete(signature);
+    })
+    .catch((e) => {
+      authoringRequested.delete(signature);
+      console.error("lesson plan authoring request failed:", e);
+    });
+
+  // Supabase kills the isolate once the response is sent unless the work is registered here.
+  try {
+    (globalThis as any).EdgeRuntime?.waitUntil?.(p);
+  } catch {
+    /* not available in every runtime — the promise still runs while the isolate is warm */
+  }
 }
 
 /**
@@ -35,8 +84,11 @@ function pickModel(_intensity: string, fallback: string): string {
  * Every failure path returns null, which renders no block at all and leaves the prompt exactly as it
  * is today. See docs/lesson-plan-layer.md §7: sessions must never block on, or break because of,
  * plan availability.
+ *
+ * A genuine cache MISS (as opposed to an error) also kicks off authoring in the background, which is
+ * how the cache ever fills in the first place.
  */
-async function fetchLessonPlan(context: any): Promise<LessonPlan | null> {
+async function fetchLessonPlan(context: any, authHeader: string): Promise<LessonPlan | null> {
   try {
     const identity = {
       subject: context?.subject,
@@ -70,12 +122,21 @@ async function fetchLessonPlan(context: any): Promise<LessonPlan | null> {
     } finally {
       clearTimeout(timer);
     }
-    if (!row) return null;
+    if (!row) {
+      // Confirmed absent rather than unreachable — author it for the turns and students that follow.
+      requestAuthoring(context, signature, authHeader);
+      return null;
+    }
 
     // A stored plan is still model output. Validate it: a malformed row must read as NO plan rather
     // than as a half-plan, because a half-plan silently teaches worse than no plan at all.
     const validated = validateLessonPlan(row.plan);
-    return validated.ok ? validated.plan : null;
+    if (!validated.ok) {
+      console.error("stored lesson plan failed validation, re-authoring:", validated.errors.join("; "));
+      requestAuthoring(context, signature, authHeader);
+      return null;
+    }
+    return validated.plan;
   } catch (e) {
     console.error("lesson plan lookup failed (teaching without a plan):", e);
     return null;
@@ -127,7 +188,7 @@ the notes, then say explicitly that the review is complete and stop posing new c
     // for one-shot JSON, not a teaching turn — the prompt below is replaced wholesale anyway) and for
     // review mode (retrieval practice on saved notes, not a first pass through the plan).
     const lessonPlan = (!systemOverride && context?.mode !== "review")
-      ? await fetchLessonPlan(context)
+      ? await fetchLessonPlan(context, req.headers.get("Authorization") || "")
       : null;
     // Empty string on a miss, so the prompt below is byte-for-byte what it is today when no plan exists.
     const lessonPlanBlock = lessonPlan ? renderPlanForTeaching(lessonPlan) : "";

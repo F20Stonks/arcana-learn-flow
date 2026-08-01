@@ -190,16 +190,55 @@ decorative.
 
 ## 6. Consumers
 
-**`chat`** receives the plan plus **which checkpoints are already met**, and executes:
-> "You are teaching toward checkpoint 2 of 4. Checkpoint 1 is met. Here is the mechanism that must
-> land, the misconception most likely in the way, and the case to contrast with. Route as *this*
-> student needs — the plan is terrain, not a script."
+**`chat`** fetches the plan server-side from the context the client already sends, so
+`SessionPage.tsx` needs no change and the plan — which contains the terminal transfer problem and
+the answers to the checkpoints — never reaches the student's browser.
 
-This is what makes the teaching loop enforceable: the session has state, not just prose to re-read.
-It also *shrinks* the prompt's live burden, which is why quality and cost improve together.
+The tutor is given the checkpoint list explicitly and told to work out silently, before replying,
+which are already evidenced in the transcript, then aim at the lowest unmet one.
 
-**`sceneDirector`** gets `scene_beats` — a scene request that already knows what must be manipulable
-and what would falsify the wrong model, rather than a one-line intent string.
+> **Corrected 2026-08-01.** An earlier draft of this section claimed `chat` also *receives* which
+> checkpoints are met. It does not: nothing stores met-checkpoints (see the follow-up below), so
+> that state channel does not exist. The shipped behaviour is the silent per-turn inference above.
+> That is still a large improvement on today — judging an explicit, enumerable list of 3-5 named
+> acts is a far more reliable call than re-deriving the whole six-stage loop from prose — but it is
+> inference, not stored state, and the distinction should not be papered over.
+
+**`sceneDirector`** does *not* read plans directly. It is frontend code (`src/lib/sceneDirector.ts`)
+that calls `chat` with a `systemOverride`, which is precisely the path where plan lookup is skipped.
+`scene_beats` therefore reach the Director only *indirectly*, via the EARNED SCENES block shaping the
+tutor's `<scene-request>`. That captures most of the value — the beat says what must be manipulable
+and what it falsifies, and the tutor passes that intent on — but wiring the Director to the plan
+directly is a genuine follow-up, and needs either a frontend change or a plan-bearing context on the
+`systemOverride` call.
+
+**`assess-session`** grades the transcript against `checkpoints` and `terminal_transfer` instead of
+the current subtopic-agnostic rubric. Completion becomes "this subtopic's checkpoints were met,"
+which is the honest meaning of the word.
+
+Two safeguards there, both load-bearing:
+- The checkpoint gate is enforced **in code**, not merely asserted in prompt text — otherwise it is
+  a hope, exactly like the six-stage loop it replaces.
+- The gate applies **only when the model actually reported checkpoints**. An explicitly empty array
+  is a judgement and gates; an *absent* field is a formatting failure and falls back to the general
+  rubric, loudly logged. Collapsing those two would let one dropped field cost a student their
+  notes, concepts, XP and review schedule — every one of which hangs off `complete` — for work they
+  genuinely did.
+
+## 6a. What fills the cache
+
+Nothing else in the system calls the authoring function, so without a trigger the table stays empty
+and every session teaches on the miss path forever. On a **confirmed** cache miss (absent row, not an
+unreachable database), `chat` fires a non-awaited request to `author-lesson-plan` and carries on
+teaching without a plan.
+
+The current turn never waits for authoring. The plan lands for a later turn, the next session, and —
+because plans are global — for every other student who ever studies that subtopic. The cache warms
+itself from real usage, with no batch job and no frontend involvement.
+
+A per-isolate set of in-flight signatures stops one instance re-firing on every turn of a session
+that is still waiting; a failed attempt clears its entry so a later turn can retry. The server-side
+upsert is idempotent, so concurrent sessions on the same subtopic cannot corrupt each other.
 
 **`assess-session`** grades the transcript against `checkpoints` and `terminal_transfer` instead of
 the current subtopic-agnostic rubric. Completion becomes "this subtopic's checkpoints were met,"
@@ -227,6 +266,22 @@ Per the standing quality bar, this ships only after a **breadth sweep**, not a d
 
 Literal 100% is not promisable from an LLM. The target is: never broken, always at least honest and
 useful, failure rate driven toward zero by measured coverage.
+
+## 8a. Known follow-ups (deliberately not in this pass)
+
+1. **Checkpoint outcomes are not persisted.** `sessions` has no jsonb or integer-array column and
+   nothing else is a natural home, so `checkpoints_met` / `checkpoints_unmet` are returned in the
+   response but stored nowhere. Adding `sessions.checkpoints_met` and `sessions.checkpoints_unmet`
+   would make unmet checkpoints usable for seeding the next session and for targeting reviews — the
+   obvious next unlock, and what would turn the per-turn inference above into real stored state.
+2. **The Scene Director does not read plans directly** (see §6).
+3. **The prerequisite gate still guesses.** The pre-flight tick-list AI-guesses prerequisites per
+   session, while the plan already carries an authored, cached `prerequisites` list. The gate should
+   read from the plan.
+4. **Review mode is deliberately excluded.** `chat` withholds the plan in review mode, so grading a
+   review transcript against checkpoints the tutor never saw would fail sessions for material the
+   review was never asked to cover — and would wrongly trip the lapse factor, shrinking intervals.
+   Reviews therefore keep today's rubric. Revisit only alongside a review-specific plan view.
 
 ## 9. Deployment note
 
