@@ -258,10 +258,21 @@ export default function SessionPage() {
     // whenever MathLive's own measurement of its rows area updates (open/close, and switching
     // layers — e.g. symbols/greek — which can change row count/height).
     let cancelled = false;
+    // MathLive refuses to retarget the virtual keyboard container when the document is inside an
+    // iframe (Lovable's preview) and throws "Container inside an iframe cannot be changed", which
+    // took the whole page down via the error boundary. In that case just leave the keyboard as
+    // MathLive's default fixed overlay — it still works, it just isn't docked.
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
     const trySetContainer = () => {
       const kbd = window.mathVirtualKeyboard;
       if (kbd && kbdDockRef.current) {
-        kbd.container = kbdDockRef.current;
+        if (!inIframe) {
+          try {
+            kbd.container = kbdDockRef.current;
+          } catch {
+            /* keyboard stays as the default overlay */
+          }
+        }
         kbd.addEventListener("geometrychange", syncKbdHeight);
         return true;
       }
