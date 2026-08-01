@@ -1,6 +1,14 @@
 import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import {
+  hasPlanIdentity,
+  LESSON_PLAN_VERSION,
+  type LessonPlan,
+  planSignature,
+  renderPlanForAssessment,
+  validateLessonPlan,
+} from "../_shared/lessonPlan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -212,6 +220,75 @@ async function tickMatchingSpecItems(
   }
 }
 
+/** PostgREST returns a many-to-one embed as an object, but some shapes come back wrapped in a
+ * one-element array. Normalise both rather than depend on which. */
+function embedded<T>(v: unknown): T | null {
+  if (v == null) return null;
+  return (Array.isArray(v) ? (v[0] as T) : (v as T)) || null;
+}
+
+/**
+ * Resolves the same globally-cached lesson plan the teaching turns used, from the subtopic id.
+ *
+ * The cache key is built from exactly the fields the client sends `chat` (subtopic/topic title,
+ * track subject/level/exam_board), read back out of the tables here — so the assessment grades
+ * against the very plan the tutor was teaching from, without widening the request contract.
+ *
+ * Every failure returns null, which leaves the rubric below exactly as it is today.
+ */
+async function fetchLessonPlanForSubtopic(
+  supabase: ReturnType<typeof createClient>,
+  subtopicId: string,
+): Promise<LessonPlan | null> {
+  try {
+    const { data, error } = await supabase
+      .from("subtopics")
+      .select("title, topics(title, learning_tracks(subject, level, exam_board))")
+      .eq("id", subtopicId)
+      .maybeSingle();
+    if (error || !data) return null;
+
+    const topic = embedded<{ title: string; learning_tracks: unknown }>((data as any).topics);
+    const track = embedded<{ subject: string; level: string | null; exam_board: string | null }>(
+      topic?.learning_tracks,
+    );
+    const identity = {
+      subject: track?.subject,
+      level: track?.level,
+      board: track?.exam_board,
+      topic: topic?.title,
+      subtopic: (data as any).title,
+    };
+    if (!hasPlanIdentity(identity)) return null;
+
+    const signature = await planSignature(identity);
+    const { data: planRow, error: planErr } = await supabase
+      .from("lesson_plans")
+      .select("plan")
+      .eq("signature", signature)
+      .eq("plan_version", LESSON_PLAN_VERSION)
+      .maybeSingle();
+    if (planErr || !planRow) return null;
+
+    // A stored plan is still model output — a malformed row must grade as NO plan (today's rubric),
+    // never as a partial bar that could pass a session on half the checkpoints.
+    const validated = validateLessonPlan((planRow as any).plan);
+    return validated.ok ? validated.plan : null;
+  } catch (e) {
+    console.error("lesson plan lookup failed (assessing on the general rubric):", e);
+    return null;
+  }
+}
+
+/** The ids the model claims were demonstrated, restricted to ids the plan actually defines. */
+function metCheckpointIds(raw: unknown, validIds: number[]): number[] {
+  if (!Array.isArray(raw)) return [];
+  const valid = new Set(validIds);
+  return [...new Set(raw.map((v) => Number(v)).filter((n) => Number.isFinite(n) && valid.has(n)))].sort(
+    (a, b) => a - b,
+  );
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
@@ -252,9 +329,24 @@ Deno.serve(async (req: Request) => {
     }
     const isReview = sessionType === "review";
 
+    // Learn sessions only: `chat` deliberately withholds the plan in review mode, so a review
+    // transcript was never produced against these checkpoints — grading it against a bar the tutor
+    // was never given would fail sessions for material the review was never asked to cover.
+    const plan = (supabase && realSubtopicId && !isReview)
+      ? await fetchLessonPlanForSubtopic(supabase, realSubtopicId)
+      : null;
+    // Both are "" without a plan, so the prompt is byte-for-byte today's when none exists.
+    const planBlock = plan ? `${renderPlanForAssessment(plan)}\n` : "";
+    const planCompletionRule = plan
+      ? `\n- CHECKPOINTS: every checkpoint listed above was demonstrated in the transcript. This is IN ADDITION to the requirements below, never instead of them — an unmet checkpoint means NOT complete no matter how strong the rest of the transcript is.`
+      : "";
+    const planJsonFields = plan
+      ? `,\n  "checkpoints_met": number[],\n  "checkpoints_unmet": number[]`
+      : "";
+
     const systemPrompt = `You are the assessment engine for an elite tutoring session (targets: 9.0 TMUA, STEP S, Olympiad medals). You read the FULL transcript of ONE session and return a strict JSON verdict. Be rigorous and repeatable — apply the rubrics literally. Do NOT award completion or XP for effort alone.
 ${isReview ? `\nThis is an ACTIVE-RECALL REVIEW session: the transcript tests recall of previously-learned material, it does not teach anything new. "complete" here means the student successfully recalled the material across the review's challenges. Leave "concepts_taught" and "concepts_required" as empty arrays (nothing new is taught in a review).\n` : ""}
-COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:
+${planBlock}COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:${planCompletionRule}
 - TRANSFER: the student solved at least one NOVEL problem (not a re-skin of a worked example) substantially unaided.
 - SELF-EXPLANATION: the student articulated the WHY — the mechanism that forces the result — in their OWN words (a freeform answer), not merely by picking correct options.
 - They reached and answered the session's hardest / terminal challenge correctly.
@@ -292,7 +384,7 @@ Respond ONLY with valid JSON:
   "xp_earned": number,
   "notes_to_save": [{"title": string, "content": string}],
   "concepts_taught": [{"name": string, "type": string, "definition": string, "aliases": string[]}],
-  "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]
+  "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]${planJsonFields}
 }`;
 
     const aiRes = await fetch(ai.url, {
@@ -321,7 +413,19 @@ Respond ONLY with valid JSON:
       return new Response(JSON.stringify(fallback), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const complete = result.complete === true;
+    // With a plan, the checkpoints ARE the completion bar (docs/lesson-plan-layer.md §6). Enforcing
+    // that here rather than trusting the rubric text is what turns it from a hope into a mechanism —
+    // and over-completion is the expensive failure: it permanently marks a subtopic done and
+    // schedules a review for material the session never covered. `unmet` is DERIVED from `met` rather
+    // than taken from the model, so a response that omits the field cannot silently pass the gate.
+    const requiredCheckpointIds = plan ? plan.checkpoints.map((c) => c.id) : [];
+    const checkpointsMet = metCheckpointIds(result.checkpoints_met, requiredCheckpointIds);
+    const checkpointsUnmet = requiredCheckpointIds.filter((id) => !checkpointsMet.includes(id));
+
+    const complete = result.complete === true && checkpointsUnmet.length === 0;
+    if (plan && result.complete === true && checkpointsUnmet.length > 0) {
+      console.log("completion withheld — checkpoints unmet:", checkpointsUnmet.join(", "));
+    }
     const confidence: "low" | "medium" | "high" =
       result.confidence === "high" || result.confidence === "medium" ? result.confidence : "low";
     const xpEarned = Math.max(10, Math.min(100, Math.round(Number(result.xp_earned) || 10)));
@@ -394,6 +498,11 @@ Respond ONLY with valid JSON:
       }
     }
 
+    // Checkpoint outcomes are NOT persisted: there is no column for them yet (`sessions` has no jsonb
+    // or int[] field, and nothing else is a natural home). Returning them keeps the signal observable
+    // — and usable for seeding the next session — until `sessions.checkpoints_met/_unmet` is added by
+    // whoever owns the schema. Omitted entirely when no plan exists, so the no-plan response shape is
+    // unchanged.
     return new Response(JSON.stringify({
       complete,
       confidence,
@@ -401,6 +510,7 @@ Respond ONLY with valid JSON:
       notes_to_save: notes,
       concepts_taught: conceptsTaught.map((c) => c.name),
       concepts_required: conceptsRequired.map((c) => c.name),
+      ...(plan ? { checkpoints_met: checkpointsMet, checkpoints_unmet: checkpointsUnmet } : {}),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("assess error:", e);

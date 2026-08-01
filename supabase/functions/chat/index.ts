@@ -1,5 +1,14 @@
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import {
+  hasPlanIdentity,
+  LESSON_PLAN_VERSION,
+  type LessonPlan,
+  planSignature,
+  renderPlanForTeaching,
+  validateLessonPlan,
+} from "../_shared/lessonPlan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,8 +16,70 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// A plan is a quality upgrade, never a dependency. Losing one costs the student a better lesson;
+// waiting on one costs them the whole turn — so the lookup is hard-capped and the turn proceeds.
+const PLAN_LOOKUP_TIMEOUT_MS = 2000;
+
 function pickModel(_intensity: string, fallback: string): string {
   return fallback;
+}
+
+/**
+ * Reads the cached lesson plan for this subtopic, server-side.
+ *
+ * The client already sends everything the cache key needs (subject/level/board/topic/subtopic), so
+ * the plan is resolved here rather than in the browser: the frontend needs no change, and the plan —
+ * which contains the terminal transfer problem and the answers to the checkpoints — never reaches
+ * the student's machine.
+ *
+ * Every failure path returns null, which renders no block at all and leaves the prompt exactly as it
+ * is today. See docs/lesson-plan-layer.md §7: sessions must never block on, or break because of,
+ * plan availability.
+ */
+async function fetchLessonPlan(context: any): Promise<LessonPlan | null> {
+  try {
+    const identity = {
+      subject: context?.subject,
+      level: context?.level,
+      board: context?.examBoard,
+      topic: context?.topic,
+      subtopic: context?.subtopic,
+    };
+    if (!hasPlanIdentity(identity)) return null;
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
+
+    const signature = await planSignature(identity);
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PLAN_LOOKUP_TIMEOUT_MS);
+    let row: { plan: unknown } | null = null;
+    try {
+      const { data, error } = await supabase
+        .from("lesson_plans")
+        .select("plan")
+        .eq("signature", signature)
+        .eq("plan_version", LESSON_PLAN_VERSION)
+        .abortSignal(controller.signal)
+        .maybeSingle();
+      if (error) return null;
+      row = (data as { plan: unknown } | null) || null;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!row) return null;
+
+    // A stored plan is still model output. Validate it: a malformed row must read as NO plan rather
+    // than as a half-plan, because a half-plan silently teaches worse than no plan at all.
+    const validated = validateLessonPlan(row.plan);
+    return validated.ok ? validated.plan : null;
+  } catch (e) {
+    console.error("lesson plan lookup failed (teaching without a plan):", e);
+    return null;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -52,6 +123,15 @@ rule — lead with the mechanism that forces the result, not a restatement of it
 the notes, then say explicitly that the review is complete and stop posing new challenges.`
       : "";
 
+    // Skipped for systemOverride (that path is the Scene Director / onboarding calling this function
+    // for one-shot JSON, not a teaching turn — the prompt below is replaced wholesale anyway) and for
+    // review mode (retrieval practice on saved notes, not a first pass through the plan).
+    const lessonPlan = (!systemOverride && context?.mode !== "review")
+      ? await fetchLessonPlan(context)
+      : null;
+    // Empty string on a miss, so the prompt below is byte-for-byte what it is today when no plan exists.
+    const lessonPlanBlock = lessonPlan ? renderPlanForTeaching(lessonPlan) : "";
+
     const systemPrompt = systemOverride || `You are Cortexed, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
 ${reviewBlock}
 
@@ -61,7 +141,7 @@ Context:
 - Subject: ${context?.subject || "General"}
 - Level: ${context?.level || "Not specified"}
 - Exam board: ${context?.examBoard || "Not specified"}
-${priorKnowledgeBlock}
+${priorKnowledgeBlock}${lessonPlanBlock}
 
 MISSION: make NOT understanding impossible. A concept is understood only when the student can (a) explain WHY it holds from its MECHANISM, (b) CONNECT it to what they already know, and (c) APPLY it to a NOVEL problem. A correct multiple-choice pick is NOT understanding — treat it as a hint they might be ready, never as proof.
 
@@ -100,7 +180,7 @@ HARD RULES (non-negotiable):
 8. WHY-FIRST EXPLANATION (the load-bearing rule): never state a result and then justify it afterwards. Lead
    with the MECHANISM that forces the result — name the load-bearing assumption it rests on, state the
    result as its inevitable consequence, and give the one-clause counterfactual ("drop that assumption and
-   it fails, because ..."). The "why" is the CONTENT of your ≤3 sentences, not extra length on top of them:
+   it fails, because ..."). The "why" is CARRIED BY the explanation itself, never appended to it afterwards:
    prefer "the leading term dominates as |x|→∞, so an odd-degree polynomial must change sign, so a real root
    is forced" over stating the theorem and then explaining it. A correct result with no mechanism is
    INCOMPLETE — structural/causal reasoning is the product, correctness is just the by-product.
