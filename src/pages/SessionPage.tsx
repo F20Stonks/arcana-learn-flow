@@ -243,6 +243,7 @@ export default function SessionPage() {
   // own public, kept-live measurement of its rows area (the "plate"); TOOLBAR_ALLOWANCE covers the
   // separate toolbar row sitting above it, measured at ~42px live, given a little headroom.
   const kbdDockRef = useRef<HTMLDivElement>(null);
+  const kbdDockedRef = useRef(false);
   const [kbdHeight, setKbdHeight] = useState(0);
   const TOOLBAR_ALLOWANCE = 64;
 
@@ -271,6 +272,7 @@ export default function SessionPage() {
         if (!inIframe) {
           try {
             kbd.container = kbdDockRef.current;
+            kbdDockedRef.current = true;
           } catch {
             /* keyboard stays as the default overlay */
           }
