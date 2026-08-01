@@ -485,7 +485,11 @@ Deno.serve(async (req: Request) => {
         plan,
         model: ai.model,
       },
-      { onConflict: "signature" },
+      // Must match the table's UNIQUE (signature, plan_version): uniqueness is per subtopic PER
+      // VERSION, so that bumping LESSON_PLAN_VERSION adds a plan beside its predecessor instead of
+      // destroying it. Naming only `signature` here would not match any constraint and the upsert
+      // would fail outright.
+      { onConflict: "signature,plan_version" },
     );
     // A failed write costs the next caller another authoring call; it must never cost THIS caller its
     // plan, which is already valid in hand.

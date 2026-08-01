@@ -56,9 +56,15 @@ function requestAuthoring(context: any, signature: string, authHeader: string): 
       subtopic: context?.subtopic,
     }),
   })
-    .then((r) => {
-      // Let a failed attempt be retried by a later turn rather than poisoning this instance.
-      if (!r.ok) authoringRequested.delete(signature);
+    .then(async (r) => {
+      // Authoring reports soft failures as { ok: false } at HTTP 200 — deliberately, so callers
+      // degrade instead of erroring. So the HTTP status says almost nothing here: branch on the
+      // BODY, or a run of failed attempts would look like successes and never be retried.
+      const body = await r.json().catch(() => null);
+      if (!r.ok || body?.ok !== true) {
+        authoringRequested.delete(signature);
+        console.error("lesson plan authoring did not produce a plan:", body?.errors ?? r.status);
+      }
     })
     .catch((e) => {
       authoringRequested.delete(signature);

@@ -12,7 +12,7 @@
 
 CREATE TABLE public.lesson_plans (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  signature TEXT NOT NULL UNIQUE, -- the global cache key; one row per subtopic identity
+  signature TEXT NOT NULL, -- the global cache key; one row per subtopic identity per version
   plan_version INTEGER NOT NULL DEFAULT 1, -- bump LESSON_PLAN_VERSION to regenerate every plan at once
   -- Denormalized identity. Never read by the cache lookup (the signature is the key) — these exist so
   -- a human can inspect, audit or spot-check the cache without reversing a hash.
@@ -23,7 +23,14 @@ CREATE TABLE public.lesson_plans (
   subtopic TEXT,
   plan JSONB NOT NULL, -- validated LessonPlan; a plan that failed validation is never stored
   model TEXT, -- which model authored it, so a quality regression can be traced to a model change
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Uniqueness is per (subtopic, version), NOT per subtopic. Keying on `signature` alone would make
+  -- `plan_version` a misnomer: bumping it would OVERWRITE the previous plan rather than sit beside it,
+  -- so an old plan could never be compared against its replacement or rolled back to. Plans are the
+  -- quality-critical artifact of this whole layer and are graded by hand against a written bar
+  -- (docs/lesson-plan-calibration.md) — being able to diff v1 against v2 for the same subtopic is
+  -- exactly what that grading needs. Superseded rows are a few KB of JSON; keep them.
+  UNIQUE (signature, plan_version)
 );
 ALTER TABLE public.lesson_plans ENABLE ROW LEVEL SECURITY;
 
@@ -35,6 +42,6 @@ CREATE POLICY "Authenticated users can view lesson plans" ON public.lesson_plans
 REVOKE ALL ON public.lesson_plans FROM anon;
 GRANT SELECT ON public.lesson_plans TO authenticated;
 
--- The only hot query is the cache lookup: signature + current plan_version. `signature` alone is
--- already indexed by its UNIQUE constraint, so this composite is the one index worth adding.
-CREATE INDEX idx_lesson_plans_signature_version ON public.lesson_plans(signature, plan_version);
+-- The only hot query is the cache lookup: signature + current plan_version — which the UNIQUE
+-- (signature, plan_version) constraint above already indexes, leading on signature. No further index
+-- is worth its write cost.

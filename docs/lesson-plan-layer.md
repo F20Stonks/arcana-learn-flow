@@ -282,6 +282,15 @@ useful, failure rate driven toward zero by measured coverage.
    review transcript against checkpoints the tutor never saw would fail sessions for material the
    review was never asked to cover — and would wrongly trip the lapse factor, shrinking intervals.
    Reviews therefore keep today's rubric. Revisit only alongside a review-specific plan view.
+5. **`scene_beats.after_checkpoint` is currently advisory.** `renderPlanForTeaching()` emits every
+   beat regardless of which checkpoints are evidenced, so "earned after checkpoint N" lives only as
+   prose in the prompt rather than as gating. It becomes enforceable once checkpoint state is
+   persisted (follow-up 1).
+6. **Authoring has no rate limit.** Any authenticated user can POST an arbitrary `subtopic` string
+   to `author-lesson-plan` and trigger an expensive call; there is no allowlist tying the request to
+   a real subtopic in a real track. Harmless while the user base is the developer and a few testers,
+   but it is a cost/abuse vector that needs a guard before real users — list it with the pre-launch
+   items, not the nice-to-haves.
 
 ## 9. Deployment note
 
