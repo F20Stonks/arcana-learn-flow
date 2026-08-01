@@ -1319,6 +1319,24 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec]);
 
+  // Arrow-key step navigation — skipped while the student is typing anywhere else on the page
+  // (chat input, math composer chips) so the keys aren't hijacked from text entry.
+  useEffect(() => {
+    if (!hasSteps) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "MATH-FIELD" || target?.isContentEditable;
+      if (isTyping) return;
+      e.preventDefault();
+      if (e.key === "ArrowLeft") setStepIdx((i) => Math.max(0, i - 1));
+      else setStepIdx((i) => Math.min(steps.length - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [hasSteps, steps.length]);
+
   const style: Style = useMemo(() => {
     const used = collectColors(spec.objects);
     return { colorMap: buildColorMap(used, theme.palette), glow: theme.glow, flat: !!spec.flat };
