@@ -247,6 +247,8 @@ export default function SessionPage() {
   const TOOLBAR_ALLOWANCE = 64;
 
   const syncKbdHeight = useCallback(() => {
+    // Only the docked keyboard occupies layout space; the fallback overlay (iframe preview) floats.
+    if (!kbdDockedRef.current) return setKbdHeight(0);
     const kbd = window.mathVirtualKeyboard;
     setKbdHeight(kbd?.visible ? Math.ceil(kbd.boundingRect.height) + TOOLBAR_ALLOWANCE : 0);
   }, []);
