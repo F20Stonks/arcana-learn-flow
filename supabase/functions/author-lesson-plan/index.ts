@@ -255,7 +255,9 @@ function parsePlanJson(content: string): unknown | null {
  * here — but only as retry feedback: a shape-valid plan that still trips one of these is stored
  * anyway, because degrading a usable plan to no plan at all would be the worse outcome.
  */
-const INTERNAL_STATE = /\b(understands?|understanding|knows|appreciates?|comfortable|familiar|grasps?|aware)\b/i;
+// Matches the state word only where it is the VERB of the checkpoint. Bare "familiar"/"aware" are
+// left out on purpose: "applies it to an unfamiliar configuration" is a perfectly good checkpoint.
+const INTERNAL_STATE = /\b(?:understands?|understanding\s+of|knows|appreciates?|grasps?|is\s+(?:comfortable|familiar|aware))\b/i;
 
 // Stopwords are stripped before comparing, otherwise two short strings look similar merely for both
 // being English. Measured over hand-written good/bad pairs across GCSE→undergrad maths and physics,
