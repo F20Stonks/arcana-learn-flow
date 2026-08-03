@@ -47,6 +47,10 @@ interface Props {
   /** Fired when the student clicks a saved insight in the Library tab that has a restorable
    * payload — the parent decides how to display it (see SessionPage's pinnedInsightPayload). */
   onSelectInsight?: (payload: Payload) => void;
+  /** Predict-before-reveal gate (see SessionPage): true when the current scene's staged FINAL
+   * step must stay hidden until the student answers the turn's challenge. Forwarded straight to
+   * Scene3D — MathTheater has no gating logic of its own. */
+  lockFinalStep?: boolean;
 }
 
 interface InsightRow {
@@ -78,6 +82,7 @@ export default function MathTheater({
   viewingInsight = false,
   onExitInsight,
   onSelectInsight,
+  lockFinalStep = false,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
@@ -371,6 +376,7 @@ export default function MathTheater({
               onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
               theme={vizTheme}
               bottomInset={sliders.length > 0 ? 92 : 0}
+              lockFinalStep={lockFinalStep}
             />
           </SceneErrorBoundary>
         ) : (

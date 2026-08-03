@@ -11,7 +11,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Line, Text, Html } from "@react-three/drei";
 import { parse, type EvalFunction } from "mathjs";
 import * as THREE from "three";
-import { ZoomIn, ZoomOut, RotateCcw, Play, Pause, SkipBack, ChevronLeft, ChevronRight } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Play, Pause, SkipBack, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import type {
   SceneSpec,
   Primitive,
@@ -1279,6 +1279,12 @@ interface Props {
   theme: VizTheme;
   /** height (px) of any panel overlaying the canvas bottom (e.g. sliders) */
   bottomInset?: number;
+  /** Predict-before-reveal gate: when true and the scene has 2+ staged steps, the FINAL step
+   * (the Director's own "payoff" convention — see sceneDirector.ts's staging rule) is not
+   * reachable via Next/dots/arrow-keys. Purely a navigation clamp — the payoff primitives are
+   * simply never rendered until the caller flips this to false, once the student has committed
+   * an answer to the turn's challenge. No effect on scenes without staged steps. */
+  lockFinalStep?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1286,7 +1292,7 @@ type OrbitControlsImpl = any;
 
 let specSeq = 0;
 
-export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 }: Props) {
+export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0, lockFinalStep = false }: Props) {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
@@ -1294,6 +1300,9 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
 
   const steps = spec.steps ?? [];
   const hasSteps = steps.length > 0;
+  // The highest step index currently reachable by student navigation. Locked turns can advance
+  // up through the second-to-last step (the build-up) but not the final one (the payoff).
+  const maxStepIdx = lockFinalStep && steps.length > 1 ? steps.length - 2 : steps.length - 1;
   const [stepIdx, setStepIdx] = useState(0);
   // remount primitives per scene so entrance animations replay
   const specKey = useMemo(() => ++specSeq, [spec]);
@@ -1319,6 +1328,14 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec]);
 
+  // Defensive clamp: if a locked gate is somehow active on remount with a stale stepIdx already
+  // past the reachable max (shouldn't normally happen since every spec change resets to 0), pull
+  // it back rather than leaving the payoff visible.
+  useEffect(() => {
+    setStepIdx((i) => Math.min(i, maxStepIdx));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxStepIdx]);
+
   // Arrow-key step navigation — skipped while the student is typing anywhere else on the page
   // (chat input, math composer chips) so the keys aren't hijacked from text entry.
   useEffect(() => {
@@ -1331,11 +1348,11 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
       if (isTyping) return;
       e.preventDefault();
       if (e.key === "ArrowLeft") setStepIdx((i) => Math.max(0, i - 1));
-      else setStepIdx((i) => Math.min(steps.length - 1, i + 1));
+      else setStepIdx((i) => Math.min(maxStepIdx, i + 1));
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [hasSteps, steps.length]);
+  }, [hasSteps, maxStepIdx]);
 
   const style: Style = useMemo(() => {
     const used = collectColors(spec.objects);
@@ -1462,29 +1479,42 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0 
               {steps[stepIdx]?.caption && (
                 <div className="text-[10px] text-slate-400 mt-0.5">{steps[stepIdx].caption}</div>
               )}
+              {lockFinalStep && stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 && (
+                <div className="text-[10px] text-amber-300 mt-0.5 flex items-center justify-center gap-1">
+                  <Lock className="h-2.5 w-2.5" /> Answer below to reveal the result
+                </div>
+              )}
             </div>
             <button
-              onClick={() => setStepIdx((i) => Math.min(steps.length - 1, i + 1))}
-              disabled={stepIdx === steps.length - 1}
-              title="Next step"
+              onClick={() => setStepIdx((i) => Math.min(maxStepIdx, i + 1))}
+              disabled={stepIdx === maxStepIdx}
+              title={stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? "Answer the challenge below to unlock" : "Next step"}
               className={`${btnCls} disabled:opacity-30 disabled:pointer-events-none ${
-                stepIdx < steps.length - 1 ? "border-sky-400/50" : ""
+                stepIdx < maxStepIdx ? "border-sky-400/50" : ""
               }`}
             >
-              <ChevronRight className="h-3.5 w-3.5" />
+              {stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? (
+                <Lock className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
             </button>
           </div>
           <div className="flex items-center gap-1">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setStepIdx(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === stepIdx ? "w-4 bg-sky-400" : i < stepIdx ? "w-1.5 bg-sky-400/50" : "w-1.5 bg-white/20"
-                }`}
-                title={steps[i].title}
-              />
-            ))}
+            {steps.map((_, i) => {
+              const locked = i > maxStepIdx;
+              return (
+                <button
+                  key={i}
+                  onClick={() => !locked && setStepIdx(i)}
+                  disabled={locked}
+                  className={`h-1.5 rounded-full transition-all disabled:cursor-not-allowed ${
+                    i === stepIdx ? "w-4 bg-sky-400" : i < stepIdx ? "w-1.5 bg-sky-400/50" : locked ? "w-1.5 bg-amber-300/30" : "w-1.5 bg-white/20"
+                  }`}
+                  title={locked ? "Locked until you answer the challenge below" : steps[i].title}
+                />
+              );
+            })}
           </div>
         </div>
       )}

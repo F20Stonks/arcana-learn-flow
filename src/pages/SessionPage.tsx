@@ -173,12 +173,32 @@ export default function SessionPage() {
   // dragged points) back to defaults every second. This was a real, pre-existing bug, not just a
   // theoretical one: it would have made the new point-on-plane marker snap back to the origin
   // every second too.
-  const activeViz = vizHistory.find((v) => v.id === activeVizId)?.payload;
+  const activeVizEntry = vizHistory.find((v) => v.id === activeVizId);
+  const activeViz = activeVizEntry?.payload;
   const currentPayload = useMemo(
     () => activeViz ?? resolveSimulationPayload({ subtopic, topic, track }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeViz, subtopic, topic, track],
   );
+
+  // Predict-before-reveal gate: the Scene Director's own staging convention (sceneDirector.ts)
+  // treats a staged scene's FINAL step as the payoff — the invariant/result highlighted. If the
+  // assistant turn that requested this scene also posed a challenge (<choices>) the student
+  // hasn't answered yet, keep that final step locked (see Scene3D's `lockFinalStep`) so the
+  // picture can't confirm an answer that hasn't been committed. Structural, not a prompt ask:
+  // scenes with no steps, or turns with no challenge, are completely unaffected. A pinned saved
+  // insight (a static snapshot, not the live turn) is never gated.
+  const lockFinalStep = useMemo(() => {
+    if (pinnedInsightPayload) return false;
+    if (!activeVizEntry || !isSceneSpec(activeVizEntry.payload)) return false;
+    const steps = activeVizEntry.payload.steps;
+    if (!steps || steps.length < 2) return false;
+    const sceneMsg = messages[activeVizEntry.messageIndex];
+    if (!sceneMsg || sceneMsg.role !== "assistant") return false;
+    if (!extractChoices(sceneMsg.content).choices) return false;
+    const answered = messages.length > activeVizEntry.messageIndex + 1;
+    return !answered;
+  }, [pinnedInsightPayload, activeVizEntry, messages]);
 
   // Live (x, y) of the point-on-plane answer marker, reported by MathTheater while the student
   // drags it. Null until the marker's first position is reported.
@@ -534,7 +554,12 @@ Return ONLY a JSON object — no prose, no markdown fences:
             if (!viz) return;
             const id = `${idx}-${Math.random().toString(36).slice(2, 7)}`;
             const preview = isSceneSpec(viz) ? viz.title || "scene" : viz.labels?.abstract?.title || viz.archetype.replace("_", " ");
-            restoredViz.push({ id, payload: viz, preview, messageIndex: idx + 1 });
+            // messageIndex is the assistant message's OWN index in `messages` (matches the live
+            // creation sites below, where `newMessages.length` is that same index because the
+            // assistant reply hasn't been appended yet at the point the entry is created) — the
+            // predict-before-reveal gate above depends on `messages[entry.messageIndex]` actually
+            // being this scene's originating assistant turn.
+            restoredViz.push({ id, payload: viz, preview, messageIndex: idx });
           });
           if (restoredViz.length) {
             setVizHistory(restoredViz);
@@ -1059,6 +1084,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
             viewingInsight={!!pinnedInsightPayload}
             onExitInsight={() => setPinnedInsightPayload(null)}
             onSelectInsight={(payload) => setPinnedInsightPayload(payload)}
+            lockFinalStep={lockFinalStep}
           />
         </div>
       </div>
