@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,8 @@ import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
 import MiniChat from "@/components/MiniChat";
 import QuestionDiagram from "@/components/workspace/QuestionDiagram";
+import MathSymbolPalette from "@/components/MathSymbolPalette";
+import RichMathField, { type RichMathFieldHandle } from "@/components/RichMathField";
 import { coerceScene } from "@/lib/sceneSpec";
 import "katex/dist/katex.min.css";
 
@@ -77,6 +79,7 @@ export default function QuestionAttack() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [showMiniChat, setShowMiniChat] = useState(false);
   const [timer, setTimer] = useState(0);
+  const answerFieldRef = useRef<RichMathFieldHandle>(null);
 
   // Persisted quiz row (generated_question_sets) — set once the current attempt's questions have
   // been saved, so answers/score can be written back to the SAME row as the student progresses,
@@ -616,13 +619,20 @@ export default function QuestionAttack() {
                 })}
               </div>
             ) : (
-              <textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Type your answer..."
-                rows={4}
-                className="w-full bg-card border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground outline-hidden focus:border-primary/30 resize-none"
-              />
+              <div className="space-y-2">
+                <MathSymbolPalette onInsert={(latex) => answerFieldRef.current?.insertLatex(latex)} />
+                <div className="bg-card border border-border rounded-xl p-4 focus-within:border-primary/30 transition-colors">
+                  <RichMathField
+                    ref={answerFieldRef}
+                    value={answer}
+                    onChange={setAnswer}
+                    placeholder="Type your answer…"
+                    disabled={feedbackLoading}
+                    autoFocus
+                    className="w-full min-h-[6rem] bg-transparent text-sm text-foreground outline-hidden whitespace-pre-wrap break-words leading-relaxed"
+                  />
+                </div>
+              </div>
             )}
 
             <button
