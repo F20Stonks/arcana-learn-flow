@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
+import { ArrowLeft, ArrowDown, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
@@ -190,6 +190,12 @@ export default function SessionPage() {
   // InteractionPanel falls back to freeform instead of the theater rendering a broken control.
   const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant");
   const lastChoices = !isStreaming && lastAssistantMsg ? extractChoices(lastAssistantMsg.content).choices : null;
+
+  // Index of the current exchange's start — the most recent user turn (and whatever assistant
+  // reply follows it). Everything before this index is a "prior exchange" and gets visually
+  // de-emphasized in the transcript (see the messages.map below). Falls back to 0 (nothing muted)
+  // before any user turn exists, e.g. a review session's AI-initiated opener.
+  const latestExchangeStart = messages.reduce((acc, m, idx) => (m.role === "user" ? idx : acc), 0);
   const wantsPointAnswer = lastChoices?.type === "point" && isSceneSpec(currentPayload);
   useEffect(() => { if (!wantsPointAnswer) setAnswerPoint(null); }, [wantsPointAnswer]);
 
@@ -324,9 +330,56 @@ export default function SessionPage() {
   };
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Auto-scroll used to fire on every streamed token (any `messages` change, including the
+  // in-place content update on each delta) — if a student scrolled up mid-response to re-read
+  // something, the very next token yanked them back to the bottom within a second. Now it only
+  // fires at turn boundaries (a message was actually ADDED, not just edited in place) and only when
+  // the student is already following along near the bottom. Otherwise a small "Jump to latest"
+  // affordance appears instead of forcing the scroll.
+  const prevMessageCountRef = useRef(0);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const NEAR_BOTTOM_PX = 80;
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    bottomRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  const jumpToLatest = () => {
+    scrollToBottom();
+    setShowJumpToLatest(false);
+    setIsNearBottom(true);
+  };
+
+  // Track whether the student is near the bottom of the transcript so we know whether to follow
+  // new content or leave them where they are.
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+      setIsNearBottom(nearBottom);
+      if (nearBottom) setShowJumpToLatest(false);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    // A turn boundary is a message being ADDED (length change) — not the same last message's
+    // content growing token-by-token while streaming (length unchanged).
+    const isNewTurn = messages.length !== prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
+    if (!isNewTurn) return;
+    if (isNearBottom) {
+      scrollToBottom();
+    } else {
+      setShowJumpToLatest(true);
+    }
+  }, [messages, isNearBottom, scrollToBottom]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => setSessionTime((t) => t + 1), 1000);
@@ -780,6 +833,16 @@ Return ONLY a JSON object — no prose, no markdown fences:
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
+  // Coarser, minute-granularity readout for the header's peripheral timer (below) — deliberately
+  // less precise than `formatTime`'s mm:ss (still used for the end-of-session summary, a one-time
+  // static display where the extra precision is fine) so the visible text only changes once a
+  // minute instead of ticking every second in the corner of the eye. `sessionTime` itself is
+  // untouched and still updates every second underneath — this only throttles what's rendered.
+  const formatSessionMinutes = (s: number) => {
+    const mins = Math.floor(s / 60);
+    return mins < 1 ? "<1 min" : `${mins} min`;
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="h-screen flex flex-col overflow-hidden">
@@ -803,7 +866,10 @@ Return ONLY a JSON object — no prose, no markdown fences:
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{formatTime(sessionTime)}</div>
+          {/* Demoted from a ticking mm:ss to a minute-granularity readout — CompletionGoal (in the
+              transcript panel below) is the primary ambient "how much is left" signal now; this is
+              just a quiet peripheral reference, not something that should visibly move every second. */}
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground/70"><Clock className="h-3 w-3" />{formatSessionMinutes(sessionTime)}</div>
           {xpEarned > 0 && <div className="flex items-center gap-1 text-xs text-xp"><Zap className="h-3.5 w-3.5" />+{xpEarned}</div>}
           <div className="lg:hidden flex items-center gap-0.5 bg-accent rounded-lg p-0.5">
             <button
@@ -847,7 +913,8 @@ Return ONLY a JSON object — no prose, no markdown fences:
           className={`min-h-0 border-r border-border flex-col ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}
           style={{ flex: `1 1 ${theaterMinimized ? "100%" : `${100 - theaterWidthPct}%`}` }}
         >
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="relative flex-1 min-h-0">
+          <div ref={chatScrollRef} className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
             {messages.length === 0 && !isStreaming && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-sm">
@@ -901,8 +968,16 @@ Return ONLY a JSON object — no prose, no markdown fences:
             {messages.map((msg, i) => {
               const isUser = msg.role === "user";
               const text = isUser ? msg.content : cleanAssistantText(msg.content);
+              // Information hierarchy, not decoration: turns from before the current exchange (the
+              // most recent user message and its reply) fade to a lower visual weight as the
+              // transcript grows over a long session, so the student's eye lands on what's active
+              // right now. Nothing is hidden or removed — still fully visible and scrollable-to.
+              const isPriorExchange = i < latestExchangeStart;
               return (
-                <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                <div
+                  key={i}
+                  className={`flex ${isUser ? "justify-end" : "justify-start"} transition-opacity duration-300 ${isPriorExchange ? "opacity-55" : ""}`}
+                >
                   <div
                     className={
                       isUser
@@ -927,6 +1002,19 @@ Return ONLY a JSON object — no prose, no markdown fences:
               </div>
             )}
             <div ref={bottomRef} />
+          </div>
+
+          {/* Unobtrusive re-entry point when a student has scrolled up to re-read something mid-
+              response — the transcript no longer force-scrolls to find them, so this is the only
+              way back to the live edge. Disappears the moment they're back near the bottom. */}
+          {showJumpToLatest && (
+            <button
+              onClick={jumpToLatest}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-md hover:bg-accent transition-colors animate-in fade-in slide-in-from-bottom-1 duration-200"
+            >
+              <ArrowDown className="h-3.5 w-3.5" /> Jump to latest
+            </button>
+          )}
           </div>
 
           {!isReview && messages.length > 0 && <CompletionGoal selfExplained={selfExplained} />}
