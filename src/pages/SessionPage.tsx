@@ -195,7 +195,13 @@ export default function SessionPage() {
     if (!steps || steps.length < 2) return false;
     const sceneMsg = messages[activeVizEntry.messageIndex];
     if (!sceneMsg || sceneMsg.role !== "assistant") return false;
-    if (!extractChoices(sceneMsg.content).choices) return false;
+    // Every turn ends with SOME challenge (mandatory per the tutor prompt) — most are plain
+    // MCQ/scaffolding checks unrelated to this specific scene's payoff. Only a "freeform"
+    // challenge (generate/predict/self-explain, loop stage 3) is actually asking the student to
+    // predict what the picture will show, so only that type should gate the reveal. Locking on
+    // any attached challenge over-triggered: a scene could get locked behind an MCQ that has
+    // nothing to do with it, which is friction with no pedagogical payoff.
+    if (extractChoices(sceneMsg.content).choices?.type !== "freeform") return false;
     const answered = messages.length > activeVizEntry.messageIndex + 1;
     return !answered;
   }, [pinnedInsightPayload, activeVizEntry, messages]);
