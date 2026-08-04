@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useSearchParams } from "react-router-dom";
-import { Loader as Loader2 } from "lucide-react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Loader as Loader2 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -50,7 +50,19 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 relative">
+      {/* Explicit way back to the landing page. BrandLogo below is already a Link to "/", but a
+          wordmark carries no affordance saying so — arriving here (especially straight from an
+          external link, where there's no history to go back through) otherwise reads as a dead end.
+          A plain Link, never navigate(-1): /auth is frequently the entry URL. */}
+      <Link
+        to="/"
+        className="absolute top-5 left-5 sm:top-6 sm:left-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </Link>
+
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <BrandLogo className="text-3xl tracking-tight" />
