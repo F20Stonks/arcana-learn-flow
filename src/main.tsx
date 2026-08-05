@@ -6,6 +6,11 @@ import App from "./App.tsx";
 import "@fontsource-variable/instrument-sans";
 import "@fontsource/instrument-serif/400.css";
 import "@fontsource/instrument-serif/400-italic.css";
+// Book-text serif (not Instrument Serif, which has no bold cut at all) — used to make reference-paper
+// question text read like the original typeset exam paper rather than the app's UI font.
+import "@fontsource/newsreader/400.css";
+import "@fontsource/newsreader/400-italic.css";
+import "@fontsource/newsreader/700.css";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
