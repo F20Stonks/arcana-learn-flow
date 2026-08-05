@@ -84,7 +84,10 @@ async function main() {
   console.log("Rasterizing pages...");
   const screenshots = await parser.getScreenshot({ scale: RASTER_SCALE, imageBuffer: true });
   await parser.destroy();
-  const pageImages = screenshots.pages.map((p) => p.data.toString("base64"));
+  // p.data is a plain Uint8Array (not a Node Buffer) — Uint8Array.toString() silently ignores an
+  // encoding argument and joins raw byte values with commas instead of base64-encoding them. Wrapping
+  // in Buffer.from() first is required to actually get base64 out.
+  const pageImages = screenshots.pages.map((p) => Buffer.from(p.data).toString("base64"));
   console.log(`Rasterized ${pageImages.length} pages.`);
 
   const body = {
