@@ -158,7 +158,9 @@ Deno.serve(async (req: Request) => {
     if (!res.ok) {
       const detail = await res.text();
       console.error("segmentation AI error:", res.status, detail);
-      return json({ ok: false, errors: [`segmentation model returned ${res.status}`] }, 502);
+      // TEMPORARY debug: surface the upstream error detail to the caller so the pilot's first live
+      // failure can be diagnosed without dashboard/log access. Revert to a generic message once resolved.
+      return json({ ok: false, errors: [`segmentation model returned ${res.status}`, detail.slice(0, 1000)] }, 502);
     }
 
     const data = await res.json();
