@@ -44,10 +44,14 @@ mechanically extracted from the same PDF (may be empty or unreliable for scanned
 a cross-check, the images are the source of truth).
 
 Transcribe every question directly from the images into clean, correct LaTeX for all mathematical
-notation. Use $...$ for inline math and $$...$$ for display math.
+notation. Use $...$ for inline math and $$...$$ for display math. Preserve the source's typographic
+emphasis exactly as printed: wrap bold text in **double asterisks** and italic prose (not math — math
+variables are already italic by LaTeX convention and need no markup) in *single asterisks*. Do not add
+emphasis that isn't in the source, and do not skip emphasis that is.
 
 Split the paper into its individual numbered questions, preserving multi-part structure ((i), (ii),
-(iii)...) within a single question's text rather than splitting sub-parts into separate questions. If
+(iii)...) within a single question's text — put each numbered or lettered sub-part on its own line so
+the structure is visible — rather than splitting sub-parts into separate questions. If
 the paper has labelled sections (e.g. "Section A: Pure Mathematics"), use them as a strong signal for
 topic tagging, but tag topics at the level of actual mathematical/physical content (e.g. "binomial
 expansion", "projectile motion"), not just the section name.

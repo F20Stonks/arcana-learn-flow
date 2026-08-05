@@ -32,17 +32,38 @@ const BUCKET = "reference-papers";
 
 // The segmentation model writes single newlines between sub-parts ("(a) ...\n(b) ..."), which
 // CommonMark treats as a soft break (collapses to a space) rather than a visual line break — every
-// sub-part reads as one run-on paragraph. Doubling every newline forces each onto its own paragraph;
-// markdown collapses 3+ consecutive newlines the same as 2, so this is safe even where the source
-// already used a real paragraph break.
-const withParagraphBreaks = (text: string) => text.replace(/\n/g, "\n\n");
+// sub-part reads as one run-on paragraph. This both forces each part onto its own paragraph AND
+// indents roman-numeral parts ("(i)", "(ii)"...) and lettered sub-parts ("(a)", "(b)"...) the way the
+// original paper does, by wrapping them in markdown blockquotes (nesting one level deeper for letters)
+// — reusing MathRenderer's existing safe blockquote handling rather than injecting raw HTML into
+// AI-generated content. The blockquote's "quoted text" look (italic, muted, colored border) is
+// neutralized below in QUESTION_TEXT_CLASSES, so only the indentation survives.
+const ROMAN_PART = /^\([ivx]+\)/i;
+const LETTER_PART = /^\([a-z]\)/;
+const withStructure = (text: string) =>
+  text
+    .split(/\n+/)
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return "";
+      if (LETTER_PART.test(trimmed)) return `> > ${trimmed}`;
+      if (ROMAN_PART.test(trimmed)) return `> ${trimmed}`;
+      return trimmed;
+    })
+    .filter(Boolean)
+    .join("\n\n");
 
 // Scoped overrides for MathRenderer's output on this page only (Tailwind arbitrary descendant
 // selectors) — larger, more open typography for long multi-part exam questions, without touching
 // MathRenderer.tsx itself, so chat/teaching surfaces elsewhere in the app are unaffected.
 const QUESTION_TEXT_CLASSES =
-  "[&_.math-renderer_p]:text-[15px] [&_.math-renderer_p]:leading-[1.85] [&_.math-renderer_p]:mb-4 " +
-  "[&_.math-renderer_p:last-child]:mb-0 [&_.katex-display]:my-3 [&_.katex]:text-[1.05em]";
+  "font-[Newsreader] [&_.math-renderer_p]:text-[16px] [&_.math-renderer_p]:leading-[1.85] [&_.math-renderer_p]:mb-4 " +
+  "[&_.math-renderer_p:last-child]:mb-0 [&_.katex-display]:my-3 [&_.katex]:text-[1.05em] " +
+  // Blockquotes are reused purely for (i)/(a)-style indentation (see withStructure above) — strip the
+  // "quoted text" treatment (border, italic, muted color) so only the indentation is visible. Nested
+  // blockquotes (lettered sub-parts) compound the padding automatically for a deeper second level.
+  "[&_.math-renderer_blockquote]:border-0 [&_.math-renderer_blockquote]:not-italic " +
+  "[&_.math-renderer_blockquote]:text-foreground [&_.math-renderer_blockquote]:pl-6 [&_.math-renderer_blockquote]:mb-0";
 
 export default function ReferenceQuestions() {
   const [params] = useSearchParams();
@@ -128,7 +149,7 @@ export default function ReferenceQuestions() {
 
             <div className="px-6 py-5 space-y-4">
               <div className={QUESTION_TEXT_CLASSES}>
-                <MathRenderer content={withParagraphBreaks(q.question_text)} />
+                <MathRenderer content={withStructure(q.question_text)} />
               </div>
 
               {q.has_diagram && (
@@ -150,7 +171,7 @@ export default function ReferenceQuestions() {
                 <details className="text-sm group">
                   <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium py-1">Solution</summary>
                   <div className={`mt-3 pl-4 border-l-2 border-border ${QUESTION_TEXT_CLASSES}`}>
-                    <MathRenderer content={withParagraphBreaks(q.solution_text)} />
+                    <MathRenderer content={withStructure(q.solution_text)} />
                   </div>
                 </details>
               )}
