@@ -184,7 +184,9 @@ Deno.serve(async (req: Request) => {
 
     const rawQuestions = (parsed as { questions?: unknown[] })?.questions;
     if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
-      return json({ ok: false, errors: ["segmentation returned no questions"] }, 502);
+      // TEMPORARY debug: same as the upstream-error branch above — surface what the model actually
+      // returned so an empty/malformed result can be diagnosed without dashboard/log access.
+      return json({ ok: false, errors: ["segmentation returned no questions", content.slice(0, 1500)] }, 502);
     }
 
     const questions: (IngestedQuestion & { has_diagram: boolean })[] = rawQuestions
