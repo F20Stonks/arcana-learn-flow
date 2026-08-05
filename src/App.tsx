@@ -14,6 +14,7 @@ import QuestionAttack from "./pages/QuestionAttack";
 import TrackPapers from "./pages/TrackPapers";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
+import ReferenceQuestions from "./pages/ReferenceQuestions";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 import PricingPage from "./pages/PricingPage";
@@ -78,6 +79,9 @@ function AppRoutes() {
       <Route path="/track/:trackId/papers" element={<DashboardGuard><TrackPapers /></DashboardGuard>} />
       <Route path="/session/:subtopicId" element={<DashboardGuard><SessionPage /></DashboardGuard>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
+          from any nav yet (direct URL only) until the UX is approved. */}
+      <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
