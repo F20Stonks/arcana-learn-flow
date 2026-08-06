@@ -28,6 +28,7 @@ import UpNextCard from "@/components/UpNextCard";
 import TrackCard from "@/components/TrackCard";
 import GeneralChat from "@/components/GeneralChat";
 import SafeBoundary from "@/components/SafeBoundary";
+import StepBankCard from "@/components/StepBankCard";
 import { SubtopicLite, TrackLite } from "@/lib/nextAction";
 import { useNextAction } from "@/hooks/useNextAction";
 import {
@@ -294,6 +295,18 @@ export default function Dashboard() {
               </button>
             </div>
           )}
+        </section>
+
+        {/* Practice — corpus-wide surfaces that aren't scoped to any one track. */}
+        <section className="mt-12">
+          <div className="reveal mb-4" style={{ animationDelay: "520ms" }}>
+            <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
+              Practice <span className="font-serif-accent font-normal">papers</span>
+            </h2>
+          </div>
+          <SafeBoundary label="STEP question bank" compact>
+            <StepBankCard delay={560} />
+          </SafeBoundary>
         </section>
 
         {/* Archived */}
