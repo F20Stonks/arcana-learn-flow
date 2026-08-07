@@ -55,8 +55,8 @@ thing that actually matters. A background phase the sweep can't observe is a pha
 the sweep called the default async path, every row would report `grounding: "queued"` and an
 `unverified`/empty coverage record, and the whole matrix would look identical whether grounding
 eventually worked, silently failed, or never ran at all. `mode:"sync"` trades sweep latency (each row is
-now a full skeleton → expand → per-topic-search → per-topic-regenerate pipeline, run to completion) for
-a result that actually says something about grounding quality.
+now a full skeleton → expand → resolve-one-real-document → chunk → regenerate-per-chunk pipeline, run
+to completion) for a result that actually says something about grounding quality.
 
 ---
 
@@ -100,10 +100,11 @@ passing checks 1-5 while failing the one check that says whether the syllabus wa
 against anything real.
 
 The script runs the matrix **sequentially, not in parallel** — each row is itself a multi-call
-authoring pipeline (skeleton → ungrounded expansion → per-topic grounded regeneration, batched and
-pooled internally in `author-syllabus-tree/index.ts`), and firing multiple rows at once on top of that
-reliably trips gateway rate limits and turns a real defect into a misleading transport failure. Expect a
-full run to take a while; that's the cost of a result that means something.
+authoring pipeline (skeleton → ungrounded expansion → resolve the ONE real specification document for
+this syllabus → chunk it → regenerate topics per chunk, pooled internally in
+`author-syllabus-tree/index.ts`), and firing multiple rows at once on top of that reliably trips
+gateway rate limits and turns a real defect into a misleading transport failure. Expect a full run to
+take a while; that's the cost of a result that means something.
 
 Raw JSON for every row is written to `scripts/sweep-syllabus-trees-results.json` (or wherever `--out`
 points) specifically so the next section can happen.
