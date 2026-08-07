@@ -163,6 +163,16 @@ Deno.serve(async (req: Request) => {
       ? context.intensity
       : "balanced";
 
+    const learnerNotes: string = typeof context?.learnerNotes === "string" ? context.learnerNotes.trim() : "";
+    const learnerStyleNotes: string = typeof context?.learnerStyleNotes === "string" ? context.learnerStyleNotes.trim() : "";
+    const learnerCardBlock = (learnerNotes || learnerStyleNotes)
+      ? `
+
+LEARNER CARD — persists across every session for this student, follow it exactly:
+${learnerNotes ? `- Their own stated instructions: "${learnerNotes}"` : ""}
+${learnerStyleNotes ? `- What past sessions have observed about how they learn: ${learnerStyleNotes}` : ""}`
+      : "";
+
     const knownConcepts: string[] = Array.isArray(context?.knownConcepts) ? context.knownConcepts : [];
     const prerequisites: { name: string; known: boolean }[] = Array.isArray(context?.prerequisites) ? context.prerequisites : [];
     const priorKnowledgeBlock = (knownConcepts.length || prerequisites.length)
@@ -208,7 +218,7 @@ Context:
 - Subject: ${context?.subject || "General"}
 - Level: ${context?.level || "Not specified"}
 - Exam board: ${context?.examBoard || "Not specified"}
-${priorKnowledgeBlock}${lessonPlanBlock}
+${priorKnowledgeBlock}${learnerCardBlock}${lessonPlanBlock}
 
 MISSION: make NOT understanding impossible. A concept is understood only when the student can (a) explain WHY it holds from its MECHANISM, (b) CONNECT it to what they already know, and (c) APPLY it to a NOVEL problem. A correct multiple-choice pick is NOT understanding — treat it as a hint they might be ready, never as proof.
 
