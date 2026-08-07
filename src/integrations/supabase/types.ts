@@ -202,6 +202,7 @@ export type Database = {
           id: string
           level: string | null
           subject: string
+          syllabus_tree_id: string | null
           title: string
           user_id: string
         }
@@ -214,6 +215,7 @@ export type Database = {
           id?: string
           level?: string | null
           subject: string
+          syllabus_tree_id?: string | null
           title: string
           user_id: string
         }
@@ -226,8 +228,59 @@ export type Database = {
           id?: string
           level?: string | null
           subject?: string
+          syllabus_tree_id?: string | null
           title?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_tracks_syllabus_tree_id_fkey"
+            columns: ["syllabus_tree_id"]
+            isOneToOne: false
+            referencedRelation: "syllabus_trees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_plans: {
+        Row: {
+          board: string | null
+          created_at: string
+          id: string
+          level: string | null
+          model: string | null
+          plan: Json
+          plan_version: number
+          signature: string
+          subject: string | null
+          subtopic: string | null
+          topic: string | null
+        }
+        Insert: {
+          board?: string | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          model?: string | null
+          plan: Json
+          plan_version?: number
+          signature: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
+        }
+        Update: {
+          board?: string | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          model?: string | null
+          plan?: Json
+          plan_version?: number
+          signature?: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
         }
         Relationships: []
       }
@@ -346,6 +399,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          learner_notes: string | null
+          learner_style_notes: string | null
           onboarding_complete: boolean
           subscription_tier: string
           total_xp: number
@@ -360,6 +415,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          learner_notes?: string | null
+          learner_style_notes?: string | null
           onboarding_complete?: boolean
           subscription_tier?: string
           total_xp?: number
@@ -374,6 +431,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          learner_notes?: string | null
+          learner_style_notes?: string | null
           onboarding_complete?: boolean
           subscription_tier?: string
           total_xp?: number
@@ -693,6 +752,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      syllabus_trees: {
+        Row: {
+          board: string | null
+          coverage: Json | null
+          created_at: string
+          id: string
+          level: string | null
+          model: string | null
+          signature: string
+          subject: string | null
+          tree: Json
+          tree_version: number
+        }
+        Insert: {
+          board?: string | null
+          coverage?: Json | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          model?: string | null
+          signature: string
+          subject?: string | null
+          tree: Json
+          tree_version?: number
+        }
+        Update: {
+          board?: string | null
+          coverage?: Json | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          model?: string | null
+          signature?: string
+          subject?: string | null
+          tree?: Json
+          tree_version?: number
+        }
+        Relationships: []
       }
       topics: {
         Row: {
