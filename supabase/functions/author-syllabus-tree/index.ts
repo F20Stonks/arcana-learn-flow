@@ -295,7 +295,9 @@ async function groundTree(
     return { topics: draft, coverage: { verdict: "unverified", topics_grounded: 0, topics_total: total } };
   }
 
-  const doc = await resolveSpecDocument(id.board || "", id.subject || "", id.level || null, tavilyKey).catch((e) => {
+  const doc = await resolveSpecDocument(
+    id.board || "", id.subject || "", id.level || null, tavilyKey, draft.map((t) => t.title),
+  ).catch((e) => {
     console.error("spec document resolution failed:", e);
     return null;
   });

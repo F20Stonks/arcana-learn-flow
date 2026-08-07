@@ -168,19 +168,64 @@ export async function searchTopicSpecText(
   }
 }
 
+const STOPWORDS = new Set([
+  "and", "the", "for", "with", "from", "into", "their", "this", "that", "using", "used",
+]);
+
+/** Significant (>= 4 chars, non-stopword) lowercase words from a topic title, used as the fingerprint
+ *  a real specification document should contain. */
+function significantWords(title: string): string[] {
+  return title
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+}
+
+/**
+ * How many of the syllabus's OWN topics this text plausibly covers, by literal keyword presence.
+ *
+ * This is what actually distinguishes a real specification from a long-but-irrelevant page (a video
+ * description, a forum thread, a "what's in this spec" summary article) — all three can be long
+ * enough to pass a length floor, but none of them densely mention this syllabus's own vocabulary the
+ * way its own specification necessarily does. A topic counts as "hit" once at least half of its
+ * significant words (or all of them, if there's only one) appear in the text.
+ */
+function relevanceScore(text: string, topicTitles: string[]): number {
+  const lower = text.toLowerCase();
+  let hits = 0;
+  for (const title of topicTitles) {
+    const words = significantWords(title);
+    if (words.length === 0) continue;
+    const present = words.filter((w) => lower.includes(w)).length;
+    if (present >= Math.max(1, Math.ceil(words.length / 2))) hits++;
+  }
+  return hits;
+}
+
+/** Below this, a document isn't meaningfully "about" this syllabus even if it's long and well-formed
+ *  — it's a coincidence, not the specification. Deliberately low: a genuine spec should clear it by a
+ *  wide margin, so this exists to reject wrong-document matches, not to be a precision target. */
+const MIN_RELEVANCE_HITS = 3;
+
 /**
  * Find and read the ONE document that IS the specification for this syllabus, in full.
  *
- * Tries every search result in order (not just the first "usable" one) and keeps the LONGEST
- * extracted text across all of them. Length is the signal that matters here: a landing page or a
- * "what's in this spec" summary article both parse successfully and both pass `looksLikeUsableText`,
- * but neither is anywhere near `MIN_DOCUMENT_CHARS` — only the actual specification document is.
+ * Tries every search result (not just the first "usable" one) and keeps whichever scores highest on
+ * `relevanceScore` against this syllabus's own topic titles — NOT whichever is longest. An earlier
+ * version of this function picked purely by length, and it failed exactly the way that invites: for
+ * "Edexcel A-Level Mathematics" it selected a YouTube video page over the real Pearson PDF, because
+ * the video's page text (description, captions, related-content blurbs) happened to be longer than
+ * what the fetch reached for the actual document. Length is not evidence of being the right document;
+ * containing this syllabus's own vocabulary is. `topicTitles` should be the draft tree's topic titles
+ * — whatever the fast, ungrounded pass already produced — since that is the cheapest available
+ * fingerprint of what this syllabus is actually about.
  */
 export async function resolveSpecDocument(
   board: string,
   subject: string,
   level: string | null,
   tavilyApiKey: string,
+  topicTitles: string[],
 ): Promise<SpecExcerpt | null> {
   const query = `${board} ${level || ""} ${subject} full specification pdf`.replace(/\s+/g, " ").trim();
   try {
@@ -194,13 +239,22 @@ export async function resolveSpecDocument(
     const results: { title: string; url: string; raw_content?: string }[] = data.results || [];
 
     let best: SpecExcerpt | null = null;
+    let bestScore = -1;
     for (const r of results) {
       let text = looksLikeUsableText(r.raw_content) ? r.raw_content! : null;
       if (!text) text = await fetchDocumentFallback(r.url);
       if (!text || text.length < MIN_DOCUMENT_CHARS) continue;
-      if (!best || text.length > best.text.length) {
+
+      const score = relevanceScore(text, topicTitles);
+      if (score < MIN_RELEVANCE_HITS) continue; // long, but not plausibly about this syllabus at all
+
+      if (score > bestScore) {
+        bestScore = score;
         best = { text: text.slice(0, MAX_DOCUMENT_CHARS), sourceUrl: r.url };
       }
+    }
+    if (best) {
+      console.log(`resolveSpecDocument: picked ${best.sourceUrl} (relevance score ${bestScore}/${topicTitles.length})`);
     }
     return best;
   } catch {
