@@ -1,6 +1,10 @@
 # The Syllabus Tree Layer
 
-**Status:** design agreed and implemented 2026-08-07, not yet deployed (see §10).
+**Status:** implemented 2026-08-07. The table and the first version of the function are LIVE
+(migration run, function deployed, both confirmed by direct check). The two-phase per-topic grounding
+rewrite in §6 is implemented but **needs `author-syllabus-tree` redeployed** before it takes effect —
+until then the deployed function still does the old whole-syllabus audit described as flawed in §6.
+No tree has yet been verified by breadth sweep (§8).
 **Companion docs:** `lesson-plan-layer.md` (the layer directly below this one), `knowledge-tracker-framework.md`,
 project CLAUDE.md.
 
@@ -45,28 +49,61 @@ improvisation of one per student.**
 This is the same move as the lesson plan layer, one level up — and it is what makes that layer
 actually pay off:
 
+Two phases, and the second one is the point (§6 covers why):
+
 ```
 onboarding goal  →  subject / level / board
                           │
                           ▼
                  ┌──────────────────┐
-                 │ author-syllabus- │   ONE expensive multi-pass call, per syllabus, EVER
-                 │ tree (cached)    │   shared across every student, globally
+                 │ author-syllabus- │   cache lookup by signature
+                 │ tree             │
                  └──────────────────┘
-                          │  syllabus_trees row (jsonb topics + coverage)
-                          ▼
-                 track instantiation
-              (topics + subtopics COPIED
-               into learning_tracks/topics/subtopics)
                           │
-                          ▼
-              student studies subtopic "X"
-                          │
-                          ▼
-              author-lesson-plan keyed on subtopic string "X"
-        ── now the SAME "X" for every student on this syllabus ──
-                  lesson_plans cache starts concentrating
+             ┌────────────┴────────────┐
+        cache HIT                  cache MISS
+     (grounded tree,                   │
+      instant)                         ▼
+             │                ┌───────────────────┐
+             │                │ FAST phase         │  skeleton + ungrounded batch
+             │                │ (seconds)          │  expansion — returned to the
+             │                └───────────────────┘  student immediately, NEVER cached
+             │                          │
+             │                          ▼
+             │              track instantiation
+             │           (topics + subtopics COPIED
+             │            into learning_tracks/topics/subtopics)
+             │                          │
+             │            canonical identity? ── no ──▶ grounding SKIPPED
+             │                          │ yes               (nothing to cache anyway)
+             │                          ▼
+             │                ┌───────────────────┐
+             │                │ GROUNDED phase     │  per topic: real spec search +
+             │                │ background, via    │  one regenerate call — collapses
+             │                │ EdgeRuntime.wait-  │  expand/audit/repair into ONE
+             │                │ Until (mode:"sync" │  call per topic (§6)
+             │                │ forces it inline)  │
+             │                └───────────────────┘
+             │                          │
+             │              topics_grounded/total ≥ 0.6 ?
+             │                          │ yes
+             └──────────────  syllabus_trees row (cached, coverage.verdict="grounded")
+                                          │
+                                          ▼
+                            NEXT student on this signature → cache HIT
+                                          │
+                                          ▼
+                            student studies subtopic "X"
+                                          │
+                                          ▼
+                            author-lesson-plan keyed on subtopic string "X"
+                      ── now the SAME "X" for every student on this syllabus ──
+                                lesson_plans cache starts concentrating
 ```
+
+The first student on any given goal always pays the FAST path and gets an ungrounded tree; only
+students who arrive after grounding has landed in the cache get the checked, `grounded` one. §6 covers
+why that trade-off is accepted rather than making everyone wait.
 
 Fixing the tree fixes the keys one layer down. Before this layer, `lesson_plans` had a combinatorial
 number of near-duplicate keys (one set per student's own subtopic phrasing) and hit rate stayed near
@@ -130,6 +167,8 @@ type SyllabusTopic = { title: string; subtopics: string[] };
 
 type SyllabusCoverage = {
   verdict: "grounded" | "unverified";
+  topics_grounded?: number;
+  topics_total?: number;
   source_url?: string;
   missing?: string[];
 };
@@ -139,7 +178,8 @@ type SyllabusTree = { topics: SyllabusTopic[]; coverage: SyllabusCoverage };
 
 `subtopics` is deliberately just `string[]`, not richer objects — the tree's whole job is naming the
 session-grain decomposition; everything about *how* to teach a given subtopic belongs one layer down,
-in the lesson plan keyed on that string. `SyllabusCoverage` is covered in §6.
+in the lesson plan keyed on that string. `topics_grounded`/`topics_total` is the honest measure behind
+`verdict` — see §6, which covers `SyllabusCoverage` in full.
 
 ### `syllabus_trees` table (`20260807120000_syllabus_trees.sql`)
 
@@ -170,42 +210,85 @@ back to the exact row that generated it, and so a future "your syllabus has an u
 has something to diff against. Existing tracks (generated before this layer existed) keep `NULL`, which
 correctly reads as "no tree, pre-dates this layer" rather than an error.
 
-## 6. Verification (the coverage record)
+## 6. Verification: the two-phase split, and why grounding replaced auditing
 
-This is what makes global caching *safe* rather than merely *fast*.
+This is what makes global caching *safe* rather than merely *fast* — and it is the section that
+changed most in this pass. The mechanism below **replaces** the original whole-tree audit-and-repair
+pass entirely; that mechanism no longer exists.
 
-Caching multiplies quality in **both** directions. A great tree, cached, benefits every future student
-on that goal for free. An incomplete tree, cached, **silently truncates the syllabus for every future
-student on that goal** — and unlike the per-student gamble in §1, this failure is now durable and
-invisible, because nothing else in the product knows the tree is short. Structural validation
-(`validateSyllabusTree` — well-formed JSON, non-empty subtopics, sane caps) cannot catch this class of
-bug at all: a tree can be perfectly well-formed and still be missing an entire spec section.
+**The flaw in the first version.** The initial design ran the whole assembled tree through one audit
+call against a single spec excerpt `resolveOfficialSpec` resolved for the entire identity — at most
+~6,000 characters from one search result. A real A-Level specification is a hundred-page document, so
+that excerpt is roughly 1-2% of it. The audit prompt was, correctly, told never to infer that something
+was missing just because the excerpt stopped — which made it structurally incapable of catching the
+dominant failure mode: material missing from **both** the tree and the excerpt. It largely
+rubber-stamped whatever the fast pass produced. `specChecklistResolver.ts` had already hit and
+documented this exact wall while building the spec-checklist feature ("a single flat search-and-truncate
+grab is nowhere near enough text to cover a real syllabus's full line items") and solved it by resolving
+spec text **per topic** instead. `specSearch.ts` (`searchTopicSpecText`, `getTavilyKey`,
+`fetchHtmlFallback`) now holds that fix as a shared module, extracted unchanged so the two consumers
+don't drift; this layer reuses it rather than re-deriving the same lesson.
 
-So, after the skeleton and expansion passes assemble a tree, `verifyAndRepair` in
-`author-syllabus-tree/index.ts` runs one more step:
+**FAST phase (`buildFastTree`).** A skeleton call produces the topic list, then `expandTopics` fans out
+ungrounded batches (`EXPAND_BATCH_SIZE = 4` topics per call, `EXPAND_CONCURRENCY = 5`) to fill in
+subtopics. Returns in seconds. This is what the waiting student's track is instantiated from. It is
+**never** cached — it has been checked against nothing but the model's own judgment.
 
-1. **Audit.** The assembled tree is summarized and checked against the spec excerpt
-   `resolveOfficialSpec` resolved for this identity (the same spec-grounding machinery
-   `jarvis-director` already uses). The audit prompt's one job is to name spec areas the tree does not
-   cover anywhere, judging by meaning not wording, and explicitly told an empty result is the expected
-   common case — not something to strain for gaps to justify.
-2. **Repair, once.** Whatever the audit reports missing is folded back in — assigned to an existing
-   topic where it fits, or given a new topic if it genuinely doesn't. This is deliberately **one pass,
-   not a loop**: repeated audit→repair cycles converge slowly and burn authoring budget (more model
-   calls, more latency) on diminishing returns for what should already be a near-complete tree by this
-   point.
-3. **Record, don't assert.** The result — `grounded` or `unverified`, the spec's `source_url`, and any
-   still-`missing` areas — is stored as *data* in the `coverage` column, not folded into a system
-   prompt and hoped for. Only `grounded` trees are ever written to the cache (§3); an `unverified` tree
-   is still returned and used for that one student, just never shared.
+**GROUNDED phase (`groundTree`), the only phase that can produce a cacheable tree.** For each topic,
+`searchTopicSpecText` fetches real specification text for **that topic specifically** — the topic title
+is quoted in the query deliberately, because an unquoted search returns the syllabus's generic landing
+page every time. One model call (`GROUNDED_TOPIC_SYSTEM`) then regenerates that topic's subtopics
+directly from the excerpt: keeping draft subtopics that still fit (reworded to the spec's own
+terminology where it differs), dropping ones the spec doesn't actually require, and adding whatever the
+excerpt requires that the draft missed.
 
-**The pessimistic-reading decision**, worth calling out because it's easy to get backwards: the repair
-pass is **not re-audited**. So `coverage.missing` records the gaps the *audit* found, not the gaps that
-survived repair — and if the repair pass added nothing (a malformed or empty repair response), the
-verdict is downgraded from `grounded` to `unverified` even though an audit did run. The reasoning:
-without re-auditing, there is no way to *know* the repair actually closed the gaps, only that an
-attempt was made. It is better for the coverage record to understate confidence than for a cached tree
-to claim a completeness nobody actually checked.
+**Why expansion, audit, and repair collapse into one call.** With real per-topic spec text in hand,
+there is nothing left to audit separately: the subtopics are *derived from* the specification, not
+invented by a general-purpose prompt and checked against a fragment of it afterward. This is both
+cheaper — one call per topic instead of a whole-tree audit plus a whole-tree repair — and stronger: the
+model is reading the actual requirement while writing the subtopic, rather than reconstructing it from
+memory and hoping a later audit catches the gap.
+
+**Where grounding runs.** By default, in the background: `groundAndCache` is handed to
+`EdgeRuntime.waitUntil` once the FAST tree has already been returned to the student — the identical
+pattern `chat/index.ts` uses to warm the lesson-plan cache. The first student on a goal gets the fast,
+ungrounded tree; every student after them gets the grounded, cached one once grounding lands. **The
+accepted trade-off:** the first student's track is instantiated from the ungrounded tree and is never
+retro-updated when grounding later completes — their `learning_tracks.syllabus_tree_id` still points at
+whichever tree existed at their signup.
+
+`mode: "sync"` forces grounding to run inline before the response is sent. Onboarding never sets this —
+a student cannot wait through N sequential searches plus N model calls. The breadth sweep
+(`scripts/sweep-syllabus-trees.mjs`) always does, because a background phase it cannot observe is a
+phase it cannot verify pass/fail against.
+
+**Grounding is skipped entirely for non-canonical identities.** Without a named board
+(`hasCanonicalIdentity` false, §3), the per-topic search has nothing to disambiguate its query on, and
+the result could not be cached even if grounding succeeded perfectly — so running it would spend N
+searches and N model calls producing a tree that gets thrown away at the end of the request. The
+response reports `grounding: "skipped"` for this case.
+
+**Honest coverage measurement.** `SyllabusCoverage` now carries `topics_grounded` / `topics_total`, not
+just a verdict — this pair is what says how real a `grounded` claim actually is for a given tree,
+because the first version of this field did not exist and the layer consequently overclaimed.
+`MIN_GROUNDED_RATIO = 0.6` is the share of topics that must resolve real spec text before
+`verdict: "grounded"` is written. Not 100%: some legitimate topics have no separately-searchable spec
+page of their own (folded into a parent page's search result, say), and demanding perfection would mean
+never caching anything. Not lower either: below 60%, "grounded" would be a claim about a minority of the
+syllabus dressed up as a claim about all of it. `coverage.missing` now records the titles of topics that
+could not be **grounded** — a gap in *verification*, not necessarily in *content*: an ungrounded topic
+still has subtopics from the fast pass, they were simply never checked against a specification.
+
+**`validateSyllabusTree` downgrades a `grounded` claim with no `source_url`.** That combination is
+structurally impossible — grounding means spec text was actually fetched from somewhere — so a stored
+row claiming it anyway means the row predates this contract or was hand-edited, and the safe move is to
+downgrade to `unverified` rather than let an unsourced completeness claim stand.
+
+**Budgets.** `GROUNDING_BUDGET_MS = 110_000` bounds the whole grounding phase; topics not reached before
+the deadline are recorded as ungrounded rather than silently dropped, so a timeout shows up honestly in
+`topics_grounded/topics_total` instead of a tree that quietly looks more verified than it is.
+`GROUNDING_CONCURRENCY = 3` throttles harder than the fast phase's `EXPAND_CONCURRENCY = 5`, because
+each grounding unit is a search **and** a model call, not just a model call.
 
 ## 7. Graceful degradation
 
@@ -215,11 +298,12 @@ plan-less session there just falls back to today's live-improvised teaching, whi
 product state. There is no equivalent fallback here: a student with no track has no product at all.
 Onboarding cannot degrade to "no syllabus."
 
-Concretely: spec resolution failing, the audit call failing, the repair call failing, or the identity
-being non-canonical are all handled by narrowing what gets *cached*, never by refusing to return a
-tree. The only hard failures in the handler are "the skeleton pass produced fewer than 3 topics" and
-"fewer than 60% of topics expanded" — both meaning the tree itself is unusably thin, not that it
-couldn't be verified or shared.
+Concretely: spec resolution failing, a topic's per-topic search failing, the grounded regeneration call
+failing, or the identity being non-canonical are all handled by narrowing what gets *cached* (or, for
+grounding, running it in the background where a failure delays a cache write, not a response), never by
+refusing to return a tree. The only hard failures in the handler are "the skeleton pass produced fewer
+than 3 topics" and "fewer than 60% of topics expanded" — both meaning the fast tree itself is unusably
+thin, not that it couldn't be verified or shared.
 
 ## 8. Verification bar
 
@@ -243,29 +327,42 @@ Per the project's standing quality bar, this ships only after a breadth sweep, n
 
 ## 9. Known follow-ups (deliberately not in this pass)
 
-1. **Coverage is only ever audited against the resolved spec *excerpt*, which is truncated.** So
-   `grounded` means "consistent with what we could fetch," not "complete against the full published
-   spec" — a real gap could sit past the point the excerpt was cut off, and the audit prompt is
-   explicitly told not to infer anything about content beyond the truncation, so it cannot catch that.
-   The project already hit this exact excerpt-coverage gap in the spec-checklist feature and solved it
-   there with **per-topic** spec resolution instead of one whole-syllabus excerpt — resolving a
-   focused spec slice per topic rather than one excerpt for the entire tree. That is the natural fix
-   here too, and would very likely raise the true (not claimed) completeness of `grounded` trees.
-2. **No re-audit after repair** (§6). The coverage record is deliberately pessimistic to compensate,
-   but an actual re-audit would let more trees legitimately earn `grounded` instead of falling back to
-   `unverified` after a repair that in fact worked.
-3. **No admin path to invalidate or regenerate a single bad tree.** If one cached tree turns out to be
+1. **Per-topic grounding still has real gaps** (moving per-topic search from a whole-syllabus excerpt
+   to per-topic resolution fixed the dominant failure mode, but not every failure mode). Each topic's
+   excerpt is still capped at `MAX_EXCERPT_CHARS` (6,000 characters, `specSearch.ts`) and
+   `searchTopicSpecText` takes the **first usable** result out of up to 4 candidates — a topic whose
+   spec page is a PDF fails to ground outright (`fetchHtmlFallback` only accepts
+   `content-type: html`, so a PDF-only spec page returns nothing usable), and a topic that's badly
+   indexed by Tavily or whose content is split across several pages can still come back empty even
+   though the material exists. There is also **no re-audit after the grounded regeneration** — the
+   `GROUNDED_TOPIC_SYSTEM` response is trusted directly once it's non-empty and well-formed, so an odd
+   or partial grounded response is caught by structural validation only, not by a second check that it
+   actually covered the excerpt. And **the first student on any goal necessarily gets the ungrounded
+   tree** (§2, §6) — grounding runs after their track is already instantiated, so their track is never
+   retro-corrected even once the cache holds a grounded version.
+2. **No admin path to invalidate or regenerate a single bad tree.** If one cached tree turns out to be
    wrong — wrong board's emphasis, a stale spec, whatever — the only lever is bumping
    `SYLLABUS_TREE_VERSION`, which regenerates *every* tree, not just the bad one. A targeted
    "re-author this signature" path (even a manual SQL delete-and-let-it-regenerate-on-miss) is missing.
-4. **`author-syllabus-tree` has no rate limit.** Any authenticated user can POST an arbitrary
-   `subject`/`level`/`board`/`goal` and trigger an expensive multi-call authoring run (skeleton +
-   N expansion batches + audit + repair), whether or not the identity is canonical. This is the same
-   abuse vector already logged as a follow-up for `author-lesson-plan`
-   (`lesson-plan-layer.md` §8a.6) — harmless while the user base is the developer and a few testers,
-   but it needs a guard (an allowlist tying the request to a real in-flight onboarding, or a per-user
-   rate limit) before real users, and should be tracked with the pre-launch items, not the
-   nice-to-haves.
+3. **`author-syllabus-tree` has no rate limit.** Any authenticated user can POST an arbitrary
+   `subject`/`level`/`board`/`goal` and trigger an expensive authoring run (skeleton + N expansion
+   batches, plus — under `mode:"sync"`, or whenever the background job runs — N per-topic searches and
+   model calls), whether or not the identity is canonical. This is the same abuse vector already logged
+   as a follow-up for `author-lesson-plan` (`lesson-plan-layer.md` §8a.6) — harmless while the user base
+   is the developer and a few testers, but it needs a guard (an allowlist tying the request to a real
+   in-flight onboarding, or a per-user rate limit) before real users, and should be tracked with the
+   pre-launch items, not the nice-to-haves.
+4. **The edge-function invocation time limit is now the binding constraint on very large syllabuses.**
+   Moving authoring server-side means the whole build — skeleton, ungrounded expansion, and (under
+   `mode:"sync"`, or whenever the background job is still running) grounding — happens inside a single
+   invocation. `GROUNDING_BUDGET_MS = 110_000` keeps the grounding phase itself from running unbounded,
+   but it is a soft internal budget, not a guarantee that the surrounding invocation still has that much
+   room left. A genuinely large syllabus — JEE-scale, up to `MAX_TOPICS = 60` topics, each a search plus
+   a model call even at `GROUNDING_CONCURRENCY = 3` — may need more wall-clock than one invocation can
+   give it. If the breadth sweep turns up invocations getting killed rather than completing (a
+   partially-grounded tree, or a `mode:"sync"` call that never returns), the fix is splitting grounding
+   into a real job queue rather than leaning on `EdgeRuntime.waitUntil`, which extends one invocation's
+   life but doesn't survive a cold start or resume across separate invocations.
 
 ## 10. Deployment note
 
@@ -276,6 +373,13 @@ layer needs two things explicitly done through Lovable's chat before any of it i
   adds `learning_tracks.syllabus_tree_id`);
 - `author-syllabus-tree` explicitly deployed as a new edge function.
 
+This applies again, in full, to the two-phase rewrite in §6: even once `author-syllabus-tree` has been
+deployed once, the fast/grounded split, the `specSearch.ts` import, and the new `mode:"sync"` handling
+are all inert until it is **redeployed** — a git push alone does not update a previously-deployed edge
+function's code (see the root `CLAUDE.md`). Anyone testing against a stale deployment will see the old
+whole-tree-audit behavior (or a straight 404, if it was never deployed at all) regardless of what's on
+`main`.
+
 Nothing here is live on a git push alone, and the ordering matters: `OnboardingPage.tsx` has already
 been rewired to call `author-syllabus-tree`, and the client-side `buildFullTrack` / `refineTrackGrain`
 / `chatJSON` path described in §1 is deleted. The frontend therefore auto-deploys on push and will
@@ -285,9 +389,11 @@ onboarding falls back to the director's own draft topics, so students still get 
 but until the migration and the function land, the layer is inert and every signup is silently on the
 fallback path.
 
-One consequence of moving the multi-pass server-side is worth watching on first deployment: the whole
-build (skeleton → expansions → spec audit → repair) now happens inside a **single** edge function
-invocation, where it was previously many short browser-driven calls. A JEE-scale syllabus is the
-stress case. The breadth sweep in `docs/syllabus-tree-calibration.md` is what should establish whether
-this fits inside the invocation limit; if it does not, splitting authoring into a two-call protocol is
-the fix, and that is a measurement to take rather than a risk to pre-emptively design around.
+One consequence of moving authoring server-side is worth watching on first deployment: the FAST build
+(skeleton → ungrounded expansion) happens inside a single edge function invocation, where it was
+previously many short browser-driven calls — and under `mode:"sync"` (or whenever the background job
+happens to still be running against a warm isolate), the GROUNDED phase's per-topic searches and model
+calls share that same invocation's clock. A JEE-scale syllabus is the stress case; see §9 follow-up 4
+for the specific limit (`GROUNDING_BUDGET_MS`) and the job-queue fallback if it's not enough. The
+breadth sweep in `docs/syllabus-tree-calibration.md` is what should establish whether this fits inside
+the invocation limit in practice, rather than this being a risk to pre-emptively design around.

@@ -9,24 +9,37 @@
 //   3. one code path now serves both cached and bespoke goals — the only difference is whether the
 //      result is written to the cache at the end.
 //
-// DIFFERENCE FROM author-lesson-plan: that function fails CLOSED when the cache is unavailable,
-// because a plan-less session is merely today's behaviour. This one must never fail closed — the
-// student is waiting on a track and has no product at all without one. An uncacheable tree is still
-// returned and used; it is simply not shared.
+// TWO PHASES, AND THE SECOND ONE IS THE POINT.
+//
+// FAST: a skeleton pass plus an ungrounded expansion. Returns in seconds. This is what the waiting
+// student's track is built from, and it is NEVER cached — it has been checked against nothing.
+//
+// GROUNDED: per-topic specification resolution. For each topic we fetch REAL spec text for that
+// topic specifically and regenerate its subtopics from that text. Only this phase can produce a
+// cacheable tree. It is slow (a search plus a model call per topic), so by default it runs in the
+// background after the response is sent, exactly like chat/index.ts warms the lesson plan cache —
+// the first student on a goal gets the fast tree, everyone after gets the grounded cached one.
+//
+// WHY PER-TOPIC. The first version of this function audited the whole tree against ONE ~6k-character
+// search result. A real A-Level specification is a hundred pages, so that excerpt is ~1-2% of it —
+// and an audit against it is structurally unable to catch the dominant failure, material missing
+// from BOTH the tree and the excerpt. It rubber-stamped. specChecklistResolver.ts had already hit
+// and documented this exact wall; specSearch.ts now holds the shared fix.
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
+import { getTavilyKey, type SpecExcerpt, searchTopicSpecText } from "../_shared/specSearch.ts";
 import {
   countSubtopics,
   hasCanonicalIdentity,
   MAX_SUBTOPICS_PER_TOPIC,
   MAX_TOPICS,
+  MIN_GROUNDED_RATIO,
   type SyllabusCoverage,
   type SyllabusIdentity,
   type SyllabusTopic,
-  type SyllabusTree,
   SYLLABUS_TREE_VERSION,
   treeSignature,
   validateSyllabusTree,
@@ -44,12 +57,16 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-/** How many topics go into one expansion call. Small batches keep each response well inside the
- *  token budget — the whole reason the old single-shot generation truncated large syllabuses. */
+/** How many topics go into one FAST expansion call. Small batches keep each response inside the
+ *  token budget — the reason single-shot generation used to truncate large syllabuses. */
 const EXPAND_BATCH_SIZE = 4;
-/** Cap on concurrent expansion calls. A 60-topic syllabus is 15 batches; firing all of them at once
- *  reliably trips gateway rate limits, and a 429 mid-build loses the whole tree. */
+/** Cap on concurrent model calls. Firing 15 batches at once reliably trips gateway rate limits. */
 const EXPAND_CONCURRENCY = 5;
+/** Grounding does a web search AND a model call per topic, so it is throttled harder. */
+const GROUNDING_CONCURRENCY = 3;
+/** Wall-clock budget for the whole grounding phase. Topics not reached are counted as ungrounded
+ *  rather than silently dropped, so a timeout shows up honestly in topics_grounded. */
+const GROUNDING_BUDGET_MS = 110_000;
 
 // ---------------------------------------------------------------------------
 // Model plumbing
@@ -71,26 +88,16 @@ function parseJsonLoose(content: string): any | null {
   return null;
 }
 
-/**
- * One non-streaming JSON completion. Returns null on any failure — every caller here has a defined
- * fallback, and a partial tree must never be mistaken for a complete one.
- */
-async function askJson(
-  system: string,
-  user: string,
-  tier: "turn" | "authoring" = "authoring",
-): Promise<any | null> {
+/** One non-streaming JSON completion. Null on any failure; every caller has a defined fallback. */
+async function askJson(system: string, user: string): Promise<any | null> {
   try {
-    const ai = await getAIConfig(tier);
+    const ai = await getAIConfig("authoring");
     const res = await fetch(ai.url, {
       method: "POST",
       headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: ai.model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
         response_format: { type: "json_object" },
       }),
     });
@@ -106,20 +113,36 @@ async function askJson(
   }
 }
 
-/** Run tasks with a bounded concurrency pool, preserving input order in the result. */
-async function pooled<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+/** Bounded-concurrency map that preserves input order. */
+async function pooled<T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (true) {
       const i = next++;
       if (i >= items.length) return;
-      results[i] = await fn(items[i]);
+      results[i] = await fn(items[i], i);
     }
   });
   await Promise.all(workers);
   return results;
 }
+
+const cleanList = (v: unknown, cap: number): string[] => {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of v) {
+    const t = String(s ?? "").trim();
+    if (!t) continue;
+    const k = t.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+    if (out.length >= cap) break;
+  }
+  return out;
+};
 
 // ---------------------------------------------------------------------------
 // Prompts
@@ -132,7 +155,7 @@ const SKELETON_SYSTEM = `You are a curriculum architect. Produce the COMPLETE, e
 
 Be exhaustive: a full multi-subject exam (e.g. JEE across Physics+Chemistry+Maths) legitimately needs 40-60 topics; a single-subject A-level 15-30; a focused module 6-12. Cover EVERY subject and area completely — never clip the last subject to save space. Order foundational → advanced. Topic TITLES ONLY, no subtopics.
 
-GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two; "Newton's Laws" and "Forces" likewise). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere in the final list — grouping changes which topic it is filed under, never whether it is covered.
+GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere.
 
 Return ONLY JSON: {"topics":["Topic 1","Topic 2", ...]}`;
 
@@ -143,53 +166,38 @@ Too coarse (bundles many distinct ideas — must be split): "Complex Numbers", "
 
 Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}]}`;
 
-const AUDIT_SYSTEM = `You are auditing a generated syllabus against the OFFICIAL specification excerpt for coverage. Your ONE job is to find what the specification requires that the syllabus does NOT cover anywhere.
+/**
+ * The grounded pass. Expansion, audit and repair collapse into ONE call per topic, because with real
+ * spec text in hand there is nothing to audit against separately — the subtopics are DERIVED from
+ * the specification rather than invented and then checked against it.
+ */
+const GROUNDED_TOPIC_SYSTEM = `You are a curriculum editor working from a REAL official examination specification excerpt for ONE topic.
+
+Produce the complete list of session-grain subtopics this topic requires, derived from the specification text you are given. Each subtopic is ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting.
 
 Rules:
-- Judge by MEANING, not wording. A spec area is covered if any topic or subtopic plainly teaches it, under any reasonable name.
-- Report ONLY genuine, substantive gaps — a whole spec area with no home in the syllabus. Do NOT report phrasing differences, granularity preferences, or ordering.
-- The excerpt may be truncated mid-document. Judge ONLY against what is actually present in it; never infer that something is missing because the excerpt stops.
-- If coverage is complete, return an empty array. An empty array is the expected, common answer — do not invent gaps to seem thorough.
+- COVER EVERYTHING in the excerpt that belongs to this topic. This is the whole point: anything the specification requires here and you omit is material the student will never be taught.
+- Use the specification's OWN terminology and emphasis. Boards differ, and the excerpt is the authority.
+- Keep any of the existing draft subtopics that genuinely fit, reworded to match the spec's terminology where they differ. Drop draft subtopics the specification does not actually require for this topic. Add everything it requires that is missing.
+- SPLIT anything too broad for one sitting. A specification line item is frequently several sittings' worth of material and must not be copied across as a single subtopic.
+- Order prerequisites-first. Return 3-${MAX_SUBTOPICS_PER_TOPIC} subtopics.
+- The excerpt may be truncated mid-document, and may contain navigation text or material from OTHER topics. Ignore anything not about this topic. If the excerpt turns out to contain no real specification content for this topic at all, return {"subtopics": [], "grounded": false} and the draft will be kept as-is.
 
-Return ONLY JSON: {"missing":["<spec area absent from the syllabus>", ...]}`;
-
-const REPAIR_SYSTEM = `You are repairing a syllabus that an audit found incomplete. You are given the existing topic titles and a list of specification areas that are missing.
-
-For each missing area, either:
-- assign it to the EXISTING topic where it most naturally belongs, or
-- create a new topic, but only if it genuinely does not fit any existing one.
-
-Every subtopic you add must be session-grain: ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting. Never restate a missing area verbatim as a subtopic if it is broader than one sitting — split it.
-
-Return ONLY the ADDITIONS, as JSON: {"additions":[{"title":"<existing or new topic title>","subtopics":["...","..."]}]}`;
+Return ONLY JSON: {"subtopics":["...","..."], "grounded": true}`;
 
 // ---------------------------------------------------------------------------
-// Authoring
+// Phase 1 — fast, ungrounded
 // ---------------------------------------------------------------------------
 
 async function buildSkeleton(id: SyllabusIdentity, goal: string, spec: string): Promise<string[]> {
   const user = `${identityLine(id, goal)}${spec ? `\n\nOFFICIAL SPECIFICATION EXCERPT — base the topic list on this real content, in the terminology it uses. Do not invent top-level topics absent from it; use your own judgment only to fill gaps left by truncation:\n"""\n${spec}\n"""` : ""}\n\nProduce the exhaustive topic list now.`;
   const data = await askJson(SKELETON_SYSTEM, user);
-  if (!Array.isArray(data?.topics)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const t of data.topics) {
-    const title = String(t ?? "").trim();
-    if (!title) continue;
-    const k = title.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(title);
-    if (out.length >= MAX_TOPICS) break;
-  }
-  return out;
+  return cleanList(data?.topics, MAX_TOPICS);
 }
 
 async function expandTopics(id: SyllabusIdentity, goal: string, titles: string[]): Promise<Record<string, string[]>> {
   const batches: string[][] = [];
-  for (let i = 0; i < titles.length; i += EXPAND_BATCH_SIZE) {
-    batches.push(titles.slice(i, i + EXPAND_BATCH_SIZE));
-  }
+  for (let i = 0; i < titles.length; i += EXPAND_BATCH_SIZE) batches.push(titles.slice(i, i + EXPAND_BATCH_SIZE));
 
   const maps = await pooled(batches, EXPAND_CONCURRENCY, async (batch) => {
     const user = `${identityLine(id, goal)}\n\nTopics: ${JSON.stringify(batch)}\n\nExpand these into session-grain subtopics.`;
@@ -198,9 +206,7 @@ async function expandTopics(id: SyllabusIdentity, goal: string, titles: string[]
     if (Array.isArray(data?.topics)) {
       for (const t of data.topics) {
         const title = String(t?.title ?? "").trim();
-        const subs = Array.isArray(t?.subtopics)
-          ? t.subtopics.map((s: unknown) => String(s ?? "").trim()).filter(Boolean).slice(0, MAX_SUBTOPICS_PER_TOPIC)
-          : [];
+        const subs = cleanList(t?.subtopics, MAX_SUBTOPICS_PER_TOPIC);
         if (title && subs.length) out[title] = subs;
       }
     }
@@ -211,11 +217,8 @@ async function expandTopics(id: SyllabusIdentity, goal: string, titles: string[]
 }
 
 /**
- * Match an expansion back to the skeleton title it was asked about.
- *
- * The model is told to echo titles verbatim and usually does, but a stray "The " or a changed dash
- * silently orphans a whole topic — which used to surface as a topic whose only subtopic was its own
- * title. Exact match first, then a normalized match, then give up.
+ * Match an expansion back to the skeleton title it was asked about. The model is told to echo titles
+ * verbatim and usually does, but a stray "The " silently orphans a whole topic.
  */
 function lookupExpansion(map: Record<string, string[]>, title: string): string[] | null {
   if (map[title]) return map[title];
@@ -227,68 +230,170 @@ function lookupExpansion(map: Record<string, string[]>, title: string): string[]
   return null;
 }
 
-/** Audit the assembled tree against the spec excerpt, then repair once. Returns the coverage record. */
-async function verifyAndRepair(
+async function buildFastTree(id: SyllabusIdentity, goal: string, wholeSpec: string): Promise<SyllabusTopic[] | null> {
+  const skeleton = await buildSkeleton(id, goal, wholeSpec);
+  if (skeleton.length < 3) return null;
+
+  const expansions = await expandTopics(id, goal, skeleton);
+  const topics: SyllabusTopic[] = [];
+  for (const title of skeleton) {
+    const subs = lookupExpansion(expansions, title);
+    // A topic that failed to expand is DROPPED, not padded with its own title as a lone subtopic.
+    // The old client path padded, producing tracks whose sections looked complete but opened one
+    // unteachable mega-session each. A visibly shorter track is the honest failure.
+    if (subs && subs.length) topics.push({ title, subtopics: subs });
+  }
+  if (topics.length < Math.ceil(skeleton.length * 0.6)) {
+    console.error(`only ${topics.length}/${skeleton.length} topics expanded`);
+    return null;
+  }
+  return topics;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — grounded, per topic. The only phase that can produce a cacheable tree.
+// ---------------------------------------------------------------------------
+
+async function groundTree(
   id: SyllabusIdentity,
-  goal: string,
-  topics: SyllabusTopic[],
-  spec: { text: string; sourceUrl: string },
-): Promise<SyllabusCoverage> {
-  const summary = topics.map((t) => `${t.title}: ${t.subtopics.join("; ")}`).join("\n");
-  const auditUser = `${identityLine(id, goal)}\n\nOFFICIAL SPECIFICATION EXCERPT:\n"""\n${spec.text}\n"""\n\nGENERATED SYLLABUS:\n"""\n${summary}\n"""\n\nList the specification areas the syllabus does not cover.`;
-  const audit = await askJson(AUDIT_SYSTEM, auditUser);
-
-  // A failed audit is NOT a pass. We cannot claim `grounded` for a tree we did not manage to check,
-  // and `unverified` is never cached — so a transient audit failure costs this student nothing and
-  // correctly keeps an unchecked tree out of the global cache.
-  if (!audit || !Array.isArray(audit.missing)) {
-    console.error("coverage audit did not return a verdict — treating tree as unverified");
-    return { verdict: "unverified", source_url: spec.sourceUrl };
+  draft: SyllabusTopic[],
+): Promise<{ topics: SyllabusTopic[]; coverage: SyllabusCoverage }> {
+  const total = draft.length;
+  const tavilyKey = await getTavilyKey();
+  if (!tavilyKey) {
+    console.error("no TAVILY_API_KEY — cannot ground, tree will not be cached");
+    return { topics: draft, coverage: { verdict: "unverified", topics_grounded: 0, topics_total: total } };
   }
 
-  const missing = audit.missing.map((m: unknown) => String(m ?? "").trim()).filter(Boolean);
-  if (missing.length === 0) {
-    return { verdict: "grounded", source_url: spec.sourceUrl };
-  }
+  const deadline = Date.now() + GROUNDING_BUDGET_MS;
+  const ungrounded: string[] = [];
+  let sourceUrl: string | undefined;
 
-  // --- One repair pass. Deliberately not a loop: repeated repair converges slowly and burns an
-  // authoring budget on diminishing returns. Whatever is still missing is recorded honestly. ---
-  const repairUser = `${identityLine(id, goal)}\n\nEXISTING TOPIC TITLES:\n${JSON.stringify(topics.map((t) => t.title))}\n\nMISSING SPECIFICATION AREAS:\n${JSON.stringify(missing)}\n\nReturn the additions now.`;
-  const repair = await askJson(REPAIR_SYSTEM, repairUser);
-
-  let repaired = 0;
-  if (Array.isArray(repair?.additions)) {
-    for (const add of repair.additions) {
-      const title = String(add?.title ?? "").trim();
-      const subs = Array.isArray(add?.subtopics)
-        ? add.subtopics.map((s: unknown) => String(s ?? "").trim()).filter(Boolean)
-        : [];
-      if (!title || subs.length === 0) continue;
-
-      const existing = topics.find((t) => t.title.toLowerCase() === title.toLowerCase());
-      if (existing) {
-        const have = new Set(existing.subtopics.map((s) => s.toLowerCase()));
-        for (const s of subs) {
-          if (have.has(s.toLowerCase())) continue;
-          if (existing.subtopics.length >= MAX_SUBTOPICS_PER_TOPIC) break;
-          existing.subtopics.push(s);
-          repaired++;
-        }
-      } else if (topics.length < MAX_TOPICS) {
-        topics.push({ title, subtopics: subs.slice(0, MAX_SUBTOPICS_PER_TOPIC) });
-        repaired += subs.length;
-      }
+  const grounded = await pooled(draft, GROUNDING_CONCURRENCY, async (topic) => {
+    if (Date.now() > deadline) {
+      ungrounded.push(topic.title);
+      return topic;
     }
-  }
 
-  // The repair pass is not re-audited (that would be the loop we just ruled out), so `missing` is
-  // recorded as the gaps the audit FOUND, annotated with whether anything was actually added. This
-  // is deliberately the pessimistic reading: it is better for the coverage record to overstate the
-  // gap than for a cached tree to claim a completeness nobody checked.
-  console.log(`coverage repair added ${repaired} subtopic(s) for ${missing.length} reported gap(s)`);
-  return repaired > 0
-    ? { verdict: "grounded", source_url: spec.sourceUrl, missing }
-    : { verdict: "unverified", source_url: spec.sourceUrl, missing };
+    let excerpt: SpecExcerpt | null = null;
+    try {
+      excerpt = await searchTopicSpecText(
+        id.board || "", id.subject || "", id.level || null, topic.title, tavilyKey,
+      );
+    } catch { /* fails soft below */ }
+
+    if (!excerpt) {
+      ungrounded.push(topic.title);
+      return topic;
+    }
+
+    const user = `Topic: "${topic.title}"\nSubject: ${id.subject} | Level: ${id.level} | Board: ${id.board}\n\nEXISTING DRAFT SUBTOPICS:\n${JSON.stringify(topic.subtopics)}\n\nOFFICIAL SPECIFICATION EXCERPT (source: ${excerpt.sourceUrl}):\n"""\n${excerpt.text}\n"""\n\nProduce the complete session-grain subtopic list for this topic now.`;
+    const data = await askJson(GROUNDED_TOPIC_SYSTEM, user);
+    const subs = cleanList(data?.subtopics, MAX_SUBTOPICS_PER_TOPIC);
+
+    // The model reporting `grounded: false`, or returning nothing usable, means the excerpt was not
+    // really this topic's specification. Keeping the draft is right; claiming it was grounded is not.
+    if (subs.length === 0 || data?.grounded === false) {
+      ungrounded.push(topic.title);
+      return topic;
+    }
+
+    sourceUrl ??= excerpt.sourceUrl;
+    return { title: topic.title, subtopics: subs };
+  });
+
+  const groundedCount = total - ungrounded.length;
+  const ratio = total > 0 ? groundedCount / total : 0;
+  const verdict = ratio >= MIN_GROUNDED_RATIO && sourceUrl ? "grounded" : "unverified";
+
+  const coverage: SyllabusCoverage = {
+    verdict,
+    topics_grounded: groundedCount,
+    topics_total: total,
+    ...(sourceUrl ? { source_url: sourceUrl } : {}),
+    // Recorded as the honest gap in VERIFICATION, not in content: these topics still have subtopics,
+    // they were just never checked against a specification. That distinction matters when reading a
+    // cached tree later and deciding whether to trust it.
+    ...(ungrounded.length ? { missing: ungrounded.slice(0, 25) } : {}),
+  };
+
+  console.log(`grounding: ${groundedCount}/${total} topics (${(ratio * 100).toFixed(0)}%) → ${verdict}`);
+  return { topics: grounded, coverage };
+}
+
+/**
+ * Write a grounded tree to the global cache. Separate from `groundTree` on purpose: the sync path
+ * needs the grounded result in its response AND in the cache, and folding the write into the
+ * grounding would mean grounding twice — every search and every model call, paid double.
+ */
+async function cacheTree(
+  supabase: ReturnType<typeof createClient>,
+  id: SyllabusIdentity,
+  signature: string,
+  topics: SyllabusTopic[],
+  coverage: SyllabusCoverage,
+): Promise<string | null> {
+  try {
+    if (coverage.verdict !== "grounded") {
+      console.log("grounding insufficient — not caching");
+      return null;
+    }
+
+    const validated = validateSyllabusTree({ topics, coverage });
+    if (!validated.ok) {
+      console.error("grounded tree failed validation, not caching:", validated.errors.join("; "));
+      return null;
+    }
+
+    const ai = await getAIConfig("authoring");
+    const { data: written, error } = await supabase
+      .from("syllabus_trees")
+      .upsert(
+        {
+          signature,
+          tree_version: SYLLABUS_TREE_VERSION,
+          subject: id.subject,
+          level: id.level,
+          board: id.board,
+          tree: validated.tree,
+          coverage,
+          model: ai.model,
+        },
+        // Must name BOTH columns: the unique constraint is (signature, tree_version); naming only
+        // `signature` would match no constraint and turn the upsert into a failing insert.
+        { onConflict: "signature,tree_version" },
+      )
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("syllabus_trees upsert failed:", error);
+      return null;
+    }
+    console.log(
+      `cached grounded syllabus: ${validated.tree.topics.length} topics / ` +
+      `${countSubtopics(validated.tree)} subtopics, ${coverage.topics_grounded}/${coverage.topics_total} grounded`,
+    );
+    return (written?.id as string) ?? null;
+  } catch (e) {
+    console.error("cacheTree failed:", e);
+    return null;
+  }
+}
+
+/** Ground, then cache. The background path; returns nothing because nobody is waiting on it. */
+async function groundAndCache(
+  supabase: ReturnType<typeof createClient>,
+  id: SyllabusIdentity,
+  signature: string,
+  draft: SyllabusTopic[],
+): Promise<void> {
+  try {
+    const { topics, coverage } = await groundTree(id, draft);
+    await cacheTree(supabase, id, signature, topics, coverage);
+  } catch (e) {
+    console.error("background grounding failed:", e);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -309,8 +414,11 @@ Deno.serve(async (req: Request) => {
       board: body?.board ?? null,
     };
     const goal: string = String(body?.goal ?? "").trim() || [identity.level, identity.subject].filter(Boolean).join(" ");
-    // The onboarding conversation, used only for spec resolution (it reads the student's own words
-    // to work out which board/exam is meant). Falls back to a synthesized line when absent.
+    // `sync` forces grounding to run inline instead of after the response. Onboarding never uses it
+    // (a student cannot wait two minutes); the breadth sweep does, because a background phase it
+    // cannot observe is a phase it cannot verify.
+    const syncGrounding = body?.mode === "sync";
+
     const messages: { role: string; content: string }[] = Array.isArray(body?.messages) && body.messages.length
       ? body.messages
       : [{ role: "user", content: [goal, identity.board, identity.subject, identity.level].filter(Boolean).join(" ") }];
@@ -326,7 +434,7 @@ Deno.serve(async (req: Request) => {
       ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } })
       : null;
 
-    // --- Cache hit: the whole point of the layer. No AI call, no write, instant onboarding. ---
+    // --- Cache hit: the whole point of the layer. No AI call, no search, instant onboarding. ---
     if (supabase && signature) {
       const { data: row, error } = await supabase
         .from("syllabus_trees")
@@ -336,8 +444,6 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (error) console.error("syllabus_trees lookup failed (will author):", error);
       if (row?.tree) {
-        // A stored tree is still model output from a possibly older contract. Re-validate: a row that
-        // no longer validates is re-authored rather than served as a broken syllabus.
         const check = validateSyllabusTree(row.tree);
         if (check.ok) {
           return json({
@@ -351,75 +457,59 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // --- Miss: author it. ---
-    const spec = await resolveOfficialSpec(messages).catch((e) => {
+    // --- Miss: fast tree first, so the student is never waiting on the grounded pass. ---
+    const wholeSpec = await resolveOfficialSpec(messages).catch((e) => {
       console.error("spec resolution failed:", e);
       return null;
     });
 
-    const skeleton = await buildSkeleton(identity, goal, spec?.text || "");
-    if (skeleton.length < 3) {
-      return json({ ok: false, errors: ["could not produce a topic skeleton for this goal"] });
+    const draft = await buildFastTree(identity, goal, wholeSpec?.text || "");
+    if (!draft) {
+      return json({ ok: false, errors: ["could not produce a usable syllabus for this goal"] });
     }
 
-    const expansions = await expandTopics(identity, goal, skeleton);
-    const topics: SyllabusTopic[] = [];
-    for (const title of skeleton) {
-      const subs = lookupExpansion(expansions, title);
-      // A topic that failed to expand is DROPPED, not padded with its own title as a lone subtopic.
-      // The old client path padded, which produced tracks whose sections looked complete but opened
-      // one unteachable mega-session each. A visibly shorter track is the honest failure.
-      if (subs && subs.length) topics.push({ title, subtopics: subs });
-    }
-    if (topics.length < Math.ceil(skeleton.length * 0.6)) {
-      return json({ ok: false, errors: [`only ${topics.length}/${skeleton.length} topics expanded`] });
+    // Grounding only ever runs for a cacheable identity: without a named board the per-topic search
+    // has nothing to disambiguate on, and the result could not be cached even if it succeeded — so
+    // running it would spend N searches to produce something we would then throw away.
+    if (!supabase || !signature) {
+      const fastTree = validateSyllabusTree({
+        topics: draft,
+        coverage: { verdict: "unverified", topics_grounded: 0, topics_total: draft.length },
+      });
+      if (!fastTree.ok) return json({ ok: false, errors: fastTree.errors });
+      return json({ ok: true, cached: false, treeId: null, grounding: "skipped", tree: fastTree.tree });
     }
 
-    const coverage: SyllabusCoverage = spec
-      ? await verifyAndRepair(identity, goal, topics, { text: spec.text, sourceUrl: spec.sourceUrl })
-      // No spec resolved: the tree is perfectly usable, but there is nothing to check it against, so
-      // it must not enter the global cache. This is the `cacheable ⟺ verifiable` gate in force.
-      : { verdict: "unverified" };
+    if (syncGrounding) {
+      const { topics, coverage } = await groundTree(identity, draft);
+      const validated = validateSyllabusTree({ topics, coverage });
+      if (!validated.ok) return json({ ok: false, errors: validated.errors });
 
-    const validated = validateSyllabusTree({ topics, coverage });
-    if (!validated.ok) {
-      return json({ ok: false, errors: validated.errors });
+      // Grounded ONCE, then written — cacheTree does no grounding of its own.
+      const treeId = await cacheTree(supabase, identity, signature, topics, coverage);
+      return json({ ok: true, cached: false, treeId, grounding: "sync", tree: validated.tree });
     }
-    const tree = validated.tree;
 
-    // --- Cache write: only a canonical identity with a verified tree is ever shared. ---
-    let treeId: string | null = null;
-    if (supabase && signature && coverage.verdict === "grounded") {
-      const ai = await getAIConfig("authoring");
-      const { data: written, error: writeErr } = await supabase
-        .from("syllabus_trees")
-        .upsert(
-          {
-            signature,
-            tree_version: SYLLABUS_TREE_VERSION,
-            subject: identity.subject,
-            level: identity.level,
-            board: identity.board,
-            tree,
-            coverage,
-            model: ai.model,
-          },
-          // Must name BOTH columns: the unique constraint is (signature, tree_version), and naming
-          // only `signature` would match no constraint and turn the upsert into a failing insert.
-          { onConflict: "signature,tree_version" },
-        )
-        .select("id")
-        .maybeSingle();
-      if (writeErr) console.error("syllabus_trees upsert failed (returning tree uncached):", writeErr);
-      treeId = written?.id ?? null;
+    // Background grounding. The student's track is built from the fast tree; the grounded tree lands
+    // in the cache for everyone after them. Same self-warming shape as the lesson plan cache.
+    const work = groundAndCache(supabase, identity, signature, draft.map((t) => ({ ...t })));
+    try {
+      (globalThis as any).EdgeRuntime?.waitUntil?.(work);
+    } catch {
+      /* not available in every runtime — the promise still runs while the isolate is warm */
     }
+
+    const fastTree = validateSyllabusTree({
+      topics: draft,
+      coverage: { verdict: "unverified", topics_grounded: 0, topics_total: draft.length },
+    });
+    if (!fastTree.ok) return json({ ok: false, errors: fastTree.errors });
 
     console.log(
-      `authored syllabus: ${tree.topics.length} topics / ${countSubtopics(tree)} subtopics, ` +
-      `coverage=${coverage.verdict}, canonical=${canonical}, cached=${treeId !== null}`,
+      `fast syllabus returned: ${fastTree.tree.topics.length} topics / ${countSubtopics(fastTree.tree)} subtopics; ` +
+      `grounding queued for signature ${signature.slice(0, 12)}…`,
     );
-
-    return json({ ok: true, cached: false, treeId, tree });
+    return json({ ok: true, cached: false, treeId: null, grounding: "queued", tree: fastTree.tree });
   } catch (e) {
     console.error("author-syllabus-tree error:", e);
     return json({ ok: false, errors: [e instanceof Error ? e.message : "unknown error"] }, 500);

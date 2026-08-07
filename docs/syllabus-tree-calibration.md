@@ -41,6 +41,25 @@ incompleteness and mis-scoping — across the identities the product actually ne
 
 ---
 
+## Why the sweep forces `mode: "sync"`
+
+`author-syllabus-tree` runs a FAST, ungrounded pass synchronously and returns it immediately, then —
+by default — grounds each topic against real spec text **in the background** via
+`EdgeRuntime.waitUntil`, so the student who triggered generation never waits for it
+(`docs/syllabus-tree-layer.md` §6). A production call with no `mode` therefore returns a tree that has,
+by design, been checked against nothing yet.
+
+Every row the sweep sends carries `mode: "sync"`, which forces grounding to run inline before the
+response comes back. This isn't a convenience setting — it's the only way the sweep can measure the
+thing that actually matters. A background phase the sweep can't observe is a phase it can't verify: if
+the sweep called the default async path, every row would report `grounding: "queued"` and an
+`unverified`/empty coverage record, and the whole matrix would look identical whether grounding
+eventually worked, silently failed, or never ran at all. `mode:"sync"` trades sweep latency (each row is
+now a full skeleton → expand → per-topic-search → per-topic-regenerate pipeline, run to completion) for
+a result that actually says something about grounding quality.
+
+---
+
 ## What the sweep checks automatically
 
 Run via `scripts/sweep-syllabus-trees.mjs`. Every row gets a PASS/FAIL from these checks:
@@ -60,14 +79,31 @@ Run via `scripts/sweep-syllabus-trees.mjs`. Every row gets a PASS/FAIL from thes
 5. A `grounded` coverage verdict MUST carry a `source_url`. An unsourced completeness claim is exactly
    what the `coverage` record exists to prevent (`syllabusTree.ts`'s `SyllabusCoverage` doc comment) —
    this is treated as a hard failure, not a warning.
-6. The negative case is not cached (`cached === false` and `treeId === null`). Flagged as a loud,
-   named failure — see above — not folded into the generic pass/fail count silently.
+6. **For every positive (non-negative) row** — the checks that actually matter, because everything
+   above this point can pass on a tree that was never checked against a specification at all:
+   - `coverage.topics_grounded / coverage.topics_total >= MIN_GROUNDED_RATIO` (0.6, mirrored from
+     `syllabusTree.ts` as a literal in the script since the harness is plain Node and that module is
+     Deno/TypeScript — see the comment above `MIN_GROUNDED_RATIO` in the script for the drift risk).
+   - `coverage.verdict === "grounded"`.
+   - `treeId != null` — the tree was actually written to `syllabus_trees`, not just computed and
+     discarded. A tree that passed grounding but wasn't persisted helps nobody after the first student.
+7. **For the negative case** — the bespoke, no-board row:
+   - it is not cached (`cached === false` and `treeId === null`, as before);
+   - `grounding === "skipped"`. A bespoke goal must never spend real searches or model calls grounding
+     a tree that can never be cached (`docs/syllabus-tree-layer.md` §6) — if this row shows
+     `grounding` as anything other than `"skipped"`, the non-canonical short-circuit in
+     `author-syllabus-tree/index.ts` has regressed, even if nothing ended up in the cache.
+
+Checks 6 and 7 are the ones worth reading closely when a row fails. A tree can have a plausible topic
+count, zero duplicates, and a well-formed `source_url` and still have grounded only 30% of its topics —
+passing checks 1-5 while failing the one check that says whether the syllabus was actually verified
+against anything real.
 
 The script runs the matrix **sequentially, not in parallel** — each row is itself a multi-call
-authoring pipeline (skeleton → expand → audit → repair, batched and pooled internally in
-`author-syllabus-tree/index.ts`), and firing multiple rows at once on top of that reliably trips
-gateway rate limits and turns a real defect into a misleading transport failure. Expect a full run to
-take a while; that's the cost of a result that means something.
+authoring pipeline (skeleton → ungrounded expansion → per-topic grounded regeneration, batched and
+pooled internally in `author-syllabus-tree/index.ts`), and firing multiple rows at once on top of that
+reliably trips gateway rate limits and turns a real defect into a misleading transport failure. Expect a
+full run to take a while; that's the cost of a result that means something.
 
 Raw JSON for every row is written to `scripts/sweep-syllabus-trees-results.json` (or wherever `--out`
 points) specifically so the next section can happen.
