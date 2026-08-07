@@ -444,6 +444,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_question_requests: {
+        Row: {
+          blocked: boolean
+          id: string
+          requested_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          blocked?: boolean
+          id?: string
+          requested_at?: string
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          blocked?: boolean
+          id?: string
+          requested_at?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       reference_questions: {
         Row: {
           created_at: string
@@ -871,6 +895,30 @@ export type Database = {
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
+      }
+      reference_question_facets: {
+        Args: { p_area?: string; p_competition?: string }
+        Returns: Json
+      }
+      reference_question_list: {
+        Args: {
+          p_area?: string
+          p_competition?: string
+          p_cursor?: number
+          p_limit?: number
+          p_search?: string
+          p_tag?: string
+          p_year?: number
+        }
+        Returns: {
+          has_diagram: boolean
+          id: string
+          question_number: string
+          source_competition: string
+          topic_tags: string[]
+          total_count: number
+          year: number
+        }[]
       }
     }
     Enums: {
