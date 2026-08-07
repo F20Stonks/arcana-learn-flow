@@ -137,6 +137,17 @@ async function main() {
         continue;
       }
 
+      // Some years (confirmed: 1991-1993, 1995-1996) restart numbering per day — "Day I: 1,2,3" then
+      // "Day II: 1,2,3" again — instead of the modern global 1-6 convention. Two problems sharing a
+      // question_number in the same batch makes the upsert's ON CONFLICT DO UPDATE try to touch the same
+      // row twice, which Postgres rejects outright. Renumber positionally (1-6, in document order) when
+      // duplicates are detected — matches the convention every other year already uses.
+      if (new Set(problems.map((p) => p.number)).size !== problems.length) {
+        problems.forEach((p, i) => {
+          p.number = String(i + 1);
+        });
+      }
+
       const questions = problems.map(({ number, raw }) => {
         const trimmed = trimBoilerplate(stripPageMarkers(raw));
         const text = escapeMarkdown(joinWrappedLines(trimmed)).normalize("NFC");
