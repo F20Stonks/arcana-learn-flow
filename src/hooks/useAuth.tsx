@@ -25,6 +25,8 @@ function createLocalProfile(nextUser: User): Profile {
     voice_id: null,
     onboarding_complete: false,
     waitlist_status: "waitlisted",
+    learner_notes: null,
+    learner_style_notes: null,
     created_at: now,
     updated_at: now,
   };
