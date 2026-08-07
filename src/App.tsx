@@ -15,9 +15,10 @@ import TrackPapers from "./pages/TrackPapers";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReferenceQuestions from "./pages/ReferenceQuestions";
-import StepQuestions, { StepQuestionDetail } from "./pages/StepQuestions";
+import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
+import DevUI from "./pages/DevUI";
 import PricingPage from "./pages/PricingPage";
 import WaitlistPage from "./pages/WaitlistPage";
 import TermsPage from "./pages/legal/TermsPage";
@@ -80,10 +81,11 @@ function AppRoutes() {
       <Route path="/track/:trackId/papers" element={<DashboardGuard><TrackPapers /></DashboardGuard>} />
       <Route path="/session/:subtopicId" element={<DashboardGuard><SessionPage /></DashboardGuard>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-      {/* Student-facing browser over the ingested STEP past-paper corpus. Not track-scoped (the corpus
-          is global), so it sits at the top level next to /dashboard rather than under /track/:id. */}
-      <Route path="/step-questions" element={<DashboardGuard><StepQuestions /></DashboardGuard>} />
-      <Route path="/step-questions/:questionId" element={<DashboardGuard><StepQuestionDetail /></DashboardGuard>} />
+      {/* Student-facing browser over the ingested reference-question corpus (STEP, Putnam, IMO, …). Not
+          track-scoped (the corpus is global), so it sits at the top level next to /dashboard rather than
+          under /track/:id. */}
+      <Route path="/question-bank" element={<DashboardGuard><QuestionBank /></DashboardGuard>} />
+      <Route path="/question-bank/:questionId" element={<DashboardGuard><QuestionBankDetail /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
@@ -92,6 +94,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/refund" element={<RefundPage />} />
       {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
+      {import.meta.env.DEV && <Route path="/dev/ui/*" element={<DevUI />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

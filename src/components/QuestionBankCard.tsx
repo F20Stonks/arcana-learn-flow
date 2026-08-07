@@ -1,5 +1,6 @@
 /**
- * Dashboard entry point into the STEP question bank (/step-questions).
+ * Dashboard entry point into the question bank (/question-bank) — spans every ingested competition
+ * (STEP, Putnam, IMO, …), not just STEP.
  *
  * Self-contained (fetches its own count) so Dashboard's track-loading path stays untouched — if the
  * corpus query fails the card still renders, just without the count, rather than taking the dashboard
@@ -10,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Library } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function StepBankCard({ delay = 0 }: { delay?: number }) {
+export default function QuestionBankCard({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const [count, setCount] = useState<number | null>(null);
 
@@ -30,7 +31,7 @@ export default function StepBankCard({ delay = 0 }: { delay?: number }) {
 
   return (
     <button
-      onClick={() => navigate("/step-questions")}
+      onClick={() => navigate("/question-bank")}
       className="glass-card glass-card-hover reveal group flex w-full items-center gap-4 rounded-2xl p-5 text-left"
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -38,10 +39,10 @@ export default function StepBankCard({ delay = 0 }: { delay?: number }) {
         <Library className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold text-foreground">STEP question bank</span>
+        <span className="block text-[15px] font-semibold text-foreground">Question bank</span>
         <span className="mt-0.5 block text-[13px] text-muted-foreground">
           {count !== null ? `${count.toLocaleString()} real ` : "Real "}
-          past-paper questions from STEP I, II and III — browse by paper and topic.
+          questions from STEP, Putnam, the IMO and more — browse by competition and topic.
         </span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />

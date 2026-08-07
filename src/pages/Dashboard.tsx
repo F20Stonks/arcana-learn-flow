@@ -28,7 +28,7 @@ import UpNextCard from "@/components/UpNextCard";
 import TrackCard from "@/components/TrackCard";
 import GeneralChat from "@/components/GeneralChat";
 import SafeBoundary from "@/components/SafeBoundary";
-import StepBankCard from "@/components/StepBankCard";
+import QuestionBankCard from "@/components/QuestionBankCard";
 import { SubtopicLite, TrackLite } from "@/lib/nextAction";
 import { useNextAction } from "@/hooks/useNextAction";
 import {
@@ -305,7 +305,7 @@ export default function Dashboard() {
             </h2>
           </div>
           <SafeBoundary label="STEP question bank" compact>
-            <StepBankCard delay={560} />
+            <QuestionBankCard delay={560} />
           </SafeBoundary>
         </section>
 

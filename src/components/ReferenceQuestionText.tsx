@@ -17,8 +17,22 @@ import "katex/dist/katex.min.css";
 const ROMAN_PART = /^\([ivx]+\)/i;
 const LETTER_PART = /^\([a-z]\)/;
 
-export const withStructure = (text: string) =>
-  text
+// A $$...$$ display-math block's internal newlines (real line breaks inside e.g.
+// \begin{aligned}...\end{aligned}) are part of the math, not paragraph structure — but the split below
+// used to run before this was accounted for, tearing a three-line "$$\nx^2+y^2=z^2\n$$" into three
+// separate paragraphs. remark-math then no longer recognises it as math at all (renders as literal "$$"
+// text). Fix: swap every $$...$$ span for a single-line placeholder before splitting, then restore the
+// original block, newlines intact, afterwards.
+const MATH_BLOCK = /\$\$[\s\S]*?\$\$/g;
+
+export const withStructure = (text: string) => {
+  const blocks: string[] = [];
+  const withPlaceholders = text.replace(MATH_BLOCK, (match) => {
+    blocks.push(match);
+    return `@@MATH_BLOCK_${blocks.length - 1}@@`;
+  });
+
+  const structured = withPlaceholders
     .split(/\n+/)
     .map((line) => {
       const trimmed = line.trim();
@@ -29,6 +43,9 @@ export const withStructure = (text: string) =>
     })
     .filter(Boolean)
     .join("\n\n");
+
+  return structured.replace(/@@MATH_BLOCK_(\d+)@@/g, (_, i) => blocks[Number(i)]);
+};
 
 // Scoped overrides for MathRenderer's output on reference-paper surfaces only (Tailwind arbitrary
 // descendant selectors) — larger, more open typography for long multi-part exam questions, without
