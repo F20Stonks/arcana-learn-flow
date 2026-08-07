@@ -1,6 +1,14 @@
 import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import {
+  hasPlanIdentity,
+  LESSON_PLAN_VERSION,
+  type LessonPlan,
+  planSignature,
+  renderPlanForAssessment,
+  validateLessonPlan,
+} from "../_shared/lessonPlan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +22,7 @@ const MIN_INTERVAL_DAYS = 3;
 const MAX_INTERVAL_DAYS = 365;
 const REVIEW_GROWTH: Record<"low" | "medium" | "high", number> = { low: 1.3, medium: 1.6, high: 2.5 };
 const REVIEW_LAPSE_FACTOR = 0.4;
+const MAX_LEARNER_OBSERVATIONS = 5;
 
 type ExtractedConcept = { name: string; type?: string; definition?: string; aliases?: string[] };
 type ConceptRow = { id: string; name: string; type: string; definition: string | null; aliases: string[] | null };
@@ -212,6 +221,83 @@ async function tickMatchingSpecItems(
   }
 }
 
+/** PostgREST returns a many-to-one embed as an object, but some shapes come back wrapped in a
+ * one-element array. Normalise both rather than depend on which. */
+function embedded<T>(v: unknown): T | null {
+  if (v == null) return null;
+  return (Array.isArray(v) ? (v[0] as T) : (v as T)) || null;
+}
+
+/**
+ * Resolves the same globally-cached lesson plan the teaching turns used, from the subtopic id.
+ *
+ * The cache key is built from exactly the fields the client sends `chat` (subtopic/topic title,
+ * track subject/level/exam_board), read back out of the tables here — so the assessment grades
+ * against the very plan the tutor was teaching from, without widening the request contract.
+ *
+ * Every failure returns null, which leaves the rubric below exactly as it is today.
+ */
+async function fetchLessonPlanForSubtopic(
+  supabase: ReturnType<typeof createClient>,
+  subtopicId: string,
+): Promise<LessonPlan | null> {
+  try {
+    const { data, error } = await supabase
+      .from("subtopics")
+      .select("title, topics(title, learning_tracks(subject, level, exam_board))")
+      .eq("id", subtopicId)
+      .maybeSingle();
+    if (error || !data) return null;
+
+    const topic = embedded<{ title: string; learning_tracks: unknown }>((data as any).topics);
+    const track = embedded<{ subject: string; level: string | null; exam_board: string | null }>(
+      topic?.learning_tracks,
+    );
+    const identity = {
+      subject: track?.subject,
+      level: track?.level,
+      board: track?.exam_board,
+      topic: topic?.title,
+      subtopic: (data as any).title,
+    };
+    if (!hasPlanIdentity(identity)) return null;
+
+    const signature = await planSignature(identity);
+    const { data: planRow, error: planErr } = await supabase
+      .from("lesson_plans")
+      .select("plan")
+      .eq("signature", signature)
+      .eq("plan_version", LESSON_PLAN_VERSION)
+      .maybeSingle();
+    if (planErr || !planRow) return null;
+
+    // A stored plan is still model output — a malformed row must grade as NO plan (today's rubric),
+    // never as a partial bar that could pass a session on half the checkpoints.
+    const validated = validateLessonPlan((planRow as any).plan);
+    return validated.ok ? validated.plan : null;
+  } catch (e) {
+    console.error("lesson plan lookup failed (assessing on the general rubric):", e);
+    return null;
+  }
+}
+
+/**
+ * The ids the model claims were demonstrated, restricted to ids the plan actually defines.
+ *
+ * Returns null when the field is ABSENT rather than empty. That distinction is load-bearing: an
+ * empty array is a judgement ("none were demonstrated") and must gate completion, whereas a missing
+ * field is a FORMATTING failure by the model and says nothing about the student. Collapsing the two
+ * would let one dropped field cost a student their notes, concepts, XP and review schedule — all of
+ * which hang off `complete` below — for work they actually did.
+ */
+function metCheckpointIds(raw: unknown, validIds: number[]): number[] | null {
+  if (!Array.isArray(raw)) return null;
+  const valid = new Set(validIds);
+  return [...new Set(raw.map((v) => Number(v)).filter((n) => Number.isFinite(n) && valid.has(n)))].sort(
+    (a, b) => a - b,
+  );
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
@@ -252,9 +338,24 @@ Deno.serve(async (req: Request) => {
     }
     const isReview = sessionType === "review";
 
+    // Learn sessions only: `chat` deliberately withholds the plan in review mode, so a review
+    // transcript was never produced against these checkpoints — grading it against a bar the tutor
+    // was never given would fail sessions for material the review was never asked to cover.
+    const plan = (supabase && realSubtopicId && !isReview)
+      ? await fetchLessonPlanForSubtopic(supabase, realSubtopicId)
+      : null;
+    // Both are "" without a plan, so the prompt is byte-for-byte today's when none exists.
+    const planBlock = plan ? `${renderPlanForAssessment(plan)}\n` : "";
+    const planCompletionRule = plan
+      ? `\n- CHECKPOINTS: every checkpoint listed above was demonstrated in the transcript. This is IN ADDITION to the requirements below, never instead of them — an unmet checkpoint means NOT complete no matter how strong the rest of the transcript is.`
+      : "";
+    const planJsonFields = plan
+      ? `,\n  "checkpoints_met": number[],\n  "checkpoints_unmet": number[]`
+      : "";
+
     const systemPrompt = `You are the assessment engine for an elite tutoring session (targets: 9.0 TMUA, STEP S, Olympiad medals). You read the FULL transcript of ONE session and return a strict JSON verdict. Be rigorous and repeatable — apply the rubrics literally. Do NOT award completion or XP for effort alone.
 ${isReview ? `\nThis is an ACTIVE-RECALL REVIEW session: the transcript tests recall of previously-learned material, it does not teach anything new. "complete" here means the student successfully recalled the material across the review's challenges. Leave "concepts_taught" and "concepts_required" as empty arrays (nothing new is taught in a review).\n` : ""}
-COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:
+${planBlock}COMPLETION RUBRIC — set "complete": true ONLY if ALL of these hold:${planCompletionRule}
 - TRANSFER: the student solved at least one NOVEL problem (not a re-skin of a worked example) substantially unaided.
 - SELF-EXPLANATION: the student articulated the WHY — the mechanism that forces the result — in their OWN words (a freeform answer), not merely by picking correct options.
 - They reached and answered the session's hardest / terminal challenge correctly.
@@ -278,6 +379,8 @@ XP RUBRIC (integer 10-100, be deterministic; reward UNDERSTANDING, not clicks):
 - Clamp to [10, 100].
 
 NOTES ("notes_to_save", 1-4 objects {title, content}): each "content" must capture the STRUCTURAL/CAUSAL takeaway — the mechanism, the load-bearing assumption, the counterfactual — NOT "we learned about X". Write them as durable revision notes the student can be quizzed on later. Math in "content" MUST use LaTeX delimiters — $...$ inline, $$...$$ block — exactly like the transcript itself (e.g. "the discriminant $b^2-4ac$", never "b^2-4ac" or "b²-4ac" as bare text). This is a real typesetting pipeline (KaTeX), not markdown-viewed-as-plaintext — undelimited notation renders as raw, uneven text instead of a proper equation.
+
+LEARNER OBSERVATIONS ("learner_observations", array of strings, [] if nothing notable — do NOT force a fixed count): zero or more one-sentence observations capturing something durable about HOW this student learns, distinct from what they now know — e.g. a recurring misconception, a representation that clicked (geometric/algebraic/physical), a notation habit, or a pacing signal. Each must generalize beyond this one subtopic — skip anything true only of this specific problem. Return [] if nothing durable and new showed up in this transcript; return several if the session genuinely revealed several distinct things. This feeds a persistent profile the tutor reads every future session.
 ${isReview ? "" : `
 CONCEPT EXTRACTION (feeds a permanent GLOBAL knowledge tracker — be precise):
 - "concepts_taught": atomic concepts this session actually TAUGHT and the student demonstrated understanding of (only include a concept if the transcript shows they grasped it).
@@ -291,8 +394,9 @@ Respond ONLY with valid JSON:
   "confidence": "low" | "medium" | "high",
   "xp_earned": number,
   "notes_to_save": [{"title": string, "content": string}],
+  "learner_observations": string[],
   "concepts_taught": [{"name": string, "type": string, "definition": string, "aliases": string[]}],
-  "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]
+  "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]${planJsonFields}
 }`;
 
     const aiRes = await fetch(ai.url, {
@@ -321,11 +425,41 @@ Respond ONLY with valid JSON:
       return new Response(JSON.stringify(fallback), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const complete = result.complete === true;
+    // With a plan, the checkpoints ARE the completion bar (docs/lesson-plan-layer.md §6). Enforcing
+    // it here rather than trusting the rubric text is what turns it from a hope into a mechanism —
+    // over-completion is the expensive failure, since it permanently marks a subtopic done and
+    // schedules a review for material the session never covered.
+    //
+    // But the gate applies ONLY when the model actually reported checkpoints. Everything downstream
+    // of `complete` — notes, concept extraction, subtopic status, review scheduling — is lost when it
+    // is false, so a model that simply omits a field it has never been asked for before must not cost
+    // a student the session they earned. Absent field => fall back to the general rubric, and say so
+    // loudly in the logs. An explicitly EMPTY array is a real judgement and still gates.
+    const requiredCheckpointIds = plan ? plan.checkpoints.map((c) => c.id) : [];
+    const reportedMet = metCheckpointIds(result.checkpoints_met, requiredCheckpointIds);
+    const checkpointsReported = plan !== null && reportedMet !== null;
+    const checkpointsMet = reportedMet ?? [];
+    const checkpointsUnmet = checkpointsReported
+      ? requiredCheckpointIds.filter((id) => !checkpointsMet.includes(id))
+      : [];
+
+    if (plan && !checkpointsReported) {
+      console.error(
+        "assessment omitted checkpoints_met despite a plan being supplied — falling back to the general completion rubric for this session",
+      );
+    }
+
+    const complete = result.complete === true && checkpointsUnmet.length === 0;
+    if (checkpointsReported && result.complete === true && checkpointsUnmet.length > 0) {
+      console.log("completion withheld — checkpoints unmet:", checkpointsUnmet.join(", "));
+    }
     const confidence: "low" | "medium" | "high" =
       result.confidence === "high" || result.confidence === "medium" ? result.confidence : "low";
     const xpEarned = Math.max(10, Math.min(100, Math.round(Number(result.xp_earned) || 10)));
     const notes: { title: string; content: string }[] = Array.isArray(result.notes_to_save) ? result.notes_to_save : [];
+    const learnerObservations: string[] = Array.isArray(result.learner_observations)
+      ? result.learner_observations.filter((o: unknown): o is string => typeof o === "string" && o.trim().length > 0).map((o: string) => o.trim())
+      : [];
     const conceptsTaught: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_taught) ? result.concepts_taught : []);
     const conceptsRequired: ExtractedConcept[] = isReview ? [] : (Array.isArray(result.concepts_required) ? result.concepts_required : []);
 
@@ -385,15 +519,29 @@ Respond ONLY with valid JSON:
         }
 
         await supabase.from("sessions").update({ completed_at: nowIso, xp_earned: xpEarned }).eq("id", sessionId);
-        if (xpEarned > 0 && userId) {
-          const { data: p } = await supabase.from("profiles").select("total_xp").eq("user_id", userId).maybeSingle();
-          if (p) await supabase.from("profiles").update({ total_xp: ((p as any).total_xp || 0) + xpEarned }).eq("user_id", userId);
+        if (userId) {
+          const { data: p } = await supabase.from("profiles").select("total_xp, learner_style_notes").eq("user_id", userId).maybeSingle();
+          if (p) {
+            const update: Record<string, unknown> = {};
+            if (xpEarned > 0) update.total_xp = ((p as any).total_xp || 0) + xpEarned;
+            if (learnerObservations.length) {
+              const prior = ((p as any).learner_style_notes || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+              const combined = [...prior, ...learnerObservations.map((o) => `- ${o}`)];
+              update.learner_style_notes = combined.slice(-MAX_LEARNER_OBSERVATIONS).join("\n");
+            }
+            if (Object.keys(update).length) await supabase.from("profiles").update(update).eq("user_id", userId);
+          }
         }
       } catch (pipeErr) {
         console.error("completion pipeline error (assessment still returned):", pipeErr);
       }
     }
 
+    // Checkpoint outcomes are NOT persisted: there is no column for them yet (`sessions` has no jsonb
+    // or int[] field, and nothing else is a natural home). Returning them keeps the signal observable
+    // — and usable for seeding the next session — until `sessions.checkpoints_met/_unmet` is added by
+    // whoever owns the schema. Omitted entirely when no plan exists, so the no-plan response shape is
+    // unchanged.
     return new Response(JSON.stringify({
       complete,
       confidence,
@@ -401,6 +549,7 @@ Respond ONLY with valid JSON:
       notes_to_save: notes,
       concepts_taught: conceptsTaught.map((c) => c.name),
       concepts_required: conceptsRequired.map((c) => c.name),
+      ...(plan ? { checkpoints_met: checkpointsMet, checkpoints_unmet: checkpointsUnmet } : {}),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("assess error:", e);

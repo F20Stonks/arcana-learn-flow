@@ -346,6 +346,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          learner_notes: string | null
+          learner_style_notes: string | null
           onboarding_complete: boolean
           subscription_tier: string
           total_xp: number
@@ -360,6 +362,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          learner_notes?: string | null
+          learner_style_notes?: string | null
           onboarding_complete?: boolean
           subscription_tier?: string
           total_xp?: number
@@ -374,6 +378,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          learner_notes?: string | null
+          learner_style_notes?: string | null
           onboarding_complete?: boolean
           subscription_tier?: string
           total_xp?: number

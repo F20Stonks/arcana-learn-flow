@@ -1,5 +1,14 @@
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import {
+  hasPlanIdentity,
+  LESSON_PLAN_VERSION,
+  type LessonPlan,
+  planSignature,
+  renderPlanForTeaching,
+  validateLessonPlan,
+} from "../_shared/lessonPlan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,8 +16,137 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// A plan is a quality upgrade, never a dependency. Losing one costs the student a better lesson;
+// waiting on one costs them the whole turn — so the lookup is hard-capped and the turn proceeds.
+const PLAN_LOOKUP_TIMEOUT_MS = 2000;
+
+// Signatures this instance has already asked to be authored. Authoring is idempotent on the server
+// (upsert by signature), so this is only to stop one instance re-firing on every turn of a session
+// that is still waiting for its first plan — not a correctness guarantee across instances.
+const authoringRequested = new Set<string>();
+
 function pickModel(_intensity: string, fallback: string): string {
   return fallback;
+}
+
+/**
+ * Fire-and-forget request to author a plan we just missed on. THIS IS WHAT MAKES THE CACHE FILL:
+ * nothing else in the system ever calls the authoring function, so without this the table stays
+ * empty and every session teaches on the miss path forever.
+ *
+ * Deliberately not awaited. The current turn is already teaching without a plan and must not wait
+ * ~30s for one; the plan lands for a later turn, the next session, and — since plans are global —
+ * for every other student who ever studies this subtopic.
+ */
+function requestAuthoring(context: any, signature: string, authHeader: string): void {
+  if (authoringRequested.has(signature)) return;
+  authoringRequested.add(signature);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  if (!SUPABASE_URL || !authHeader) return;
+
+  const p = fetch(`${SUPABASE_URL}/functions/v1/author-lesson-plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: authHeader },
+    body: JSON.stringify({
+      subject: context?.subject,
+      level: context?.level,
+      board: context?.examBoard,
+      topic: context?.topic,
+      subtopic: context?.subtopic,
+    }),
+  })
+    .then(async (r) => {
+      // Authoring reports soft failures as { ok: false } at HTTP 200 — deliberately, so callers
+      // degrade instead of erroring. So the HTTP status says almost nothing here: branch on the
+      // BODY, or a run of failed attempts would look like successes and never be retried.
+      const body = await r.json().catch(() => null);
+      if (!r.ok || body?.ok !== true) {
+        authoringRequested.delete(signature);
+        console.error("lesson plan authoring did not produce a plan:", body?.errors ?? r.status);
+      }
+    })
+    .catch((e) => {
+      authoringRequested.delete(signature);
+      console.error("lesson plan authoring request failed:", e);
+    });
+
+  // Supabase kills the isolate once the response is sent unless the work is registered here.
+  try {
+    (globalThis as any).EdgeRuntime?.waitUntil?.(p);
+  } catch {
+    /* not available in every runtime — the promise still runs while the isolate is warm */
+  }
+}
+
+/**
+ * Reads the cached lesson plan for this subtopic, server-side.
+ *
+ * The client already sends everything the cache key needs (subject/level/board/topic/subtopic), so
+ * the plan is resolved here rather than in the browser: the frontend needs no change, and the plan —
+ * which contains the terminal transfer problem and the answers to the checkpoints — never reaches
+ * the student's machine.
+ *
+ * Every failure path returns null, which renders no block at all and leaves the prompt exactly as it
+ * is today. See docs/lesson-plan-layer.md §7: sessions must never block on, or break because of,
+ * plan availability.
+ *
+ * A genuine cache MISS (as opposed to an error) also kicks off authoring in the background, which is
+ * how the cache ever fills in the first place.
+ */
+async function fetchLessonPlan(context: any, authHeader: string): Promise<LessonPlan | null> {
+  try {
+    const identity = {
+      subject: context?.subject,
+      level: context?.level,
+      board: context?.examBoard,
+      topic: context?.topic,
+      subtopic: context?.subtopic,
+    };
+    if (!hasPlanIdentity(identity)) return null;
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
+
+    const signature = await planSignature(identity);
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PLAN_LOOKUP_TIMEOUT_MS);
+    let row: { plan: unknown } | null = null;
+    try {
+      const { data, error } = await supabase
+        .from("lesson_plans")
+        .select("plan")
+        .eq("signature", signature)
+        .eq("plan_version", LESSON_PLAN_VERSION)
+        .abortSignal(controller.signal)
+        .maybeSingle();
+      if (error) return null;
+      row = (data as { plan: unknown } | null) || null;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!row) {
+      // Confirmed absent rather than unreachable — author it for the turns and students that follow.
+      requestAuthoring(context, signature, authHeader);
+      return null;
+    }
+
+    // A stored plan is still model output. Validate it: a malformed row must read as NO plan rather
+    // than as a half-plan, because a half-plan silently teaches worse than no plan at all.
+    const validated = validateLessonPlan(row.plan);
+    if (!validated.ok) {
+      console.error("stored lesson plan failed validation, re-authoring:", validated.errors.join("; "));
+      requestAuthoring(context, signature, authHeader);
+      return null;
+    }
+    return validated.plan;
+  } catch (e) {
+    console.error("lesson plan lookup failed (teaching without a plan):", e);
+    return null;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -24,6 +162,16 @@ Deno.serve(async (req: Request) => {
     const intensity = context?.intensity === "guided" || context?.intensity === "rigorous"
       ? context.intensity
       : "balanced";
+
+    const learnerNotes: string = typeof context?.learnerNotes === "string" ? context.learnerNotes.trim() : "";
+    const learnerStyleNotes: string = typeof context?.learnerStyleNotes === "string" ? context.learnerStyleNotes.trim() : "";
+    const learnerCardBlock = (learnerNotes || learnerStyleNotes)
+      ? `
+
+LEARNER CARD — persists across every session for this student, follow it exactly:
+${learnerNotes ? `- Their own stated instructions: "${learnerNotes}"` : ""}
+${learnerStyleNotes ? `- What past sessions have observed about how they learn: ${learnerStyleNotes}` : ""}`
+      : "";
 
     const knownConcepts: string[] = Array.isArray(context?.knownConcepts) ? context.knownConcepts : [];
     const prerequisites: { name: string; known: boolean }[] = Array.isArray(context?.prerequisites) ? context.prerequisites : [];
@@ -52,6 +200,15 @@ rule — lead with the mechanism that forces the result, not a restatement of it
 the notes, then say explicitly that the review is complete and stop posing new challenges.`
       : "";
 
+    // Skipped for systemOverride (that path is the Scene Director / onboarding calling this function
+    // for one-shot JSON, not a teaching turn — the prompt below is replaced wholesale anyway) and for
+    // review mode (retrieval practice on saved notes, not a first pass through the plan).
+    const lessonPlan = (!systemOverride && context?.mode !== "review")
+      ? await fetchLessonPlan(context, req.headers.get("Authorization") || "")
+      : null;
+    // Empty string on a miss, so the prompt below is byte-for-byte what it is today when no plan exists.
+    const lessonPlanBlock = lessonPlan ? renderPlanForTeaching(lessonPlan) : "";
+
     const systemPrompt = systemOverride || `You are Cortexed, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
 ${reviewBlock}
 
@@ -61,7 +218,7 @@ Context:
 - Subject: ${context?.subject || "General"}
 - Level: ${context?.level || "Not specified"}
 - Exam board: ${context?.examBoard || "Not specified"}
-${priorKnowledgeBlock}
+${priorKnowledgeBlock}${learnerCardBlock}${lessonPlanBlock}
 
 MISSION: make NOT understanding impossible. A concept is understood only when the student can (a) explain WHY it holds from its MECHANISM, (b) CONNECT it to what they already know, and (c) APPLY it to a NOVEL problem. A correct multiple-choice pick is NOT understanding — treat it as a hint they might be ready, never as proof.
 
@@ -100,7 +257,7 @@ HARD RULES (non-negotiable):
 8. WHY-FIRST EXPLANATION (the load-bearing rule): never state a result and then justify it afterwards. Lead
    with the MECHANISM that forces the result — name the load-bearing assumption it rests on, state the
    result as its inevitable consequence, and give the one-clause counterfactual ("drop that assumption and
-   it fails, because ..."). The "why" is the CONTENT of your ≤3 sentences, not extra length on top of them:
+   it fails, because ..."). The "why" is CARRIED BY the explanation itself, never appended to it afterwards:
    prefer "the leading term dominates as |x|→∞, so an odd-degree polynomial must change sign, so a real root
    is forced" over stating the theorem and then explaining it. A correct result with no mechanism is
    INCOMPLETE — structural/causal reasoning is the product, correctness is just the by-product.

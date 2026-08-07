@@ -105,7 +105,7 @@ export default function SessionPage() {
   const { subtopicId } = useParams();
   const [searchParams] = useSearchParams();
   const isReview = searchParams.get("mode") === "review";
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [subtopic, setSubtopic] = useState<Tables<"subtopics"> | null>(null);
@@ -685,6 +685,8 @@ Return ONLY a JSON object — no prose, no markdown fences:
             intensity,
             knownConcepts: knownConceptNames,
             prerequisites,
+            learnerNotes: profile?.learner_notes || undefined,
+            learnerStyleNotes: profile?.learner_style_notes || undefined,
           },
         }),
       });

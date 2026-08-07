@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   AlertDialog,
@@ -187,16 +188,23 @@ function AccountPanel() {
   const { user, profile, refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [learnerNotes, setLearnerNotes] = useState(profile?.learner_notes || "");
   const [saving, setSaving] = useState(false);
 
-  const dirty = displayName !== (profile?.display_name || "") || avatarUrl !== (profile?.avatar_url || "");
+  const dirty = displayName !== (profile?.display_name || "")
+    || avatarUrl !== (profile?.avatar_url || "")
+    || learnerNotes !== (profile?.learner_notes || "");
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: displayName.trim() || null, avatar_url: avatarUrl.trim() || null })
+      .update({
+        display_name: displayName.trim() || null,
+        avatar_url: avatarUrl.trim() || null,
+        learner_notes: learnerNotes.trim() || null,
+      })
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -247,6 +255,36 @@ function AccountPanel() {
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
           Save changes
         </button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-1">How I learn best</h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Tell your tutor anything it should always keep in mind — a pace, a representation you prefer, a habit to avoid.
+          This is injected into every session, verbatim.
+        </p>
+        <Textarea
+          value={learnerNotes}
+          onChange={(e) => setLearnerNotes(e.target.value)}
+          placeholder="e.g. Go slower on notation, I mix up ∂ and d. Show me the geometric picture before the algebra."
+          rows={4}
+          maxLength={1000}
+        />
+        <button
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2"
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+          Save changes
+        </button>
+
+        {profile?.learner_style_notes && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-1.5">What your tutor has noticed</p>
+            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{profile.learner_style_notes}</p>
+          </div>
+        )}
       </div>
     </div>
   );
