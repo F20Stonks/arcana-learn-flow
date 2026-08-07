@@ -14,23 +14,34 @@
 // FAST: a skeleton pass plus an ungrounded expansion. Returns in seconds. This is what the waiting
 // student's track is built from, and it is NEVER cached — it has been checked against nothing.
 //
-// GROUNDED: per-topic specification resolution. For each topic we fetch REAL spec text for that
-// topic specifically and regenerate its subtopics from that text. Only this phase can produce a
-// cacheable tree. It is slow (a search plus a model call per topic), so by default it runs in the
-// background after the response is sent, exactly like chat/index.ts warms the lesson plan cache —
-// the first student on a goal gets the fast tree, everyone after gets the grounded cached one.
+// GROUNDED: resolve the ONE document that IS this syllabus's specification — usually a PDF — read it
+// in FULL, split it into overlapping chunks, and regenerate every topic's subtopics from the chunks
+// that actually contain its content. Only this phase can produce a cacheable tree. It is slow (a
+// document fetch/parse plus a handful of model calls), so by default it runs in the background after
+// the response is sent, exactly like chat/index.ts warms the lesson plan cache — the first student on
+// a goal gets the fast tree, everyone after gets the grounded cached one.
 //
-// WHY PER-TOPIC. The first version of this function audited the whole tree against ONE ~6k-character
-// search result. A real A-Level specification is a hundred pages, so that excerpt is ~1-2% of it —
-// and an audit against it is structurally unable to catch the dominant failure, material missing
-// from BOTH the tree and the excerpt. It rubber-stamped. specChecklistResolver.ts had already hit
-// and documented this exact wall; specSearch.ts now holds the shared fix.
+// TWO THINGS WERE WRONG WITH THE FIRST VERSION OF THIS PHASE, NOT ONE.
+//
+// (1) It audited the whole tree against ONE ~6k-character search result — roughly 1-2% of a real
+// hundred-page specification — so the audit was structurally unable to catch the dominant failure,
+// material missing from BOTH the tree and the excerpt. It rubber-stamped.
+//
+// (2) The obvious fix — search per topic instead — was ALSO broken, for a reason that had nothing to
+// do with granularity: the fetch fallback only accepted `content-type: html` and silently discarded
+// every PDF result, and specifications are very frequently published as PDFs. So even a correctly
+// targeted per-topic search would often find the real document and then throw it away unread.
+//
+// The fix here is neither "audit less" nor "search narrower" — it is "read the actual document,
+// whatever format it's in, wherever it's actually hosted." specSearch.ts's `resolveSpecDocument` does
+// not restrict by domain: a specification mirrored on a revision site or a school's own upload is
+// exactly as usable as the exam board's own copy, and is often the only copy a search surfaces well.
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
-import { getTavilyKey, type SpecExcerpt, searchTopicSpecText } from "../_shared/specSearch.ts";
+import { chunkText, getTavilyKey, resolveSpecDocument } from "../_shared/specSearch.ts";
 import {
   countSubtopics,
   hasCanonicalIdentity,
@@ -62,10 +73,20 @@ const json = (body: unknown, status = 200) =>
 const EXPAND_BATCH_SIZE = 4;
 /** Cap on concurrent model calls. Firing 15 batches at once reliably trips gateway rate limits. */
 const EXPAND_CONCURRENCY = 5;
-/** Grounding does a web search AND a model call per topic, so it is throttled harder. */
-const GROUNDING_CONCURRENCY = 3;
-/** Wall-clock budget for the whole grounding phase. Topics not reached are counted as ungrounded
- *  rather than silently dropped, so a timeout shows up honestly in topics_grounded. */
+/** Characters per grounding chunk. Large enough that a real specification (60-150k chars) needs only
+ *  a handful of chunks, small enough to stay comfortably inside one model call's context+response
+ *  budget alongside the full topic list sent with every chunk. */
+const CHUNK_CHARS = 25_000;
+/** A specification's content statements are frequently split across a source-document page boundary.
+ *  Without overlap, a topic whose defining sentence straddles a chunk boundary appears in neither
+ *  chunk's context and never grounds. */
+const CHUNK_OVERLAP_CHARS = 1_000;
+/** Cap on concurrent chunk calls. Far fewer chunks than the old per-topic call count, so this can
+ *  stay modest without the whole phase taking materially longer. */
+const CHUNK_CONCURRENCY = 4;
+/** Wall-clock budget for the whole grounding phase. Chunks not reached before the deadline are
+ *  skipped rather than silently dropped from the count, so a timeout shows up honestly as a lower
+ *  topics_grounded ratio instead of quietly passing. */
 const GROUNDING_BUDGET_MS = 110_000;
 
 // ---------------------------------------------------------------------------
@@ -167,23 +188,26 @@ Too coarse (bundles many distinct ideas — must be split): "Complex Numbers", "
 Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}]}`;
 
 /**
- * The grounded pass. Expansion, audit and repair collapse into ONE call per topic, because with real
- * spec text in hand there is nothing to audit against separately — the subtopics are DERIVED from
- * the specification rather than invented and then checked against it.
+ * The grounded pass. Expansion, audit and repair collapse into ONE call per CHUNK, because with real
+ * spec text in hand there is nothing to audit separately — the subtopics are DERIVED from the
+ * specification rather than invented and then checked against it. One chunk is one physical slice of
+ * the real document (see chunkText in specSearch.ts), not one topic — a chunk may cover several
+ * topics, one topic, or none, and the model is told to report exactly that rather than guess.
  */
-const GROUNDED_TOPIC_SYSTEM = `You are a curriculum editor working from a REAL official examination specification excerpt for ONE topic.
+const GROUNDED_CHUNK_SYSTEM = `You are extracting curriculum structure from ONE CHUNK of a real official examination specification document. The chunk is a mechanical slice of a much larger document — it may start or end mid-sentence, may be a title page or table of contents with no real content, and will very often cover only SOME of the topics you are given, or none at all. That is expected; only report what is actually IN this chunk.
 
-Produce the complete list of session-grain subtopics this topic requires, derived from the specification text you are given. Each subtopic is ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting.
+You are given the syllabus's full topic list (with draft subtopics from an earlier, ungrounded pass) and this one chunk of real specification text.
 
-Rules:
-- COVER EVERYTHING in the excerpt that belongs to this topic. This is the whole point: anything the specification requires here and you omit is material the student will never be taught.
-- Use the specification's OWN terminology and emphasis. Boards differ, and the excerpt is the authority.
-- Keep any of the existing draft subtopics that genuinely fit, reworded to match the spec's terminology where they differ. Drop draft subtopics the specification does not actually require for this topic. Add everything it requires that is missing.
-- SPLIT anything too broad for one sitting. A specification line item is frequently several sittings' worth of material and must not be copied across as a single subtopic.
-- Order prerequisites-first. Return 3-${MAX_SUBTOPICS_PER_TOPIC} subtopics.
-- The excerpt may be truncated mid-document, and may contain navigation text or material from OTHER topics. Ignore anything not about this topic. If the excerpt turns out to contain no real specification content for this topic at all, return {"subtopics": [], "grounded": false} and the draft will be kept as-is.
+For EACH topic this chunk contains real specification content for:
+- Produce the complete session-grain subtopic list for that topic, AS FAR AS THIS CHUNK COVERS IT. (A different chunk may cover the rest of the same topic if its content spans multiple pages of the source document — you are only reporting this chunk's share.)
+- Each subtopic is ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting. Split anything the specification bundles that is broader than one sitting.
+- Use the specification's own terminology, not the draft's.
+- The topic title in your response must match one of the given titles EXACTLY.
 
-Return ONLY JSON: {"subtopics":["...","..."], "grounded": true}`;
+Do NOT include a topic you have no real content for in this chunk — do not guess, do not pad from the draft, do not invent. An empty result for a chunk that turns out to be front matter or an appendix is the CORRECT answer, not a failure.
+
+Return ONLY JSON: {"topics": [{"title": "<exact title from the list>", "subtopics": ["...", "..."]}]}
+If this chunk has no real specification content for any of the given topics, return {"topics": []}.`;
 
 // ---------------------------------------------------------------------------
 // Phase 1 — fast, ungrounded
@@ -251,8 +275,14 @@ async function buildFastTree(id: SyllabusIdentity, goal: string, wholeSpec: stri
 }
 
 // ---------------------------------------------------------------------------
-// Phase 2 — grounded, per topic. The only phase that can produce a cacheable tree.
+// Phase 2 — grounded, against the real document. The only phase that can produce a cacheable tree.
 // ---------------------------------------------------------------------------
+
+/** The compact form of the draft tree sent alongside EVERY chunk, so the model can match content to
+ *  exact topic titles without re-deriving the syllabus structure from scratch each time. */
+function draftTopicList(draft: SyllabusTopic[]): string {
+  return draft.map((t) => `- ${t.title} :: ${t.subtopics.join("; ")}`).join("\n");
+}
 
 async function groundTree(
   id: SyllabusIdentity,
@@ -265,60 +295,72 @@ async function groundTree(
     return { topics: draft, coverage: { verdict: "unverified", topics_grounded: 0, topics_total: total } };
   }
 
+  const doc = await resolveSpecDocument(
+    id.board || "", id.subject || "", id.level || null, tavilyKey, draft.map((t) => t.title),
+  ).catch((e) => {
+    console.error("spec document resolution failed:", e);
+    return null;
+  });
+  if (!doc) {
+    console.error("no specification document could be resolved — tree will not be cached");
+    return { topics: draft, coverage: { verdict: "unverified", topics_grounded: 0, topics_total: total } };
+  }
+
+  const chunks = chunkText(doc.text, CHUNK_CHARS, CHUNK_OVERLAP_CHARS);
+  const topicList = draftTopicList(draft);
   const deadline = Date.now() + GROUNDING_BUDGET_MS;
-  const ungrounded: string[] = [];
-  let sourceUrl: string | undefined;
 
-  const grounded = await pooled(draft, GROUNDING_CONCURRENCY, async (topic) => {
-    if (Date.now() > deadline) {
-      ungrounded.push(topic.title);
-      return topic;
+  // Accumulate subtopics found per topic ACROSS chunks (overlap, or a section genuinely spanning
+  // multiple chunks, can mean the same topic is reported more than once) — merged and deduped below.
+  const foundByTopic = new Map<string, string[]>();
+
+  await pooled(chunks, CHUNK_CONCURRENCY, async (chunk) => {
+    if (Date.now() > deadline) return;
+    const user = `SYLLABUS TOPICS (draft, for matching only — the specification chunk is the authority):\n${topicList}\n\nSPECIFICATION CHUNK (source: ${doc.sourceUrl}):\n"""\n${chunk}\n"""\n\nExtract what this chunk covers now.`;
+    const data = await askJson(GROUNDED_CHUNK_SYSTEM, user);
+    if (!Array.isArray(data?.topics)) return;
+    for (const t of data.topics) {
+      const title = String(t?.title ?? "").trim();
+      const subs = cleanList(t?.subtopics, MAX_SUBTOPICS_PER_TOPIC);
+      if (!title || subs.length === 0) continue;
+      const key = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const existing = foundByTopic.get(key) || [];
+      foundByTopic.set(key, [...existing, ...subs]);
     }
-
-    let excerpt: SpecExcerpt | null = null;
-    try {
-      excerpt = await searchTopicSpecText(
-        id.board || "", id.subject || "", id.level || null, topic.title, tavilyKey,
-      );
-    } catch { /* fails soft below */ }
-
-    if (!excerpt) {
-      ungrounded.push(topic.title);
-      return topic;
-    }
-
-    const user = `Topic: "${topic.title}"\nSubject: ${id.subject} | Level: ${id.level} | Board: ${id.board}\n\nEXISTING DRAFT SUBTOPICS:\n${JSON.stringify(topic.subtopics)}\n\nOFFICIAL SPECIFICATION EXCERPT (source: ${excerpt.sourceUrl}):\n"""\n${excerpt.text}\n"""\n\nProduce the complete session-grain subtopic list for this topic now.`;
-    const data = await askJson(GROUNDED_TOPIC_SYSTEM, user);
-    const subs = cleanList(data?.subtopics, MAX_SUBTOPICS_PER_TOPIC);
-
-    // The model reporting `grounded: false`, or returning nothing usable, means the excerpt was not
-    // really this topic's specification. Keeping the draft is right; claiming it was grounded is not.
-    if (subs.length === 0 || data?.grounded === false) {
-      ungrounded.push(topic.title);
-      return topic;
-    }
-
-    sourceUrl ??= excerpt.sourceUrl;
-    return { title: topic.title, subtopics: subs };
   });
 
-  const groundedCount = total - ungrounded.length;
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let groundedCount = 0;
+  const ungrounded: string[] = [];
+  const topics: SyllabusTopic[] = draft.map((topic) => {
+    const merged = foundByTopic.get(norm(topic.title));
+    if (!merged || merged.length === 0) {
+      ungrounded.push(topic.title);
+      return topic;
+    }
+    groundedCount++;
+    return { title: topic.title, subtopics: cleanList(merged, MAX_SUBTOPICS_PER_TOPIC) };
+  });
+
   const ratio = total > 0 ? groundedCount / total : 0;
-  const verdict = ratio >= MIN_GROUNDED_RATIO && sourceUrl ? "grounded" : "unverified";
+  const verdict = ratio >= MIN_GROUNDED_RATIO ? "grounded" : "unverified";
 
   const coverage: SyllabusCoverage = {
     verdict,
     topics_grounded: groundedCount,
     topics_total: total,
-    ...(sourceUrl ? { source_url: sourceUrl } : {}),
+    source_url: doc.sourceUrl,
     // Recorded as the honest gap in VERIFICATION, not in content: these topics still have subtopics,
-    // they were just never checked against a specification. That distinction matters when reading a
-    // cached tree later and deciding whether to trust it.
+    // they were just never matched to real specification text in the resolved document. That
+    // distinction matters when reading a cached tree later and deciding whether to trust it.
     ...(ungrounded.length ? { missing: ungrounded.slice(0, 25) } : {}),
   };
 
-  console.log(`grounding: ${groundedCount}/${total} topics (${(ratio * 100).toFixed(0)}%) → ${verdict}`);
-  return { topics: grounded, coverage };
+  console.log(
+    `grounding: resolved ${doc.text.length} chars from ${doc.sourceUrl} as ${chunks.length} chunk(s); ` +
+    `${groundedCount}/${total} topics (${(ratio * 100).toFixed(0)}%) → ${verdict}`,
+  );
+  return { topics, coverage };
 }
 
 /**
@@ -327,7 +369,12 @@ async function groundTree(
  * grounding would mean grounding twice — every search and every model call, paid double.
  */
 async function cacheTree(
-  supabase: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  supabase: any, // `ReturnType<typeof createClient>` resolves to the GENERIC function's default type
+  // params (schema "never"), not the concrete client `createClient(url, key, opts)` actually returns
+  // — passing that concrete client to a parameter typed that way fails to typecheck. No other function
+  // in this codebase hits this because none of them factor the client out into a helper; `any` here is
+  // the same looseness the rest of this file already uses for AI response shapes.
   id: SyllabusIdentity,
   signature: string,
   topics: SyllabusTopic[],
@@ -383,7 +430,8 @@ async function cacheTree(
 
 /** Ground, then cache. The background path; returns nothing because nobody is waiting on it. */
 async function groundAndCache(
-  supabase: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  supabase: any, // see the comment on cacheTree's identical parameter above
   id: SyllabusIdentity,
   signature: string,
   draft: SyllabusTopic[],

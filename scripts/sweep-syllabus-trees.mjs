@@ -8,10 +8,11 @@
 // deployed anywhere.
 //
 // Calls are made SEQUENTIALLY, not in parallel. Each row is an expensive multi-call authoring run
-// (skeleton -> expand -> audit -> repair, see author-syllabus-tree/index.ts) that itself pools
-// several AI calls internally; firing multiple rows at once on top of that reliably trips gateway
-// rate limits and turns a real failure into a misleading one. Expect this to take a while — that is
-// the cost of a run that means something, not a bug.
+// (skeleton -> expand -> resolve ONE real spec document -> chunk it -> regenerate topics per chunk,
+// see author-syllabus-tree/index.ts) that itself pools several AI calls internally; firing multiple
+// rows at once on top of that reliably trips gateway rate limits and turns a real failure into a
+// misleading one. Expect this to take a while — that is the cost of a run that means something, not
+// a bug.
 //
 // Usage:
 //   node scripts/sweep-syllabus-trees.mjs [--token <bearer JWT>] [--supabase-url <url>] [--out <path>]
@@ -213,7 +214,7 @@ function checkRow(row, result) {
         `a bespoke goal entered the global cache, the layer's worst failure mode`,
       );
     }
-    // A bespoke goal must not spend N per-topic searches on a tree that can never be cached.
+    // A bespoke goal must not spend a document search/fetch/chunk pass on a tree that can never be cached.
     if (result.grounding !== "skipped") {
       failures.push(`negative case ran grounding (grounding="${result.grounding}") — wasted spend on an uncacheable tree`);
     }
@@ -251,10 +252,11 @@ function checkRow(row, result) {
 async function callOne(supabaseUrl, token, body) {
   const res = await fetch(`${supabaseUrl}/functions/v1/author-syllabus-tree`, {
     method: "POST",
-    // mode:"sync" forces the per-topic grounding pass to run INLINE. In production that pass runs in
-    // the background after the response is sent, so a default call would return a fast, deliberately
-    // ungrounded tree — and a sweep that measured that would be verifying the one phase whose whole
-    // point is that it has been checked against nothing.
+    // mode:"sync" forces the grounding pass (resolve the real spec document, chunk it, regenerate
+    // topics against real chunks) to run INLINE. In production that pass runs in the background after
+    // the response is sent, so a default call would return a fast, deliberately ungrounded tree — and
+    // a sweep that measured that would be verifying the one phase whose whole point is that it has
+    // been checked against nothing.
     body: JSON.stringify({ ...body, mode: "sync" }),
     headers: {
       "Content-Type": "application/json",
