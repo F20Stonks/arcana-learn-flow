@@ -1,8 +1,7 @@
-import { getBearerToken } from "@/lib/authHeader";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import BrandLogo from "@/components/BrandLogo";
@@ -11,6 +10,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+type SyllabusTopic = { title: string; subtopics: string[] };
 
 const EXAMPLE_PROMPTS = [
   "I want an A* in A-level further maths",
@@ -34,177 +35,93 @@ export default function OnboardingPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Grain-refinement pass (pillar A: tracks must be correctly sized). jarvis-director produces a
-  // spec-grounded track, but its subtopics are often too broad to be one self-contained session
-  // (e.g. "Complex Number Arithmetic" is really 4-5 sittings). This takes the generated topics and,
-  // via the ALREADY-DEPLOYED chat function's systemOverride, splits any over-broad subtopic into
-  // session-grain ones — preserving the grounded topic structure. Returns subtopic-arrays aligned by
-  // topic index, or null on any problem (caller then keeps the original, unrefined subtopics).
-  const refineTrackGrain = async (track: { topics: { title: string; subtopics: string[] }[] }): Promise<string[][] | null> => {
+  /**
+   * Fetch the syllabus tree for this goal.
+   *
+   * The multi-pass generation that used to live here (skeleton → parallel expand → grain refine, all
+   * driven from the browser) now runs inside the author-syllabus-tree edge function. That is not
+   * tidying: the tree is cached GLOBALLY, and the cache write has to be a service-role write, or any
+   * client could replace the syllabus served to every future student on the same goal. Moving it also
+   * means a student whose goal is already cached gets their track instantly instead of paying for a
+   * full generation run. See docs/syllabus-tree-layer.md.
+   *
+   * Returns null on any failure; the caller then falls back to the director's own draft topics.
+   */
+  const fetchSyllabusTree = async (
+    meta: { goal: string; subject: string; level?: string; examBoard?: string },
+    conversation: Message[],
+  ): Promise<{ topics: SyllabusTopic[]; treeId: string | null } | null> => {
     try {
-      const sys = `You are a curriculum editor. You are given a track's topics with their subtopics. Your ONE job is GRANULARITY: every subtopic must be a single SELF-CONTAINED lesson — one core idea plus its immediate practice, fully learnable in one ~20-30 minute sitting.
-Rules:
-- If a subtopic is too broad for one sitting (it bundles several distinct ideas, e.g. "Complex Number Arithmetic", "Differentiation", "Trigonometry"), SPLIT it into ordered session-grain subtopics.
-- Leave already-well-sized subtopics exactly as they are.
-- Do NOT add, remove, or reorder TOPICS — return exactly the same number of topics, in the same order, with the same titles.
-- Order subtopics so prerequisites come before what depends on them.
-- Do not invent material beyond the track's evident scope; only split what is already there. Cap each topic at 10 subtopics.
-This applies to ALL of mathematics and physics, from high-school (GCSE / A-level) to undergraduate. Adapt the grain to whatever material you are given — never to a fixed template. Judge "one sitting" relative to the track's own level.
-Good grain (one idea each): "Argand diagrams: plotting a complex number", "Resolving a projectile's velocity into components", "Gauss's law for a single point charge", "Solving a linear equation in one variable".
-Too coarse (bundles many distinct ideas — must be split): "Complex Numbers", "Calculus", "Electromagnetism", "Forces and Motion".
-Return ONLY JSON — no prose, no markdown fences:
-{"topics":[{"title":"<unchanged title>","subtopics":["...","..."]}]}`;
-      const payload = { topics: track.topics.map((t) => ({ title: t.title, subtopics: t.subtopics })) };
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await getBearerToken()}`,
+      const { data, error } = await supabase.functions.invoke("author-syllabus-tree", {
+        body: {
+          subject: meta.subject,
+          level: meta.level ?? null,
+          board: meta.examBoard ?? null,
+          goal: meta.goal,
+          // The conversation is forwarded only so the spec resolver can read the student's own words
+          // to work out which board/exam is actually meant.
+          messages: conversation.map((m) => ({ role: m.role, content: m.content })),
         },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: `Refine the granularity of this track:\n${JSON.stringify(payload)}` }],
-          systemOverride: sys,
-        }),
       });
-      if (!resp.ok || !resp.body) return null;
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      let buf = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, nl);
-          buf = buf.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const j = line.slice(6).trim();
-          if (j === "[DONE]") break;
-          try {
-            const d = JSON.parse(j).choices?.[0]?.delta?.content;
-            if (d) acc += d;
-          } catch { /* skip non-content events */ }
-        }
+      if (error || !data?.ok) {
+        console.error("syllabus tree authoring failed:", error || data?.errors);
+        return null;
       }
-
-      const match = acc.match(/\{[\s\S]*\}/);
-      if (!match) return null;
-      const refinedTopics = JSON.parse(match[0]).topics;
-      // Must align 1:1 with the grounded topics; otherwise discard and keep the original.
-      if (!Array.isArray(refinedTopics) || refinedTopics.length !== track.topics.length) return null;
-      const result: string[][] = [];
-      for (const rt of refinedTopics) {
-        const subs = Array.isArray(rt?.subtopics)
-          ? rt.subtopics.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 10)
-          : [];
-        if (subs.length === 0) return null; // a topic lost all subtopics → unsafe, fall back
-        result.push(subs);
-      }
-      return result;
-    } catch {
+      const topics = Array.isArray(data.tree?.topics) ? (data.tree.topics as SyllabusTopic[]) : [];
+      if (topics.length === 0) return null;
+      return { topics, treeId: data.treeId ?? null };
+    } catch (e) {
+      console.error("syllabus tree request failed:", e);
       return null;
     }
   };
 
-  // Reusable one-shot JSON call through the already-deployed chat function (systemOverride = a
-  // non-teaching instruction). Accumulates the SSE stream and parses the first JSON object; null on error.
-  const chatJSON = async (systemOverride: string, userContent: string): Promise<any | null> => {
-    try {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await getBearerToken()}`,
-        },
-        body: JSON.stringify({ messages: [{ role: "user", content: userContent }], systemOverride }),
-      });
-      if (!resp.ok || !resp.body) return null;
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      let buf = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, nl);
-          buf = buf.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const j = line.slice(6).trim();
-          if (j === "[DONE]") break;
-          try {
-            const d = JSON.parse(j).choices?.[0]?.delta?.content;
-            if (d) acc += d;
-          } catch { /* skip non-content events */ }
-        }
-      }
-      const m = acc.match(/\{[\s\S]*\}/);
-      return m ? JSON.parse(m[0]) : null;
-    } catch {
-      return null;
+  /**
+   * Write the track's topics and subtopics.
+   *
+   * Batched deliberately. This used to insert one row per subtopic inside a nested loop — for a
+   * JEE-scale track (40+ topics, 350+ subtopics) that is several hundred sequential round trips, all
+   * while the student sits on a spinner. Topics go in one insert, then every subtopic across every
+   * topic goes in a second, so the whole instantiation is two round trips regardless of track size.
+   */
+  const instantiateTopics = async (trackId: string, topics: SyllabusTopic[]) => {
+    const { data: insertedTopics, error: topicErr } = await supabase
+      .from("topics")
+      .insert(topics.map((t, i) => ({
+        track_id: trackId,
+        title: t.title,
+        order_index: i,
+        status: "unlocked",
+      })))
+      .select("id, order_index");
+
+    if (topicErr || !insertedTopics) {
+      console.error("topic insert failed:", topicErr);
+      return;
     }
-  };
 
-  // Multi-pass track builder (pillar A: COMPLETE tracks for ANY maths/physics goal, HS→undergrad).
-  // A single director call caps at ~8k tokens, so a huge goal (e.g. JEE) comes back a fraction of the
-  // real syllabus. This splits generation into stages that each get a full budget:
-  //   1) skeleton — the EXHAUSTIVE list of top-level topics (cheap; seeded by the director's draft)
-  //   2) expand   — each small batch of topics → session-grain subtopics, in parallel
-  // Returns the assembled topics, or null on failure (caller falls back to the director's grain-refined track).
-  const buildFullTrack = async (
-    meta: { userGoal: string; title: string; subject: string; level?: string; examBoard?: string },
-    draftTopics: string[],
-  ): Promise<{ title: string; subtopics: string[] }[] | null> => {
-    const skeletonSys = `You are a curriculum architect. Produce the COMPLETE, exhaustive list of top-level topics a student must master to fully achieve their goal — the ENTIRE syllabus, nothing left out. This must work for ANY mathematics or physics goal worldwide, high-school to undergraduate (JEE, STEP, A-level, IB, AP, a named university course, or a self-study aim).
-Goal: "${meta.userGoal}"
-Title: ${meta.title} | Subject: ${meta.subject} | Level: ${meta.level || "unspecified"}${meta.examBoard ? ` | Exam/Board: ${meta.examBoard}` : ""}
-A draft that is likely INCOMPLETE — keep what's right, add everything missing: ${JSON.stringify(draftTopics)}
-Be exhaustive: a full multi-subject exam (e.g. JEE across Physics+Chemistry+Maths) legitimately needs 40-60 topics; a single-subject A-level 15-30; a focused module 6-12. Cover EVERY subject and area completely — never clip the last subject to save space. Order foundational → advanced. Topic TITLES ONLY, no subtopics.
-GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two; "Newton's Laws" and "Forces" likewise). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere in the final list — grouping changes which topic it's filed under, never whether it's covered.
-Return ONLY JSON: {"topics":["Topic 1","Topic 2", ...]}`;
-    const skelData = await chatJSON(skeletonSys, "Produce the exhaustive topic list now.");
-    const skeleton: string[] = Array.isArray(skelData?.topics)
-      ? skelData.topics.map((t: unknown) => String(t).trim()).filter(Boolean).slice(0, 60)
-      : [];
-    if (skeleton.length < 3) return null;
+    // Match returned rows back by order_index rather than array position — insert() does not
+    // guarantee the returned rows come back in the order they were sent.
+    const idByOrder = new Map<number, string>();
+    for (const row of insertedTopics) idByOrder.set(row.order_index as number, row.id as string);
 
-    setBuildStatus(`Mapping the syllabus — ${skeleton.length} topics. Building the lessons for each…`);
+    const subtopicRows = topics.flatMap((t, ti) => {
+      const topicId = idByOrder.get(ti);
+      if (!topicId) return [];
+      return t.subtopics.map((title, si) => ({
+        topic_id: topicId,
+        title,
+        order_index: si,
+        status: "unlocked",
+        estimated_minutes: 30,
+      }));
+    });
 
-    const expandBatch = async (titles: string[]): Promise<Record<string, string[]>> => {
-      const sys = `You are a curriculum editor. For EACH given topic, list its session-grain subtopics: each subtopic is ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting. Split anything broader. Spans all maths & physics, GCSE→undergraduate; judge grain relative to the goal's level. Order subtopics prerequisites-first. 3-10 per topic. Keep each topic TITLE EXACTLY as given.
-Goal context: ${meta.title} | ${meta.subject} | Level: ${meta.level || "unspecified"}.
-Topics: ${JSON.stringify(titles)}
-Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}]}`;
-      const data = await chatJSON(sys, "Expand these into session-grain subtopics.");
-      const out: Record<string, string[]> = {};
-      if (Array.isArray(data?.topics)) {
-        for (const t of data.topics) {
-          const subs = Array.isArray(t?.subtopics)
-            ? t.subtopics.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 10)
-            : [];
-          if (t?.title && subs.length) out[String(t.title).trim()] = subs;
-        }
-      }
-      return out;
-    };
-
-    const batches: string[][] = [];
-    for (let i = 0; i < skeleton.length; i += 4) batches.push(skeleton.slice(i, i + 4));
-    const maps = await Promise.all(batches.map((b) => expandBatch(b)));
-    const merged: Record<string, string[]> = Object.assign({}, ...maps);
-
-    const assembled = skeleton.map((title) => ({ title, subtopics: merged[title] || [title] }));
-    // Require most topics to have actually expanded; else treat the whole pass as failed and fall back.
-    const expandedCount = assembled.filter((a) => merged[a.title]).length;
-    if (expandedCount < Math.ceil(skeleton.length * 0.6)) return null;
-    return assembled;
+    if (subtopicRows.length) {
+      const { error: subErr } = await supabase.from("subtopics").insert(subtopicRows);
+      if (subErr) console.error("subtopic insert failed:", subErr);
+    }
   };
 
   const sendMessage = async (text: string) => {
@@ -224,8 +141,36 @@ Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}
       const data = resp.data;
 
       if (data.track) {
-        // Track was generated - save to DB
-        const { data: track } = await supabase.from("learning_tracks").insert({
+        setBuildStatus("Mapping the full syllabus…");
+
+        const userGoal = newMessages.filter((m) => m.role === "user").map((m) => m.content).join(" | ");
+        const authored = await fetchSyllabusTree(
+          {
+            goal: userGoal,
+            subject: data.track.subject,
+            level: data.track.level,
+            examBoard: data.track.exam_board,
+          },
+          newMessages,
+        );
+
+        // Fallback: the director already returned a draft tree alongside the track metadata. It is
+        // coarser than an authored one, but a usable track always beats no track.
+        const finalTopics: SyllabusTopic[] = authored?.topics
+          ?? (data.track.topics || []).map((t: { title: string; subtopics: string[] }) => ({
+            title: t.title,
+            subtopics: Array.isArray(t.subtopics) && t.subtopics.length ? t.subtopics : [t.title],
+          }));
+
+        // Both the authored tree and the director's draft can come back empty. Creating the track
+        // anyway would leave the student permanently onboarded onto a track with no topics — and
+        // because `onboarding_complete` is set just below, they would never be offered this flow
+        // again. Failing here routes into the catch and lets them retry, which is recoverable.
+        if (finalTopics.length === 0) {
+          throw new Error("no syllabus could be built for this goal");
+        }
+
+        const { data: track, error: trackErr } = await supabase.from("learning_tracks").insert({
           user_id: user.id,
           title: data.track.title,
           subject: data.track.subject,
@@ -233,52 +178,23 @@ Return ONLY JSON: {"topics":[{"title":"<exact title>","subtopics":["...","..."]}
           exam_board: data.track.exam_board,
           level: data.track.level,
           exam_date: data.track.exam_date,
+          // Provenance only — the track is a COPY of the tree at this moment, never a live view of
+          // it, so re-authoring a tree never changes a track under the student who owns it.
+          //
+          // Spread conditionally rather than sending an explicit null: the frontend auto-deploys on
+          // push while the migration that adds this column has to be run separately through
+          // Lovable's chat, so there is a real window where the column does not exist yet. Naming it
+          // unconditionally would make EVERY track insert fail during that window; omitting it when
+          // there is nothing to record keeps onboarding working until the migration lands.
+          ...(authored?.treeId ? { syllabus_tree_id: authored.treeId } : {}),
         }).select().single();
 
-        if (track) {
-          setBuildStatus("Mapping the full syllabus…");
-          // Multi-pass: build a COMPLETE, session-grained topic set for a goal of any size. Falls back
-          // to the director's single-shot track (grain-refined) if the multi-pass is unavailable.
-          const userGoal = newMessages.filter((m) => m.role === "user").map((m) => m.content).join(" | ");
-          let finalTopics = await buildFullTrack(
-            {
-              userGoal,
-              title: data.track.title,
-              subject: data.track.subject,
-              level: data.track.level,
-              examBoard: data.track.exam_board,
-            },
-            data.track.topics.map((t: { title: string }) => t.title),
-          );
-          if (!finalTopics) {
-            const refinedGrain = await refineTrackGrain(data.track);
-            finalTopics = data.track.topics.map((t: { title: string; subtopics: string[] }, i: number) => ({
-              title: t.title,
-              subtopics: (refinedGrain && refinedGrain[i]) || t.subtopics,
-            }));
-          }
-          for (let ti = 0; ti < finalTopics.length; ti++) {
-            const t = finalTopics[ti];
-            const { data: topic } = await supabase.from("topics").insert({
-              track_id: track.id,
-              title: t.title,
-              order_index: ti,
-              status: "unlocked",
-            }).select().single();
-
-            if (topic) {
-              for (let si = 0; si < t.subtopics.length; si++) {
-                await supabase.from("subtopics").insert({
-                  topic_id: topic.id,
-                  title: t.subtopics[si],
-                  order_index: si,
-                  status: "unlocked",
-                  estimated_minutes: 30,
-                });
-              }
-            }
-          }
+        // A failed track insert used to fall through to `onboarding_complete: true` below, which
+        // stranded the student: onboarded, no track, and no way back into this flow to retry.
+        if (trackErr || !track) {
+          throw new Error(trackErr?.message || "could not create the track");
         }
+        await instantiateTopics(track.id, finalTopics);
 
         await supabase.from("profiles").update({ onboarding_complete: true }).eq("user_id", user.id);
         await refreshProfile();
