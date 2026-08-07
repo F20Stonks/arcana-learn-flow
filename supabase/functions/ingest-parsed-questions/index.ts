@@ -2,8 +2,14 @@
 // ingest-reference-paper, this is for sources that supply real, structured text directly (e.g. the STEP
 // database's own LaTeX source), so there's nothing to transcribe or segment. This function's only job is
 // the part a local script can't do: mirror each question's original image to storage (service role) and
-// write rows (service role) with a cache check so re-running the scraper is safe.
+// write rows (service role).
 // Admin-gated the same way as ingest-reference-paper (reuses RECONCILE_ADMIN_USER_IDS).
+//
+// Upserts on (source_competition, year, question_number) — a real unique constraint, see migration
+// 20260807123657 — rather than skipping whenever source_url already exists. That used to be safe (STEP
+// rows are one-and-done), but Putnam/IMO's year-level source_url is shared across all of a year's
+// problems, so a source_url-only check would have silently skipped every later re-ingestion of the same
+// year instead of replacing earlier (e.g. index-only) content with better content.
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
@@ -80,22 +86,20 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, errors: ["no valid questions after validation"] }, 400);
     }
 
-    // --- Cache check: skip any question whose source_url is already ingested (safe to re-run). ---
-    const urls = questions.map((q) => q.source_url);
+    // Look up which of these rows already exist (by natural key) purely to report insert-vs-update
+    // counts the way this endpoint always has — upsert() itself doesn't distinguish them.
+    const keyOf = (r: { source_competition: string; year: number | null; question_number: string }) =>
+      `${r.source_competition}::${r.year ?? ""}::${r.question_number}`;
+    const competitions = [...new Set(questions.map((q) => q.source_competition))];
     const { data: existingRows, error: existingErr } = await supabase
       .from("reference_questions")
-      .select("source_url")
-      .in("source_url", urls);
-    if (existingErr) console.error("reference_questions lookup failed (will proceed to insert all):", existingErr);
-    const existingSet = new Set((existingRows || []).map((r) => r.source_url as string));
-    const toInsert = questions.filter((q) => !existingSet.has(q.source_url));
-
-    if (toInsert.length === 0) {
-      return json({ ok: true, inserted: 0, skipped: questions.length, fromCache: true });
-    }
+      .select("source_competition, year, question_number")
+      .in("source_competition", competitions);
+    if (existingErr) console.error("reference_questions lookup failed (will proceed to upsert):", existingErr);
+    const existingKeys = new Set((existingRows || []).map((r) => keyOf(r)));
 
     const rows = [];
-    for (const q of toInsert) {
+    for (const q of questions) {
       let storagePath: string | null = null;
       if (q.image_base64) {
         try {
@@ -131,13 +135,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: inserted, error: insertErr } = await supabase.from("reference_questions").insert(rows).select("id");
-    if (insertErr) {
-      console.error("reference_questions insert failed:", insertErr);
-      return json({ ok: false, errors: ["failed to store questions", insertErr.message] }, 500);
+    const { data: upserted, error: upsertErr } = await supabase
+      .from("reference_questions")
+      .upsert(rows, { onConflict: "source_competition,year,question_number" })
+      .select("id");
+    if (upsertErr) {
+      console.error("reference_questions upsert failed:", upsertErr);
+      return json({ ok: false, errors: ["failed to store questions", upsertErr.message] }, 500);
     }
 
-    return json({ ok: true, inserted: inserted?.length || 0, skipped: existingSet.size, fromCache: false });
+    const insertedCount = rows.filter((r) => !existingKeys.has(keyOf(r))).length;
+    const updatedCount = rows.length - insertedCount;
+    return json({ ok: true, inserted: insertedCount, skipped: updatedCount, upserted: upserted?.length || 0 });
   } catch (e) {
     console.error("ingest-parsed-questions error:", e);
     return json({ ok: false, errors: [e instanceof Error ? e.message : "Unknown error"] }, 500);
