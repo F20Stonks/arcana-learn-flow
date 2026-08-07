@@ -1,0 +1,2 @@
+ALTER FUNCTION public.reference_question_facets(TEXT, TEXT) SET search_path = public;
+ALTER FUNCTION public.reference_question_list(TEXT, TEXT, TEXT, INTEGER, TEXT, INTEGER, INTEGER) SET search_path = public;
