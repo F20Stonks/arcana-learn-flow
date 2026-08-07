@@ -391,6 +391,57 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_questions: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          has_diagram: boolean
+          id: string
+          license_note: string | null
+          question_number: string | null
+          question_text: string
+          solution_text: string | null
+          source_competition: string
+          source_url: string
+          storage_path: string | null
+          subject: string
+          topic_tags: string[]
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          has_diagram?: boolean
+          id?: string
+          license_note?: string | null
+          question_number?: string | null
+          question_text: string
+          solution_text?: string | null
+          source_competition: string
+          source_url: string
+          storage_path?: string | null
+          subject: string
+          topic_tags?: string[]
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          has_diagram?: boolean
+          id?: string
+          license_note?: string | null
+          question_number?: string | null
+          question_text?: string
+          solution_text?: string | null
+          source_competition?: string
+          source_url?: string
+          storage_path?: string | null
+          subject?: string
+          topic_tags?: string[]
+          year?: number | null
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           completed_at: string | null
