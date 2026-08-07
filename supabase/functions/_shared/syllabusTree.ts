@@ -45,11 +45,23 @@ export type SyllabusTopic = {
  */
 export type SyllabusCoverage = {
   /**
-   * `grounded`  — checked against a resolved official spec.
-   * `unverified`— no spec could be resolved; the tree is usable but MUST NOT be cached.
+   * `grounded`  — enough topics resolved real spec text to make the coverage claim mean something.
+   * `unverified`— too little (or no) spec text resolved. The tree is usable but MUST NOT be cached.
    */
   verdict: "grounded" | "unverified";
-  /** where the spec excerpt came from, so a coverage claim can be audited by hand */
+  /**
+   * How many topics had REAL specification text resolved for them, out of how many exist.
+   *
+   * This pair is the honest measure of what `grounded` is worth, and it exists because the first
+   * version of this layer did not have it and consequently overclaimed. A single whole-syllabus
+   * search returns ~6k characters from ONE page; a real A-Level specification is a hundred pages.
+   * Auditing a 40-topic tree against that one excerpt cannot detect the dominant failure — material
+   * missing from BOTH the tree and the excerpt — so it largely rubber-stamps. Resolving per topic is
+   * what makes the check real, and this ratio is what says how real it was for this particular tree.
+   */
+  topics_grounded?: number;
+  topics_total?: number;
+  /** A representative spec URL, so a coverage claim can be spot-checked by hand. */
   source_url?: string;
   /**
    * Spec areas still absent after the repair pass. Deliberately recorded rather than hidden: a tree
@@ -58,6 +70,15 @@ export type SyllabusCoverage = {
    */
   missing?: string[];
 };
+
+/**
+ * The share of a tree's topics that must resolve real spec text before `grounded` is claimed.
+ *
+ * Not 100%: some legitimate topics genuinely have no separately-searchable spec page, and demanding
+ * perfection would mean never caching anything. Not low either — below this, "grounded" would be a
+ * claim about a minority of the syllabus dressed up as a claim about all of it.
+ */
+export const MIN_GROUNDED_RATIO = 0.6;
 
 export type SyllabusTree = {
   topics: SyllabusTopic[];
@@ -189,8 +210,21 @@ export function validateSyllabusTree(raw: unknown): TreeValidationResult {
   const coverage: SyllabusCoverage = { verdict };
   const sourceUrl = str(rawCoverage.source_url);
   if (sourceUrl) coverage.source_url = sourceUrl;
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : null;
+  const grounded = num(rawCoverage.topics_grounded);
+  const total = num(rawCoverage.topics_total);
+  if (grounded !== null) coverage.topics_grounded = grounded;
+  if (total !== null) coverage.topics_total = total;
   const missing = arr(rawCoverage.missing).map(str).filter(Boolean);
   if (missing.length) coverage.missing = missing;
+
+  // A `grounded` verdict with no source URL is structurally impossible: grounding means spec text was
+  // actually fetched from somewhere. If a stored row claims it anyway, the row predates a contract
+  // change or was hand-edited — downgrade rather than let an unsourced coverage claim stand.
+  if (coverage.verdict === "grounded" && !coverage.source_url) {
+    coverage.verdict = "unverified";
+  }
 
   if (errors.length) return { ok: false, errors };
   return { ok: true, tree: { topics, coverage } };

@@ -11,11 +11,12 @@
 // shows no checklist rather than breaking the page.
 
 import { getAIConfig, getAIConfigSync } from "./aiConfig.ts";
+// The search/fetch primitives below used to live in this file. They moved to specSearch.ts unchanged
+// when syllabus tree authoring needed the same per-topic resolution — the constraint in the header
+// comment above is not specific to checklists, and two copies of it would drift.
+import { getTavilyKey, searchTopicSpecText } from "./specSearch.ts";
 
-const FETCH_TIMEOUT_MS = 8000;
 const OVERALL_TIMEOUT_MS = 18000;
-const MAX_EXCERPT_CHARS = 6000;
-const MIN_USABLE_CHARS = 200;
 
 export type SpecChecklistItem = {
   code: string | null;
@@ -24,69 +25,6 @@ export type SpecChecklistItem = {
   evidenceRequirements: string[];
   subtopicTitles: string[];
 };
-
-async function getTavilyKey(): Promise<string | null> {
-  const envKey = Deno.env.get("TAVILY_API_KEY");
-  if (envKey) return envKey;
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) return null;
-
-  const { createClient } = await import("npm:@supabase/supabase-js@2.45.0");
-  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
-  const { data } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
-  return data?.value || null;
-}
-
-function looksLikeUsableText(s: string | null | undefined): s is string {
-  return !!s && s.replace(/\s/g, "").length >= MIN_USABLE_CHARS;
-}
-
-async function fetchHtmlFallback(url: string): Promise<string | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(url, { signal: controller.signal, headers: { "User-Agent": "Mozilla/5.0 (compatible; ArcanaLearnFlow/1.0)" } });
-      if (!res.ok) return null;
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("html")) return null;
-      const html = await res.text();
-      const text = html
-        .replace(/<script[\s\S]*?<\/script>/gi, " ")
-        .replace(/<style[\s\S]*?<\/style>/gi, " ")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&[a-z]+;/gi, " ")
-        .replace(/\s+/g, " ").trim();
-      return looksLikeUsableText(text) ? text : null;
-    } finally {
-      clearTimeout(timeout);
-    }
-  } catch {
-    return null;
-  }
-}
-
-async function searchTopicSpecText(
-  board: string, subject: string, level: string | null, topicTitle: string, tavilyApiKey: string,
-): Promise<{ text: string; sourceUrl: string } | null> {
-  const query = `${board} ${level || ""} ${subject} specification "${topicTitle}" content statement assessment`.replace(/\s+/g, " ").trim();
-  const res = await fetch("https://api.tavily.com/search", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${tavilyApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query, max_results: 4, search_depth: "advanced", include_raw_content: true }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const results: { title: string; url: string; raw_content?: string }[] = data.results || [];
-  for (const r of results) {
-    let text = looksLikeUsableText(r.raw_content) ? r.raw_content! : null;
-    if (!text) text = await fetchHtmlFallback(r.url);
-    if (text) return { text: text.slice(0, MAX_EXCERPT_CHARS), sourceUrl: r.url };
-  }
-  return null;
-}
 
 async function segmentIntoItems(
   specText: string, sourceUrl: string, topicTitle: string, subtopicTitles: string[],

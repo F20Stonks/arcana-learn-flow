@@ -69,6 +69,13 @@ async function loadEnv() {
  *  author-syllabus-tree/index.ts) — bands below mirror that guidance, widened slightly to not be
  *  brittle against reasonable model variance. { min, max } is inclusive.
  */
+/**
+ * Must match MIN_GROUNDED_RATIO in supabase/functions/_shared/syllabusTree.ts. Kept as a literal
+ * rather than imported because that module is Deno/TypeScript and this harness is plain Node — if
+ * the contract value changes, change it here too or the sweep will disagree with the function.
+ */
+const MIN_GROUNDED_RATIO = 0.6;
+
 const TOPIC_BANDS = {
   GCSE: { min: 4, max: 20 },
   "A-LEVEL": { min: 8, max: 35 },
@@ -206,6 +213,32 @@ function checkRow(row, result) {
         `a bespoke goal entered the global cache, the layer's worst failure mode`,
       );
     }
+    // A bespoke goal must not spend N per-topic searches on a tree that can never be cached.
+    if (result.grounding !== "skipped") {
+      failures.push(`negative case ran grounding (grounding="${result.grounding}") — wasted spend on an uncacheable tree`);
+    }
+  } else {
+    // --- The checks that actually matter. Everything above this point can pass on a tree that was
+    // --- never checked against a specification at all.
+    const g = coverage.topics_grounded;
+    const t = coverage.topics_total;
+    if (typeof g !== "number" || typeof t !== "number") {
+      failures.push("coverage is missing topics_grounded/topics_total — cannot tell how real the grounding was");
+    } else {
+      const ratio = t > 0 ? g / t : 0;
+      if (ratio < MIN_GROUNDED_RATIO) {
+        failures.push(
+          `only ${g}/${t} topics (${(ratio * 100).toFixed(0)}%) resolved real spec text, ` +
+          `below the ${(MIN_GROUNDED_RATIO * 100).toFixed(0)}% bar — "grounded" would be a claim about a minority of the syllabus`,
+        );
+      }
+    }
+    if (coverage.verdict !== "grounded") {
+      failures.push(`coverage.verdict is "${coverage.verdict}", so this tree is NOT cacheable`);
+    }
+    if (result.treeId == null) {
+      failures.push("treeId is null — the tree was not written to the global cache, so the next student re-authors it");
+    }
   }
 
   return { pass: failures.length === 0, failures };
@@ -218,11 +251,15 @@ function checkRow(row, result) {
 async function callOne(supabaseUrl, token, body) {
   const res = await fetch(`${supabaseUrl}/functions/v1/author-syllabus-tree`, {
     method: "POST",
+    // mode:"sync" forces the per-topic grounding pass to run INLINE. In production that pass runs in
+    // the background after the response is sent, so a default call would return a fast, deliberately
+    // ungrounded tree — and a sweep that measured that would be verifying the one phase whose whole
+    // point is that it has been checked against nothing.
+    body: JSON.stringify({ ...body, mode: "sync" }),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
   });
 
   const text = await res.text();
