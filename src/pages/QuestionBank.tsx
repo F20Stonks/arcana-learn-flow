@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ChevronRight, ExternalLink, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import CommandBar from "@/components/CommandBar";
 import ReferenceQuestionText from "@/components/ReferenceQuestionText";
 
@@ -88,6 +89,11 @@ export default function QuestionBank() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
+  const { profile } = useAuth();
+  // This page is reachable by waitlisted users (see App.tsx — deliberately gated by ProtectedRoute, not
+  // DashboardGuard) who don't have a real /dashboard to go back to yet; send them to /waitlist instead
+  // of bouncing them through a redirect they didn't ask for.
+  const backHome = profile && profile.waitlist_status !== "approved" ? "/waitlist" : "/dashboard";
 
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,10 +211,10 @@ export default function QuestionBank() {
 
       <main className="relative mx-auto max-w-5xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate(backHome)}
           className="reveal mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
+          <ArrowLeft className="h-3.5 w-3.5" /> {backHome === "/waitlist" ? "Back" : "Dashboard"}
         </button>
         <header className="reveal" style={{ animationDelay: "60ms" }}>
           <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">

@@ -83,9 +83,11 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       {/* Student-facing browser over the ingested reference-question corpus (STEP, Putnam, IMO, …). Not
           track-scoped (the corpus is global), so it sits at the top level next to /dashboard rather than
-          under /track/:id. */}
-      <Route path="/question-bank" element={<DashboardGuard><QuestionBank /></DashboardGuard>} />
-      <Route path="/question-bank/:questionId" element={<DashboardGuard><QuestionBankDetail /></DashboardGuard>} />
+          under /track/:id. Deliberately gated by ProtectedRoute (session only), NOT DashboardGuard —
+          waitlisted signups (not yet approved, no onboarding) get read access here specifically, as the
+          "something real to do while you wait" hook. Everything else stays behind full approval. */}
+      <Route path="/question-bank" element={<ProtectedRoute><QuestionBank /></ProtectedRoute>} />
+      <Route path="/question-bank/:questionId" element={<ProtectedRoute><QuestionBankDetail /></ProtectedRoute>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
