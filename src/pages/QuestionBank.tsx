@@ -6,20 +6,23 @@
  * here is a real, verbatim past-paper/competition question, so nothing on this surface is generated,
  * graded or scored. Read-only browse + read in v1.
  *
+ * Data access goes entirely through the `reference-questions` edge function, NOT direct table queries —
+ * this used to fetch the whole corpus into the browser just to compute filter-chip counts client-side,
+ * which is also exactly the shape a scraper wants (one authenticated request, whole table). The edge
+ * function does server-side filtering/aggregation (via reference_question_list/facets RPCs) and rate
+ * limits per user, weighting full-question-text ("detail") requests heavier than list/facet ones.
+ *
  * Two things worth knowing before editing:
  *  - `topic_tags` is each source's OWN free-text vocabulary, not the app's subtopic taxonomy. tag[0] is
  *    the broad area (STEP declares its own, e.g. "Pure Mathematics"; Putnam/IMO rows just carry the
  *    competition name until per-problem topic tagging is built as an AI-assisted follow-up) — the
- *    scrapers write it first deliberately — and the remaining tags are specific topics. That split is
- *    what makes a two-level filter possible without inventing a mapping. Do NOT try to line these up
- *    with `subtopics` rows; that's an unsolved design problem, not an oversight.
+ *    scrapers write it first deliberately — and the remaining tags are specific topics. Do NOT try to
+ *    line these up with `subtopics` rows; that's an unsolved design problem, not an oversight.
  *  - Not every row has real question text. STEP rows are fully reproduced (the source has no
  *    redistribution restriction found). Putnam/IMO rows are index-only — their archives explicitly
  *    restrict (Putnam) or simply don't grant (IMO) redistribution of problem text, so those rows carry
  *    metadata plus a link to the official source instead (see `isIndexOnly` below, keyed off
  *    `license_note`, and scripts/scrape-putnam-index.mjs / scrape-imo-index.mjs).
- *  - reference_questions isn't in the generated Supabase types yet, so the client calls are cast
- *    `as never`/`as any`, the same pattern TrackPapers.tsx uses for past_papers.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -29,10 +32,6 @@ import { useAuth } from "@/hooks/useAuth";
 import CommandBar from "@/components/CommandBar";
 import ReferenceQuestionText from "@/components/ReferenceQuestionText";
 
-const BUCKET = "reference-papers";
-const PAGE_SIZE = 60;
-
-/** Row shape for the browse list — deliberately without question_text (1200+ rows of it is megabytes). */
 interface QuestionSummary {
   id: string;
   source_competition: string;
@@ -52,6 +51,15 @@ interface QuestionFull extends QuestionSummary {
   license_note: string | null;
 }
 
+interface Facets {
+  competitions: [string, number][];
+  areas: [string, number][];
+  years: number[];
+  tagsInArea: [string, number][];
+}
+
+const EMPTY_FACETS: Facets = { competitions: [], areas: [], years: [], tagsInArea: [] };
+
 const area = (q: { topic_tags: string[] | null }) => q.topic_tags?.[0] || "Other";
 const specificTags = (q: { topic_tags: string[] | null }) => (q.topic_tags || []).slice(1);
 const label = (q: { source_competition: string; year: number | null; question_number: string | null }) =>
@@ -59,6 +67,21 @@ const label = (q: { source_competition: string; year: number | null; question_nu
 // Index-only rows (Putnam, IMO, …) never got their question text copied in — see the scrapers' shared
 // LICENSE_NOTE wording, the one signal both intentionally carry for this check.
 const isIndexOnly = (q: { license_note: string | null }) => !!q.license_note?.includes("not reproduced here");
+
+// Friendly copy for the one error shape worth distinguishing from a generic load failure.
+const RATE_LIMIT_MESSAGE = "Slow down a little — you've hit the read limit. Try again in a few minutes.";
+
+async function callBank<T>(body: Record<string, unknown>): Promise<{ data: T | null; error: string | null }> {
+  const resp = await supabase.functions.invoke("reference-questions", { body });
+  if (resp.error) {
+    // supabase-js surfaces a non-2xx as resp.error without the parsed body in some versions — status is
+    // still on the underlying context where available, but the safest cross-version check is the message.
+    const status = (resp.error as { context?: { status?: number } })?.context?.status;
+    if (status === 429) return { data: null, error: RATE_LIMIT_MESSAGE };
+    return { data: null, error: resp.error.message || "Request failed." };
+  }
+  return { data: resp.data as T, error: null };
+}
 
 /* ─────────────────────────── shared bits ─────────────────────────── */
 
@@ -96,9 +119,12 @@ export default function QuestionBank() {
   const backHome = profile && profile.waitlist_status !== "approved" ? "/waitlist" : "/dashboard";
 
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [facets, setFacets] = useState<Facets>(EMPTY_FACETS);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [visible, setVisible] = useState(PAGE_SIZE);
 
   // Filters live in the URL so a filtered view is shareable and survives the back button out of a
   // question. Empty string = "all" for each.
@@ -108,6 +134,14 @@ export default function QuestionBank() {
   const year = params.get("year") || "";
   const query = params.get("q") || "";
 
+  // The search box updates the URL (and therefore `query`) on every keystroke for a responsive feel, but
+  // the network call is debounced off a separate value — otherwise every keystroke is a billed request.
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -115,84 +149,72 @@ export default function QuestionBank() {
     // Changing the area invalidates whatever specific tag was picked inside the old one.
     if (key === "area") next.delete("tag");
     setParams(next, { replace: true });
-    setVisible(PAGE_SIZE);
   };
 
+  // Facets only depend on competition/area (see reference_question_facets' signature) — tag/year/search
+  // changes don't need a re-fetch here.
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await callBank<{ facets: Facets }>({
+        mode: "facets",
+        competition: competition || undefined,
+        area: selectedArea || undefined,
+      });
+      if (data) setFacets(data.facets);
+      else if (error) console.error("Facet load failed:", error);
+    })();
+  }, [competition, selectedArea]);
+
+  // The list re-fetches from the start whenever any filter changes.
   useEffect(() => {
     (async () => {
       setLoading(true);
       setLoadError("");
-      try {
-        // PostgREST caps a plain select at 1000 rows and the corpus is larger than that, so page
-        // through explicitly rather than silently truncating the bank at 1000 questions.
-        const all: QuestionSummary[] = [];
-        const CHUNK = 1000;
-        for (let from = 0; ; from += CHUNK) {
-          const { data, error } = await (supabase.from("reference_questions" as never) as any)
-            .select("id, source_competition, year, question_number, topic_tags, has_diagram")
-            .eq("subject", "Mathematics")
-            .order("year", { ascending: false })
-            .order("source_competition", { ascending: true })
-            .order("question_number", { ascending: true })
-            .range(from, from + CHUNK - 1);
-          if (error) throw error;
-          const batch = (data || []) as QuestionSummary[];
-          all.push(...batch);
-          if (batch.length < CHUNK) break;
-        }
-        setQuestions(all);
-      } catch (err) {
-        console.error("Question bank load failed:", err);
-        setLoadError("Couldn't load the question bank. Check your connection and try again.");
-      } finally {
-        setLoading(false);
+      const { data, error } = await callBank<{ questions: QuestionSummary[]; totalCount: number; nextCursor: number | null }>({
+        mode: "list",
+        filters: {
+          competition: competition || undefined,
+          area: selectedArea || undefined,
+          tag: tag || undefined,
+          year: year ? Number(year) : undefined,
+          search: debouncedQuery || undefined,
+        },
+        cursor: 0,
+      });
+      if (data) {
+        setQuestions(data.questions);
+        setTotalCount(data.totalCount);
+        setCursor(data.nextCursor);
+      } else {
+        console.error("Question bank load failed:", error);
+        setLoadError(error || "Couldn't load the question bank. Check your connection and try again.");
       }
+      setLoading(false);
     })();
-  }, []);
+  }, [competition, selectedArea, tag, year, debouncedQuery]);
 
-  const competitions = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const q of questions) counts.set(q.source_competition, (counts.get(q.source_competition) || 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  }, [questions]);
-
-  const areas = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const q of questions) {
-      if (competition && q.source_competition !== competition) continue;
-      counts.set(area(q), (counts.get(area(q)) || 0) + 1);
-    }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  }, [questions, competition]);
-
-  const years = useMemo(
-    () => [...new Set(questions.map((q) => q.year).filter((y): y is number => !!y))].sort((a, b) => b - a),
-    [questions],
-  );
-
-  // Specific topics are only offered once an area is chosen — there are dozens of them across the whole
-  // corpus, which is an unusable flat list, but a real menu within one area.
-  const tagsInArea = useMemo(() => {
-    if (!selectedArea) return [];
-    const counts = new Map<string, number>();
-    for (const q of questions) {
-      if (area(q) !== selectedArea) continue;
-      for (const t of specificTags(q)) counts.set(t, (counts.get(t) || 0) + 1);
-    }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  }, [questions, selectedArea]);
-
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return questions.filter((q) => {
-      if (competition && q.source_competition !== competition) return false;
-      if (selectedArea && area(q) !== selectedArea) return false;
-      if (tag && !specificTags(q).includes(tag)) return false;
-      if (year && String(q.year) !== year) return false;
-      if (needle && !(q.topic_tags || []).join(" ").toLowerCase().includes(needle)) return false;
-      return true;
+  const loadMore = async () => {
+    if (cursor === null) return;
+    setLoadingMore(true);
+    const { data, error } = await callBank<{ questions: QuestionSummary[]; totalCount: number; nextCursor: number | null }>({
+      mode: "list",
+      filters: {
+        competition: competition || undefined,
+        area: selectedArea || undefined,
+        tag: tag || undefined,
+        year: year ? Number(year) : undefined,
+        search: debouncedQuery || undefined,
+      },
+      cursor,
     });
-  }, [questions, competition, selectedArea, tag, year, query]);
+    if (data) {
+      setQuestions((prev) => [...prev, ...data.questions]);
+      setCursor(data.nextCursor);
+    } else {
+      console.error("Question bank load-more failed:", error);
+    }
+    setLoadingMore(false);
+  };
 
   const hasFilters = !!(competition || selectedArea || tag || year || query);
 
@@ -228,13 +250,13 @@ export default function QuestionBank() {
 
         {/* Filters */}
         <section className="reveal mt-8 space-y-4" style={{ animationDelay: "140ms" }}>
-          {competitions.length > 0 && (
+          {facets.competitions.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="micro-label mr-1">Competition</span>
               <Chip active={!competition} onClick={() => setFilter("competition", "")}>
                 All
               </Chip>
-              {competitions.map(([c, n]) => (
+              {facets.competitions.map(([c, n]) => (
                 <Chip
                   key={c}
                   active={competition === c}
@@ -246,13 +268,13 @@ export default function QuestionBank() {
             </div>
           )}
 
-          {areas.length > 0 && (
+          {facets.areas.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="micro-label mr-1">Area</span>
               <Chip active={!selectedArea} onClick={() => setFilter("area", "")}>
                 All
               </Chip>
-              {areas.map(([a, n]) => (
+              {facets.areas.map(([a, n]) => (
                 <Chip key={a} active={selectedArea === a} onClick={() => setFilter("area", selectedArea === a ? "" : a)}>
                   {a} <span className="readout ml-1 text-[11px] opacity-60">{n}</span>
                 </Chip>
@@ -260,13 +282,13 @@ export default function QuestionBank() {
             </div>
           )}
 
-          {tagsInArea.length > 0 && (
+          {facets.tagsInArea.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-accent/15 p-3">
               <span className="micro-label mr-1">Topic</span>
               <Chip active={!tag} onClick={() => setFilter("tag", "")}>
                 All in {selectedArea}
               </Chip>
-              {tagsInArea.map(([t, n]) => (
+              {facets.tagsInArea.map(([t, n]) => (
                 <Chip key={t} active={tag === t} onClick={() => setFilter("tag", tag === t ? "" : t)}>
                   {t} <span className="readout ml-1 text-[11px] opacity-60">{n}</span>
                 </Chip>
@@ -290,7 +312,7 @@ export default function QuestionBank() {
               className="h-10 rounded-full border border-border bg-accent/25 px-4 text-[14px] text-foreground focus:border-primary/40 focus:outline-none"
             >
               <option value="">All years</option>
-              {years.map((y) => (
+              {facets.years.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
@@ -298,10 +320,7 @@ export default function QuestionBank() {
             </select>
             {hasFilters && (
               <button
-                onClick={() => {
-                  setParams(new URLSearchParams(), { replace: true });
-                  setVisible(PAGE_SIZE);
-                }}
+                onClick={() => setParams(new URLSearchParams(), { replace: true })}
                 className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" /> Clear
@@ -325,17 +344,17 @@ export default function QuestionBank() {
             <>
               <div className="mb-4 flex items-baseline justify-between">
                 <span className="readout text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
-                  {filtered.length} question{filtered.length === 1 ? "" : "s"}
+                  {totalCount} question{totalCount === 1 ? "" : "s"}
                 </span>
               </div>
 
-              {filtered.length === 0 ? (
+              {questions.length === 0 ? (
                 <div className="glass-card rounded-2xl p-10 text-center">
                   <p className="text-[14px] text-muted-foreground">Nothing matches those filters.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
-                  {filtered.slice(0, visible).map((q) => (
+                  {questions.map((q) => (
                     <Link
                       key={q.id}
                       to={`/question-bank/${q.id}`}
@@ -364,12 +383,14 @@ export default function QuestionBank() {
                 </div>
               )}
 
-              {visible < filtered.length && (
+              {cursor !== null && (
                 <button
-                  onClick={() => setVisible((v) => v + PAGE_SIZE)}
-                  className="mt-6 w-full rounded-full border border-border py-3 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-60"
                 >
-                  Show {Math.min(PAGE_SIZE, filtered.length - visible)} more
+                  {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Show {Math.min(60, totalCount - questions.length)} more
                 </button>
               )}
             </>
@@ -389,9 +410,9 @@ export function QuestionBankDetail() {
 
   const [question, setQuestion] = useState<QuestionFull | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (!questionId) return;
@@ -399,30 +420,26 @@ export function QuestionBankDetail() {
     (async () => {
       setLoading(true);
       setNotFound(false);
+      setLoadError("");
       setImageUrl(null);
-      setImageFailed(false);
-      const { data, error } = await (supabase.from("reference_questions" as never) as any)
-        .select("*")
-        .eq("id", questionId)
-        .maybeSingle();
+      const { data, error } = await callBank<{ question: QuestionFull; imageUrl: string | null }>({
+        mode: "detail",
+        id: questionId,
+      });
       if (cancelled) return;
+      if (error === RATE_LIMIT_MESSAGE) {
+        setLoadError(error);
+        setLoading(false);
+        return;
+      }
       if (error || !data) {
         setNotFound(true);
         setLoading(false);
         return;
       }
-      const q = data as QuestionFull;
-      setQuestion(q);
+      setQuestion(data.question);
+      setImageUrl(data.imageUrl);
       setLoading(false);
-
-      // The bucket is private, so the mirrored page image is only reachable through a signed URL.
-      if (q.storage_path) {
-        const { data: signed } = await (supabase.storage.from(BUCKET) as any).createSignedUrl(q.storage_path, 3600);
-        if (!cancelled) {
-          if (signed?.signedUrl) setImageUrl(signed.signedUrl);
-          else setImageFailed(true);
-        }
-      }
     })();
     return () => {
       cancelled = true;
@@ -447,6 +464,10 @@ export function QuestionBankDetail() {
           <div className="flex items-center gap-3 py-12">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             <p className="text-[14px] text-muted-foreground">Loading question…</p>
+          </div>
+        ) : loadError ? (
+          <div className="glass-card rounded-2xl p-10 text-center">
+            <p className="text-[14px] text-foreground">{loadError}</p>
           </div>
         ) : notFound || !question ? (
           <div className="glass-card rounded-2xl p-10 text-center">
@@ -494,17 +515,11 @@ export function QuestionBankDetail() {
                     src={imageUrl}
                     alt={`Original page image for ${label(question)}`}
                     className="w-full rounded-lg bg-white"
-                    onError={() => setImageFailed(true)}
                   />
-                ) : imageFailed || !question.storage_path ? (
+                ) : (
                   <p className="text-[13px] text-muted-foreground">
                     The original page image isn't available here — open the source below to see the diagram.
                   </p>
-                ) : (
-                  <div className="flex items-center gap-2 py-6 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-[13px]">Loading the original page…</span>
-                  </div>
                 )}
               </figure>
             )}
