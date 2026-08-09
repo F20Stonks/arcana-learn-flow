@@ -40,8 +40,10 @@ type PopularTrack = { title: string; subject: string; level: string; examBoard: 
 const POPULAR_TRACKS: PopularTrack[] = [
   { title: "AQA A-Level Physics", subject: "Physics", level: "A-Level", examBoard: "AQA" },
   { title: "AQA A-Level Mathematics", subject: "Mathematics", level: "A-Level", examBoard: "AQA" },
+  { title: "AQA A-Level Further Mathematics", subject: "Further Mathematics", level: "A-Level", examBoard: "AQA" },
   { title: "Edexcel A-Level Mathematics", subject: "Mathematics", level: "A-Level", examBoard: "Edexcel" },
   { title: "Edexcel A-Level Physics", subject: "Physics", level: "A-Level", examBoard: "Edexcel" },
+  { title: "Edexcel A-Level Further Mathematics", subject: "Further Mathematics", level: "A-Level", examBoard: "Edexcel" },
   { title: "OCR A-Level Mathematics", subject: "Mathematics", level: "A-Level", examBoard: "OCR" },
   { title: "OCR A-Level Physics", subject: "Physics", level: "A-Level", examBoard: "OCR" },
   { title: "TMUA", subject: "Mathematics", level: "Admissions test", examBoard: "TMUA" },
