@@ -620,6 +620,42 @@ export type Database = {
           },
         ]
       }
+      spec_documents: {
+        Row: {
+          board: string
+          created_at: string
+          extracted_text: string
+          id: string
+          level: string | null
+          relevance_score: number | null
+          source_url: string
+          storage_path: string | null
+          subject: string
+        }
+        Insert: {
+          board: string
+          created_at?: string
+          extracted_text: string
+          id?: string
+          level?: string | null
+          relevance_score?: number | null
+          source_url: string
+          storage_path?: string | null
+          subject: string
+        }
+        Update: {
+          board?: string
+          created_at?: string
+          extracted_text?: string
+          id?: string
+          level?: string | null
+          relevance_score?: number | null
+          source_url?: string
+          storage_path?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
