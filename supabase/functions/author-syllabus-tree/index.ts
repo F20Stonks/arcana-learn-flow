@@ -41,7 +41,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
-import { chunkText, getTavilyKey, resolveSpecDocument } from "../_shared/specSearch.ts";
+import { chunkText, getTavilyKey } from "../_shared/specSearch.ts";
+import { resolveSpecDocumentCached } from "../_shared/specDocumentCache.ts";
 import {
   countSubtopics,
   hasCanonicalIdentity,
@@ -332,6 +333,8 @@ function draftTopicList(draft: SyllabusTopic[]): string {
 }
 
 async function groundTree(
+  // deno-lint-ignore no-explicit-any
+  supabase: any, // see the comment on cacheTree's identical parameter below
   id: SyllabusIdentity,
   draft: SyllabusTopic[],
 ): Promise<{ topics: SyllabusTopic[]; coverage: SyllabusCoverage }> {
@@ -342,8 +345,11 @@ async function groundTree(
     return { topics: draft, coverage: { verdict: "unverified", topics_grounded: 0, topics_total: total } };
   }
 
-  const doc = await resolveSpecDocument(
-    id.board || "", id.subject || "", id.level || null, tavilyKey, draft.map((t) => t.title),
+  // Cache-checked: a prior grounding run on this exact (board, subject, level) already resolved and
+  // stored the real document, so this skips straight to it instead of re-searching Tavily and
+  // re-parsing a PDF for an identity that's already been done. See specDocumentCache.ts.
+  const doc = await resolveSpecDocumentCached(
+    supabase, id.board || "", id.subject || "", id.level || null, tavilyKey, draft.map((t) => t.title),
   ).catch((e) => {
     console.error("spec document resolution failed:", e);
     return null;
@@ -495,7 +501,7 @@ async function groundAndCache(
   optionalUnits: string[],
 ): Promise<void> {
   try {
-    const { topics, coverage } = await groundTree(id, draft);
+    const { topics, coverage } = await groundTree(supabase, id, draft);
     await cacheTree(supabase, id, signature, option, topics, coverage, optionalUnits);
   } catch (e) {
     console.error("background grounding failed:", e);
@@ -594,7 +600,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (syncGrounding) {
-      const { topics, coverage } = await groundTree(identity, draft);
+      const { topics, coverage } = await groundTree(supabase, identity, draft);
       const validated = validateSyllabusTree(
         { topics, coverage, ...(optionalUnits.length ? { optionalUnits } : {}) },
         minTopics,
