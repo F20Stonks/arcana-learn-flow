@@ -785,6 +785,7 @@ export type Database = {
           id: string
           level: string | null
           model: string | null
+          option: string
           signature: string
           subject: string | null
           tree: Json
@@ -797,6 +798,7 @@ export type Database = {
           id?: string
           level?: string | null
           model?: string | null
+          option?: string
           signature: string
           subject?: string | null
           tree: Json
@@ -809,6 +811,7 @@ export type Database = {
           id?: string
           level?: string | null
           model?: string | null
+          option?: string
           signature?: string
           subject?: string | null
           tree?: Json
