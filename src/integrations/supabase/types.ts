@@ -195,6 +195,7 @@ export type Database = {
       learning_tracks: {
         Row: {
           archived_at: string | null
+          available_options: string[]
           created_at: string
           emoji: string | null
           exam_board: string | null
@@ -208,6 +209,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          available_options?: string[]
           created_at?: string
           emoji?: string | null
           exam_board?: string | null
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          available_options?: string[]
           created_at?: string
           emoji?: string | null
           exam_board?: string | null
@@ -821,21 +824,27 @@ export type Database = {
       }
       topics: {
         Row: {
+          archived_at: string | null
           id: string
+          option_group: string | null
           order_index: number
           status: string
           title: string
           track_id: string
         }
         Insert: {
+          archived_at?: string | null
           id?: string
+          option_group?: string | null
           order_index?: number
           status?: string
           title: string
           track_id: string
         }
         Update: {
+          archived_at?: string | null
           id?: string
+          option_group?: string | null
           order_index?: number
           status?: string
           title?: string
