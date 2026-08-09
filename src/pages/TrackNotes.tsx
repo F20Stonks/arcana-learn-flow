@@ -51,7 +51,9 @@ export default function TrackNotes() {
     const { data: t } = await supabase.from("learning_tracks").select("*").eq("id", trackId!).single();
     setTrack(t);
 
-    const { data: rawTopics } = await supabase.from("topics").select("*").eq("track_id", trackId!).order("order_index");
+    // .is("archived_at", null): an archived option's topics shouldn't appear in the notes topic list.
+    const { data: rawTopics } = await (supabase.from("topics" as never) as any)
+      .select("*").eq("track_id", trackId!).is("archived_at", null).order("order_index");
     if (!rawTopics) { setLoading(false); return; }
 
     const enriched: TopicWithSubs[] = [];

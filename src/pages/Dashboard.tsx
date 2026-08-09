@@ -82,7 +82,11 @@ export default function Dashboard() {
       const enriched: Track[] = await Promise.all(
         (rawTracks || []).map(async (t) => {
           try {
-            const { data: topics } = await supabase.from("topics").select("id, order_index").eq("track_id", t.id);
+            // .is("archived_at", null): an archived option's topics (see TrackOverview.tsx) shouldn't
+            // count toward this track's progress ring or "what's next" — same reasoning as an archived
+            // TRACK already being excluded from this dashboard entirely.
+            const { data: topics } = await (supabase.from("topics" as never) as any)
+              .select("id, order_index").eq("track_id", t.id).is("archived_at", null);
             const topicIds = topics?.map((tp) => tp.id) || [];
             const topicOrderById = new Map((topics || []).map((tp) => [tp.id, tp.order_index]));
             let subtopicCount = 0;

@@ -48,6 +48,8 @@ import {
   MAX_SUBTOPICS_PER_TOPIC,
   MAX_TOPICS,
   MIN_GROUNDED_RATIO,
+  MIN_OPTION_TOPICS,
+  MIN_TOPICS,
   type SyllabusCoverage,
   type SyllabusIdentity,
   type SyllabusTopic,
@@ -172,13 +174,38 @@ const cleanList = (v: unknown, cap: number): string[] => {
 const identityLine = (id: SyllabusIdentity, goal: string) =>
   `Goal: "${goal}"\nSubject: ${id.subject || "(unspecified)"} | Level: ${id.level || "(unspecified)"} | Exam/Board: ${id.board || "(none named)"}`;
 
-const SKELETON_SYSTEM = `You are a curriculum architect. Produce the COMPLETE, exhaustive list of top-level topics a student must master to fully achieve their goal — the ENTIRE syllabus, nothing left out. This must work for ANY mathematics or physics goal worldwide, high-school to undergraduate (JEE, STEP, A-level, IB, AP, a named university course, or a self-study aim).
+/**
+ * Two skeleton modes, not one. Real specs are frequently not a single linear list: AQA A-Level
+ * Physics has a compulsory core PLUS five mutually-exclusive OPTIONS (Astrophysics, Medical Physics,
+ * Engineering Physics, Turning Points in Physics, Electronics) of which a student sits exactly one.
+ * The original single-mode prompt had no concept of this at all — pointed at a spec with options, it
+ * would either fold all of them in (wrong: hands every student 4 options' worth of material they'll
+ * never sit) or silently pick one (wrong: which one is not this prompt's call to make). CORE mode
+ * builds ONLY the compulsory content and separately names whatever electives it's aware of, so the
+ * caller (onboarding / TrackOverview) can offer a picker; OPTION mode builds ONLY the one named
+ * elective, scoped as a small module rather than judged against whole-syllabus expectations.
+ */
+function buildSkeletonSystem(option: string): string {
+  if (!option) {
+    return `You are a curriculum architect. Produce the COMPLETE, exhaustive list of top-level topics for the COMPULSORY, CORE part of a student's goal — the material EVERY student pursuing this goal must cover, regardless of any elective/optional units they separately choose. This must work for ANY mathematics or physics goal worldwide, high-school to undergraduate (JEE, STEP, A-level, IB, AP, a named university course, or a self-study aim).
 
 Be exhaustive: a full multi-subject exam (e.g. JEE across Physics+Chemistry+Maths) legitimately needs 40-60 topics; a single-subject A-level 15-30; a focused module 6-12. Cover EVERY subject and area completely — never clip the last subject to save space. Order foundational → advanced. Topic TITLES ONLY, no subtopics.
 
-GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the syllabus must still appear somewhere.
+GROUPING: prefer fewer, well-scoped topics over many narrow ones — group tightly-related concepts a student would naturally study together into ONE topic (e.g. "Quarks" and "Fundamental Particles" are facets of the same topic, not two). Only give something its own topic when the material is broad enough to need its own dedicated sequence of sessions. This is purely ORGANIZATIONAL, never a cut: every concept that belongs in the CORE syllabus must still appear somewhere.
+
+ELECTIVE/OPTIONAL UNITS: many syllabuses (especially A-Level style exams) offer a small set of mutually-exclusive OPTION units of which a student studies only one, or a subset, chosen separately from the compulsory core (e.g. AQA A-Level Physics's Astrophysics/Medical Physics/Engineering Physics/Turning Points in Physics/Electronics — a student sits exactly one). EXCLUDE all such elective content from the topic list above. Instead, separately report the names of whatever elective/optional units you know this syllabus offers, in "optionalUnits" — empty array if this syllabus has none, or if you're not sure. Do not guess unit names that aren't real.
+
+Return ONLY JSON: {"topics":["Topic 1","Topic 2", ...], "optionalUnits":["Option A","Option B", ...]}`;
+  }
+
+  return `You are a curriculum architect authoring ONE ELECTIVE OPTION UNIT within a larger syllabus — NOT the whole syllabus. The student separately covers (or has covered) the compulsory core; your job is only the topic list for the single named option: "${option}".
+
+This is normally a small, focused unit — commonly 2-6 topics, occasionally fewer for a narrow option. Do NOT pad it to resemble a full syllabus, and do NOT include material that belongs to the compulsory core or to a DIFFERENT option. Order foundational → advanced. Topic TITLES ONLY, no subtopics.
+
+GROUPING: prefer fewer, well-scoped topics over many narrow ones, same reasoning as for a full syllabus — group tightly-related concepts a student would naturally study together into ONE topic.
 
 Return ONLY JSON: {"topics":["Topic 1","Topic 2", ...]}`;
+}
 
 const EXPAND_SYSTEM = `You are a curriculum editor. For EACH given topic, list its session-grain subtopics: each subtopic is ONE self-contained idea plus immediate practice, learnable in a single ~20-30 minute sitting. Split anything broader. Spans all maths & physics, GCSE→undergraduate; judge grain relative to the goal's level. Order subtopics prerequisites-first. 3-${MAX_SUBTOPICS_PER_TOPIC} per topic. Keep each topic TITLE EXACTLY as given.
 
@@ -213,10 +240,21 @@ If this chunk has no real specification content for any of the given topics, ret
 // Phase 1 — fast, ungrounded
 // ---------------------------------------------------------------------------
 
-async function buildSkeleton(id: SyllabusIdentity, goal: string, spec: string): Promise<string[]> {
-  const user = `${identityLine(id, goal)}${spec ? `\n\nOFFICIAL SPECIFICATION EXCERPT — base the topic list on this real content, in the terminology it uses. Do not invent top-level topics absent from it; use your own judgment only to fill gaps left by truncation:\n"""\n${spec}\n"""` : ""}\n\nProduce the exhaustive topic list now.`;
-  const data = await askJson(SKELETON_SYSTEM, user);
-  return cleanList(data?.topics, MAX_TOPICS);
+async function buildSkeleton(
+  id: SyllabusIdentity,
+  goal: string,
+  spec: string,
+  option: string,
+): Promise<{ topics: string[]; optionalUnits: string[] }> {
+  const scopeLine = option ? `\n\nYou are scoped to ONE elective option: "${option}". Ignore any other options or the compulsory core.` : "";
+  const user = `${identityLine(id, goal)}${scopeLine}${spec ? `\n\nOFFICIAL SPECIFICATION EXCERPT — base the topic list on this real content, in the terminology it uses. Do not invent top-level topics absent from it; use your own judgment only to fill gaps left by truncation:\n"""\n${spec}\n"""` : ""}\n\nProduce the exhaustive topic list now.`;
+  const data = await askJson(buildSkeletonSystem(option), user);
+  return {
+    topics: cleanList(data?.topics, MAX_TOPICS),
+    // Only meaningful in core mode — an option-mode call has nothing further to name, and its prompt
+    // never asks for this field, so `data?.optionalUnits` will simply be absent/empty there.
+    optionalUnits: option ? [] : cleanList(data?.optionalUnits, MAX_TOPICS),
+  };
 }
 
 async function expandTopics(id: SyllabusIdentity, goal: string, titles: string[]): Promise<Record<string, string[]>> {
@@ -254,9 +292,18 @@ function lookupExpansion(map: Record<string, string[]>, title: string): string[]
   return null;
 }
 
-async function buildFastTree(id: SyllabusIdentity, goal: string, wholeSpec: string): Promise<SyllabusTopic[] | null> {
-  const skeleton = await buildSkeleton(id, goal, wholeSpec);
-  if (skeleton.length < 3) return null;
+async function buildFastTree(
+  id: SyllabusIdentity,
+  goal: string,
+  wholeSpec: string,
+  option: string,
+): Promise<{ topics: SyllabusTopic[]; optionalUnits: string[] } | null> {
+  const { topics: skeleton, optionalUnits } = await buildSkeleton(id, goal, wholeSpec, option);
+  // Option mode is authoring one small elective unit, not a whole syllabus — MIN_TOPICS (the
+  // whole-syllabus floor, catching a broken skeleton call) would wrongly reject a legitimately small
+  // 1-2 topic option. See MIN_OPTION_TOPICS in syllabusTree.ts.
+  const floor = option ? MIN_OPTION_TOPICS : MIN_TOPICS;
+  if (skeleton.length < floor) return null;
 
   const expansions = await expandTopics(id, goal, skeleton);
   const topics: SyllabusTopic[] = [];
@@ -271,7 +318,7 @@ async function buildFastTree(id: SyllabusIdentity, goal: string, wholeSpec: stri
     console.error(`only ${topics.length}/${skeleton.length} topics expanded`);
     return null;
   }
-  return topics;
+  return { topics, optionalUnits };
 }
 
 // ---------------------------------------------------------------------------
@@ -377,8 +424,10 @@ async function cacheTree(
   // the same looseness the rest of this file already uses for AI response shapes.
   id: SyllabusIdentity,
   signature: string,
+  option: string,
   topics: SyllabusTopic[],
   coverage: SyllabusCoverage,
+  optionalUnits: string[],
 ): Promise<string | null> {
   try {
     if (coverage.verdict !== "grounded") {
@@ -386,7 +435,13 @@ async function cacheTree(
       return null;
     }
 
-    const validated = validateSyllabusTree({ topics, coverage });
+    // Option mode uses the same MIN_OPTION_TOPICS floor as buildFastTree — a legitimately small
+    // elective unit must not fail cache-write validation for the same reason it doesn't fail the
+    // fast-build check.
+    const validated = validateSyllabusTree(
+      { topics, coverage, ...(optionalUnits.length ? { optionalUnits } : {}) },
+      option ? MIN_OPTION_TOPICS : MIN_TOPICS,
+    );
     if (!validated.ok) {
       console.error("grounded tree failed validation, not caching:", validated.errors.join("; "));
       return null;
@@ -398,6 +453,7 @@ async function cacheTree(
       .upsert(
         {
           signature,
+          option,
           tree_version: SYLLABUS_TREE_VERSION,
           subject: id.subject,
           level: id.level,
@@ -406,9 +462,9 @@ async function cacheTree(
           coverage,
           model: ai.model,
         },
-        // Must name BOTH columns: the unique constraint is (signature, tree_version); naming only
-        // `signature` would match no constraint and turn the upsert into a failing insert.
-        { onConflict: "signature,tree_version" },
+        // Must name ALL THREE columns: the unique constraint is (signature, option, tree_version);
+        // naming fewer would match no constraint and turn the upsert into a failing insert.
+        { onConflict: "signature,option,tree_version" },
       )
       .select("id")
       .maybeSingle();
@@ -434,11 +490,13 @@ async function groundAndCache(
   supabase: any, // see the comment on cacheTree's identical parameter above
   id: SyllabusIdentity,
   signature: string,
+  option: string,
   draft: SyllabusTopic[],
+  optionalUnits: string[],
 ): Promise<void> {
   try {
     const { topics, coverage } = await groundTree(id, draft);
-    await cacheTree(supabase, id, signature, topics, coverage);
+    await cacheTree(supabase, id, signature, option, topics, coverage, optionalUnits);
   } catch (e) {
     console.error("background grounding failed:", e);
   }
@@ -461,6 +519,9 @@ Deno.serve(async (req: Request) => {
       level: body?.level ?? null,
       board: body?.board ?? null,
     };
+    // '' (default) = the compulsory core. A specific option name authors just that one elective unit.
+    // See buildSkeletonSystem's two modes above and 20260809130000_syllabus_tree_options.sql.
+    const option: string = String(body?.option ?? "").trim();
     const goal: string = String(body?.goal ?? "").trim() || [identity.level, identity.subject].filter(Boolean).join(" ");
     // `sync` forces grounding to run inline instead of after the response. Onboarding never uses it
     // (a student cannot wait two minutes); the breadth sweep does, because a background phase it
@@ -488,11 +549,12 @@ Deno.serve(async (req: Request) => {
         .from("syllabus_trees")
         .select("id, tree, coverage")
         .eq("signature", signature)
+        .eq("option", option)
         .eq("tree_version", SYLLABUS_TREE_VERSION)
         .maybeSingle();
       if (error) console.error("syllabus_trees lookup failed (will author):", error);
       if (row?.tree) {
-        const check = validateSyllabusTree(row.tree);
+        const check = validateSyllabusTree(row.tree, option ? MIN_OPTION_TOPICS : MIN_TOPICS);
         if (check.ok) {
           return json({
             ok: true,
@@ -511,10 +573,12 @@ Deno.serve(async (req: Request) => {
       return null;
     });
 
-    const draft = await buildFastTree(identity, goal, wholeSpec?.text || "");
-    if (!draft) {
+    const built = await buildFastTree(identity, goal, wholeSpec?.text || "", option);
+    if (!built) {
       return json({ ok: false, errors: ["could not produce a usable syllabus for this goal"] });
     }
+    const { topics: draft, optionalUnits } = built;
+    const minTopics = option ? MIN_OPTION_TOPICS : MIN_TOPICS;
 
     // Grounding only ever runs for a cacheable identity: without a named board the per-topic search
     // has nothing to disambiguate on, and the result could not be cached even if it succeeded — so
@@ -523,24 +587,28 @@ Deno.serve(async (req: Request) => {
       const fastTree = validateSyllabusTree({
         topics: draft,
         coverage: { verdict: "unverified", topics_grounded: 0, topics_total: draft.length },
-      });
+        ...(optionalUnits.length ? { optionalUnits } : {}),
+      }, minTopics);
       if (!fastTree.ok) return json({ ok: false, errors: fastTree.errors });
       return json({ ok: true, cached: false, treeId: null, grounding: "skipped", tree: fastTree.tree });
     }
 
     if (syncGrounding) {
       const { topics, coverage } = await groundTree(identity, draft);
-      const validated = validateSyllabusTree({ topics, coverage });
+      const validated = validateSyllabusTree(
+        { topics, coverage, ...(optionalUnits.length ? { optionalUnits } : {}) },
+        minTopics,
+      );
       if (!validated.ok) return json({ ok: false, errors: validated.errors });
 
       // Grounded ONCE, then written — cacheTree does no grounding of its own.
-      const treeId = await cacheTree(supabase, identity, signature, topics, coverage);
+      const treeId = await cacheTree(supabase, identity, signature, option, topics, coverage, optionalUnits);
       return json({ ok: true, cached: false, treeId, grounding: "sync", tree: validated.tree });
     }
 
     // Background grounding. The student's track is built from the fast tree; the grounded tree lands
     // in the cache for everyone after them. Same self-warming shape as the lesson plan cache.
-    const work = groundAndCache(supabase, identity, signature, draft.map((t) => ({ ...t })));
+    const work = groundAndCache(supabase, identity, signature, option, draft.map((t) => ({ ...t })), optionalUnits);
     try {
       (globalThis as any).EdgeRuntime?.waitUntil?.(work);
     } catch {
@@ -550,7 +618,8 @@ Deno.serve(async (req: Request) => {
     const fastTree = validateSyllabusTree({
       topics: draft,
       coverage: { verdict: "unverified", topics_grounded: 0, topics_total: draft.length },
-    });
+      ...(optionalUnits.length ? { optionalUnits } : {}),
+    }, minTopics);
     if (!fastTree.ok) return json({ ok: false, errors: fastTree.errors });
 
     console.log(

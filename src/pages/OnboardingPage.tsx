@@ -5,13 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import BrandLogo from "@/components/BrandLogo";
+import { instantiateTopics, type SyllabusTopic } from "@/lib/syllabusTrack";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
-
-type SyllabusTopic = { title: string; subtopics: string[] };
 
 const EXAMPLE_PROMPTS = [
   "I want an A* in A-level further maths",
@@ -50,7 +49,7 @@ export default function OnboardingPage() {
   const fetchSyllabusTree = async (
     meta: { goal: string; subject: string; level?: string; examBoard?: string },
     conversation: Message[],
-  ): Promise<{ topics: SyllabusTopic[]; treeId: string | null } | null> => {
+  ): Promise<{ topics: SyllabusTopic[]; treeId: string | null; optionalUnits: string[] } | null> => {
     try {
       const { data, error } = await supabase.functions.invoke("author-syllabus-tree", {
         body: {
@@ -70,57 +69,11 @@ export default function OnboardingPage() {
       }
       const topics = Array.isArray(data.tree?.topics) ? (data.tree.topics as SyllabusTopic[]) : [];
       if (topics.length === 0) return null;
-      return { topics, treeId: data.treeId ?? null };
+      const optionalUnits = Array.isArray(data.tree?.optionalUnits) ? (data.tree.optionalUnits as string[]) : [];
+      return { topics, treeId: data.treeId ?? null, optionalUnits };
     } catch (e) {
       console.error("syllabus tree request failed:", e);
       return null;
-    }
-  };
-
-  /**
-   * Write the track's topics and subtopics.
-   *
-   * Batched deliberately. This used to insert one row per subtopic inside a nested loop — for a
-   * JEE-scale track (40+ topics, 350+ subtopics) that is several hundred sequential round trips, all
-   * while the student sits on a spinner. Topics go in one insert, then every subtopic across every
-   * topic goes in a second, so the whole instantiation is two round trips regardless of track size.
-   */
-  const instantiateTopics = async (trackId: string, topics: SyllabusTopic[]) => {
-    const { data: insertedTopics, error: topicErr } = await supabase
-      .from("topics")
-      .insert(topics.map((t, i) => ({
-        track_id: trackId,
-        title: t.title,
-        order_index: i,
-        status: "unlocked",
-      })))
-      .select("id, order_index");
-
-    if (topicErr || !insertedTopics) {
-      console.error("topic insert failed:", topicErr);
-      return;
-    }
-
-    // Match returned rows back by order_index rather than array position — insert() does not
-    // guarantee the returned rows come back in the order they were sent.
-    const idByOrder = new Map<number, string>();
-    for (const row of insertedTopics) idByOrder.set(row.order_index as number, row.id as string);
-
-    const subtopicRows = topics.flatMap((t, ti) => {
-      const topicId = idByOrder.get(ti);
-      if (!topicId) return [];
-      return t.subtopics.map((title, si) => ({
-        topic_id: topicId,
-        title,
-        order_index: si,
-        status: "unlocked",
-        estimated_minutes: 30,
-      }));
-    });
-
-    if (subtopicRows.length) {
-      const { error: subErr } = await supabase.from("subtopics").insert(subtopicRows);
-      if (subErr) console.error("subtopic insert failed:", subErr);
     }
   };
 
@@ -170,7 +123,7 @@ export default function OnboardingPage() {
           throw new Error("no syllabus could be built for this goal");
         }
 
-        const { data: track, error: trackErr } = await supabase.from("learning_tracks").insert({
+        const { data: track, error: trackErr } = await (supabase.from("learning_tracks" as never) as any).insert({
           user_id: user.id,
           title: data.track.title,
           subject: data.track.subject,
@@ -187,6 +140,10 @@ export default function OnboardingPage() {
           // unconditionally would make EVERY track insert fail during that window; omitting it when
           // there is nothing to record keeps onboarding working until the migration lands.
           ...(authored?.treeId ? { syllabus_tree_id: authored.treeId } : {}),
+          // Which elective options this syllabus has, captured once here rather than read live from
+          // the tree later (see available_options's own migration comment) — empty when the tree
+          // authoring fell back to the director's draft topics, which never carries this field.
+          ...(authored?.optionalUnits?.length ? { available_options: authored.optionalUnits } : {}),
         }).select().single();
 
         // A failed track insert used to fall through to `onboarding_complete: true` below, which

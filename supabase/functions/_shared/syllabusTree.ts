@@ -83,6 +83,15 @@ export const MIN_GROUNDED_RATIO = 0.6;
 export type SyllabusTree = {
   topics: SyllabusTopic[];
   coverage: SyllabusCoverage;
+  /**
+   * Elective/optional units this syllabus has (e.g. AQA Physics's Astrophysics/Medical Physics/
+   * Engineering Physics/Turning Points/Electronics), named by a CORE-mode tree so callers know an
+   * option picker should exist at all and what to call each choice. Only ever populated on a core
+   * tree (`option: ''`) — an option tree has nothing further to name. Absent or empty means either
+   * "this syllabus has no electives" or "not yet determined" (e.g. a bespoke goal); callers should not
+   * distinguish those two, both mean "don't show an option picker."
+   */
+  optionalUnits?: string[];
 };
 
 export type SyllabusIdentity = {
@@ -154,13 +163,22 @@ const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 /** Caps. Generous enough for a full multi-subject exam (JEE-scale), tight enough to bound cost. */
 export const MAX_TOPICS = 60;
 export const MAX_SUBTOPICS_PER_TOPIC = 12;
-const MIN_TOPICS = 3;
+/** Floor for a CORE or bespoke (whole-syllabus) tree. */
+export const MIN_TOPICS = 3;
+/**
+ * Floor for an OPTION tree (one elective unit, not a whole syllabus). AQA Physics's smallest option
+ * (Astrophysics) is 3 topics; reusing MIN_TOPICS=3 would already pass it, but a 1- or 2-topic option
+ * (a narrower board's elective) is still a legitimate small module, not a failed generation the way a
+ * 2-topic CORE tree would be — the whole-syllabus floor exists to catch a broken skeleton call, and an
+ * option's structurally smaller scope shouldn't be judged by the same bar.
+ */
+export const MIN_OPTION_TOPICS = 1;
 
 export type TreeValidationResult =
   | { ok: true; tree: SyllabusTree }
   | { ok: false; errors: string[] };
 
-export function validateSyllabusTree(raw: unknown): TreeValidationResult {
+export function validateSyllabusTree(raw: unknown, minTopics: number = MIN_TOPICS): TreeValidationResult {
   const errors: string[] = [];
   if (!raw || typeof raw !== "object") return { ok: false, errors: ["tree is not an object"] };
   const r = raw as Record<string, unknown>;
@@ -201,9 +219,11 @@ export function validateSyllabusTree(raw: unknown): TreeValidationResult {
     if (topics.length >= MAX_TOPICS) break;
   }
 
-  if (topics.length < MIN_TOPICS) {
-    errors.push(`only ${topics.length} usable topic(s); a syllabus needs at least ${MIN_TOPICS}`);
+  if (topics.length < minTopics) {
+    errors.push(`only ${topics.length} usable topic(s); needs at least ${minTopics}`);
   }
+
+  const optionalUnits = arr(r.optionalUnits).map(str).filter(Boolean);
 
   const rawCoverage = (r.coverage && typeof r.coverage === "object" ? r.coverage : {}) as Record<string, unknown>;
   const verdict = rawCoverage.verdict === "grounded" ? "grounded" : "unverified";
@@ -227,7 +247,7 @@ export function validateSyllabusTree(raw: unknown): TreeValidationResult {
   }
 
   if (errors.length) return { ok: false, errors };
-  return { ok: true, tree: { topics, coverage } };
+  return { ok: true, tree: { topics, coverage, ...(optionalUnits.length ? { optionalUnits } : {}) } };
 }
 
 /** Total teachable sessions in a tree — the honest "how big is this" number for UI and logging. */

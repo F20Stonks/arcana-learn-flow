@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText, ClipboardList, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Check, Loader2, BookOpen, Target, Map, Circle, Trash2, FileText, ClipboardList, MoreHorizontal, Plus, ArchiveRestore, Archive } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 import SpecChecklist from "@/components/SpecChecklist";
 import SafeBoundary from "@/components/SafeBoundary";
+import { addOptionToTrack, archiveOption, restoreOption } from "@/lib/syllabusTrack";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +27,16 @@ import {
 import { toast } from "sonner";
 import { SubjectIcon } from "@/lib/subjectIcons";
 
-type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
+// archived_at / option_group aren't in the generated Tables<"topics"> type yet — new columns from
+// 20260809130100_topic_archive_and_options.sql, same "written but not yet Lovable-run" situation
+// TrackPapers.tsx already documents for other tables. Extended by hand until types are regenerated.
+type Topic = Tables<"topics"> & {
+  subtopics: Tables<"subtopics">[];
+  archived_at: string | null;
+  option_group: string | null;
+};
+
+type OptionState = "not_added" | "active" | "archived";
 
 type View = "overview" | "map" | "spec";
 
@@ -82,6 +92,8 @@ export default function TrackOverview() {
   const [view, setView] = useState<View>("overview");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [availableOptions, setAvailableOptions] = useState<string[]>([]);
+  const [optionBusy, setOptionBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (!trackId || !user) return;
@@ -93,26 +105,32 @@ export default function TrackOverview() {
     setLoading(true);
     setLoadError("");
     try {
-      const { data: t, error: trackError } = await supabase.from("learning_tracks").select("*").eq("id", trackId).single();
+      const { data: t, error: trackError } = await (supabase.from("learning_tracks" as never) as any).select("*").eq("id", trackId).single();
       if (trackError) throw trackError;
       setTrack(t);
+      setAvailableOptions(Array.isArray(t?.available_options) ? t.available_options : []);
 
-      const { data: rawTopics, error: topicsError } = await supabase.from("topics").select("*").eq("track_id", trackId).order("order_index");
+      // Fetch ALL topics (active and archived) in one query — the main list below filters to active
+      // only, but the options section needs to see archived rows too, to know what's addable vs.
+      // restorable vs. already active.
+      const { data: rawTopics, error: topicsError } = await (supabase.from("topics" as never) as any)
+        .select("*").eq("track_id", trackId).order("order_index");
       if (topicsError) throw topicsError;
 
       const enriched: Topic[] = await Promise.all(
-        (rawTopics || []).map(async (topic) => {
+        (rawTopics || []).map(async (topic: Topic) => {
           const { data: subs } = await supabase.from("subtopics").select("*").eq("topic_id", topic.id).order("order_index");
           return { ...topic, subtopics: subs || [] };
         }),
       );
       setTopics(enriched);
-      if (enriched.length > 0) {
+      const active = enriched.filter((t) => !t.archived_at);
+      if (active.length > 0) {
         // Resume where the student actually left off, not always the first topic — a subtopic
         // stuck mid-session (see SessionPage.tsx's status write) is a much stronger signal of
         // "where to look" than track order.
-        const resumeTopic = enriched.find((t) => t.subtopics.some((s) => s.status === "in_progress"));
-        setExpanded(new Set([(resumeTopic ?? enriched[0]).id]));
+        const resumeTopic = active.find((t) => t.subtopics.some((s) => s.status === "in_progress"));
+        setExpanded(new Set([(resumeTopic ?? active[0]).id]));
       }
     } catch (error) {
       console.error("Track load failed:", error);
@@ -153,9 +171,63 @@ export default function TrackOverview() {
     navigate("/dashboard");
   };
 
-  const totalSubs = topics.reduce((a, t) => a + t.subtopics.length, 0);
-  const completedSubs = topics.reduce((a, t) => a + t.subtopics.filter((s) => s.status === "complete").length, 0);
+  // Archived topics are hidden from the working track — the sidebar list, progress, and everything
+  // below reads from this, not the raw fetch, so an archived option's material simply stops appearing
+  // rather than needing to be filtered out at every use site individually.
+  const activeTopics = topics.filter((t) => !t.archived_at);
+
+  const totalSubs = activeTopics.reduce((a, t) => a + t.subtopics.length, 0);
+  const completedSubs = activeTopics.reduce((a, t) => a + t.subtopics.filter((s) => s.status === "complete").length, 0);
   const pct = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
+
+  /** Not-added / active / archived, per elective option this track's syllabus has. */
+  const optionState = (option: string): OptionState => {
+    const rows = topics.filter((t) => t.option_group === option);
+    if (rows.length === 0) return "not_added";
+    return rows.some((t) => !t.archived_at) ? "active" : "archived";
+  };
+
+  const handleAddOption = async (option: string) => {
+    if (!track || optionBusy) return;
+    setOptionBusy(option);
+    const result = await addOptionToTrack(
+      { id: track.id, subject: track.subject, level: track.level, exam_board: track.exam_board },
+      option,
+    );
+    setOptionBusy(null);
+    if (!result.ok) {
+      toast.error(result.error || "Couldn't add that option");
+      return;
+    }
+    toast.success(`${option} added`);
+    await loadTrack();
+  };
+
+  const handleArchiveOption = async (option: string) => {
+    if (!trackId || optionBusy) return;
+    setOptionBusy(option);
+    const result = await archiveOption(trackId, option);
+    setOptionBusy(null);
+    if (!result.ok) {
+      toast.error("Couldn't archive that option");
+      return;
+    }
+    toast.success(`${option} archived — add it back anytime`);
+    await loadTrack();
+  };
+
+  const handleRestoreOption = async (option: string) => {
+    if (!trackId || optionBusy) return;
+    setOptionBusy(option);
+    const result = await restoreOption(trackId, option);
+    setOptionBusy(null);
+    if (!result.ok) {
+      toast.error("Couldn't restore that option");
+      return;
+    }
+    toast.success(`${option} restored`);
+    await loadTrack();
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -229,7 +301,7 @@ export default function TrackOverview() {
         </div>
 
         <div className="p-2">
-          {topics.map((topic) => {
+          {activeTopics.map((topic) => {
             const total = topic.subtopics.length;
             const done = topic.subtopics.filter((s) => s.status === "complete").length;
             const active = topic.subtopics.some((s) => s.status === "in_progress");
@@ -342,11 +414,61 @@ export default function TrackOverview() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
               </div>
+
+              {/* Elective options — only rendered when this syllabus actually has any. No option here
+                  is "official"; all are equally addable/archivable at any time, per the product
+                  direction that this app isn't the exam board and doesn't gate on assigned modules. */}
+              {availableOptions.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-4 mb-6">
+                  <p className="text-xs text-muted-foreground mb-3">Options</p>
+                  <div className="space-y-2">
+                    {availableOptions.map((option) => {
+                      const state = optionState(option);
+                      const busy = optionBusy === option;
+                      return (
+                        <div key={option} className="flex items-center justify-between gap-3 py-1">
+                          <span className="text-sm text-foreground">{option}</span>
+                          {state === "not_added" && (
+                            <button
+                              onClick={() => handleAddOption(option)}
+                              disabled={busy}
+                              className="flex items-center gap-1.5 text-xs font-medium text-primary px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                            >
+                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                              Add
+                            </button>
+                          )}
+                          {state === "active" && (
+                            <button
+                              onClick={() => handleArchiveOption(option)}
+                              disabled={busy}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                            >
+                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
+                              Archive
+                            </button>
+                          )}
+                          {state === "archived" && (
+                            <button
+                              onClick={() => handleRestoreOption(option)}
+                              disabled={busy}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                            >
+                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArchiveRestore className="h-3 w-3" />}
+                              Restore
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           ) : view === "map" ? (
             <SafeBoundary label="Knowledge map">
               <KnowledgeMap
-                topics={topics}
+                topics={activeTopics}
                 trackTitle={track?.title}
                 onSubtopicClick={(id) => navigate(`/session/${id}`)}
                 onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
@@ -355,7 +477,7 @@ export default function TrackOverview() {
           ) : (
             trackId ? (
               <SafeBoundary label="Specification checklist">
-                <SpecChecklist trackId={trackId} topics={topics} hasExamBoard={!!track?.exam_board} />
+                <SpecChecklist trackId={trackId} topics={activeTopics} hasExamBoard={!!track?.exam_board} />
               </SafeBoundary>
             ) : null
           )}
