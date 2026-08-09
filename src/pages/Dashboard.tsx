@@ -88,7 +88,9 @@ export default function Dashboard() {
             const { data: topics } = await (supabase.from("topics" as never) as any)
               .select("id, order_index").eq("track_id", t.id).is("archived_at", null);
             const topicIds = topics?.map((tp) => tp.id) || [];
-            const topicOrderById = new Map((topics || []).map((tp) => [tp.id, tp.order_index]));
+            const topicOrderById = new Map<string, number>(
+              (topics || []).map((tp: { id: string; order_index: number }) => [tp.id, tp.order_index]),
+            );
             let subtopicCount = 0;
             let completedCount = 0;
             let subtopicsDetail: SubtopicLite[] = [];
