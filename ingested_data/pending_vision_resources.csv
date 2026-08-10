@@ -1,0 +1,16 @@
+URL,Track,Subject,Reason
+https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf,ENGAA,Engineering,pdf_parse_error
+https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf,BMO,Mathematics,download_failed
+https://example.com/french_olympiad_2022.pdf,Olympiad,Mathematics,mock_url_skipped
+https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf,ENGAA,Engineering,pdf_parse_error
+https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf,BMO,Mathematics,download_failed
+https://example.com/french_olympiad_2022.pdf,Olympiad,Mathematics,mock_url_skipped
+https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf,ENGAA,Engineering,pdf_parse_error
+https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf,BMO,Mathematics,download_failed
+https://example.com/french_olympiad_2022.pdf,Olympiad,Mathematics,mock_url_skipped
+https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf,ENGAA,Engineering,unreadable_or_garbled_math
+https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf,BMO,Mathematics,download_failed
+https://example.com/french_olympiad_2022.pdf,Olympiad,Mathematics,mock_url_skipped
+https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf,ENGAA,Engineering,unreadable_or_garbled_math
+https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf,BMO,Mathematics,download_failed
+https://example.com/french_olympiad_2022.pdf,Olympiad,Mathematics,mock_url_skipped

@@ -15,6 +15,8 @@ import TrackPapers from "./pages/TrackPapers";
 import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReferenceQuestions from "./pages/ReferenceQuestions";
+import ResourceBank from "./pages/ResourceBank";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
@@ -90,6 +92,8 @@ function AppRoutes() {
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
+      <Route path="/resource-bank" element={<ProtectedRoute><ResourceBank /></ProtectedRoute>} />
+      <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
