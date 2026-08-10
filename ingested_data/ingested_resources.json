@@ -1,0 +1,67 @@
+[
+  {
+    "source_competition": "Putnam",
+    "year": 2025,
+    "subject": "Mathematics",
+    "language": "English",
+    "source_country": "USA",
+    "resource_type": "past_paper",
+    "learning_track": "Putnam",
+    "source_url": "https://kskedlaya.org/putnam-archive/2025.pdf",
+    "question_text": "The 86th William Lowell Putnam Mathematical Competition\nSaturday, December 6, 2025\nA1 Let m0 and n0 be distinct positive integers. For every\npositive integer k, define mk and nk to be the relatively\nprime positive integers such that\nmk\nnk\n= 2mk−1 + 1\n2nk−1 + 1 .\nProve that 2mk + 1 and 2nk + 1 are relatively prime for\nall but finitely many positive integers k.\nA2 Find the largest real number a and the smallest real\nnumber b such that\nax(π − x) ≤ sin x ≤ bx(π − x)\nfor all x in the interval [0, π].\nA3 Alice and Bob play a game with a string of n digits, each\nof which is restricted to be 0, 1, or 2. Initially all the\ndigits are 0. A legal move is to add or subtract 1 from\none digit to create a new string that has not appeared\nbefore. A player with no legal move loses, and the other\nplayer wins. Alice goes first, and the players alternate\nmoves. For each n ≥ 1, determine which player has a\nstrategy that guarantees winning.\nA4 Find the minimal value of k such that there exist k-by-k\nreal matrices A1, . . . , A2025 with the property that AiA j =\nA jAi if and only if |i − j| ∈ {0, 1, 2024}.\nA5 Let n be an integer with n ≥ 2. For a sequence s =\n(s1, . . . , sn−1) where each si = ±1, let f (s) be the num-\nber of permutations (a1, . . . , an) of {1, 2, . . . , n} such\nthat si(ai+1 − ai) > 0 for all i. For each n, determine\nthe sequences s for which f (s) is maximal.\nA6 Let b0 = 0 and, for n ≥ 0, define bn+1 = 2b2\nn + bn + 1.\nFor each k ≥ 1, show that b2k+1 − 2b2k is divisible by\n22k+2 but not by 22k+3.\nB1 Suppose that each point in the plane is colored either red\nor green, subject to the following condition: For every\nthree noncollinear points A, B,C of the same color, the\ncenter of the circle passing through A, B and C is also\nthis color. Prove that all points of the plane are the same\ncolor.\nB2 Let f : [0, 1] → [0, ∞) be strictly increasing and continu-\nous. Let R be the region bounded by x = 0, x = 1, y = 0,\nand y = f (x). Let x1 be the x-coordinate of the centroid\nof R. Le...",
+    "has_diagram": true,
+    "full_pdf_storage_path": "reference-papers/Putnam_2025.pdf"
+  },
+  {
+    "source_competition": "Putnam",
+    "year": 2025,
+    "subject": "Mathematics",
+    "language": "English",
+    "source_country": "USA",
+    "resource_type": "past_paper",
+    "learning_track": "Putnam",
+    "source_url": "https://kskedlaya.org/putnam-archive/2025s.pdf",
+    "question_text": "Solutions to the 86th William Lowell Putnam Mathematical Competition\nSaturday, December 6, 2025\nManjul Bhargava, Kiran Kedlaya, and Lenny Ng\nA1 For each k ≥ 0, the numbers 2mk + 1 and 2nk + 1 are\nodd and hence their greatest common factor dk must be\nodd. For an integer r, let Odd(r) denote the largest odd\nfactor of r. Then note that\nOdd(mk+1 − nk+1) = Odd\n\u0012 2mk + 1\ndk\n− 2nk + 1\ndk\n\u0013\n= Odd\n\u0012 mk − nk\ndk\n\u0013\n≤ Odd(mk − nk),\nwith equality if and only if dk = 1. Thus Odd(mk −\nnk) is a nonincreasing sequence of positive integers,\ndecreasing only when dk > 1. Hence the sequence\nOdd(mk − nk) must stabilize once k is greater than some\nK, implying that dk = 1 for k > K; that is, 2mk + 1 and\n2nk + 1 are relatively prime for all k > K, as desired.\nA2 The answer is a = 1/π and b = 4/π2.\nFirst solution. It suffices to restrict to x ∈ [0, π/2]\nrather than x ∈ [0, π] since the given inequalities are un-\nchanged if we replace x by π − x. Define the function\nf (x) = sin x\nx(π − x) ,\nand note that f is differentiable on (0, π/2] and can be\nextended continuously to x = 0 by setting f (0) = 1/π.\nIn particular, if a and b satisfy the desired condition,\nthen a ≤ 1/π and and b ≥ f (π/2) = 4/π2; it thus suf-\nfices to check that a = 1/π and b = 4/π2 satisfy the\ncondition.\nWe compute that f ′(x) = g(x)\nx2(π−x)2 for\ng(x) = x(π − x) cos x − (π − 2x) sin x.\nWe claim that g(x) > 0 for all x ∈ (0, π/2). Indeed, note\nthat g(0) = g(π/2) = 0 and\ng′(x) = (x2 − πx + 2)(sin x).\nNoting that the quadratic x2 − πx + 2 is positive at x = 0\nand negative at x = π/2, we see that it has a root\nr ∈ (0, π/2), is positive before that root, and is nega-\ntive after that root. That is, g′(x) > 0 for x ∈ (0, r) and\ng′(x) < 0 for x ∈ (r, π/2). If some x0 ∈ (0, π/2) satis-\nfied g(x0) ≤ 0, then we would have both x0 > r since g\nis increasing in (0, r) and g(0) = 0, and x0 < r since g\nis decreasing in (r, π/2) and g(π/2) = 0, contradiction.\nThis proves the claim.\nSince f ′(x) > 0 on (0, π/2), it follows that f (x) is\nstrict...",
+    "has_diagram": true,
+    "full_pdf_storage_path": "reference-papers/Putnam_2025.pdf"
+  },
+  {
+    "source_competition": "Putnam",
+    "year": 2025,
+    "subject": "Mathematics",
+    "language": "English",
+    "source_country": "USA",
+    "resource_type": "past_paper",
+    "learning_track": "Putnam",
+    "source_url": "https://kskedlaya.org/putnam-archive/AnnouncementOfWinners2025.pdf",
+    "question_text": "A NNOUNCEMENT OF WINNERS\nof the eighty-sixth competition held on December 6, 2025\nIn each of the following categories, the listing is in alphabetical order.\nTHE PUTNAM FELLOWS — THE FIVE HIGHEST-RANKING PARTICIPANTS\nEach receives an award of $2,500.\nJack Hu\nCheng Jiang\nLuke Robitaille\nChunji Wang\nZixiang (Peter) Zhou\nUniversity of Chicago\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nTHE NEXT TWELVE HIGHEST-RANKING PARTICIPANTS\nEach receives an award of $1,000.\nClaudio Bastiani-Fonck\nPapon Lapate\nGyudong Lee\nDerek Liu\nMaximus Lu\nKrishna Pothapragada\nPitchayut Saengrungkongka\nQiao Sun\nAllen Wang\nHedong Wang\nKevin Wang\nXiaohan Zhang\nUniversity of Chicago\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nGeorgetown University\nMassachusetts Institute of Technology\nUniversity of California, Santa Barbara\n\n-- 1 of 24 --\n\nTHE NEXT EIGHT HIGHEST-RANKING PARTICIPANTS\nEach receives an award of $250.\nWarren Bei\nReagan Choi\nPico Gilman\nHenry Jiang\nZhicheng Jiang\nShihan Kanungo\nJessica Wan\nYichen Xiao\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\nSan Jose State University\nMassachusetts Institute of Technology\nMassachusetts Institute of Technology\n\n-- 2 of 24 --\n\nHONORABLE MENTION — PARTICIPANTS\nRANKED 26-100\nThis section does not include two participants who declined to be listed publicly.\nDavid Anghel, MIT\nSrinivas Arun, MIT\nAdvaith Avadhanam, MIT\nAsha Basu, McGill University\nOkezue Bell, Stanford University\nRohan Bodke, MIT\nRuben Carpenter, Yale University\nAndrew Carratu, MIT\nPerryn...",
+    "has_diagram": true,
+    "full_pdf_storage_path": "reference-papers/Putnam_2025.pdf"
+  },
+  {
+    "source_competition": "Putnam",
+    "year": 2024,
+    "subject": "Mathematics",
+    "language": "English",
+    "source_country": "USA",
+    "resource_type": "past_paper",
+    "learning_track": "Putnam",
+    "source_url": "https://kskedlaya.org/putnam-archive/2024.pdf",
+    "question_text": "The 85th William Lowell Putnam Mathematical Competition\nSaturday, December 7, 2024\nA1 Determine all positive integers n for which there exist\npositive integers a, b, and c satisfying\n2an + 3bn = 4cn.\nA2 For which real polynomials p is there a real polynomial\nq such that\np(p(x)) − x = (p(x) − x)2q(x)\nfor all real x?\nA3 Let S be the set of bijections\nT : {1, 2, 3} × {1, 2, . . . , 2024} → {1, 2, . . . , 6072}\nsuch that T (1, j) < T (2, j) < T (3, j) for all j ∈\n{1, 2, . . . , 2024} and T (i, j) < T (i, j + 1) for all i ∈\n{1, 2, 3} and j ∈ {1, 2, . . . , 2023}. Do there exist a and c\nin {1, 2, 3} and b and d in {1, 2, . . . , 2024} such that the\nfraction of elements T in S for which T (a, b) < T (c, d)\nis at least 1/3 and at most 2/3?\nA4 Find all primes p > 5 for which there exists an integer\na and an integer r satisfying 1 ≤ r ≤ p − 1 with the fol-\nlowing property: the sequence 1, a, a2, . . . , ap−5 can be\nrearranged to form a sequence b0, b1, b2, . . . , bp−5 such\nthat bn − bn−1 − r is divisible by p for 1 ≤ n ≤ p − 5.\nA5 Consider a circle Ω with radius 9 and center at the ori-\ngin (0, 0), and a disc ∆ with radius 1 and center at (r, 0),\nwhere 0 ≤ r ≤ 8. Two points P and Q are chosen in-\ndependently and uniformly at random on Ω. Which\nvalue(s) of r minimize the probability that the chord PQ\nintersects ∆?\nA6 Let c0, c1, c2, . . . be the sequence defined so that\n1 − 3x − √1 − 14x + 9x2\n4 =\n∞\n∑\nk=0\nckxk\nfor sufficiently small x. For a positive integer n, let A\nbe the n-by-n matrix with i, j-entry ci+ j−1 for i and j in\n{1, . . . , n}. Find the determinant of A.\nB1 Let n and k be positive integers. The square in the ith\nrow and jth column of an n-by-n grid contains the num-\nber i + j − k. For which n and k is it possible to select\nn squares from the grid, no two in the same row or col-\numn, such that the numbers contained in the selected\nsquares are exactly 1, 2, . . . , n?\nB2 Two convex quadrilaterals are called partners if they\nhave three vertices in common and they c...",
+    "has_diagram": true,
+    "full_pdf_storage_path": "reference-papers/Putnam_2024.pdf"
+  },
+  {
+    "source_competition": "Putnam",
+    "year": 2024,
+    "subject": "Mathematics",
+    "language": "English",
+    "source_country": "USA",
+    "resource_type": "past_paper",
+    "learning_track": "Putnam",
+    "source_url": "https://kskedlaya.org/putnam-archive/2024s.pdf",
+    "question_text": "Solutions to the 85th William Lowell Putnam Mathematical Competition\nSaturday, December 7, 2024\nManjul Bhargava, Kiran Kedlaya, and Lenny Ng\nA1 The answer is n = 1. When n = 1, (a, b, c) = (1, 2, 2) is\na solution to the given equation. We claim that there are\nno solutions when n ≥ 2.\nFor n = 2, suppose that we have a solution to 2a2 +\n3b2 = 4c2 with a, b, c ∈ N. By dividing each of a, b, c\nby gcd(a, b, c), we obtain another solution; thus we\ncan assume that gcd(a, b, c) = 1. Note that we have\na2 + c2 ≡ 0 (mod 3), and that only 0 and 1 are per-\nfect squares mod 3; thus we must have a2 ≡ c2 ≡ 0\n(mod 3). But then a, c are both multiples of 3; it follows\nfrom b2 = 12(c/3)2 −6(a/3)2 that b is a multiple of 3 as\nwell, contradicting our assumption that gcd(a, b, c) = 1.\nFor n ≥ 3, suppose that 2an + 3bn = 4cn. As in the\nprevious case, we can assume gcd(a, b, c) = 1. Since\n3bn = 4cn − 2an, b must be even. We can then write\nan + 2n−1 · 3(b/2)n = 2cn, and so a must be even.\nThen 2n−1(a/2)n + 2n−2 · 3(b/2)n = cn, and c must be\neven as well. This contradicts our assumption that\ngcd(a, b, c) = 1.\nA2 The answer is p(x) = ±x + c for any c ∈ R. Note that\nany such polynomial works: if p(x) = x + c then p(x) −\nx = c, while if p(x) = −x + c then p(p(x)) − x = 0. We\nwill show that in fact these are the only polynomials\np(x) such that p(p(x)) − x is divisible by r(x)2, where\nr(x) = p(x) − x.\nFirst solution. Suppose that p(p(x)) − x is divisible by\nr(x)2. Then\nx ≡ p(p(x))\n= p(x + r(x))\n≡ p(x) + p′(x)r(x) (mod r(x)2).\nIn other words, r(x)(1 + p′(x)) is divisible by r(x)2.\nFrom this, it follows that either r(x) = 0 or 1 + p′(x)\nis divisible by r(x). In the first case, we have p(x) = x.\nIn the second case, if 1 + p′(x) = 0 then p(x) = −x + c\nfor some constant c; otherwise, we have\ndeg(p) − 1 = deg(1 + p′(x)) ≥ deg(r)\nand this is only possible if p(x) = x + c for some con-\nstant c.\nSecond solution. Suppose that p(p(x)) − x is divisible\nby r(x)2. Then\n0 ≡ d\ndx (p(p(x)) − x)\n= p′(x)p′(p(x)) − ...",
+    "has_diagram": true,
+    "full_pdf_storage_path": "reference-papers/Putnam_2024.pdf"
+  }
+]

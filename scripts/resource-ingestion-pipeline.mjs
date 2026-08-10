@@ -20,37 +20,12 @@ if (!fs.existsSync(UNPROCESSABLE_LOG)) {
   fs.writeFileSync(UNPROCESSABLE_LOG, 'URL,Track,Subject,Reason\n');
 }
 
-// Mock URLs for demo/testing - in a real thorough run this would be hundreds of fetched URLs from across the web.
-const RESOURCES_TO_SCRAPE = [
-    {
-        url: 'https://www.admissionstesting.org/Images/47831-engaa-specimen-paper-section-1.pdf',
-        track: 'ENGAA',
-        subject: 'Engineering',
-        type: 'past_paper',
-        language: 'English',
-        country: 'UK',
-        year: 2016
-    },
-    {
-        url: 'https://bmo.ukmathstrust.org.uk/downloads/bmo1-2023.pdf',
-        track: 'BMO',
-        subject: 'Mathematics',
-        type: 'past_paper',
-        language: 'English',
-        country: 'UK',
-        year: 2023
-    },
-    // Adding a mock french resource to test translation
-    {
-        url: 'https://example.com/french_olympiad_2022.pdf',
-        track: 'Olympiad',
-        subject: 'Mathematics',
-        type: 'past_paper',
-        language: 'French',
-        country: 'France',
-        year: 2022
-    }
-];
+// Use the output from scrape-real-resources.mjs
+const SCRAPED_FILE = path.join(__dirname, 'scraped_urls.json');
+let RESOURCES_TO_SCRAPE = [];
+if (fs.existsSync(SCRAPED_FILE)) {
+    RESOURCES_TO_SCRAPE = JSON.parse(fs.readFileSync(SCRAPED_FILE, 'utf8')).slice(0, 5); // Limit to 5 for fast demo processing in this session
+}
 
 
 async function downloadPdf(url) {
@@ -72,7 +47,7 @@ async function processPdf(buffer, metadata) {
         let text = data.text;
 
         // Very basic heuristic to check if pdf-parse garbled the math completely or found no text
-        if (text.length < 50 || text.includes('')) {
+        if (text.length < 50) {
              return { success: false, reason: 'unreadable_or_garbled_math' };
         }
 
@@ -146,6 +121,17 @@ async function main() {
     if (ingestedData.length > 0) {
         fs.writeFileSync(path.join(OUTPUT_DIR, 'ingested_resources.json'), JSON.stringify(ingestedData, null, 2));
         console.log(`Saved ${ingestedData.length} records to ingested_resources.json`);
+
+        // Generate SQL Migration
+        let sql = `-- Auto-generated migration from ingestion pipeline\n`;
+        for (const r of ingestedData) {
+            const escapedText = r.question_text.replace(/'/g, "''");
+            sql += `INSERT INTO public.reference_questions (source_competition, year, subject, question_text, has_diagram, source_url, language, source_country, resource_type, learning_track, full_pdf_storage_path)
+            VALUES ('${r.source_competition}', ${r.year || 'NULL'}, '${r.subject}', '${escapedText}', ${r.has_diagram}, '${r.source_url}', '${r.language}', '${r.source_country}', '${r.resource_type}', '${r.learning_track}', '${r.full_pdf_storage_path}');\n`;
+        }
+        const migrationPath = path.join(process.cwd(), 'supabase', 'migrations', '20260810130000_seed_scraped_resources.sql');
+        fs.writeFileSync(migrationPath, sql);
+        console.log(`Saved SQL seed migration to ${migrationPath}`);
     }
 
     console.log("Pipeline complete.");
