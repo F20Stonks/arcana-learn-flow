@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network } from "lucide-react";
+import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network, BookOpen, BarChart3 } from "lucide-react";
 import ConceptGraph from "@/components/ConceptGraph";
 
 type TrackRow = { id: string; title: string; emoji: string | null; exam_date: string | null; subject: string };
@@ -98,6 +98,15 @@ export default function HubSidebar() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
+          <>
+          <div className="flex gap-2 p-2 border-b border-border/50">
+             <button onClick={() => { setOpen(false); navigate('/resource-bank'); }} className="flex-1 flex items-center justify-center gap-2 h-9 rounded-md bg-secondary/50 hover:bg-secondary text-sm font-medium transition-colors">
+                <BookOpen className="w-4 h-4" /> Resources
+             </button>
+             <button onClick={() => { setOpen(false); navigate('/analytics'); }} className="flex-1 flex items-center justify-center gap-2 h-9 rounded-md bg-secondary/50 hover:bg-secondary text-sm font-medium transition-colors">
+                <BarChart3 className="w-4 h-4" /> Analytics
+             </button>
+          </div>
           <Tabs defaultValue="knowledge" className="flex-1 flex flex-col min-h-0 mt-2">
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="knowledge"><Brain className="h-3.5 w-3.5 mr-1.5" />Knowledge</TabsTrigger>
@@ -115,6 +124,7 @@ export default function HubSidebar() {
               <CalendarTab tracks={tracks} reviews={reviews} subtopicTitles={subtopicTitles} />
             </TabsContent>
           </Tabs>
+          </>
         )}
       </SheetContent>
     </Sheet>
