@@ -92,8 +92,8 @@ function AppRoutes() {
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
-      <Route path="/resource-bank" element={<ProtectedRoute><ResourceBank /></ProtectedRoute>} />
-      <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
+      <Route path="/resource-bank" element={<DashboardGuard><ResourceBank /></DashboardGuard>} />
+      <Route path="/analytics" element={<DashboardGuard><AnalyticsDashboard /></DashboardGuard>} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />

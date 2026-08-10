@@ -21,17 +21,24 @@ export default function ResourceBank() {
 
   async function fetchResources() {
     setLoading(true);
-    // Since we just added columns in a migration, they might be null for older rows, but we fetch all.
-    const { data, error } = await supabase
-      .from('reference_questions')
-      .select('id, source_competition, year, subject, difficulty, language, source_country, resource_type, learning_track, full_pdf_storage_path')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    try {
+      const { data, error } = await supabase
+        .from('reference_questions')
+        .select('id, source_competition, year, subject, difficulty, language, source_country, resource_type, learning_track, full_pdf_storage_path')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-    if (error) {
-      console.error('Error fetching resources:', error);
-    } else {
-      setResources(data || []);
+      if (error) {
+        console.error('Error fetching resources:', error);
+        // Fallback for user: alert them if the schema migration wasn't applied yet
+        if (error.message.includes('relation "public.reference_questions" does not exist') || error.message.includes('column')) {
+            console.warn("Database schema mismatch. Please run 'supabase db push' to apply the latest migrations.");
+        }
+      } else {
+        setResources(data || []);
+      }
+    } catch(e) {
+        console.error('Unexpected error fetching resources:', e);
     }
     setLoading(false);
   }
