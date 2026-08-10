@@ -158,7 +158,7 @@ export default function ResourceBank() {
                         PDF
                       </Button>
                     )}
-                    <Button size="sm" onClick={() => window.location.href = `/reference-questions?source=${res.source_competition}`}>
+                    <Button size="sm" onClick={() => window.location.href = `/reference-questions?competition=${res.source_competition}`}>
                       Practice
                     </Button>
                   </div>
