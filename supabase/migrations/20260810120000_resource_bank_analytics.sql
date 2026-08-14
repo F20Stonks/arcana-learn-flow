@@ -6,7 +6,10 @@ ADD COLUMN IF NOT EXISTS resource_type TEXT DEFAULT 'past_paper', -- e.g., 'past
 ADD COLUMN IF NOT EXISTS learning_track TEXT,                     -- e.g., 'ESAT', 'TMUA', 'A-Level', 'Olympiad'
 ADD COLUMN IF NOT EXISTS full_pdf_storage_path TEXT;              -- Path to the complete PDF resource
 
--- Track individual attempts on reference questions
+-- Track individual attempts on reference questions. No writer exists yet — the current
+-- ReferenceQuestions.tsx / StepQuestions.tsx surfaces are read-only viewers with a reveal-solution
+-- toggle, not an answer-submission flow. This table is forward infrastructure for that flow (part of
+-- the "general question engine" rebuild), not something populated by anything shipped today.
 CREATE TABLE IF NOT EXISTS public.user_question_attempts (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -32,29 +35,36 @@ CREATE INDEX idx_user_attempts_user_id ON public.user_question_attempts(user_id)
 CREATE INDEX idx_user_attempts_question_id ON public.user_question_attempts(reference_question_id);
 
 
--- Track overall topic mastery based on attempts
-CREATE TABLE IF NOT EXISTS public.user_topic_mastery (
+-- Which concepts a reference question exercises or assumes — the reference-question equivalent of
+-- subtopic_concepts (see 20260709120000_knowledge_tracker_v1.sql). Deliberately NOT a path to writing
+-- user_concept_knowledge: per docs/knowledge-tracker-framework.md §4, "known" is earned by completing
+-- a full teaching session ("enforced by session design... not by the tracker"), not by answering a
+-- practice question correctly — a lucky guess on a hard olympiad question must not permanently flip a
+-- concept to known. This table exists so attempt data can be CORRELATED against what's already known
+-- (surfacing "you got this right without having formally learned X yet" or feeding a future
+-- "recommend questions relevant to what you know" feature) without polluting the tracker itself.
+CREATE TABLE IF NOT EXISTS public.reference_question_concepts (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    topic TEXT NOT NULL,
-    mastery_level FLOAT NOT NULL DEFAULT 0.0, -- Range 0.0 to 1.0 or similar
-    attempts_count INTEGER NOT NULL DEFAULT 0,
-    successful_attempts INTEGER NOT NULL DEFAULT 0,
-    total_time_spent_seconds INTEGER NOT NULL DEFAULT 0,
-    last_updated TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE(user_id, topic)
+    reference_question_id UUID NOT NULL REFERENCES public.reference_questions(id) ON DELETE CASCADE,
+    concept_id UUID NOT NULL REFERENCES public.concepts(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'tests' CHECK (role IN ('tests', 'requires')),
+    UNIQUE (reference_question_id, concept_id, role)
 );
 
-ALTER TABLE public.user_topic_mastery ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view their own topic mastery" ON public.user_topic_mastery FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own topic mastery" ON public.user_topic_mastery FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own topic mastery" ON public.user_topic_mastery FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-REVOKE ALL ON public.user_topic_mastery FROM anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_topic_mastery TO authenticated;
+ALTER TABLE public.reference_question_concepts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view reference question concepts" ON public.reference_question_concepts FOR SELECT TO authenticated USING (true);
+REVOKE ALL ON public.reference_question_concepts FROM anon;
+GRANT SELECT ON public.reference_question_concepts TO authenticated;
+GRANT ALL ON public.reference_question_concepts TO service_role;
 
-CREATE INDEX idx_user_topic_mastery_user_id ON public.user_topic_mastery(user_id);
+CREATE INDEX idx_reference_question_concepts_question ON public.reference_question_concepts(reference_question_id);
+CREATE INDEX idx_reference_question_concepts_concept ON public.reference_question_concepts(concept_id);
 
--- Create a view for easy analytics querying
+-- Live aggregation over real attempt data — a VIEW rather than a maintained table, so there is no
+-- separate "who updates this" problem (the earlier draft of this migration had a user_topic_mastery
+-- TABLE with no writer specified anywhere, table or trigger — it would have sat empty forever even
+-- once attempts existed). Empty until the answer-submission flow ships and starts writing attempts;
+-- that's a correct, honest empty state, not a bug.
 CREATE OR REPLACE VIEW public.user_resource_analytics WITH (security_invoker = true) AS
 SELECT
     uqa.user_id,

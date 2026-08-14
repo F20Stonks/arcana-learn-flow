@@ -21,9 +21,11 @@ export default function ResourceBank() {
 
   async function fetchResources() {
     setLoading(true);
-    // Since we just added columns in a migration, they might be null for older rows, but we fetch all.
-    const { data, error } = await supabase
-      .from('reference_questions')
+    // language/source_country/resource_type/learning_track/full_pdf_storage_path aren't in the
+    // generated types yet (migration not applied to the live project) — same as-never/as-any
+    // pattern ReferenceQuestions.tsx already uses for reference_questions itself. Older rows
+    // predate these columns and read back null, which every render path below already handles.
+    const { data, error } = await (supabase.from("reference_questions" as never) as any)
       .select('id, source_competition, year, subject, difficulty, language, source_country, resource_type, learning_track, full_pdf_storage_path')
       .order('created_at', { ascending: false })
       .limit(100);
@@ -31,7 +33,7 @@ export default function ResourceBank() {
     if (error) {
       console.error('Error fetching resources:', error);
     } else {
-      setResources(data || []);
+      setResources((data as Record<string, unknown>[]) || []);
     }
     setLoading(false);
   }
@@ -120,7 +122,7 @@ export default function ResourceBank() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResources.map((res) => (
-            <Card key={res.id} className="flex flex-col hover:border-primary/50 transition-colors group">
+            <Card key={res.id as string} className="flex flex-col hover:border-primary/50 transition-colors group">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start mb-2">
                   <Badge variant={res.difficulty === 'hard' ? 'destructive' : res.difficulty === 'medium' ? 'default' : 'secondary'}>
