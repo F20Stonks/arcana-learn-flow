@@ -172,6 +172,16 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
         }
         break;
       }
+      case "scalarField": {
+        const [xMin, xMax, yMin, yMax] = p.bounds;
+        const xy: Array<Record<string, number>> = [];
+        for (const x of lin(xMin, xMax, 4))
+          for (const y of lin(yMin, yMax, 4)) xy.push({ ...baseScope, x, y });
+        // NaN tolerated per-sample: the renderer maps non-finite field values
+        // to 0 (a dead pixel), the same contract as curve asymptote breaks.
+        ctxs.push({ where: `${w}.f`, expr: p.f, samples: xy, nanOk: true });
+        break;
+      }
       case "vectorField": {
         const [xMin, xMax, yMin, yMax, zMin, zMax] = p.bounds;
         const xyz: Array<Record<string, number>> = [];

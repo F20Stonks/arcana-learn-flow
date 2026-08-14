@@ -213,6 +213,44 @@ export interface SurfacePrim extends Staged {
   colormap?: "height" | "none";
 }
 
+/**
+ * A flat 2D scalar field rendered as a colour-mapped surface in the XY plane —
+ * equipotential/field-intensity maps, wave interference, probability density,
+ * temperature/pressure distributions. This is the primitive for "the value at
+ * every point in a region", planar and honest by construction (no fake-3D
+ * tilt: the field lives at z=0, read like a real contour map, never lit —
+ * lighting would distort the very colour the student is meant to read off).
+ *
+ * `surface` is for when the THIRD axis is the story (a literal height). Use
+ * `scalarField` whenever the underlying thing is genuinely 2D and colour is
+ * standing in for a value, not a shape.
+ */
+export interface ScalarFieldPrim extends Staged {
+  kind: "scalarField";
+  /** value at (x, y) — mathjs expr in x, y, sliders, time */
+  f: string;
+  /** extent in the XY plane: [xMin, xMax, yMin, yMax] */
+  bounds: [number, number, number, number];
+  /** grid resolution per axis; default 40 */
+  resolution?: number;
+  /**
+   * "diverging" (blue↔white↔red, centred on zero — potential, charge, signed
+   * amplitude) or "sequential" (dark→accent — intensity, probability density,
+   * temperature). Default "diverging".
+   */
+  palette?: "diverging" | "sequential";
+  /**
+   * Clamp range: |value| ≤ max (diverging) or 0..max (sequential). Omit it —
+   * the range is auto-derived from what the field actually samples to, so a
+   * field that rescales under a slider never needs the AI to predict bounds.
+   */
+  max?: number;
+  /** tints the "sequential" ramp's bright end, or is ignored for "diverging" (which is
+   *  always blue/red — a field's SIGN is data, not a style choice) */
+  color?: Color;
+  opacity?: number; // default 0.9
+}
+
 export interface VectorFieldPrim extends Staged {
   kind: "vectorField";
   /** components fx(x,y,z), fy(x,y,z), fz(x,y,z) — z optional */
@@ -290,6 +328,7 @@ export type Primitive =
   | ArcPrim
   | AngleMarkPrim
   | SurfacePrim
+  | ScalarFieldPrim
   | VectorFieldPrim
   | ArrowPrim
   | PolygonPrim
@@ -437,6 +476,16 @@ function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
       if (prim.vMax === prim.vMin) prim.vMax = (prim.vMin as number) + 1;
       prim.uSamples = clamp(num(prim.uSamples, 48), 8, 96);
       prim.vSamples = clamp(num(prim.vSamples, 48), 8, 96);
+      return prim as unknown as Primitive;
+    }
+    case "scalarField": {
+      if (!isExpr(prim.f)) return null;
+      if (!Array.isArray(prim.bounds) || prim.bounds.length < 4) return null;
+      prim.bounds = (prim.bounds as unknown[]).slice(0, 4).map((b, i) => num(b, i % 2 === 0 ? -3 : 3));
+      if (prim.resolution !== undefined) prim.resolution = clamp(num(prim.resolution, 40), 8, 80);
+      if (prim.max !== undefined && !Number.isFinite(prim.max as number)) delete prim.max;
+      if (prim.opacity !== undefined) prim.opacity = clamp(num(prim.opacity, 0.9), 0.05, 1);
+      if (prim.palette !== "sequential") prim.palette = "diverging";
       return prim as unknown as Primitive;
     }
     case "vectorField": {

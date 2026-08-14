@@ -24,6 +24,7 @@ import type {
   ArcPrim,
   AngleMarkPrim,
   SurfacePrim,
+  ScalarFieldPrim,
   VectorFieldPrim,
   ArrowPrim,
   PolygonPrim,
@@ -906,6 +907,94 @@ function SurfaceR({ p, scope, style, progress }: { p: SurfacePrim; scope: Scope;
   );
 }
 
+const SCALARFIELD_EXCLUDE = ["x", "y"] as const;
+
+/**
+ * Flat colour-mapped surface: value at every (x,y) becomes a vertex colour on
+ * a z=0 grid. Unlit deliberately — `meshBasicMaterial`, not `meshStandardMaterial`
+ * — because this is a primitive the student reads colour off of like a real
+ * contour map; scene lighting darkening one corner would be lying about the
+ * data, the same way a fake 3D tilt would be. `surface` is for when height IS
+ * the story; this is for when colour is standing in for a value.
+ */
+function ScalarFieldR({ p, scope, style, progress }: { p: ScalarFieldPrim; scope: Scope; style: Style; progress: number }) {
+  const res = p.resolution ?? 40;
+  const ff = useMemo(() => compileExpr(p.f), [p.f]);
+  const key = depKey([ff], scope, SCALARFIELD_EXCLUDE);
+  const [xMin, xMax, yMin, yMax] = p.bounds;
+  const diverging = (p.palette ?? "diverging") !== "sequential";
+  const tint = resolveColor(p.color, "#38bdf8", style);
+
+  const geom = useMemo(() => {
+    const n = res + 1;
+    const positions = new Float32Array(n * n * 3);
+    const values = new Float32Array(n * n);
+    const s: Scope = { ...scope, x: 0, y: 0 };
+    let lo = Infinity, hi = -Infinity;
+    for (let j = 0; j < n; j++) {
+      s.y = yMin + (j / res) * (yMax - yMin);
+      for (let i = 0; i < n; i++) {
+        s.x = xMin + (i / res) * (xMax - xMin);
+        const idx = j * n + i;
+        positions[idx * 3] = s.x;
+        positions[idx * 3 + 1] = s.y;
+        positions[idx * 3 + 2] = 0;
+        const v = ff.fn(s);
+        const safe = Number.isFinite(v) ? v : 0;
+        values[idx] = safe;
+        if (safe < lo) lo = safe;
+        if (safe > hi) hi = safe;
+      }
+    }
+    const indices: number[] = [];
+    for (let j = 0; j < res; j++) {
+      for (let i = 0; i < res; i++) {
+        const a = j * n + i, b = a + 1, c = a + n, d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
+    // Explicit `max` wins; otherwise auto-ranged from what was actually sampled, so a field
+    // that rescales under a slider never needs the AI to predict its own bounds up front.
+    const range = p.max ?? (diverging ? Math.max(Math.abs(lo), Math.abs(hi), 1e-6) : Math.max(hi, 1e-6));
+    const colors = new Float32Array(n * n * 3);
+    const cold = new THREE.Color("#2563eb");
+    const mid = new THREE.Color("#f8fafc");
+    const warm = new THREE.Color("#ef4444");
+    const base = new THREE.Color(tint);
+    const dark = base.clone().multiplyScalar(0.12);
+    const c = new THREE.Color();
+    for (let idx = 0; idx < n * n; idx++) {
+      if (diverging) {
+        const t = Math.max(-1, Math.min(1, values[idx] / range));
+        if (t < 0) c.lerpColors(mid, cold, -t); else c.lerpColors(mid, warm, t);
+      } else {
+        const t = Math.max(0, Math.min(1, values[idx] / range));
+        c.lerpColors(dark, base, t);
+      }
+      colors[idx * 3] = c.r; colors[idx * 3 + 1] = c.g; colors[idx * 3 + 2] = c.b;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    g.setIndex(indices);
+    return g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ff, xMin, xMax, yMin, yMax, res, diverging, tint, p.max, key]);
+
+  useEffect(() => () => geom.dispose(), [geom]);
+
+  return (
+    <mesh geometry={geom}>
+      <meshBasicMaterial
+        vertexColors
+        opacity={(p.opacity ?? 0.9) * (0.15 + 0.85 * progress)}
+        transparent
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
 const FIELD_EXCLUDE = ["x", "y", "z"] as const;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -1214,6 +1303,7 @@ function PrimitiveR({ prim, scope, style, theme, progress = 1 }: { prim: Primiti
     case "arc": return <ArcR p={prim} scope={scope} style={style} progress={progress} />;
     case "angleMark": return <AngleMarkR p={prim} scope={scope} style={style} progress={progress} />;
     case "surface": return <SurfaceR p={prim} scope={scope} style={style} progress={progress} />;
+    case "scalarField": return <ScalarFieldR p={prim} scope={scope} style={style} progress={progress} />;
     case "vectorField": return <VectorFieldR p={prim} scope={scope} style={style} progress={progress} />;
     case "arrow": return <ArrowR p={prim} scope={scope} style={style} progress={progress} />;
     case "polygon": return <PolygonR p={prim} scope={scope} style={style} progress={progress} />;

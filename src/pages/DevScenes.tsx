@@ -233,6 +233,44 @@ const SCENES: { name: string; spec: SceneSpec }[] = [
     },
   },
   {
+    // Verbatim worked example 5 from SCENE_DIRECTOR_PROMPT — if this breaks,
+    // the model is being taught to imitate broken JSON.
+    name: "Dipole potential (scalarField diverging + vectorField)",
+    spec: {
+      kind: "scene",
+      title: "The field of an electric dipole",
+      caption: "Two equal, opposite charges — watch how their potentials cancel exactly on the midline.",
+      why: "Potential adds like a plain scalar (one term per charge), so between equal-and-opposite charges the two contributions fight to a standoff exactly on the perpendicular bisector — the field there points straight from + to -, not radially from either charge alone.",
+      flat: true,
+      camera: [0, 0, 9],
+      objects: [
+        { kind: "scalarField", f: "1/sqrt((x-2)^2+y^2+0.09) - 1/sqrt((x+2)^2+y^2+0.09)", bounds: [-5, 5, -5, 5], palette: "diverging", opacity: 0.85 },
+        { kind: "vectorField", fx: "(x-2)/((x-2)^2+y^2+0.09)^1.5 - (x+2)/((x+2)^2+y^2+0.09)^1.5", fy: "y/((x-2)^2+y^2+0.09)^1.5 - y/((x+2)^2+y^2+0.09)^1.5", bounds: [-5, 5, -5, 5], density: 9, normalize: true, color: "#0f172a" },
+        { kind: "point", at: [2, 0, 0.05], color: "#ef4444", size: 0.14, label: "+q" },
+        { kind: "point", at: [-2, 0, 0.05], color: "#2563eb", size: 0.14, label: "-q" },
+        { kind: "text", at: [0, -4.4, 0], content: "V(x,y)=\\tfrac{q}{r_+}-\\tfrac{q}{r_-}", latex: true, color: "#f8fafc", size: 0.28 },
+      ],
+    },
+  },
+  {
+    name: "Two-slit interference (scalarField sequential, slider, live text)",
+    spec: {
+      kind: "scene",
+      title: "Where two waves agree, light lands",
+      caption: "Slide the slit separation — the fringes squeeze together as d grows.",
+      why: "Each point's brightness is set by the path difference to the two slits: a whole number of wavelengths means crests arrive together (bright), a half number means they cancel (dark). Changing d moves where those agreements happen — geometry, not magic.",
+      flat: true,
+      camera: [0, 0, 9],
+      sliders: [{ key: "d", label: "Slit separation d", min: 0.5, max: 3, step: 0.05, default: 1.5 }],
+      objects: [
+        { kind: "scalarField", f: "1 + cos(6*(sqrt((x-d/2)^2+(y+4)^2) - sqrt((x+d/2)^2+(y+4)^2)))", bounds: [-4, 4, -3, 3], resolution: 60, palette: "sequential", color: "#fbbf24" },
+        { kind: "point", at: ["d/2", -4, 0.05], color: "#38bdf8", size: 0.1, label: "S_1" },
+        { kind: "point", at: ["-d/2", -4, 0.05], color: "#38bdf8", size: 0.1, label: "S_2" },
+        { kind: "text", at: [0, 3.6, 0], content: "\\Delta r = n\\lambda \\Rightarrow \\text{bright}\\quad (d = ${d})", latex: true, color: "#f8fafc", size: 0.26 },
+      ],
+    },
+  },
+  {
     name: "Sanitizer stress (bad prims, huge density)",
     spec: sanitizeScene({
       kind: "scene",
