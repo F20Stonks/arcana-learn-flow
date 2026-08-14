@@ -15,6 +15,7 @@ import { getAIConfig, getAIConfigSync } from "./aiConfig.ts";
 // when syllabus tree authoring needed the same per-topic resolution — the constraint in the header
 // comment above is not specific to checklists, and two copies of it would drift.
 import { getTavilyKey, searchTopicSpecText } from "./specSearch.ts";
+import { aiFetch } from "./aiFetch.ts";
 
 const OVERALL_TIMEOUT_MS = 18000;
 
@@ -30,11 +31,7 @@ async function segmentIntoItems(
   specText: string, sourceUrl: string, topicTitle: string, subtopicTitles: string[],
 ): Promise<{ items: SpecChecklistItem[]; sourceUrl: string } | null> {
   const ai = getAIConfigSync();
-  const res = await fetch(ai.url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: ai.model,
+  const res = await aiFetch(ai, {
       messages: [
         {
           role: "system",
@@ -53,8 +50,7 @@ If the excerpt doesn't actually contain real spec requirement content for this t
         { role: "user", content: specText },
       ],
       response_format: { type: "json_object" },
-    }),
-  });
+    });
   if (!res.ok) return null;
   const data = await res.json();
   try {

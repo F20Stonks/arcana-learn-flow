@@ -1,6 +1,7 @@
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { DIAGRAM_CAPABILITY } from "../_shared/diagramCapability.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { aiFetch } from "../_shared/aiFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,18 +72,13 @@ example.
 
 ${DIAGRAM_CAPABILITY}`;
 
-    const aiRes = await fetch(ai.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ai.model,
+    const aiRes = await aiFetch(ai, {
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Generate the ${count}-question ${difficulty} paper now.` },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!aiRes.ok) {
       if (aiRes.status === 429) {

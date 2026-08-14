@@ -3,6 +3,7 @@ import { getAIConfig } from "../_shared/aiConfig.ts";
 import { callVertexExpressChat } from "../_shared/vertexExpress.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import {
+import { aiFetch } from "../_shared/aiFetch.ts";
   hasPlanIdentity,
   LESSON_PLAN_VERSION,
   type LessonPlan,
@@ -329,18 +330,10 @@ Order in your reply: short prose → <scene-request> (only when earned) → <cho
     // identical either way.
     const response = ai.provider === "vertex-express"
       ? await callVertexExpressChat({ apiKey: ai.key, model: ai.model, messages: turnMessages })
-      : await fetch(ai.url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${ai.key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: pickModel(intensity, ai.model),
+      : await aiFetch(ai, {
             messages: turnMessages,
             stream: true,
-          }),
-        });
+          });
 
     if (!response.ok) {
       if (response.status === 429) {

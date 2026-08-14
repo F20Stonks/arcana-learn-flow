@@ -44,6 +44,7 @@ import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 import { chunkText, getTavilyKey } from "../_shared/specSearch.ts";
 import { resolveSpecDocumentCached } from "../_shared/specDocumentCache.ts";
 import {
+import { aiFetch } from "../_shared/aiFetch.ts";
   countSubtopics,
   hasCanonicalIdentity,
   MAX_SUBTOPICS_PER_TOPIC,
@@ -116,15 +117,10 @@ function parseJsonLoose(content: string): any | null {
 async function askJson(system: string, user: string): Promise<any | null> {
   try {
     const ai = await getAIConfig("authoring");
-    const res = await fetch(ai.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ai.model,
+    const res = await aiFetch(ai, {
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
     if (!res.ok) {
       console.error("syllabus authoring AI error:", res.status, await res.text());
       return null;
