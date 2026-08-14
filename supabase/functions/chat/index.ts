@@ -324,16 +324,14 @@ Order in your reply: short prose → <scene-request> (only when earned) → <cho
       ...messages.map((m: any) => ({ role: m.role, content: m.content })),
     ];
 
-    // vertex-express speaks Gemini's native wire format, not the OpenAI shape every other provider
-    // here does — callVertexExpressChat does that translation and hands back a plain Response, so
-    // everything below (the ok/429/402 checks, the final `new Response(response.body, ...)`) is
-    // identical either way.
-    const response = ai.provider === "vertex-express"
-      ? await callVertexExpressChat({ apiKey: ai.key, model: ai.model, messages: turnMessages })
-      : await aiFetch(ai, {
-            messages: turnMessages,
-            stream: true,
-          });
+    // aiFetch handles the wire format: vertex-express speaks Gemini's native shape (translated in
+    // _shared/vertexExpress.ts), every other provider takes the OpenAI shape. Either way the result
+    // is a plain Response, so everything below is identical.
+    const response = await aiFetch(ai, {
+      model: pickModel(intensity, ai.model),
+      messages: turnMessages,
+      stream: true,
+    });
 
     if (!response.ok) {
       if (response.status === 429) {
