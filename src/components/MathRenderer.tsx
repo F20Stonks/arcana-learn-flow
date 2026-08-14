@@ -28,12 +28,12 @@ const markdownComponents = {
   h1: ({ children, ...props }: any) => <h1 className="text-lg font-bold text-foreground mt-4 mb-2" {...props}>{children}</h1>,
   h2: ({ children, ...props }: any) => <h2 className="text-base font-semibold text-foreground mt-3 mb-1.5" {...props}>{children}</h2>,
   h3: ({ children, ...props }: any) => <h3 className="text-sm font-semibold text-foreground mt-2 mb-1" {...props}>{children}</h3>,
-  p: ({ children, ...props }: any) => <p className="text-sm leading-relaxed text-foreground mb-2 last:mb-0" {...props}>{children}</p>,
+  p: ({ children, ...props }: any) => <p className="text-[inherit] leading-[inherit] text-foreground mb-3 last:mb-0" {...props}>{children}</p>,
   strong: ({ children, ...props }: any) => <strong className="font-semibold text-foreground" {...props}>{children}</strong>,
   em: ({ children, ...props }: any) => <em className="italic text-foreground/90" {...props}>{children}</em>,
-  ul: ({ children, ...props }: any) => <ul className="list-disc list-inside text-sm text-foreground space-y-1 mb-2 ml-1" {...props}>{children}</ul>,
-  ol: ({ children, ...props }: any) => <ol className="list-decimal list-inside text-sm text-foreground space-y-1 mb-2 ml-1" {...props}>{children}</ol>,
-  li: ({ children, ...props }: any) => <li className="text-sm text-foreground" {...props}>{children}</li>,
+  ul: ({ children, ...props }: any) => <ul className="list-disc text-[inherit] text-foreground space-y-1.5 mb-3 ml-4 marker:text-muted-foreground/50" {...props}>{children}</ul>,
+  ol: ({ children, ...props }: any) => <ol className="list-decimal text-[inherit] text-foreground space-y-1.5 mb-3 ml-4 marker:text-muted-foreground/50" {...props}>{children}</ol>,
+  li: ({ children, ...props }: any) => <li className="text-[inherit] leading-[inherit] text-foreground pl-1" {...props}>{children}</li>,
   code: ({ children, className, ...props }: any) => {
     const isBlock = className?.includes("language-");
     if (isBlock) {
@@ -42,7 +42,7 @@ const markdownComponents = {
     return <code className="bg-accent px-1.5 py-0.5 rounded text-xs font-mono text-primary" {...props}>{children}</code>;
   },
   blockquote: ({ children, ...props }: any) => (
-    <blockquote className="border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground italic mb-2" {...props}>{children}</blockquote>
+    <blockquote className="border-l-2 border-primary/40 pl-3.5 text-[inherit] text-muted-foreground italic mb-3" {...props}>{children}</blockquote>
   ),
   table: ({ children, ...props }: any) => (
     <div className="overflow-x-auto mb-2"><table className="text-xs w-full border-collapse" {...props}>{children}</table></div>

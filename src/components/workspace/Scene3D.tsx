@@ -1277,8 +1277,6 @@ interface Props {
   params: Record<string, number>;
   onParam: (key: string, value: number) => void;
   theme: VizTheme;
-  /** height (px) of any panel overlaying the canvas bottom (e.g. sliders) */
-  bottomInset?: number;
   /** Predict-before-reveal gate: when true and the scene has 2+ staged steps, the FINAL step
    * (the Director's own "payoff" convention — see sceneDirector.ts's staging rule) is not
    * reachable via Next/dots/arrow-keys. Purely a navigation clamp — the payoff primitives are
@@ -1292,7 +1290,7 @@ type OrbitControlsImpl = any;
 
 let specSeq = 0;
 
-export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0, lockFinalStep = false }: Props) {
+export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = false }: Props) {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
@@ -1393,8 +1391,16 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0,
   const btnCls =
     "p-1.5 rounded-md bg-black/40 border border-white/10 text-slate-200 hover:bg-black/60 hover:border-white/30 backdrop-blur-sm transition-colors";
 
+  const showHint = !usesTime && !spec.flat;
+
   return (
-    <div className="relative w-full h-full">
+    // Column, not a stack of overlays: every control that carries WORDS (the step title/caption
+    // above all) gets its own reserved row under the canvas. Floating them over the scene meant a
+    // construction whose geometry happened to sit low was read straight through the caption card —
+    // the diagram and its own description covering each other. Reserved space makes that impossible
+    // by construction rather than by hoping the geometry stays out of the way.
+    <div className="flex h-full w-full flex-col">
+      <div data-scene-view className="relative min-h-0 flex-1">
       <Canvas
         camera={{ position: cam, fov: 50, near: 0.1, far: 1000 }}
         gl={{ antialias: true, alpha: true }}
@@ -1427,97 +1433,107 @@ export default function Scene3D({ spec, params, onParam, theme, bottomInset = 0,
           <SceneClock playing={playing} speed={speed} resetNonce={resetNonce} onTick={setTime} />
         )}
       </Canvas>
-
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-10">
-        <button onClick={() => zoomBy(0.8)} title="Zoom in" className={btnCls}>
-          <ZoomIn className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={() => zoomBy(1.25)} title="Zoom out" className={btnCls}>
-          <ZoomOut className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={resetView} title="Reset view" className={btnCls}>
-          <RotateCcw className="h-3.5 w-3.5" />
-        </button>
       </div>
 
-      {usesTime && (
-        <div className="absolute left-3 flex items-center gap-1.5 z-10" style={{ bottom: 12 + bottomInset }}>
-          <button onClick={() => setPlaying((v) => !v)} title={playing ? "Pause" : "Play"} className={btnCls}>
-            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          </button>
-          <button onClick={() => setResetNonce((n) => n + 1)} title="Restart" className={btnCls}>
-            <SkipBack className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={cycleSpeed} title="Speed" className={`${btnCls} text-[10px] font-semibold w-8 text-center`}>
-            {speed === 0.5 ? "½×" : `${speed}×`}
-          </button>
-          <span className="text-[10px] font-mono text-slate-400 bg-black/40 border border-white/10 rounded-md px-1.5 py-1 backdrop-blur-sm">
-            t = {time.toFixed(1)}s
-          </span>
-        </div>
-      )}
+      {/* Control bar. One row under the canvas holding everything that isn't the diagram: playback,
+          the step player, and the view controls. */}
+      <div
+        data-scene-controls
+        className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t px-2.5 py-2"
+        style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.22)" }}
+      >
+        {usesTime && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button onClick={() => setPlaying((v) => !v)} title={playing ? "Pause" : "Play"} className={btnCls}>
+              {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            </button>
+            <button onClick={() => setResetNonce((n) => n + 1)} title="Restart" className={btnCls}>
+              <SkipBack className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={cycleSpeed} title="Speed" className={`${btnCls} text-[10px] font-semibold w-8 text-center`}>
+              {speed === 0.5 ? "½×" : `${speed}×`}
+            </button>
+            <span className="text-[10px] font-mono text-slate-400">t = {time.toFixed(1)}s</span>
+          </div>
+        )}
 
-      {/* step player — constructions & proofs advance one logical move at a time */}
-      {hasSteps && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 max-w-[78%]"
-          style={{ bottom: 12 + bottomInset }}
-        >
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
-              disabled={stepIdx === 0}
-              title="Previous step"
-              className={`${btnCls} disabled:opacity-30 disabled:pointer-events-none`}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </button>
-            <div className="text-center px-3 py-1.5 rounded-md bg-black/50 border border-white/10 backdrop-blur-sm min-w-[180px]">
-              <div className="text-[11px] font-semibold text-slate-100">
-                {stepIdx + 1}/{steps.length} · {steps[stepIdx]?.title}
-              </div>
-              {steps[stepIdx]?.caption && (
-                <div className="text-[10px] text-slate-400 mt-0.5">{steps[stepIdx].caption}</div>
-              )}
-              {lockFinalStep && stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 && (
-                <div className="text-[10px] text-amber-300 mt-0.5 flex items-center justify-center gap-1">
-                  <Lock className="h-2.5 w-2.5" /> Answer below to reveal the result
+        {showHint && (
+          <span className="min-w-0 flex-1 truncate text-[10px] text-slate-500">
+            Drag to orbit · scroll to zoom · right-click to pan
+          </span>
+        )}
+
+        {/* step player — constructions & proofs advance one logical move at a time */}
+        {hasSteps && (
+          <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+            <div className="flex w-full items-center gap-2">
+              <button
+                onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
+                disabled={stepIdx === 0}
+                title="Previous step"
+                className={`${btnCls} shrink-0 disabled:opacity-30 disabled:pointer-events-none`}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <div className="min-w-0 flex-1 text-center">
+                <div className="text-[11px] font-semibold leading-snug text-slate-100">
+                  {stepIdx + 1}/{steps.length} · {steps[stepIdx]?.title}
                 </div>
-              )}
+                {steps[stepIdx]?.caption && (
+                  <div className="mt-0.5 text-[10px] leading-snug text-slate-400">{steps[stepIdx].caption}</div>
+                )}
+                {lockFinalStep && stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 && (
+                  <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] text-amber-300">
+                    <Lock className="h-2.5 w-2.5 shrink-0" /> Answer below to reveal the result
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setStepIdx((i) => Math.min(maxStepIdx, i + 1))}
+                disabled={stepIdx === maxStepIdx}
+                title={stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? "Answer the challenge below to unlock" : "Next step"}
+                className={`${btnCls} shrink-0 disabled:opacity-30 disabled:pointer-events-none ${
+                  stepIdx < maxStepIdx ? "border-sky-400/50" : ""
+                }`}
+              >
+                {stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? (
+                  <Lock className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
+              </button>
             </div>
-            <button
-              onClick={() => setStepIdx((i) => Math.min(maxStepIdx, i + 1))}
-              disabled={stepIdx === maxStepIdx}
-              title={stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? "Answer the challenge below to unlock" : "Next step"}
-              className={`${btnCls} disabled:opacity-30 disabled:pointer-events-none ${
-                stepIdx < maxStepIdx ? "border-sky-400/50" : ""
-              }`}
-            >
-              {stepIdx === maxStepIdx && maxStepIdx < steps.length - 1 ? (
-                <Lock className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5" />
-              )}
-            </button>
+            <div className="flex items-center gap-1">
+              {steps.map((_, i) => {
+                const locked = i > maxStepIdx;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => !locked && setStepIdx(i)}
+                    disabled={locked}
+                    className={`h-1.5 rounded-full transition-all disabled:cursor-not-allowed ${
+                      i === stepIdx ? "w-4 bg-sky-400" : i < stepIdx ? "w-1.5 bg-sky-400/50" : locked ? "w-1.5 bg-amber-300/30" : "w-1.5 bg-white/20"
+                    }`}
+                    title={locked ? "Locked until you answer the challenge below" : steps[i].title}
+                  />
+                );
+              })}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            {steps.map((_, i) => {
-              const locked = i > maxStepIdx;
-              return (
-                <button
-                  key={i}
-                  onClick={() => !locked && setStepIdx(i)}
-                  disabled={locked}
-                  className={`h-1.5 rounded-full transition-all disabled:cursor-not-allowed ${
-                    i === stepIdx ? "w-4 bg-sky-400" : i < stepIdx ? "w-1.5 bg-sky-400/50" : locked ? "w-1.5 bg-amber-300/30" : "w-1.5 bg-white/20"
-                  }`}
-                  title={locked ? "Locked until you answer the challenge below" : steps[i].title}
-                />
-              );
-            })}
-          </div>
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <button onClick={() => zoomBy(0.8)} title="Zoom in" className={btnCls}>
+            <ZoomIn className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => zoomBy(1.25)} title="Zoom out" className={btnCls}>
+            <ZoomOut className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={resetView} title="Reset view" className={btnCls}>
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

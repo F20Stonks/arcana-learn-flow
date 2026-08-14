@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowDown, Send, Loader2, Clock, Zap, MessageSquare, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle } from "lucide-react";
+import { ArrowLeft, ArrowUp, Loader2, Clock, Zap, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle, Shapes, NotebookPen, Compass, Sigma, ChevronsUpDown, SlidersHorizontal, Frame, Layers, MessageSquare, Maximize2, Minimize2 } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { Tables } from "@/integrations/supabase/types";
 import MathRenderer from "@/components/MathRenderer";
@@ -14,6 +14,23 @@ import RichMathField, { type RichMathFieldHandle } from "@/components/RichMathFi
 import MatrixInput from "@/components/session/MatrixInput";
 import NumericUnitInput from "@/components/session/NumericUnitInput";
 import MultiSelectInput from "@/components/session/MultiSelectInput";
+import SessionCanvas, { type ContentBounds } from "@/components/session/SessionCanvas";
+import CardDeck from "@/components/session/CardDeck";
+import ChatColumn from "@/components/session/ChatColumn";
+import InfiniteCanvas from "@/components/session/InfiniteCanvas";
+import FloatingPanel, { type PanelRect } from "@/components/session/FloatingPanel";
+import NotesPanel from "@/components/session/NotesPanel";
+import QuickActions from "@/components/session/QuickActions";
+import NavigatorPanel, { type PlanOutline } from "@/components/session/NavigatorPanel";
+import SessionSettingsPanel from "@/components/session/SessionSettingsPanel";
+import PanelDock, { type DockItem } from "@/components/session/PanelDock";
+import ThinkingBlock from "@/components/session/ThinkingBlock";
+import {
+  DEFAULT_PREFS, REVEAL_RATE, cardGap, cardWidth, loadSessionPrefs, prefsToVars, saveSessionPrefs,
+  type SessionPrefs,
+} from "@/lib/sessionPrefs";
+import { clampScale, type Viewport } from "@/lib/canvasViewport";
+import { deriveNotes } from "@/lib/sessionNotes";
 import { resolveSimulationPayload, type SimulationPayload } from "@/lib/simulationPayload";
 import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
@@ -93,6 +110,44 @@ function cleanAssistantText(raw: string): string {
     .trim();
   return extractChoices(noReq).text;
 }
+
+type PanelId = "stage" | "notes" | "navigator" | "settings";
+interface PanelState {
+  rect: PanelRect;
+  /** Folded to its title bar, still parked on the workspace. */
+  collapsed: boolean;
+  /** Taken off the workspace entirely — recoverable from the dock, never lost. */
+  minimized: boolean;
+}
+
+const PANEL_ORDER: PanelId[] = ["stage", "notes", "navigator", "settings"];
+const PANEL_META: Record<PanelId, { label: string; icon: typeof Shapes }> = {
+  stage: { label: "Visualization", icon: Shapes },
+  notes: { label: "Notes", icon: NotebookPen },
+  navigator: { label: "Navigator", icon: Compass },
+  settings: { label: "Settings", icon: SlidersHorizontal },
+};
+
+/** Which of the three arrangements the lesson itself is being read in. Orthogonal to the panel
+ *  presets below: this is the shape of the CONVERSATION, those are where the tools sit. */
+type CentralMode = "canvas" | "cards" | "chat";
+
+const CENTRAL_MODES: { id: CentralMode; label: string; icon: typeof Frame; hint: string }[] = [
+  { id: "canvas", label: "Canvas", icon: Frame, hint: "Free surface — drag cards anywhere, pan and zoom" },
+  { id: "cards", label: "Deck", icon: Layers, hint: "One exchange at a time, scroll through the stack" },
+  { id: "chat", label: "Chat", icon: MessageSquare, hint: "A plain scrolling column you can widen" },
+];
+
+/** Named arrangements of the workspace. Presets exist because the right layout for reading a long
+ *  derivation is not the right layout for comparing two cards, and neither is worth arranging by
+ *  hand every time. */
+type ViewPreset = "read" | "study" | "overview";
+
+const VIEW_PRESETS: { id: ViewPreset; label: string; hint: string }[] = [
+  { id: "read", label: "Read", hint: "Just the lesson — panels folded away" },
+  { id: "study", label: "Study", hint: "Visualization and notes alongside" },
+  { id: "overview", label: "Overview", hint: "Zoom out to the whole session" },
+];
 
 interface VizHistoryEntry {
   id: string;
@@ -217,51 +272,460 @@ export default function SessionPage() {
   const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant");
   const lastChoices = !isStreaming && lastAssistantMsg ? extractChoices(lastAssistantMsg.content).choices : null;
 
-  // Index of the current exchange's start — the most recent user turn (and whatever assistant
-  // reply follows it). Everything before this index is a "prior exchange" and gets visually
-  // de-emphasized in the transcript (see the messages.map below). Falls back to 0 (nothing muted)
-  // before any user turn exists, e.g. a review session's AI-initiated opener.
-  const latestExchangeStart = messages.reduce((acc, m, idx) => (m.role === "user" ? idx : acc), 0);
+  // (Prior-exchange de-emphasis now lives in SessionCanvas, which dims every card except the live
+  // one — so the old latestExchangeStart index this page used to compute is no longer needed.)
   const wantsPointAnswer = lastChoices?.type === "point" && isSceneSpec(currentPayload);
   useEffect(() => { if (!wantsPointAnswer) setAnswerPoint(null); }, [wantsPointAnswer]);
 
-  // Below the lg breakpoint, Chat and Math Theater share the screen via a toggle
-  // instead of the theater being hidden outright (it used to just disappear).
-  const [mobileView, setMobileView] = useState<"chat" | "theater">("chat");
-  const lastSeenVizId = useRef<string | null>(null);
-  useEffect(() => {
-    if (mobileView === "theater") lastSeenVizId.current = activeVizId;
-  }, [mobileView, activeVizId]);
-  const hasUnseenViz = mobileView !== "theater" && !!activeVizId && activeVizId !== lastSeenVizId.current;
+  // ---- Canvas viewport ------------------------------------------------------------------------
+  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, scale: 1 });
+  const [contentBounds, setContentBounds] = useState<ContentBounds | null>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  /** Canvas-space rects of every turn card, keyed by message index. */
+  const cardRefs = useRef<Map<number, { x: number; y: number; w: number; h: number }>>(new Map());
+  /** Mirror of commandBarHeight, readable by the fit maths declared above that state. */
+  const commandBarHeightRef = useRef(0);
 
-  // Desktop: resizable + minimizable Math Theater. Width is stored as a percentage
-  // of the workspace and clamped so the chat panel never fully disappears.
-  const [theaterMinimized, setTheaterMinimized] = useState(false);
-  const [theaterWidthPct, setTheaterWidthPct] = useState(() => {
-    const saved = localStorage.getItem("theaterWidthPct");
-    const n = saved ? parseFloat(saved) : NaN;
-    return Number.isFinite(n) ? Math.min(80, Math.max(25, n)) : 60;
+  const frameSize = () => ({
+    w: frameRef.current?.clientWidth ?? window.innerWidth,
+    h: frameRef.current?.clientHeight ?? window.innerHeight,
   });
-  useEffect(() => { localStorage.setItem("theaterWidthPct", String(theaterWidthPct)); }, [theaterWidthPct]);
-  const [isResizing, setIsResizing] = useState(false);
-  const workspaceRef = useRef<HTMLDivElement>(null);
 
+  // Frame size as state as well as a getter: the maximized rect and the central column both have to
+  // be recomputed when the window changes, and a plain getter can't trigger that.
+  const [frame, setFrame] = useState({ w: 0, h: 0 });
+  /** Set once the student moves or resizes a panel by hand — after which the layout is theirs. */
+  const panelsTouched = useRef(false);
+  const placePanelsRef = useRef<(preset?: ViewPreset) => void>(() => {});
+  const presetRef = useRef<ViewPreset>("study");
   useEffect(() => {
-    if (!isResizing) return;
-    const onMove = (e: MouseEvent) => {
-      if (!workspaceRef.current) return;
-      const rect = workspaceRef.current.getBoundingClientRect();
-      const pct = ((rect.right - e.clientX) / rect.width) * 100;
-      setTheaterWidthPct(Math.min(80, Math.max(25, pct)));
+    const el = frameRef.current;
+    if (!el) return;
+    let last = { w: 0, h: 0 };
+    const measure = () => {
+      const next = { w: el.clientWidth, h: el.clientHeight };
+      if (next.w === last.w && next.h === last.h) return;
+      const first = last.w === 0;
+      last = next;
+      setFrame(next);
+      // Panels are parked against the frame's edges. Once the frame changes size those parking
+      // spots have moved, so an untouched layout is re-parked rather than left stranded — a right
+      // hand panel placed at 1000px wide otherwise sits in the middle of a 1440px window, cutting
+      // the reading area in half. A layout the student has arranged themselves is never overridden.
+      if (!first && !panelsTouched.current) placePanelsRef.current(presetRef.current);
     };
-    const onUp = () => setIsResizing(false);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ---- Student preferences (typography, density, motion, canvas) -------------------------------
+  const [prefs, setPrefs] = useState<SessionPrefs>(loadSessionPrefs);
+  const updatePrefs = useCallback((patch: Partial<SessionPrefs>) => {
+    setPrefs((prev) => {
+      const next = { ...prev, ...patch };
+      saveSessionPrefs(next);
+      return next;
+    });
+  }, []);
+  const resetPrefs = useCallback(() => {
+    setPrefs(DEFAULT_PREFS);
+    saveSessionPrefs(DEFAULT_PREFS);
+  }, []);
+  const prefVars = useMemo(() => prefsToVars(prefs), [prefs]);
+  const revealRate = REVEAL_RATE[prefs.reveal];
+
+  // ---- How the lesson itself is laid out ------------------------------------------------------
+  const [centralMode, setCentralMode] = useState<CentralMode>(() => {
+    const saved = localStorage.getItem("sessionCentralMode");
+    return saved === "cards" || saved === "chat" ? saved : "canvas";
+  });
+  const changeCentralMode = useCallback((mode: CentralMode) => {
+    setCentralMode(mode);
+    localStorage.setItem("sessionCentralMode", mode);
+  }, []);
+  const [chatWidth, setChatWidth] = useState(() => {
+    const saved = Number(localStorage.getItem("sessionChatWidth"));
+    return Number.isFinite(saved) && saved >= 380 ? saved : 620;
+  });
+  const changeChatWidth = useCallback((w: number) => {
+    setChatWidth(w);
+    localStorage.setItem("sessionChatWidth", String(w));
+  }, []);
+
+  // ---- Panels ---------------------------------------------------------------------------------
+  // Declared before the viewport helpers because those need to know where the right-hand panels are:
+  // the reading area is whatever they aren't covering.
+  const [panels, setPanels] = useState<Record<PanelId, PanelState>>(() => ({
+    stage: { rect: { x: 0, y: 0, w: 340, h: 268 }, collapsed: false, minimized: false },
+    notes: { rect: { x: 0, y: 0, w: 340, h: 260 }, collapsed: false, minimized: false },
+    navigator: { rect: { x: 0, y: 0, w: 226, h: 300 }, collapsed: true, minimized: false },
+    settings: { rect: { x: 0, y: 0, w: 268, h: 400 }, collapsed: false, minimized: true },
+  }));
+  const [topPanel, setTopPanel] = useState<PanelId>("stage");
+
+  const setPanel = useCallback((id: PanelId, patch: Partial<PanelState>) => {
+    // Moving or resizing by hand takes ownership of the layout: from here on the workspace stops
+    // re-parking panels on a window resize, because the student has said where they want them.
+    if (patch.rect) panelsTouched.current = true;
+    setPanels((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  }, []);
+
+  /** How much bottom-left room the dock is taking, so placement can stop above it. */
+  const minimizedCount = PANEL_ORDER.filter((id) => panels[id].minimized).length;
+  const dockAllowanceRef = useRef(0);
+  dockAllowanceRef.current = minimizedCount > 0 ? 46 : 0;
+
+  /** Which panel — or the lesson itself — is currently expanded over the workspace. */
+  const [maximized, setMaximized] = useState<PanelId | "central" | null>(null);
+
+  const toggleMaximized = useCallback((id: PanelId | "central") => {
+    setMaximized((cur) => (cur === id ? null : id));
+    if (id !== "central") {
+      // Expanding something folded shut would show a title bar and nothing else.
+      setPanels((prev) => ({ ...prev, [id]: { ...prev[id], collapsed: false, minimized: false } }));
+      setTopPanel(id);
+    }
+  }, []);
+
+  // Escape restores. The panel is not modal — the workspace behind it stays live — but Escape is
+  // what every hand reaches for, so it has to work anyway.
+  useEffect(() => {
+    if (!maximized) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMaximized(null);
     };
-  }, [isResizing]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [maximized]);
+
+  const minimizePanel = useCallback((id: PanelId) => {
+    setMaximized((cur) => (cur === id ? null : cur));
+    setPanels((prev) => ({ ...prev, [id]: { ...prev[id], minimized: true } }));
+  }, []);
+
+  const restorePanel = useCallback((id: PanelId) => {
+    setPanels((prev) => ({ ...prev, [id]: { ...prev[id], minimized: false, collapsed: false } }));
+    setTopPanel(id);
+  }, []);
+
+  /**
+   * Park the panels in their default corners once the frame has a real size.
+   *
+   * `initial` marks a placement that is allowed to decide which panels START put away. Only the
+   * first placement of a session gets that say — every later call (a window resize, the dock
+   * changing height) re-parks what is on the workspace without changing what the student has
+   * chosen to have open.
+   */
+  const placePanels = useCallback((preset: ViewPreset = "study", initial = false) => {
+    const { w, h } = frameSize();
+    if (!w) return;
+    const narrow = w < 940;
+    // Below this, a left-hand panel and a right-hand column together leave the lesson itself less
+    // room than either of them. The Navigator is the one that can wait in the dock: it is folded
+    // shut by default anyway, so on a smaller window it costs 250px of reading width to show a
+    // title bar. One click in the dock brings it straight back.
+    const tight = w < 1120;
+    const M = 14;
+    const rightW = Math.min(340, w - M * 2);
+    const rightX = narrow ? M : w - rightW - M;
+    const showSide = preset === "study" && !narrow;
+    // The command bar floats over the bottom of the frame, so panels stop above it rather than
+    // running underneath. Placement can run before the bar has been measured, so fall back to a
+    // realistic estimate — a zero here is what previously ran the notes panel off the bottom.
+    const floor = h - (commandBarHeightRef.current || 210) - dockAllowanceRef.current - M;
+
+    // The right-hand column is budgeted, not assumed. Two stacked panels at their preferred heights
+    // need ~500px of frame; a 640px-tall window has nowhere near that once the command bar has taken
+    // its share, and hard-coded heights there put the notes panel straight through the composer.
+    const GAP = 44;
+    const column = Math.max(120, floor - M);
+    // The stage holds a diagram plus its caption and controls, so it gets first claim on the height.
+    let stageH = narrow ? 300 : Math.min(400, Math.max(280, column * 0.5));
+    stageH = Math.min(stageH, Math.max(190, column - 60));
+    let notesY = M + stageH + GAP;
+    let notesH = floor - notesY;
+    let notesCollapsed = !showSide;
+    if (notesH < 170) {
+      // Not enough left for a notes panel worth reading: fold it to its title bar and rest that bar
+      // on the floor, where it is still one click from opening.
+      notesCollapsed = true;
+      notesH = 170;
+      notesY = Math.max(M + stageH + 12, floor - 42);
+    }
+
+    // Settings parks under the navigator on the left, clear of it rather than on top of it.
+    const navH = Math.max(120, Math.min(320, floor - M - 60));
+    const settingsY = Math.min(M + navH + 12, Math.max(M, floor - 220));
+    const settingsH = Math.max(190, Math.min(430, floor - settingsY));
+
+    setPanels((prev) => ({
+      stage: {
+        rect: { x: rightX, y: M, w: rightW, h: stageH },
+        collapsed: preset === "read" || preset === "overview" || narrow,
+        minimized: prev.stage.minimized,
+      },
+      notes: {
+        rect: { x: rightX, y: notesY, w: rightW, h: notesH },
+        collapsed: notesCollapsed,
+        minimized: prev.notes.minimized,
+      },
+      navigator: {
+        rect: { x: M, y: M, w: 226, h: navH },
+        collapsed: true,
+        minimized: initial ? tight : prev.navigator.minimized,
+      },
+      settings: {
+        rect: { x: M, y: settingsY, w: 268, h: settingsH },
+        collapsed: false,
+        minimized: prev.settings.minimized,
+      },
+    }));
+  }, []);
+
+  const panelsPlaced = useRef(false);
+  useEffect(() => {
+    if (panelsPlaced.current) return;
+    const { w } = frameSize();
+    if (!w) return;
+    panelsPlaced.current = true;
+    placePanels("study", true);
+  }, [messages.length, placePanels]);
+
+  // The dock appearing or disappearing changes where the floor is for the left-hand panels. An
+  // untouched layout follows it; a hand-arranged one is left exactly as the student left it.
+  useEffect(() => {
+    if (!panelsPlaced.current || panelsTouched.current) return;
+    placePanels(presetRef.current);
+  }, [minimizedCount, placePanels]);
+
+  const replacedForBar = useRef(false);
+  const [preset, setPreset] = useState<ViewPreset>("study");
+  const applyPreset = useCallback((next: ViewPreset) => {
+    setPreset(next);
+    // Choosing a preset is an explicit request for a fresh arrangement, so it hands layout control
+    // back to the workspace.
+    panelsTouched.current = false;
+    presetRef.current = next;
+    placePanels(next);
+    // "Overview" is a viewport state, not just a panel arrangement — fit after the panels have
+    // folded, so the fit maths sees the wider reading area they just freed up.
+    if (next === "overview") requestAnimationFrame(() => fitToContentRef.current());
+  }, [placePanels]);
+  const fitToContentRef = useRef<() => void>(() => {});
+  placePanelsRef.current = placePanels;
+  presetRef.current = preset;
+
+  /**
+   * The clear horizontal band between the panels — where a card can sit with nothing floating over
+   * it. Computed from live panel rects rather than assumed sides, because every panel is movable:
+   * whichever edge a panel has been dragged to is the edge it eats.
+   *
+   * Collapsed panels still count. A folded panel is still a title bar occupying that strip, and a
+   * card sliding under it is exactly the overlap this exists to prevent. Minimized ones do not —
+   * they are not on the workspace at all.
+   */
+  const clearBand = useCallback(() => {
+    const { w } = frameSize();
+    const mid = w / 2;
+    let left = 0;
+    let right = w;
+    for (const id of PANEL_ORDER) {
+      const p = panels[id];
+      if (p.minimized) continue;
+      const cx = p.rect.x + p.rect.w / 2;
+      if (cx < mid) left = Math.max(left, p.rect.x + p.rect.w + 24);
+      else right = Math.min(right, p.rect.x - 24);
+    }
+    return { left, right, w };
+  }, [panels]);
+
+  const readingBand = useCallback(() => {
+    const { left, right, w } = clearBand();
+    // Never let panels squeeze the reading area to nothing — below this the cards win and the
+    // panels simply overlay, which beats a 40px-wide reading column. (Canvas only: cards there can
+    // be dragged out from under a panel, so an overlap is recoverable.)
+    if (right - left < 380) return { left: 0, right: w };
+    return { left, right };
+  }, [clearBand]);
+
+  /**
+   * Where the deck and the chat column live. Unlike the canvas band this one never falls back to
+   * the full width: those two views place a fixed column that the student cannot drag out from
+   * under a panel, so running it beneath one would be an overlap with no way out. If the clear
+   * space is genuinely too narrow, the column keeps a legible minimum and stays centred in it.
+   */
+  const centralBand = useCallback(() => {
+    const { left, right, w } = clearBand();
+    const MIN = 320;
+    if (right - left >= MIN) return { left, right };
+    const mid = Math.min(Math.max((left + right) / 2, MIN / 2), w - MIN / 2);
+    return { left: mid - MIN / 2, right: mid + MIN / 2 };
+  }, [clearBand]);
+
+  /** Frame everything on the canvas, inside the clear band and above the command bar. */
+  const fitToContent = useCallback(() => {
+    const b = contentBounds;
+    if (!b || b.maxX <= b.minX) return;
+    const { h } = frameSize();
+    const { left, right } = readingBand();
+    const band = right - left;
+    const padX = 48;
+    const padY = 64;
+    const bottom = commandBarHeightRef.current + 32;
+    const scale = clampScale(
+      Math.min((band - padX * 2) / (b.maxX - b.minX), (h - padY - bottom) / (b.maxY - b.minY)),
+    );
+    setViewport({
+      scale,
+      x: left + (band - (b.maxX - b.minX) * scale) / 2 - b.minX * scale,
+      y: padY - b.minY * scale,
+    });
+  }, [contentBounds, readingBand]);
+
+  /**
+   * Ease the viewport so one card sits centred in the clear band.
+   *
+   * If the card is wider than the band the zoom comes down to fit it, rather than centring
+   * something too wide and letting its edges slide under the panels. Capped at 1 so a narrow card
+   * is never magnified — this only ever zooms out to make room.
+   */
+  const focusRect = useCallback((r: { x: number; y: number; w: number; h: number }) => {
+    const { h } = frameSize();
+    const { left, right } = readingBand();
+    const band = right - left;
+    setViewport((vp) => {
+      const scale = clampScale(Math.min(vp.scale, (band - 40) / r.w, 1));
+      const targetX = left + Math.max(16, (band - r.w * scale) / 2);
+      return { scale, x: targetX - r.x * scale, y: Math.max(64, h * 0.2) - r.y * scale };
+    });
+  }, [readingBand]);
+
+  fitToContentRef.current = fitToContent;
+
+  const focusCard = useCallback((index: number) => {
+    const r = cardRefs.current.get(index);
+    if (r) focusRect(r);
+  }, [focusRect]);
+
+  // Bring each new turn into view. Cards are placed automatically, so without this a new answer can
+  // land off-screen and the session looks like it stopped responding.
+  const lastFocusedRef = useRef(-1);
+  useEffect(() => {
+    const latest = contentBounds?.latest;
+    if (!latest || messages.length === 0) return;
+    if (lastFocusedRef.current === messages.length) return;
+    lastFocusedRef.current = messages.length;
+    focusRect(latest);
+  }, [messages.length, contentBounds, focusRect]);
+
+  const vizByMessageIndex = useMemo(() => {
+    const map = new Map<number, string>();
+    // Later entries win: if one turn produced two scenes, the most recent is the one its card's
+    // "show on stage" button brings back.
+    for (const v of vizHistory) map.set(v.messageIndex, v.id);
+    return map;
+  }, [vizHistory]);
+
+  /**
+   * Student-safe outline of the authored lesson plan, if one is cached for this subtopic.
+   *
+   * Null is the normal case, not an error: most subtopics have not been authored yet, and the
+   * Navigator falls back to what it can derive locally. The endpoint returns only the core idea,
+   * the derivation *claims*, notation and a checkpoint count — never the mechanisms, the
+   * checkpoint evidence or the terminal problem.
+   */
+  const [planOutline, setPlanOutline] = useState<PlanOutline | null>(null);
+  useEffect(() => {
+    if (!subtopic?.title || !topic?.title || !track?.subject) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/lesson-plan-outline`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getBearerToken()}` },
+          body: JSON.stringify({
+            subject: track.subject, level: track.level, board: track.exam_board,
+            topic: topic.title, subtopic: subtopic.title,
+          }),
+        });
+        if (!resp.ok) return;
+        const body = await resp.json();
+        if (!cancelled && body?.outline) setPlanOutline(body.outline as PlanOutline);
+      } catch {
+        /* No outline is a supported state — the Navigator simply shows less. */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [subtopic?.title, topic?.title, track?.subject, track?.level, track?.exam_board]);
+
+  /** Everything the tutor has said, lowercased — lets the Navigator place the lesson on its route. */
+  const tutorTranscript = useMemo(
+    () => messages.filter((m) => m.role === "assistant").map((m) => cleanAssistantText(m.content)).join(" ").toLowerCase(),
+    [messages],
+  );
+
+  /** Concise notes distilled from the tutor's turns as they arrive — no extra model call. */
+  const derivedNotes = useMemo(
+    () => deriveNotes(messages, cleanAssistantText),
+    [messages],
+  );
+
+  /** Distinct key terms established so far, newest last — the Navigator's "Established" list. */
+  const coveredTerms = useMemo(() => {
+    const seen: string[] = [];
+    for (const n of derivedNotes) {
+      for (const t of n.terms) if (!seen.includes(t)) seen.push(t);
+    }
+    return seen.slice(-10);
+  }, [derivedNotes]);
+
+  const [savingNote, setSavingNote] = useState(false);
+  /** Whether the composer's "/" menu is showing every quick action or just the two-chip teaser. */
+  const [commandsOpen, setCommandsOpen] = useState(false);
+
+  // The command bar floats over the canvas, and its height is NOT fixed — it swaps between a text
+  // field, a matrix grid, a row of MCQ buttons and so on, and grows again when the symbol palette
+  // opens. A hard-coded bottom padding is therefore guaranteed to be wrong for some turn, and being
+  // wrong means the last card slides underneath the bar. Measuring it is the only way the canvas
+  // can promise it never happens.
+  const commandBarRef = useRef<HTMLDivElement>(null);
+  const [commandBarHeight, setCommandBarHeight] = useState(0);
+  useEffect(() => {
+    const el = commandBarRef.current;
+    if (!el) return;
+    // getBoundingClientRect over offsetHeight: offsetHeight rounds to whole pixels, and the rounding
+    // error is what leaves the last card a few pixels under the bar.
+    const measure = () => {
+      const h = Math.ceil(el.getBoundingClientRect().height);
+      commandBarHeightRef.current = h;
+      setCommandBarHeight(h);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    // The bar's children swap wholesale between turns (text field → MCQ buttons → matrix grid), and
+    // a child that replaces another of a different height doesn't always resize the observed wrapper
+    // in the same frame. Re-measuring on turn boundaries closes that gap.
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    const el = commandBarRef.current;
+    if (!el) return;
+    const h = Math.ceil(el.getBoundingClientRect().height);
+    commandBarHeightRef.current = h;
+    setCommandBarHeight(h);
+  }, [messages, isStreaming]);
+  const canvasBottomInset = commandBarHeight + 24;
+
+  // Re-place the panels once the command bar reports its real height: the first placement runs off
+  // an estimate, and the panels that stop above the bar need the true figure or they run past it.
+  useEffect(() => {
+    if (replacedForBar.current || !commandBarHeight || !panelsPlaced.current) return;
+    replacedForBar.current = true;
+    placePanels("study", true);
+  }, [commandBarHeight, placePanels]);
 
   // Virtual math keyboard dock — MathLive's on-screen keyboard defaults to a `position: fixed`
   // overlay appended to document.body, invisible to normal page layout/scroll. Pointing
@@ -355,57 +819,43 @@ export default function SessionPage() {
     goBack();
   };
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-
-  // Auto-scroll used to fire on every streamed token (any `messages` change, including the
-  // in-place content update on each delta) — if a student scrolled up mid-response to re-read
-  // something, the very next token yanked them back to the bottom within a second. Now it only
-  // fires at turn boundaries (a message was actually ADDED, not just edited in place) and only when
-  // the student is already following along near the bottom. Otherwise a small "Jump to latest"
-  // affordance appears instead of forcing the scroll.
-  const prevMessageCountRef = useRef(0);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
-  const NEAR_BOTTOM_PX = 80;
-
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    bottomRef.current?.scrollIntoView({ behavior });
-  }, []);
-
-  const jumpToLatest = () => {
-    scrollToBottom();
-    setShowJumpToLatest(false);
-    setIsNearBottom(true);
+  /**
+   * Pin the tutor's current explanation straight into the student's notes for this subtopic.
+   *
+   * The end-of-session assessment already writes its own notes, but only once, only at the end, and
+   * only what it judged worth keeping. This is the student's own call, made in the moment — the
+   * explanation that finally made it click is exactly the one they want back later, and it was
+   * previously unrecoverable once the turn scrolled away.
+   */
+  const saveTurnToNotes = async (messageIndex: number) => {
+    if (savingNote || !user || !subtopicId) return;
+    const msg = messages[messageIndex];
+    const content = msg?.role === "assistant" ? cleanAssistantText(msg.content).trim() : "";
+    if (!content) {
+      toast.error("Nothing to save yet");
+      return;
+    }
+    setSavingNote(true);
+    const { error } = await supabase.from("notes").insert({
+      user_id: user.id,
+      subtopic_id: subtopicId,
+      title: subtopic?.title ? `${subtopic.title} — saved in session` : "Saved in session",
+      content,
+    });
+    setSavingNote(false);
+    if (error) {
+      console.error("note save failed:", error);
+      toast.error("Couldn't save that to your notes");
+      return;
+    }
+    toast.success("Saved to your notes");
   };
 
-  // Track whether the student is near the bottom of the transcript so we know whether to follow
-  // new content or leave them where they are.
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
-      setIsNearBottom(nearBottom);
-      if (nearBottom) setShowJumpToLatest(false);
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  useEffect(() => {
-    // A turn boundary is a message being ADDED (length change) — not the same last message's
-    // content growing token-by-token while streaming (length unchanged).
-    const isNewTurn = messages.length !== prevMessageCountRef.current;
-    prevMessageCountRef.current = messages.length;
-    if (!isNewTurn) return;
-    if (isNearBottom) {
-      scrollToBottom();
-    } else {
-      setShowJumpToLatest(true);
-    }
-  }, [messages, isNearBottom, scrollToBottom]);
+  // (The transcript's scroll-following machinery — near-bottom tracking, auto-scroll on new turns,
+  // "jump to latest" — retired with the scrolling transcript itself. Its canvas equivalent is
+  // focusRect/focusCard above, which eases the viewport instead of scrolling a column.)
 
   useEffect(() => {
     timerRef.current = setInterval(() => setSessionTime((t) => t + 1), 1000);
@@ -876,10 +1326,56 @@ Return ONLY a JSON object — no prose, no markdown fences:
     return mins < 1 ? "<1 min" : `${mins} min`;
   };
 
+  // ---- Derived layout ---------------------------------------------------------------------------
+  // Everything below is computed immediately before the render and deliberately not hoisted: this
+  // component declares its hooks in several passes, and a layout constant placed higher up has
+  // repeatedly ended up referencing state declared further down (a temporal-dead-zone crash that has
+  // bitten this file three times). Read-only derivations belong here, where every input exists.
+
+  const framePx = { w: frame.w || window.innerWidth, h: frame.h || window.innerHeight };
+
+  const dockItems: DockItem[] = PANEL_ORDER.filter((id) => panels[id].minimized).map((id) => ({
+    id,
+    label: PANEL_META[id].label,
+    icon: PANEL_META[id].icon,
+  }));
+  // The dock is anchored to the bottom-left of the frame, so anything full-height stops above it
+  // rather than running its last card through a row of pills.
+  const dockAllowance = dockItems.length > 0 ? 46 : 0;
+  /** The floor every floating thing stops at: above the command bar, and above the dock. */
+  const floorInset = canvasBottomInset + dockAllowance;
+
+  /** Expanded rect: most of the frame, stopping short of the command bar so it stays reachable. */
+  const maxPad = Math.round(Math.min(48, Math.max(16, framePx.w * 0.04)));
+  const maxRect: PanelRect = {
+    x: maxPad,
+    y: maxPad,
+    w: Math.max(320, framePx.w - maxPad * 2),
+    h: Math.max(240, framePx.h - maxPad - floorInset - 8),
+  };
+
+  /** Where the deck and the chat column sit: the clear band, or the expanded rect. */
+  const band = centralBand();
+  const centralRect: PanelRect =
+    maximized === "central"
+      ? maxRect
+      : {
+          x: band.left + 16,
+          y: 12,
+          w: Math.max(300, band.right - band.left - 32),
+          h: Math.max(220, framePx.h - floorInset - 12),
+        };
+
+  /** A panel's live rect — its own, unless it's the one currently expanded. */
+  const rectOf = (id: PanelId): PanelRect => (maximized === id ? maxRect : panels[id].rect);
+  const zOf = (id: PanelId) => (maximized === id ? 50 : topPanel === id ? 46 : 42);
+
+  const thinking = isStreaming && messages[messages.length - 1]?.role !== "assistant";
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="h-screen flex flex-col overflow-hidden">
-      <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
+      <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={pauseAndExit}
@@ -902,23 +1398,60 @@ Return ONLY a JSON object — no prose, no markdown fences:
           {/* Demoted from a ticking mm:ss to a minute-granularity readout — CompletionGoal (in the
               transcript panel below) is the primary ambient "how much is left" signal now; this is
               just a quiet peripheral reference, not something that should visibly move every second. */}
+          {/* View presets live in the header, not floating on the canvas — a pill in the top-right
+              corner of the surface lands exactly where the stage is parked. */}
+          {messages.length > 0 && (
+            <>
+              {/* Two switchers, deliberately separate. The left one changes the shape of the LESSON;
+                  the right one changes where the TOOLS sit. Merging them into one control would
+                  force a choice between the two every time either is wanted. */}
+              <div className="hidden md:flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5">
+                {CENTRAL_MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => changeCentralMode(m.id)}
+                    title={m.hint}
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-200 ${
+                      centralMode === m.id ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <m.icon className="h-3 w-3" />
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="hidden lg:flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5">
+                {VIEW_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => applyPreset(p.id)}
+                    title={p.hint}
+                    className={`rounded-full px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-200 ${
+                      preset === p.id ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() =>
+                  panels.settings.minimized ? restorePanel("settings") : minimizePanel("settings")
+                }
+                title="Session settings — typography, density, motion, canvas"
+                aria-label="Session settings"
+                className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors duration-200 ${
+                  panels.settings.minimized
+                    ? "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
+                    : "border-primary/40 bg-primary/10 text-primary"
+                }`}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
           <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground/70"><Clock className="h-3 w-3" />{formatSessionMinutes(sessionTime)}</div>
           {xpEarned > 0 && <div className="flex items-center gap-1 text-xs text-xp"><Zap className="h-3.5 w-3.5" />+{xpEarned}</div>}
-          <div className="lg:hidden flex items-center gap-0.5 bg-accent rounded-lg p-0.5">
-            <button
-              onClick={() => setMobileView("chat")}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${mobileView === "chat" ? "bg-background text-foreground" : "text-muted-foreground"}`}
-            >
-              <MessageSquare className="h-3.5 w-3.5" /> Chat
-            </button>
-            <button
-              onClick={() => setMobileView("theater")}
-              className={`relative px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${mobileView === "theater" ? "bg-background text-foreground" : "text-muted-foreground"}`}
-            >
-              <Box className="h-3.5 w-3.5" /> Theater
-              {hasUnseenViz && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />}
-            </button>
-          </div>
           <button onClick={endSession} disabled={isEnding} className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50 flex items-center gap-1.5">
             {isEnding && <Loader2 className="h-3 w-3 animate-spin" />}
             {isEnding ? "Ending…" : "End"}
@@ -940,26 +1473,38 @@ Return ONLY a JSON object — no prose, no markdown fences:
         </div>
       )}
 
-      <div ref={workspaceRef} className={`flex-1 flex min-h-0 ${isResizing ? "select-none" : ""}`}>
-        {/* LEFT — Companion Panel */}
-        <div
-          className={`min-h-0 border-r border-border flex-col ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}
-          style={{ flex: `1 1 ${theaterMinimized ? "100%" : `${100 - theaterWidthPct}%`}` }}
-        >
-          <div className="relative flex-1 min-h-0">
-          <div ref={chatScrollRef} className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
-            {messages.length === 0 && !isStreaming && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-sm">
+      {/* THE CANVAS — a real surface you pan and zoom, not a column you scroll. The visualization is
+          pinned above it (StagePanel) rather than living in a card, because a diagram that scrolls
+          away is useless exactly when the prose beside it starts referring to one. */}
+      <div
+        ref={frameRef}
+        data-canvas-frame
+        data-session-surface
+        data-anim={prefs.animations ? "on" : "off"}
+        className="relative flex-1 min-h-0"
+        style={prefVars as React.CSSProperties}
+      >
+        {/* Backdrop shade from the student's canvas preference. Sits under everything and takes no
+            pointer events, so it can never be the thing a click lands on. */}
+        {prefs.tone !== 0 && (
+          <div className="pointer-events-none absolute inset-0 z-0" style={{ background: "var(--sx-tone)" }} />
+        )}
+          {messages.length === 0 && !isStreaming ? (
+            <div className="absolute inset-0 z-10 overflow-y-auto">
+              <div className="mx-auto max-w-lg px-6 pb-40 pt-[12vh] text-center">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {subtopic?.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {isReview
-                    ? <>Starting your recall review of <strong className="text-foreground">{subtopic?.title}</strong>…</>
-                    : <>Start your session on <strong className="text-foreground">{subtopic?.title}</strong> — pick a way in, or just ask.</>}
+                    ? <>Starting your recall review…</>
+                    : <>Pick a way in, or just ask.</>}
                 </p>
                 {!isReview && gateLoading && !gateItems && (
-                  <p className="mt-6 text-xs text-muted-foreground animate-pulse">Checking what this lesson builds on…</p>
+                  <p className="mt-8 text-xs text-muted-foreground animate-pulse">Checking what this lesson builds on…</p>
                 )}
                 {!isReview && gateItems && gateItems.length > 0 && (
-                  <div className="mt-6 max-w-sm mx-auto text-left rounded-2xl border border-border bg-card p-4">
+                  <div className="mt-8 mx-auto text-left rounded-2xl border border-border/70 bg-card/80 p-5 backdrop-blur-xl">
                     <p className="text-xs font-semibold text-foreground">Before we start — tick what you're already solid on</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5 mb-3">Anything you leave unticked, I'll build up first so nothing catches you out.</p>
                     <div className="flex flex-col gap-1">
@@ -984,12 +1529,12 @@ Return ONLY a JSON object — no prose, no markdown fences:
                   </div>
                 )}
                 {!isReview && (
-                  <div className="mt-5 flex flex-col items-stretch gap-2 max-w-xs mx-auto">
+                  <div className="mt-8 flex flex-col items-stretch gap-2.5">
                     {STARTER_PROMPTS.map((s) => (
                       <button
                         key={s.send}
                         onClick={() => sendMessage(s.send)}
-                        className="px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground hover:bg-accent hover:border-primary/40 transition-colors"
+                        className="rounded-2xl border border-border/70 bg-card/70 px-5 py-3.5 text-sm text-foreground backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-primary/40 hover:bg-accent hover:shadow-lg"
                       >
                         {s.label}
                       </button>
@@ -997,103 +1542,263 @@ Return ONLY a JSON object — no prose, no markdown fences:
                   </div>
                 )}
               </div>
-            )}
-            {messages.map((msg, i) => {
-              const isUser = msg.role === "user";
-              const text = isUser ? msg.content : cleanAssistantText(msg.content);
-              // Information hierarchy, not decoration: turns from before the current exchange (the
-              // most recent user message and its reply) fade to a lower visual weight as the
-              // transcript grows over a long session, so the student's eye lands on what's active
-              // right now. Nothing is hidden or removed — still fully visible and scrollable-to.
-              const isPriorExchange = i < latestExchangeStart;
-              return (
-                <div
-                  key={i}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"} transition-opacity duration-300 ${isPriorExchange ? "opacity-55" : ""}`}
-                >
-                  <div
-                    className={
-                      isUser
-                        ? "max-w-[85%] sm:max-w-[70%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed bg-primary text-primary-foreground"
-                        : "max-w-[90%] sm:max-w-[80%] text-sm leading-relaxed text-foreground"
-                    }
+            </div>
+          ) : centralMode === "canvas" ? (
+            <InfiniteCanvas viewport={viewport} onViewportChange={setViewport} onFit={fitToContent} bottomInset={canvasBottomInset}>
+              <SessionCanvas
+                messages={messages}
+                cleanText={cleanAssistantText}
+                vizByMessageIndex={vizByMessageIndex}
+                activeVizId={activeVizId}
+                onSelectViz={(id) => setActiveVizId(id)}
+                scale={viewport.scale}
+                onBoundsChange={setContentBounds}
+                cardRefs={cardRefs}
+                onSaveNote={saveTurnToNotes}
+                isStreaming={isStreaming}
+                defaultWidth={cardWidth(prefs)}
+                gap={cardGap(prefs)}
+                revealRate={revealRate}
+                pending={
+                  thinking ? (
+                    <ThinkingCard top={(contentBounds?.maxY ?? 0) + 76} width={cardWidth(prefs)} animations={prefs.animations} />
+                  ) : null
+                }
+              />
+            </InfiniteCanvas>
+          ) : (
+            /* Deck and chat are laid out in the clear band between the panels, so neither of them
+               can ever end up underneath one. Maximizing swaps that rect for the expanded one — the
+               same element, a different size, which is why it animates instead of appearing. */
+            <div
+              className="absolute"
+              data-central={centralMode}
+              style={{
+                left: centralRect.x,
+                top: centralRect.y,
+                width: centralRect.w,
+                height: centralRect.h,
+                zIndex: maximized === "central" ? 50 : 10,
+                transition: prefs.animations
+                  ? "left 320ms var(--ease-out), top 320ms var(--ease-out), width 320ms var(--ease-out), height 320ms var(--ease-out)"
+                  : "none",
+              }}
+            >
+              <div className="flex h-full w-full flex-col">
+                {/* The expand control gets its own strip. Floating it over the first card would be
+                    the same mistake the visualization made. */}
+                <div className="flex h-7 shrink-0 items-center justify-end gap-1 pr-1">
+                  <button
+                    onClick={() => toggleMaximized("central")}
+                    title={maximized === "central" ? "Restore the lesson (Esc)" : "Expand the lesson"}
+                    aria-label={maximized === "central" ? "Restore the lesson" : "Expand the lesson"}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
                   >
-                    <MathRenderer content={text} />
-                  </div>
+                    {maximized === "central" ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                  </button>
                 </div>
-              );
-            })}
-            {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex justify-start">
-                <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
+                <div className="min-h-0 flex-1">
+                  {centralMode === "cards" ? (
+                    <CardDeck
+                      messages={messages}
+                      cleanText={cleanAssistantText}
+                      vizByMessageIndex={vizByMessageIndex}
+                      activeVizId={activeVizId}
+                      onSelectViz={(id) => setActiveVizId(id)}
+                      onSaveNote={saveTurnToNotes}
+                      isStreaming={isStreaming}
+                      thinking={thinking}
+                      revealRate={revealRate}
+                      animations={prefs.animations}
+                    />
+                  ) : (
+                    <ChatColumn
+                      messages={messages}
+                      cleanText={cleanAssistantText}
+                      vizByMessageIndex={vizByMessageIndex}
+                      activeVizId={activeVizId}
+                      onSelectViz={(id) => setActiveVizId(id)}
+                      onSaveNote={saveTurnToNotes}
+                      isStreaming={isStreaming}
+                      thinking={thinking}
+                      revealRate={revealRate}
+                      animations={prefs.animations}
+                      width={Math.min(chatWidth, centralRect.w - 24)}
+                      onWidthChange={changeChatWidth}
+                      maxWidth={Math.max(380, centralRect.w - 24)}
+                    />
+                  )}
                 </div>
               </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Unobtrusive re-entry point when a student has scrolled up to re-read something mid-
-              response — the transcript no longer force-scrolls to find them, so this is the only
-              way back to the live edge. Disappears the moment they're back near the bottom. */}
-          {showJumpToLatest && (
-            <button
-              onClick={jumpToLatest}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-md hover:bg-accent transition-colors animate-in fade-in slide-in-from-bottom-1 duration-200"
-            >
-              <ArrowDown className="h-3.5 w-3.5" /> Jump to latest
-            </button>
+            </div>
           )}
-          </div>
 
-          {!isReview && messages.length > 0 && <CompletionGoal selfExplained={selfExplained} />}
-          {!isReview && <IntensitySelector intensity={intensity} onChange={changeIntensity} />}
-
-          <InteractionPanel
-            messages={messages}
-            isStreaming={isStreaming}
-            input={input}
-            setInput={setInput}
-            onSend={sendMessage}
-            currentPayload={currentPayload}
-            answerPoint={answerPoint}
-          />
-        </div>
-
-        {/* Resize handle */}
-        {!theaterMinimized && (
+        {/* Dim while something is expanded. The workspace stays visible and keeps running behind
+            it — this is an expansion, not a modal — but the eye is told where to look, and a click
+            anywhere out there puts things back. */}
+        {maximized && (
           <div
-            className="hidden lg:block w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
-            onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
-            title="Drag to resize"
+            onClick={() => setMaximized(null)}
+            style={{ zIndex: 44 }}
+            className="absolute inset-0 bg-background/65 backdrop-blur-[2px]"
+            aria-hidden
           />
         )}
 
-        {/* RIGHT — Math Theater */}
+        {messages.length > 0 && (
+          <>
+            {/* THE STAGE — always visible, never inside a card. */}
+            {!panels.stage.minimized && (
+            <FloatingPanel
+              rect={rectOf("stage")}
+              onRectChange={(rect) => setPanel("stage", { rect })}
+              collapsed={panels.stage.collapsed}
+              onToggleCollapsed={() => setPanel("stage", { collapsed: !panels.stage.collapsed })}
+              title={isSceneSpec(currentPayload) ? currentPayload.title : "Visualization"}
+              icon={Shapes}
+              side="right"
+              minW={280}
+              minH={200}
+              zIndex={zOf("stage")}
+              onFocus={() => setTopPanel("stage")}
+              onMinimize={() => minimizePanel("stage")}
+              maximized={maximized === "stage"}
+              onToggleMaximized={() => toggleMaximized("stage")}
+            >
+              <MathTheater
+                subtopicId={subtopicId}
+                payload={pinnedInsightPayload ?? currentPayload}
+                history={vizHistory}
+                activeVizId={activeVizId}
+                onSelectViz={(id) => setActiveVizId(id)}
+                answerRequest={wantsPointAnswer ? POINT_ANSWER_KEYS : undefined}
+                onAnswerChange={(x, y) => setAnswerPoint({ x, y })}
+                viewingInsight={!!pinnedInsightPayload}
+                onExitInsight={() => setPinnedInsightPayload(null)}
+                onSelectInsight={(payload) => setPinnedInsightPayload(payload)}
+                lockFinalStep={lockFinalStep}
+                allowFullscreen={false}
+              />
+            </FloatingPanel>
+            )}
+
+            {!panels.notes.minimized && (
+            <FloatingPanel
+              rect={rectOf("notes")}
+              onRectChange={(rect) => setPanel("notes", { rect })}
+              collapsed={panels.notes.collapsed}
+              onToggleCollapsed={() => setPanel("notes", { collapsed: !panels.notes.collapsed })}
+              title="Notes"
+              icon={NotebookPen}
+              side="right"
+              meta={derivedNotes.length || undefined}
+              zIndex={zOf("notes")}
+              onFocus={() => setTopPanel("notes")}
+              onMinimize={() => minimizePanel("notes")}
+              maximized={maximized === "notes"}
+              onToggleMaximized={() => toggleMaximized("notes")}
+            >
+              <NotesPanel
+                notes={derivedNotes}
+                vizHistory={vizHistory}
+                activeVizId={activeVizId}
+                onSelectViz={(id) => setActiveVizId(id)}
+                onJumpToCard={focusCard}
+                isStreaming={isStreaming}
+              />
+            </FloatingPanel>
+            )}
+
+            {!panels.navigator.minimized && (
+            <FloatingPanel
+              rect={rectOf("navigator")}
+              onRectChange={(rect) => setPanel("navigator", { rect })}
+              collapsed={panels.navigator.collapsed}
+              onToggleCollapsed={() => setPanel("navigator", { collapsed: !panels.navigator.collapsed })}
+              title="Navigator"
+              icon={Compass}
+              side="left"
+              minW={200}
+              zIndex={zOf("navigator")}
+              onFocus={() => setTopPanel("navigator")}
+              onMinimize={() => minimizePanel("navigator")}
+              maximized={maximized === "navigator"}
+              onToggleMaximized={() => toggleMaximized("navigator")}
+            >
+              <NavigatorPanel
+                topicTitle={topic?.title}
+                subtopicTitle={subtopic?.title}
+                prerequisites={prerequisites}
+                selfExplained={selfExplained}
+                covered={coveredTerms}
+                turns={messages.filter((m) => m.role === "user").length}
+                isReview={isReview}
+                outline={planOutline}
+                transcript={tutorTranscript}
+              />
+            </FloatingPanel>
+            )}
+
+            {!panels.settings.minimized && (
+            <FloatingPanel
+              rect={rectOf("settings")}
+              onRectChange={(rect) => setPanel("settings", { rect })}
+              collapsed={panels.settings.collapsed}
+              onToggleCollapsed={() => setPanel("settings", { collapsed: !panels.settings.collapsed })}
+              title="Session settings"
+              icon={SlidersHorizontal}
+              side="left"
+              minW={244}
+              minH={220}
+              zIndex={zOf("settings")}
+              onFocus={() => setTopPanel("settings")}
+              onMinimize={() => minimizePanel("settings")}
+              maximized={maximized === "settings"}
+              onToggleMaximized={() => toggleMaximized("settings")}
+            >
+              <SessionSettingsPanel prefs={prefs} onChange={updatePrefs} onReset={resetPrefs} />
+            </FloatingPanel>
+            )}
+
+            <PanelDock items={dockItems} onRestore={(id) => restorePanel(id as PanelId)} bottom={canvasBottomInset} />
+          </>
+        )}
+
+        {/* COMMAND BAR — the one piece of persistent chrome. Everything the current turn needs to
+            answer with lives here, so the canvas above it stays purely the lesson. */}
+        {/* Lifted above the dim layer while something is expanded: the point of expanding the
+            lesson is to read it and answer, so the place you answer has to stay lit. */}
         <div
-          className={`min-h-0 flex-col ${mobileView === "theater" ? "flex" : "hidden"} lg:flex`}
-          style={{ flex: `0 0 ${theaterMinimized ? "3rem" : `${theaterWidthPct}%`}` }}
+          ref={commandBarRef}
+          style={{ zIndex: maximized ? 52 : 30 }}
+          className="pointer-events-none absolute inset-x-0 bottom-0"
         >
-          <MathTheater
-            subtopicId={subtopicId}
-            payload={pinnedInsightPayload ?? currentPayload}
-            history={vizHistory}
-            activeVizId={activeVizId}
-            onSelectViz={(id) => setActiveVizId(id)}
-            minimized={theaterMinimized}
-            onMinimize={() => setTheaterMinimized(true)}
-            onRestore={() => setTheaterMinimized(false)}
-            answerRequest={wantsPointAnswer ? POINT_ANSWER_KEYS : undefined}
-            onAnswerChange={(x, y) => setAnswerPoint({ x, y })}
-            viewingInsight={!!pinnedInsightPayload}
-            onExitInsight={() => setPinnedInsightPayload(null)}
-            onSelectInsight={(payload) => setPinnedInsightPayload(payload)}
-            lockFinalStep={lockFinalStep}
-          />
+          <div data-command-bar className="pointer-events-auto mx-auto w-full max-w-xl px-4 pb-4">
+            {/* Quick actions sit above the composer, where the eye already is when deciding what to
+                say next — not floating off to one side where they read as decoration. */}
+            {messages.some((m) => m.role === "assistant") && (
+              <QuickActions
+                onSend={sendMessage}
+                disabled={isStreaming}
+                expanded={commandsOpen}
+                onCollapse={() => setCommandsOpen(false)}
+              />
+            )}
+            <div className="overflow-hidden rounded-[1.5rem] border border-border/60 bg-card/75 shadow-[0_2px_8px_rgba(0,0,0,0.18),0_24px_56px_-20px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+              <InteractionPanel
+                messages={messages}
+                isStreaming={isStreaming}
+                input={input}
+                setInput={setInput}
+                onSend={sendMessage}
+                currentPayload={currentPayload}
+                answerPoint={answerPoint}
+                intensity={isReview ? undefined : intensity}
+                onChangeIntensity={isReview ? undefined : changeIntensity}
+                onOpenCommands={() => setCommandsOpen((v) => !v)}
+              />
+            </div>
+          </div>
         </div>
       </div>
       </div>
@@ -1123,6 +1828,21 @@ Return ONLY a JSON object — no prose, no markdown fences:
           onRemoveViz={removeVizInsight}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * The card that stands in for a reply still being composed.
+ *
+ * A ring of light travelling the border, plus skeleton lines with a sweep across them. It occupies
+ * the same footprint the real card will, so the canvas doesn't jump when the text arrives — the
+ * placeholder becomes the answer rather than being replaced by it.
+ */
+function ThinkingCard({ top, width, animations }: { top: number; width: number; animations: boolean }) {
+  return (
+    <div className={`absolute ${animations ? "animate-rise" : ""}`} style={{ left: 0, top, width }}>
+      <ThinkingBlock animations={animations} />
     </div>
   );
 }
@@ -1279,24 +1999,9 @@ const STARTER_PROMPTS: { label: string; send: string }[] = [
   { label: "Skip ahead and quiz me", send: "I think I know this — skip ahead and quiz me to find my gaps." },
 ];
 
-// A concept is only marked complete once the student explains a 'why' in their own words AND solves a
-// novel problem unaided. Showing the bar mid-session keeps "Progress saved" from being a surprise. Only
-// the self-explanation half is observable client-side; the novel-problem half is the AI's call at the end.
-function CompletionGoal({ selfExplained }: { selfExplained: boolean }) {
-  return (
-    <div className="px-4 pt-2 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
-      <span className="shrink-0 font-medium">To complete:</span>
-      <span className={`flex items-center gap-1 ${selfExplained ? "text-success" : ""}`}>
-        {selfExplained ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
-        explain a “why” in your own words
-      </span>
-      <span className="flex items-center gap-1">
-        <Circle className="h-3 w-3" />
-        solve a novel problem unaided
-      </span>
-    </div>
-  );
-}
+// (CompletionGoal and IntensitySelector were retired with the old stacked command bar. The two
+// completion conditions now live in the Navigator, where they sit beside the route they measure;
+// depth became a single cycling pill in the composer instead of a permanent segmented band.)
 
 const INTENSITY_META: Record<Intensity, { label: string; hint: string }> = {
   guided: { label: "Guided", hint: "Mostly guided choices — lowest friction." },
@@ -1304,32 +2009,14 @@ const INTENSITY_META: Record<Intensity, { label: string; hint: string }> = {
   rigorous: { label: "Rigorous", hint: "Derive and solve novel problems unaided — hardest." },
 };
 
-function IntensitySelector({ intensity, onChange }: { intensity: Intensity; onChange: (v: Intensity) => void }) {
-  return (
-    <div className="px-4 pt-2 pb-1 flex items-center gap-2 border-t border-border">
-      <span
-        className="text-[11px] text-muted-foreground shrink-0"
-        title="How hard Cortexed pushes you to explain the why and solve novel problems yourself"
-      >
-        Depth
-      </span>
-      <div className="flex items-center gap-0.5 bg-accent rounded-lg p-0.5">
-        {(Object.keys(INTENSITY_META) as Intensity[]).map((lvl) => (
-          <button
-            key={lvl}
-            onClick={() => onChange(lvl)}
-            title={INTENSITY_META[lvl].hint}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              intensity === lvl ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {INTENSITY_META[lvl].label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+/** Depth is a three-position cycle in the composer rather than a permanent segmented row — it is
+ *  changed rarely, so it should cost one square of chrome, not a whole band of it. */
+const NEXT_INTENSITY: Record<Intensity, Intensity> = {
+  guided: "balanced",
+  balanced: "rigorous",
+  rigorous: "guided",
+};
+
 
 // 1-4 inclusive for both dims — matches the bound MathSymbolPalette's own templates use (2x2,
 // 2-vector). Returns null (not NaN) on anything out of range so callers can treat it as "invalid,
@@ -1347,6 +2034,9 @@ function InteractionPanel({
   onSend,
   currentPayload,
   answerPoint,
+  intensity,
+  onChangeIntensity,
+  onOpenCommands,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -1355,6 +2045,9 @@ function InteractionPanel({
   onSend: (text: string) => void;
   currentPayload: SimulationPayload | SceneSpec;
   answerPoint: { x: number; y: number } | null;
+  intensity?: Intensity;
+  onChangeIntensity?: (v: Intensity) => void;
+  onOpenCommands?: () => void;
 }) {
   const last = messages[messages.length - 1];
   const choices =
@@ -1363,6 +2056,7 @@ function InteractionPanel({
       : null;
 
   const [showText, setShowText] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
   const fieldRef = useRef<RichMathFieldHandle>(null);
 
   // A fresh structured prompt should never inherit the previous turn's "type instead" escape.
@@ -1418,7 +2112,7 @@ function InteractionPanel({
         const x = answerPoint?.x ?? 0;
         const y = answerPoint?.y ?? 0;
         return (
-          <div className="p-4 border-t border-border space-y-2">
+          <div className="p-2.5 space-y-2">
             <p className="text-sm text-muted-foreground">
               Drag the highlighted point on the Math Theater into place, then submit.
             </p>
@@ -1439,7 +2133,7 @@ function InteractionPanel({
       }
     } else if (choices.options.length > 0 && choices.type !== "freeform") {
       return (
-        <div className="p-4 border-t border-border bg-background">
+        <div className="p-2.5">
           <div className="flex flex-wrap gap-2 mb-2">
             {choices.options.map((opt, idx) => (
               <button
@@ -1463,33 +2157,77 @@ function InteractionPanel({
     }
   }
 
+  // Composer layout: the field gets the full width of the bar, and every control sits on one quiet
+  // row beneath it. The symbol palette is behind a toggle rather than permanently open — it was the
+  // single biggest block of standing clutter in the old bar.
   return (
-    <div className="p-4 border-t border-border space-y-2">
-      <MathSymbolPalette onInsert={(latex) => fieldRef.current?.insertLatex(latex)} />
-      <div className="flex items-end gap-3 bg-card border border-border rounded-xl px-4 py-2.5">
-        <RichMathField
-          ref={fieldRef}
-          value={input}
-          onChange={setInput}
-          onEnter={() => {
-            onSend(input);
-            setShowText(false);
-          }}
-          placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask Cortexed…"}
-          className="flex-1 bg-transparent text-sm text-foreground outline-hidden max-h-40 overflow-y-auto py-1 whitespace-pre-wrap break-words"
-          disabled={isStreaming}
-          autoFocus
-        />
+    <div className="px-3 pb-2.5 pt-2">
+      <RichMathField
+        ref={fieldRef}
+        value={input}
+        onChange={setInput}
+        onEnter={() => {
+          onSend(input);
+          setShowText(false);
+        }}
+        placeholder={choices?.type === "freeform" ? "Type your answer…" : "Ask anything, or answer above…"}
+        className="w-full bg-transparent px-1 py-1.5 text-[13px] text-foreground outline-hidden max-h-40 overflow-y-auto whitespace-pre-wrap break-words placeholder:text-muted-foreground/50"
+        disabled={isStreaming}
+        autoFocus
+      />
+
+      {showPalette && (
+        <div className="mt-1.5 animate-rise">
+          <MathSymbolPalette onInsert={(latex) => fieldRef.current?.insertLatex(latex)} />
+        </div>
+      )}
+
+      <div className="mt-1.5 flex items-center gap-1">
         <button
-          onClick={() => {
-            onSend(input);
-            setShowText(false);
-          }}
-          disabled={!input.trim() || isStreaming}
-          className="h-8 w-8 shrink-0 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-opacity"
+          onClick={() => setShowPalette((v) => !v)}
+          title="Maths symbols"
+          aria-label="Maths symbols"
+          className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm transition-colors ${
+            showPalette ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
         >
-          <Send className="h-4 w-4" />
+          <Sigma className="h-3.5 w-3.5" />
         </button>
+
+        {onOpenCommands && (
+          <button
+            onClick={onOpenCommands}
+            title="Quick actions"
+            aria-label="Quick actions"
+            className="flex h-7 w-7 items-center justify-center rounded-lg font-mono text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            /
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-1.5">
+          {intensity && onChangeIntensity && (
+            <button
+              onClick={() => onChangeIntensity(NEXT_INTENSITY[intensity])}
+              title={`Depth: ${INTENSITY_META[intensity].hint}`}
+              className="flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[10.5px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            >
+              {INTENSITY_META[intensity].label}
+              <ChevronsUpDown className="h-3 w-3 opacity-60" />
+            </button>
+          )}
+          <button
+            onClick={() => {
+              onSend(input);
+              setShowText(false);
+            }}
+            disabled={!input.trim() || isStreaming}
+            aria-label="Send"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-200 hover:opacity-90 disabled:bg-secondary disabled:text-muted-foreground/50"
+          >
+            {isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );

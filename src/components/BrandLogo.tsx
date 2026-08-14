@@ -12,8 +12,8 @@ interface Props {
  */
 export default function BrandLogo({ className }: Props) {
   return (
-    <Link to="/" className={cn("font-bold text-foreground hover:opacity-80 transition-opacity", className)}>
-      Cortexed
+    <Link to="/" className={cn("font-bold text-foreground hover:opacity-80 transition-opacity flex items-baseline", className)}>
+      Cortexed<span className="text-primary text-xl leading-none">.</span>
     </Link>
   );
 }

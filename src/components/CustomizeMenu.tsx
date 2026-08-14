@@ -7,11 +7,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { APP_THEMES, loadStoredThemeId, applyTheme } from "@/lib/appThemes";
 
 const ACCENTS: { name: string; hsl: string }[] = [
+  { name: "Cyan", hsl: "hsl(198 93% 60%)" },
   { name: "Indigo", hsl: "hsl(239 84% 67%)" },
   { name: "Emerald", hsl: "hsl(152 76% 44%)" },
   { name: "Amber", hsl: "hsl(38 95% 58%)" },
   { name: "Rose", hsl: "hsl(346 84% 61%)" },
-  { name: "Sky", hsl: "hsl(199 89% 58%)" },
   { name: "Violet", hsl: "hsl(270 84% 67%)" },
 ];
 
@@ -30,7 +30,7 @@ function normalizeAccent(value: string): string {
 }
 
 export function applyStoredAccent() {
-  const stored = localStorage.getItem("jarvis_accent");
+  const stored = localStorage.getItem("cortexed_accent");
   if (stored) document.documentElement.style.setProperty("--primary", normalizeAccent(stored));
 }
 
@@ -40,7 +40,7 @@ export default function CustomizeMenu() {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [emoji, setEmoji] = useState(profile?.avatar_url || "🧠");
   const [accent, setAccent] = useState<string>(() => {
-    const stored = localStorage.getItem("jarvis_accent");
+    const stored = localStorage.getItem("cortexed_accent");
     return stored ? normalizeAccent(stored) : ACCENTS[0].hsl;
   });
   const [themeId, setThemeId] = useState<string>(() => loadStoredThemeId());
@@ -54,7 +54,7 @@ export default function CustomizeMenu() {
   const applyAccent = (hsl: string) => {
     setAccent(hsl);
     document.documentElement.style.setProperty("--primary", hsl);
-    localStorage.setItem("jarvis_accent", hsl);
+    localStorage.setItem("cortexed_accent", hsl);
   };
 
   const selectTheme = (id: string) => {
@@ -64,7 +64,7 @@ export default function CustomizeMenu() {
     // default shows cleanly instead of an old accent bleeding through. The user can still
     // re-pick an accent afterward, independently, exactly as before.
     document.documentElement.style.removeProperty("--primary");
-    localStorage.removeItem("jarvis_accent");
+    localStorage.removeItem("cortexed_accent");
     setAccent("");
   };
 

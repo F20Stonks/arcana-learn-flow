@@ -136,10 +136,10 @@ function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConc
 
   return (
     <div className="space-y-4 py-2">
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="glass-card rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm font-medium text-foreground">Concepts known</span>
-          <span className="text-2xl font-semibold text-primary tabular-nums">{knownConcepts.length}</span>
+          <span className="text-2xl font-semibold text-primary readout">{knownConcepts.length}</span>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed mb-3">
           Atomic concepts (notation, terminology, skills) you've locked in by completing sessions. These are
@@ -148,8 +148,8 @@ function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConc
         <div className="flex gap-1.5">
           {(["notation", "terminology", "skill"] as const).map((t) => (
             <div key={t} className="flex-1 rounded-lg bg-secondary/60 px-2 py-1.5 text-center">
-              <div className="text-base font-semibold text-foreground tabular-nums leading-none">{typeCounts[t] || 0}</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{CONCEPT_TYPE_LABEL[t]}</div>
+              <div className="text-base font-semibold text-foreground readout leading-none">{typeCounts[t] || 0}</div>
+              <div className="micro-label mt-0.5">{CONCEPT_TYPE_LABEL[t]}</div>
             </div>
           ))}
         </div>
@@ -157,7 +157,7 @@ function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConc
 
       {knownConcepts.length > 0 ? (
         <>
-          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 glass-card rounded-lg px-3 py-2">
             <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={query}
@@ -168,16 +168,16 @@ function KnowledgeTab({ tracks, knownConcepts }: { tracks: TrackRow[]; knownConc
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <h4 className="micro-label mb-2">
               {q ? `${filtered.length} match${filtered.length === 1 ? "" : "es"}` : "All concepts"}
             </h4>
             {filtered.length > 0 ? (
               <div className="space-y-1.5">
                 {filtered.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-foreground bg-card border border-border rounded-lg px-3 py-2">
+                  <div key={i} className="flex items-center gap-2 text-sm text-foreground glass-card rounded-lg px-3 py-2">
                     <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span className="truncate flex-1">{c.name}</span>
-                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
+                    <span className="shrink-0 micro-label bg-secondary rounded px-1.5 py-0.5">
                       {CONCEPT_TYPE_LABEL[c.type] || c.type}
                     </span>
                   </div>
@@ -240,7 +240,7 @@ function CalendarTab({ tracks, reviews, subtopicTitles }: { tracks: TrackRow[]; 
       />
 
       <div>
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Upcoming</h4>
+        <h4 className="micro-label mb-2">Upcoming</h4>
         {upcoming.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Nothing scheduled yet.</p>
         ) : (
@@ -259,12 +259,12 @@ function CalendarTab({ tracks, reviews, subtopicTitles }: { tracks: TrackRow[]; 
                 <button
                   key={i}
                   onClick={() => navigate(`/session/${e.subtopicId}?mode=review`)}
-                  className="w-full flex items-center gap-2 text-sm bg-card border border-border rounded-lg px-3 py-2 hover:border-primary/40 hover:bg-accent/40 transition-colors"
+                  className="w-full flex items-center gap-2 text-sm glass-card glass-card-hover rounded-lg px-3 py-2"
                 >
                   {row}
                 </button>
               ) : (
-                <div key={i} className="flex items-center gap-2 text-sm bg-card border border-border rounded-lg px-3 py-2">
+                <div key={i} className="flex items-center gap-2 text-sm glass-card rounded-lg px-3 py-2">
                   {row}
                 </div>
               );

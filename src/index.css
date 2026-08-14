@@ -91,6 +91,12 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-pulse-slow: glow-pulse 2.4s ease-in-out infinite;
+  /* Loading language. `sheen` sweeps a highlight across a skeleton; `orbit` runs a light around a
+     border via a rotating conic gradient. Both are transform/opacity only, so they stay on the
+     compositor and never cost a layout while the model is streaming. */
+  --animate-sheen: sheen 1.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-orbit: orbit 2.6s linear infinite;
+  --animate-rise: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes accordion-down {
@@ -104,6 +110,17 @@
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 14px rgba(251, 191, 36, 0.45); transform: scale(1); }
   50% { box-shadow: 0 0 32px rgba(251, 191, 36, 0.85); transform: scale(1.06); }
+}
+@keyframes sheen {
+  0% { transform: translateX(-140%); }
+  100% { transform: translateX(460%); }
+}
+@keyframes orbit {
+  to { transform: rotate(1turn); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 
 @utility container {
@@ -605,6 +622,49 @@ button {
 /* KaTeX overrides for dark theme */
 .katex { color: inherit !important; }
 .katex .mord, .katex .mbin, .katex .mrel, .katex .mopen, .katex .mclose, .katex .mpunct, .katex .mop { color: inherit !important; }
+
+/* ---- Math typography -------------------------------------------------------------------------
+   KaTeX ships at 1.21em, which next to a 13–14px UI font renders visibly larger than the prose
+   around it — the single biggest reason mixed text-and-maths looks unconsidered. These rules bring
+   inline maths back onto the same optical size as its sentence, and give display maths the room and
+   the horizontal escape hatch a real equation needs. */
+.math-renderer .katex { font-size: 1.06em; }
+
+/* Display equations: breathing room above and below, and their own scroll rather than forcing the
+   card (or the page) to widen for one long derivation. */
+.math-renderer .katex-display {
+  margin: 1.15em 0;
+  padding: 0.15em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.math-renderer .katex-display > .katex { font-size: 1.15em; }
+.math-renderer .katex-display:first-child { margin-top: 0; }
+.math-renderer .katex-display:last-child { margin-bottom: 0; }
+
+/* Fractions and radicals read cramped at small sizes; a little lead around the rule fixes it. */
+.math-renderer .katex .mfrac .frac-line { border-bottom-width: 0.055em; }
+.math-renderer .katex .mfrac > span > span { padding: 0.06em 0; }
+
+/* Stop a stray long expression from widening a card and breaking the layout. */
+.math-renderer { overflow-wrap: break-word; }
+
+/* ---- Session preferences ----------------------------------------------------------------------
+   Two things the student can set that CSS has to apply rather than a component: the size of rendered
+   maths relative to its prose, and whether the workspace moves at all. Both are scoped to the
+   session surface, so nothing outside a lesson is affected. */
+[data-session-surface] .math-renderer .katex { font-size: calc(1.06em * var(--sx-math, 1)); }
+[data-session-surface] .math-renderer .katex-display > .katex { font-size: calc(1.15em * var(--sx-math, 1)); }
+
+/* Motion off means off: transitions and looping animations alike. Scoped and deliberate — a student
+   who turns this off is telling us the movement is in their way, not asking for it to be subtler. */
+[data-session-surface][data-anim="off"] *,
+[data-session-surface][data-anim="off"] *::before,
+[data-session-surface][data-anim="off"] *::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+  animation-iteration-count: 1 !important;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

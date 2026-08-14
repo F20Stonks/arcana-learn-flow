@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Tables } from "@/integrations/supabase/types";
-import { Maximize2, Minimize2, Check, ChevronDown, ChevronUp, Sparkles, Zap, Trophy, Flame } from "lucide-react";
+import { Maximize2, Minimize2, Check, ChevronDown, ChevronUp, Sparkles, Zap, Trophy } from "lucide-react";
 
 type Topic = Tables<"topics"> & { subtopics: Tables<"subtopics">[] };
 
@@ -29,17 +29,13 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
     return () => window.removeEventListener("keydown", onKey);
   }, [fullscreen]);
 
-  const stats = useMemo(() => {
-    const total = topics.reduce((a, t) => a + t.subtopics.length, 0);
-    const done = topics.reduce((a, t) => a + t.subtopics.filter(s => s.status === "complete").length, 0);
-    const pct = total ? Math.round((done / total) * 100) : 0;
-    // "Frontier": first non-complete subtopic in the first topic that isn't fully done.
-    let frontierId: string | null = null;
+  // "Frontier": first non-complete subtopic in the first topic that isn't fully done.
+  const frontierId = useMemo(() => {
     for (const t of topics) {
       const next = t.subtopics.find(s => s.status !== "complete");
-      if (next) { frontierId = next.id; break; }
+      if (next) return next.id;
     }
-    return { total, done, pct, frontierId };
+    return null;
   }, [topics]);
 
   const toggleCollapse = (id: string) => setCollapsed(prev => {
@@ -75,14 +71,9 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
         </div>
 
         <div className="flex items-center gap-3">
-          {/* XP bar */}
-          <div className="hidden sm:flex items-center gap-2">
-            <Flame className="h-3.5 w-3.5 text-[#73ffb8]" />
-            <div className="w-40 h-2 rounded-full bg-[#0d1b2a] border border-[#14b892]/25 overflow-hidden">
-              <div className="h-full rounded-full bg-linear-to-r from-[#2dd4a8] to-[#73ffb8] transition-all duration-500 shadow-[0_0_10px_rgba(115,255,184,0.6)]" style={{ width: `${stats.pct}%` }} />
-            </div>
-            <span className="text-xs font-mono text-[#73ffb8] tabular-nums">{stats.done}<span className="text-[#5eead4]/50">/{stats.total}</span></span>
-          </div>
+          {/* No track-level progress bar here — TrackOverview owns the single progress meter, directly
+              above this component. Per-topic bars below stay: those say something the page-level
+              meter doesn't. */}
           <button onClick={() => setFullscreen(f => !f)} className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#0d1b2a] border border-[#14b892]/25 text-[#5eead4] hover:text-[#73ffb8] hover:border-[#2dd4a8] transition-colors" title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
@@ -102,7 +93,7 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
                 index={i}
                 collapsed={collapsed.has(topic.id)}
                 onToggleCollapse={() => toggleCollapse(topic.id)}
-                frontierId={stats.frontierId}
+                frontierId={frontierId}
                 onSubtopicClick={onSubtopicClick}
                 onVerifyClick={onVerifyClick}
               />

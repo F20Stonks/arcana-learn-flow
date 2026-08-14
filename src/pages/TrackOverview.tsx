@@ -38,7 +38,10 @@ type Topic = Tables<"topics"> & {
 
 type OptionState = "not_added" | "active" | "archived";
 
-type View = "overview" | "map" | "spec";
+/** Two surfaces only. The old "Overview" tab was a thin wrapper around a progress bar, the exam
+ *  date and the options list — all of which now sit above the map, where the same information is
+ *  in context instead of one click away. */
+type View = "map" | "spec";
 
 /**
  * Replaces the old chevron + static status-dot pair with one signal: a ring showing REAL
@@ -89,7 +92,7 @@ export default function TrackOverview() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [view, setView] = useState<View>("overview");
+  const [view, setView] = useState<View>("map");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [availableOptions, setAvailableOptions] = useState<string[]>([]);
@@ -340,10 +343,13 @@ export default function TrackOverview() {
                       </button>
                       <button
                         onClick={() => navigate(`/session/${sub.id}`)}
-                        className="flex-1 text-left py-2 text-xs text-muted-foreground hover:text-foreground transition-colors line-clamp-2 leading-snug"
+                        className="min-w-0 flex-1 text-left py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                         title={sub.title}
                       >
-                        {sub.title}
+                        {/* The clamp MUST live on a padding-free inner element. `line-clamp-2` clips at
+                            the padding box, so putting it on the padded button itself let a sliver of
+                            line 3 bleed through the bottom padding and collide with the next row. */}
+                        <span className="line-clamp-2 leading-snug">{sub.title}</span>
                       </button>
                       {isResuming && (
                         <button
@@ -376,12 +382,6 @@ export default function TrackOverview() {
           {/* View toggle */}
           <div className="flex gap-1 bg-accent rounded-lg p-1 mb-6 w-fit">
             <button
-              onClick={() => setView("overview")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === "overview" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Overview
-            </button>
-            <button
               onClick={() => setView("map")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${view === "map" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
@@ -395,19 +395,25 @@ export default function TrackOverview() {
             </button>
           </div>
 
-          {view === "overview" ? (
+          {view === "map" ? (
             <>
-              {track?.exam_date && (
-                <div className="bg-card border border-border rounded-xl p-4 mb-6">
-                  <p className="text-xs text-muted-foreground mb-1">Exam date</p>
-                  <p className="text-sm font-medium text-foreground">{new Date(track.exam_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
-                </div>
-              )}
-
-              <div className="bg-card border border-border rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between mb-2">
+              {/* The track's headline numbers, relocated here from the retired Overview tab. This is
+                  now the ONLY progress meter on the page — the map's own HUD bar was removed so the
+                  same fact isn't stated twice, two inches apart, in two different visual languages. */}
+              <div className="bg-card border border-border rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between gap-4 mb-2">
                   <p className="text-xs text-muted-foreground">Progress</p>
-                  <p className="text-xs font-medium text-foreground">{pct}%</p>
+                  <div className="flex items-center gap-4">
+                    {track?.exam_date && (
+                      <p className="text-xs text-muted-foreground">
+                        Exam{" "}
+                        <span className="font-medium text-foreground">
+                          {new Date(track.exam_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                        </span>
+                      </p>
+                    )}
+                    <p className="text-xs font-medium text-foreground tabular-nums">{pct}%</p>
+                  </div>
                 </div>
                 <div className="w-full h-2 rounded-full bg-secondary">
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
@@ -415,11 +421,20 @@ export default function TrackOverview() {
                 <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
               </div>
 
+              <SafeBoundary label="Knowledge map">
+                <KnowledgeMap
+                  topics={activeTopics}
+                  trackTitle={track?.title}
+                  onSubtopicClick={(id) => navigate(`/session/${id}`)}
+                  onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
+                />
+              </SafeBoundary>
+
               {/* Elective options — only rendered when this syllabus actually has any. No option here
                   is "official"; all are equally addable/archivable at any time, per the product
                   direction that this app isn't the exam board and doesn't gate on assigned modules. */}
               {availableOptions.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-4 mb-6">
+                <div className="bg-card border border-border rounded-xl p-4 mt-4 max-w-3xl">
                   <p className="text-xs text-muted-foreground mb-3">Options</p>
                   <div className="space-y-2">
                     {availableOptions.map((option) => {
@@ -465,15 +480,6 @@ export default function TrackOverview() {
                 </div>
               )}
             </>
-          ) : view === "map" ? (
-            <SafeBoundary label="Knowledge map">
-              <KnowledgeMap
-                topics={activeTopics}
-                trackTitle={track?.title}
-                onSubtopicClick={(id) => navigate(`/session/${id}`)}
-                onVerifyClick={(id) => navigate(`/track/${trackId}/questions?subtopic=${id}&mode=verify`)}
-              />
-            </SafeBoundary>
           ) : (
             trackId ? (
               <SafeBoundary label="Specification checklist">

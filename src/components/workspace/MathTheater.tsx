@@ -51,6 +51,10 @@ interface Props {
    * step must stay hidden until the student answers the turn's challenge. Forwarded straight to
    * Scene3D — MathTheater has no gating logic of its own. */
   lockFinalStep?: boolean;
+  /** False when the host already provides a better way to make this bigger. Inside a session the
+   *  panel expands in place, and a second control that throws the same content into a `fixed
+   *  inset-0` overlay is both a duplicate and the popup behaviour the workspace avoids. */
+  allowFullscreen?: boolean;
 }
 
 interface InsightRow {
@@ -83,6 +87,7 @@ export default function MathTheater({
   onExitInsight,
   onSelectInsight,
   lockFinalStep = false,
+  allowFullscreen = true,
 }: Props) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MathMode>(MODE_ABSTRACT);
@@ -267,26 +272,30 @@ export default function MathTheater({
       ) : (
       <>
       {/* Header: tabs + toggle */}
-      <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: mathTheme.grid }}>
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b" style={{ borderColor: mathTheme.grid }}>
+        <div className="flex min-w-0 items-center gap-1">
           <button onClick={() => setTab("theater")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
               tab === "theater" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"}`}>
-            Math Theater
+            Theater
           </button>
           <button onClick={() => setTab("library")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
               tab === "library" ? "bg-white/10 text-white" : "text-slate-400 hover:text-slate-200"}`}>
             <Library className="h-3.5 w-3.5" /> Insights
           </button>
         </div>
 
         {tab === "theater" && (
-          <div className="flex items-center gap-2">
-            <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
-              style={{ borderColor: mathTheme.grid, color: mathTheme.textDim }}>
-              {isScene ? "scene" : (payload as SimulationPayload).archetype.replace("_", " ")}
-            </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={saveInsight}
+              title="Save this to your Insights Library"
+              aria-label="Save to your Insights Library"
+              className="p-1.5 rounded-md border border-violet-400/40 bg-violet-500/15 text-violet-100 hover:bg-violet-500/30 transition-colors"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+            </button>
             <Popover>
               <PopoverTrigger asChild>
                 <button
@@ -331,22 +340,26 @@ export default function MathTheater({
                 </div>
               </PopoverContent>
             </Popover>
-            <button
-              onClick={onMinimize}
-              title="Minimize theater"
-              className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-              style={{ borderColor: mathTheme.grid }}
-            >
-              <PanelRightClose className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setFullscreen((f) => !f)}
-              title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-              style={{ borderColor: mathTheme.grid }}
-            >
-              {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-            </button>
+            {onMinimize && (
+              <button
+                onClick={onMinimize}
+                title="Minimize theater"
+                className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                style={{ borderColor: mathTheme.grid }}
+              >
+                <PanelRightClose className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {allowFullscreen && (
+              <button
+                onClick={() => setFullscreen((f) => !f)}
+                title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+                className="p-1.5 rounded-md border text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                style={{ borderColor: mathTheme.grid }}
+              >
+                {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -366,60 +379,57 @@ export default function MathTheater({
         </div>
       )}
 
-      {/* Theater body */}
-      <div className={`relative flex-1 min-h-0 ${tab === "theater" ? "" : "hidden"}`}>
-        {isScene ? (
-          <SceneErrorBoundary resetKey={payload}>
-            <Scene3D
-              spec={scene3dSpec}
-              params={params}
-              onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
-              theme={vizTheme}
-              bottomInset={sliders.length > 0 ? 92 : 0}
-              lockFinalStep={lockFinalStep}
-            />
-          </SceneErrorBoundary>
-        ) : (
-          <SimulationFactory payload={payload as SimulationPayload} params={params} />
-        )}
-
-        {/* Overlay: dynamic labels from payload */}
-        <div className="absolute top-3 left-3 right-3 pointer-events-none">
-          <div className="rounded-lg backdrop-blur-sm bg-black/30 border border-white/5 px-3 py-2 max-w-[60%]">
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: mathTheme.textDim }}>
-              {meta.title}
-            </div>
+      {/* Theater body — a column. The description, the picture, the history strip and the sliders
+          each own a row of their own, so none of them can ever be drawn over the diagram. This used
+          to be a stack of absolutely-positioned overlays, which is exactly how a scene ended up
+          rendering underneath its own caption. */}
+      <div className={`flex min-h-0 flex-1 flex-col ${tab === "theater" ? "" : "hidden"}`}>
+        {/* What this picture is — in flow, above the scene. */}
+        {/* Caption and reason only. The scene's TITLE is already the panel's title — repeating it
+            here cost a line of a panel whose whole job is to show a picture. */}
+        {(meta.subtitle || meta.formulas.length > 0) && (
+        <div data-viz-meta className="flex shrink-0 items-start gap-2 border-b px-3 py-1.5" style={{ borderColor: mathTheme.grid }}>
+          {/* Capped and scrollable: a payload with six formulas must not squeeze the diagram out of
+              its own panel, and a short one must not leave a hole. */}
+          <div className="min-w-0 max-h-14 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
             {meta.subtitle && (
-              <div className="text-sm font-semibold" style={{ color: mathTheme.text }}>
+              <div className="text-[12.5px] font-medium leading-snug" style={{ color: mathTheme.text }}>
                 <MathRenderer content={meta.subtitle} />
               </div>
             )}
-            <div className="mt-1 text-xs space-y-0.5" style={{ color: mathTheme.text }}>
-              {meta.formulas.map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
-            </div>
-            {isScene && (payload as SceneSpec).flat !== true && (
-              <div className="mt-1 text-[10px]" style={{ color: mathTheme.textDim }}>
-                Drag to orbit · scroll to zoom · right-click to pan
+            {meta.formulas.length > 0 && (
+              <div className="mt-0.5 space-y-0.5 text-xs" style={{ color: mathTheme.textDim }}>
+                {meta.formulas.map((f, i) => (<div key={i}><MathRenderer content={f} /></div>))}
               </div>
             )}
           </div>
         </div>
+        )}
 
-        <button
-          onClick={saveInsight}
-          className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-100 text-xs font-medium transition-colors"
-        >
-          <Bookmark className="h-3.5 w-3.5" /> Save to Notebook
-        </button>
+        {/* The picture gets a floor. Every other row in this column can compress or scroll; this one
+            is what the panel is for, so it keeps a usable height and the rows around it give way. */}
+        <div data-viz-stage className="relative min-h-[150px] flex-1">
+          {isScene ? (
+            <SceneErrorBoundary resetKey={payload}>
+              <Scene3D
+                spec={scene3dSpec}
+                params={params}
+                onParam={(key, value) => setParams((p) => ({ ...p, [key]: value }))}
+                theme={vizTheme}
+                lockFinalStep={lockFinalStep}
+              />
+            </SceneErrorBoundary>
+          ) : (
+            <SimulationFactory payload={payload as SimulationPayload} params={params} />
+          )}
+        </div>
 
         {/* Visualization history strip — AI-emitted vizzes the student can scrub back through */}
         {history.length > 0 && (
           <div
-            className="absolute left-3 right-3 flex gap-2 overflow-x-auto pb-1 pt-2"
-            style={{
-              bottom: sliders.length > 0 ? 92 : 12,
-              scrollbarWidth: "thin",
-            }}
+            data-viz-history
+            className="flex shrink-0 gap-2 overflow-x-auto border-t px-3 py-1.5"
+            style={{ borderColor: mathTheme.grid, scrollbarWidth: "thin" }}
           >
             {history.map((h, idx) => {
               const active = h.id === activeVizId;
@@ -444,7 +454,7 @@ export default function MathTheater({
 
         {/* Dynamic sliders from payload */}
         {sliders.length > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-sm bg-black/40 border-t" style={{ borderColor: mathTheme.grid }}>
+          <div data-viz-sliders className="shrink-0 border-t px-4 py-2.5" style={{ borderColor: mathTheme.grid, background: "rgba(0,0,0,0.22)" }}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]" style={{ color: mathTheme.text }}>
               {sliders.map((s) => {
                 const raw = params[s.key] ?? s.default;
