@@ -355,7 +355,11 @@ Order in your reply: short prose → <scene-request> (only when earned) → <cho
     }
 
     return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      // TEMP DIAGNOSTIC (2026-08-14): names which provider actually served this turn, visible in
+      // the browser Network tab, so a "still hitting Lovable" report can be confirmed instead of
+      // guessed at. Leaks no secret — provider name only. Remove once GCP_EXPRESS_API_KEY routing
+      // is confirmed working end-to-end.
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-AI-Provider": ai.provider },
     });
   } catch (e) {
     console.error("chat error:", e);
