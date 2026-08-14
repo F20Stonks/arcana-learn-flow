@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 // author-syllabus-tree — builds the topic/subtopic decomposition for a learning goal, and caches it
 // globally when the goal names a real external syllabus. See docs/syllabus-tree-layer.md.
 //
@@ -44,7 +45,6 @@ import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 import { chunkText, getTavilyKey } from "../_shared/specSearch.ts";
 import { resolveSpecDocumentCached } from "../_shared/specDocumentCache.ts";
 import {
-import { aiFetch } from "../_shared/aiFetch.ts";
   countSubtopics,
   hasCanonicalIdentity,
   MAX_SUBTOPICS_PER_TOPIC,

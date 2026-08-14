@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 // Authors — and globally caches — the lesson plan for one subtopic. See docs/lesson-plan-layer.md.
 //
 // The economics are the point: this is ONE expensive call per subtopic EVER, amortised across every
@@ -12,7 +13,6 @@ import { getAIConfig } from "../_shared/aiConfig.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import {
-import { aiFetch } from "../_shared/aiFetch.ts";
   hasPlanIdentity,
   LESSON_PLAN_VERSION,
   planSignature,

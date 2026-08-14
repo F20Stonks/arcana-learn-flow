@@ -1,8 +1,8 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import {
-import { aiFetch } from "../_shared/aiFetch.ts";
   hasPlanIdentity,
   LESSON_PLAN_VERSION,
   type LessonPlan,
