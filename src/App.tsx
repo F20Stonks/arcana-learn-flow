@@ -16,6 +16,9 @@ import SessionPage from "./pages/SessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReferenceQuestions from "./pages/ReferenceQuestions";
 import ResourceBank from "./pages/ResourceBank";
+import ConceptsPage from "./pages/ConceptsPage";
+import MapPage from "./pages/MapPage";
+import ReviewCalendarPage from "./pages/ReviewCalendarPage";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import NotFound from "./pages/NotFound";
@@ -93,6 +96,11 @@ function AppRoutes() {
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
       <Route path="/resource-bank" element={<ProtectedRoute><ResourceBank /></ProtectedRoute>} />
+      {/* The Knowledge group. These were tabs inside a right-hand slide-over; they're routes now so
+          they can be linked, refreshed and navigated back out of like anything else. */}
+      <Route path="/concepts" element={<DashboardGuard><ConceptsPage /></DashboardGuard>} />
+      <Route path="/map" element={<DashboardGuard><MapPage /></DashboardGuard>} />
+      <Route path="/reviews" element={<DashboardGuard><ReviewCalendarPage /></DashboardGuard>} />
       <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />

@@ -11,9 +11,9 @@
  * identity, instrument readouts and the account. Destinations are always named in text, never
  * icon-only, because an unlabelled icon is how a feature becomes invisible.
  *
- * Hub tabs (Concepts / Competence / Reviews) are addressed as first-class sidebar destinations even
- * though they still open the Hub panel — the panel is an implementation detail, the destination is
- * the promise. When they graduate to their own routes the sidebar entries stay put.
+ * The Knowledge group (Concepts / Map / Review Calendar) used to be three tabs of a right-hand
+ * slide-over addressed as sidebar destinations. They are their own routes now, so those entries
+ * behave like every other one: a URL, a back button, something to refresh into.
  */
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -38,7 +38,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/hooks/useAuth";
 import { useDueReviewCount } from "@/hooks/useDueReviewCount";
 import CustomizeMenu from "@/components/CustomizeMenu";
-import HubSidebar, { HubTab } from "@/components/HubSidebar";
 import SafeBoundary from "@/components/SafeBoundary";
 
 const COLLAPSE_KEY = "cortexed.sidebarCollapsed";
@@ -63,9 +62,7 @@ function BrandMark() {
 type NavItem = {
   label: string;
   icon: typeof Home;
-  /** Either a route to navigate to, or a Hub tab to open. */
-  to?: string;
-  hub?: HubTab;
+  to: string;
   /** Extra routes that should also light this item up as current. */
   match?: (path: string) => boolean;
   badge?: number;
@@ -79,11 +76,14 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       items: [{ label: "Home", icon: Home, to: "/dashboard", match: (p) => p.startsWith("/dashboard") || p.startsWith("/track/") }],
     },
     {
+      // These three were tabs in a right-hand slide-over. They're real routes now: a sheet has no
+      // URL, no back button and nothing to refresh into, which is the wrong container for a
+      // searchable list, a graph and a calendar.
       heading: "Knowledge",
       items: [
-        { label: "Competence", icon: Network, hub: "map" },
-        { label: "Concepts", icon: Brain, hub: "knowledge" },
-        { label: "Reviews", icon: CalendarDays, hub: "calendar", badge: dueReviews },
+        { label: "Concepts", icon: Brain, to: "/concepts" },
+        { label: "Map", icon: Network, to: "/map" },
+        { label: "Review Calendar", icon: CalendarDays, to: "/reviews", badge: dueReviews },
       ],
     },
     {
@@ -116,8 +116,6 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
 
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [hubOpen, setHubOpen] = useState(false);
-  const [hubTab, setHubTab] = useState<HubTab>("knowledge");
   const [peek, setPeek] = useState(false);
 
   useEffect(() => {
@@ -141,26 +139,14 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
     return () => window.removeEventListener("keydown", onKey);
   }, [focusMode]);
 
-  const openHub = (tab: HubTab) => {
-    setHubTab(tab);
-    setHubOpen(true);
-    setMobileOpen(false);
-  };
-
   const go = (item: NavItem) => {
-    if (item.hub) return openHub(item.hub);
-    if (item.to) {
-      navigate(item.to);
-      setMobileOpen(false);
-      if (focusMode) setPeek(false);
-    }
+    navigate(item.to);
+    setMobileOpen(false);
+    if (focusMode) setPeek(false);
   };
 
-  const isCurrent = (item: NavItem) => {
-    if (item.hub) return hubOpen && hubTab === item.hub;
-    if (!item.to) return false;
-    return item.match ? item.match(location.pathname) : location.pathname.startsWith(item.to);
-  };
+  const isCurrent = (item: NavItem) =>
+    item.match ? item.match(location.pathname) : location.pathname.startsWith(item.to);
 
   const streak = profile?.weekly_streak ?? 0;
   const points = profile?.total_xp ?? 0;
@@ -374,11 +360,6 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* The Hub panel, driven entirely by the sidebar now — no unlabelled icon owns it. */}
-      <SafeBoundary label="Hub" compact>
-        <HubSidebar open={hubOpen} onOpenChange={setHubOpen} tab={hubTab} onTabChange={setHubTab} />
-      </SafeBoundary>
     </div>
   );
 }

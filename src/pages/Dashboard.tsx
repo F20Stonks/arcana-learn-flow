@@ -20,7 +20,8 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ChevronRight, Trash2, Loader2, MessageCircle } from "lucide-react";
+import { Plus, ChevronRight, Trash2, Loader2, MessageCircle, Maximize2, Minimize2, Minus, ChevronUp } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+/**
+ * How the "Ask Cortexed" panel is sized. `minimized` persists (it's a standing preference about
+ * how you want your dashboard laid out); `fullscreen` deliberately does NOT — reopening the app
+ * into a full-screen chat you set up days ago would be a surprise, so it resets to `normal`.
+ */
+type ChatMode = "normal" | "minimized" | "fullscreen";
+const CHAT_MODE_KEY = "cortexed.dashboardChatMinimized";
 
 // Lifted out of UpNextCard: the greeting is now a page-level heading above the hero row, so the
 // empty state gets the same one instead of its own separate "Welcome, …".
@@ -70,6 +79,32 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [chatMode, setChatMode] = useState<ChatMode>(() =>
+    localStorage.getItem(CHAT_MODE_KEY) === "1" ? "minimized" : "normal",
+  );
+
+  useEffect(() => {
+    if (chatMode !== "fullscreen") localStorage.setItem(CHAT_MODE_KEY, chatMode === "minimized" ? "1" : "0");
+  }, [chatMode]);
+
+  // Escape leaves fullscreen, and the page behind it is locked so exiting doesn't drop you at a
+  // different scroll position than you left. Guarded on `typing` so Escape in the chat input
+  // doesn't yank the panel out from under you mid-question.
+  useEffect(() => {
+    if (chatMode !== "fullscreen") return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      if (e.key === "Escape" && !typing) setChatMode("normal");
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [chatMode]);
 
   useEffect(() => {
     if (!user) return;
@@ -228,8 +263,14 @@ export default function Dashboard() {
 
         {/* Hero row: what to do next on the left, the always-open chat on the right. Both columns
             stretch to the taller of the two so they read as one instrument panel; below lg the
-            chat stacks underneath rather than squeezing the session title into two words a line. */}
-        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+            chat stacks underneath rather than squeezing the session title into two words a line.
+            When the chat is minimised the row drops to one column so up-next takes the full width;
+            when it's fullscreen the aside leaves the flow entirely (see chatMode). */}
+        <div
+          className={`grid grid-cols-1 items-stretch gap-5 ${
+            chatMode === "normal" ? "lg:grid-cols-[minmax(0,1fr)_360px]" : ""
+          }`}
+        >
           <div className="min-w-0">
             {plan ? (
               <UpNextCard plan={plan} />
@@ -253,16 +294,67 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* One <aside>, three shapes — deliberately NOT a portal and never unmounted. Rendering
+              fullscreen through a portal would give GeneralChat a new parent, React would remount
+              it, and the conversation so far would be thrown away by the act of enlarging it. So
+              fullscreen is just `fixed inset-0` on this same element, and minimised keeps it
+              mounted behind a collapsed header. */}
           <aside
-            className="reveal glass-card flex min-h-[420px] flex-col overflow-hidden rounded-3xl border-border"
-            style={{ animationDelay: "120ms" }}
+            className={
+              chatMode === "fullscreen"
+                ? "fixed inset-0 z-50 flex flex-col overflow-hidden border-0 bg-background"
+                : `reveal glass-card flex flex-col overflow-hidden rounded-3xl border-border ${
+                    chatMode === "minimized" ? "" : "min-h-[420px]"
+                  }`
+            }
+            style={chatMode === "fullscreen" ? undefined : { animationDelay: "120ms" }}
             aria-label="Ask Cortexed"
           >
-            <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
-              <MessageCircle className="h-4 w-4 text-primary" />
-              <h2 className="text-[14px] font-medium text-foreground">Ask Cortexed</h2>
+            <div
+              className={`flex items-center gap-2 px-5 py-3.5 ${
+                chatMode === "minimized" ? "" : "border-b border-border"
+              } ${chatMode === "fullscreen" ? "mx-auto w-full max-w-3xl" : ""}`}
+            >
+              <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
+              <h2 className="flex-1 truncate text-[14px] font-medium text-foreground">Ask Cortexed</h2>
+
+              {chatMode !== "minimized" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setChatMode(chatMode === "fullscreen" ? "normal" : "fullscreen")}
+                      aria-label={chatMode === "fullscreen" ? "Exit fullscreen" : "Fullscreen"}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      {chatMode === "fullscreen" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{chatMode === "fullscreen" ? "Exit fullscreen" : "Fullscreen"}</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Available in every mode, fullscreen included — "minimise anytime". */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setChatMode(chatMode === "minimized" ? "normal" : "minimized")}
+                    aria-label={chatMode === "minimized" ? "Open chat" : "Minimise chat"}
+                    aria-expanded={chatMode !== "minimized"}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    {chatMode === "minimized" ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{chatMode === "minimized" ? "Open chat" : "Minimise"}</TooltipContent>
+              </Tooltip>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col p-4">
+
+            {/* `hidden` rather than unmounted, for the same reason as the portal note above. */}
+            <div
+              className={`min-h-0 flex-1 flex-col p-4 ${chatMode === "minimized" ? "hidden" : "flex"} ${
+                chatMode === "fullscreen" ? "mx-auto w-full max-w-3xl" : ""
+              }`}
+            >
               <SafeBoundary label="Cortexed chat">
                 <GeneralChat fill />
               </SafeBoundary>
