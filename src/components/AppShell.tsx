@@ -295,12 +295,20 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
 
       <div className="flex">
         {/* ── Desktop rail ─────────────────────────────────────────────────────────── */}
+        {/* Position is set in exactly ONE branch. The previous version applied `sticky` unconditionally
+            and added `fixed` on top of it for focus mode — and Tailwind emits `sticky` AFTER `fixed`,
+            so `sticky` won. The rail therefore stayed in normal flow at its full width during a
+            session, reserving a blank 212px (68px collapsed) gutter down the left of the canvas while
+            `-translate-x-full` slid only its CONTENTS out of view. Focus mode must take the rail out
+            of flow entirely, or "focus" costs the student a sixth of the screen for nothing. */}
         <aside
-          className={`sticky z-30 hidden shrink-0 flex-col border-r border-border bg-background/60 backdrop-blur-xl transition-[width] duration-200 lg:flex ${
-            focusMode ? "top-0 h-screen" : "top-14 h-[calc(100vh-3.5rem)]"
-          } ${collapsed ? "w-[68px]" : "w-[212px]"} ${
-            focusMode ? (peek ? "fixed left-0 translate-x-0 shadow-2xl" : "fixed left-0 -translate-x-full") : ""
-          } ${focusMode ? "transition-transform duration-200" : ""}`}
+          className={`z-30 hidden shrink-0 flex-col border-r border-border bg-background/60 backdrop-blur-xl transition-[width] duration-200 lg:flex ${
+            focusMode
+              ? `fixed left-0 top-0 h-screen transition-transform duration-200 ${
+                  peek ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+                }`
+              : "sticky top-14 h-[calc(100vh-3.5rem)]"
+          } ${collapsed ? "w-[68px]" : "w-[212px]"}`}
           aria-hidden={focusMode && !peek}
         >
           <NavList iconOnly={collapsed} />
