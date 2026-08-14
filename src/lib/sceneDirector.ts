@@ -3,6 +3,9 @@ import type { SceneSpec } from "./sceneSpec";
 import { isSceneSpec, sanitizeScene } from "./sceneSpec";
 import { extractViz, parseModelJson } from "./vizExtract";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
+import { validateScene, type ValidationReport } from "./sceneValidate";
+import { mechanicalRepair, type RepairAction } from "./sceneRepair";
+import { logSceneOutcome, type SceneOutcome } from "./sceneOutcomeLog";
 
 /**
  * The Scene Director: a dedicated call that turns a one-line scene request
@@ -128,6 +131,9 @@ export interface DirectSceneRequest {
   level?: string;
   /** last couple of conversation turns, for level/tone grounding */
   recentTranscript?: string;
+  /** attribution for the scene_outcomes row; omitting them costs only telemetry detail */
+  sessionId?: string | null;
+  subtopicId?: string | null;
 }
 
 /**
@@ -200,6 +206,53 @@ async function streamSceneOnce(userContent: string): Promise<{ acc: string; scen
   return { acc, scene: parseDirectorResponse(acc) };
 }
 
+/**
+ * Rung 3: hand the model its own broken scene together with the exact validator errors.
+ *
+ * Exactly ONE attempt, on purpose. A model that cannot fix a named compile error with that error
+ * quoted in front of it will not fix it on the third ask either, and every extra call is latency the
+ * student spends looking at an empty canvas. This is also the only rung of the ladder that costs
+ * anything, which is why it sits below the free mechanical pass rather than above it.
+ */
+async function modelRepairOnce(scene: SceneSpec, report: ValidationReport): Promise<SceneSpec | null> {
+  const problems = [
+    ...report.exprIssues.map(
+      (i) => `- ${i.where} → ${i.kind}${i.detail ? ` (${i.detail})` : ""} · expression: ${i.expr}`,
+    ),
+    ...report.flags.map((f) => `- flag: ${f}`),
+  ].join("\n");
+
+  const userContent = `The scene below FAILED deterministic validation. Return the CORRECTED scene.
+
+PROBLEMS FOUND:
+${problems}
+
+RULES FOR THE FIX:
+- Keep the teaching intent, the objects, and the manipulables wherever they are already valid.
+- Change only what is broken. Do NOT simplify or strip the scene to make validation easy — a
+  degenerate scene that validates is a worse failure than the one you were given.
+- Every expression must parse under mathjs and evaluate finite at the scene's default state.
+
+BROKEN SCENE:
+${JSON.stringify(scene)}`;
+
+  const { scene: fixed } = await streamSceneOnce(userContent);
+  return fixed;
+}
+
+/**
+ * Authors a scene, then walks it down a ladder of increasingly expensive recoveries, recording which
+ * rung it exited on. Before this, a scene either parsed or vanished — and a scene that parsed was
+ * shown to the student whether or not its expressions actually evaluated, because nothing checked.
+ *
+ *   0  author (with the truncation retry below)
+ *   1  validate — clean scenes return immediately, which is the overwhelmingly common path
+ *   2  mechanical repair — free, deterministic, drops only what is provably broken
+ *   3  one model repair call — the only rung that costs anything
+ *   4  give up rather than render a scene known to be invalid
+ *
+ * Returning null still means "no new scene" to every caller, so nothing upstream changes.
+ */
 export async function directScene(req: DirectSceneRequest): Promise<SceneSpec | null> {
   const userContent = `SCENE REQUEST from the tutor:
 ${req.request}
@@ -207,21 +260,50 @@ ${req.request}
 Lesson context: subject=${req.subject ?? "maths"} · topic=${req.topic ?? "-"} · subtopic=${req.subtopic ?? "-"} · level=${req.level ?? "-"}
 ${req.recentTranscript ? `Recent conversation (for level/tone — do NOT teach, just scale the scene):\n${req.recentTranscript}` : ""}`;
 
-  // The free gateway intermittently truncates a long scene stream mid-JSON
-  // (measured: a rich scene that opens <scene> but never closes it). That is
-  // NOT a model-competence failure — the same request succeeds on a retry — so
-  // a truncated/empty response is retried with a short backoff before we give
-  // up. Without this, exactly the richest scenes (the ones worth showing) were
-  // the ones silently dropped. Up to 3 attempts.
+  let attempts = 0;
+  const finish = (
+    scene: SceneSpec | null,
+    outcome: SceneOutcome,
+    rung: number,
+    report?: ValidationReport,
+    actions?: RepairAction[],
+  ): SceneSpec | null => {
+    // Deliberately not awaited: telemetry must never sit between the student and their scene.
+    void logSceneOutcome({
+      request: req.request,
+      outcome,
+      rung,
+      sessionId: req.sessionId,
+      subtopicId: req.subtopicId,
+      hardFail: report?.hardFail ?? false,
+      flags: report?.flags,
+      issueKinds: report ? [...new Set(report.exprIssues.map((i) => i.kind))] : [],
+      repairActions: (actions ?? []).map((a) => `${a.kind}: ${a.detail}`),
+      primCount: scene?.objects.length ?? report?.primCount ?? null,
+      attempts,
+    });
+    return scene;
+  };
+
+  // ---- rung 0: authorship ------------------------------------------------
+  // The gateway intermittently truncates a long scene stream mid-JSON (measured: a rich scene that
+  // opens <scene> but never closes it). That is NOT a model-competence failure — the same request
+  // succeeds on a retry — so a truncated/empty response is retried with a short backoff. Without
+  // this, exactly the richest scenes were the ones silently dropped.
+  let authored: SceneSpec | null = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
+    attempts = attempt;
     try {
       const { acc, scene } = await streamSceneOnce(userContent);
-      if (scene) return scene;
+      if (scene) {
+        authored = scene;
+        break;
+      }
       const truncated = acc.includes("<scene>") && !acc.includes("</scene>");
       if (!truncated && acc.trim().length > 0) {
         // A complete but unparsable response won't improve on retry — stop.
         console.warn("[scene-director] no usable scene in response; head:", acc.slice(0, 120));
-        return null;
+        break;
       }
       console.warn(`[scene-director] ${truncated ? "truncated" : "empty"} stream, attempt ${attempt}/3 — retrying`);
     } catch {
@@ -229,5 +311,40 @@ ${req.recentTranscript ? `Recent conversation (for level/tone — do NOT teach, 
     }
     if (attempt < 3) await new Promise((r) => setTimeout(r, 1200 * attempt));
   }
-  return null;
+  if (!authored) return finish(null, "no-scene", 0);
+
+  // ---- rung 1: deterministic validation ----------------------------------
+  const report = validateScene(authored, 0);
+  if (!report.hardFail) return finish(authored, "clean", 1, report);
+  console.warn("[scene-director] scene failed validation:", report.exprIssues.map((i) => `${i.where}:${i.kind}`).join(", "));
+
+  // ---- rung 2: mechanical repair (free) ----------------------------------
+  const { scene: repaired, actions } = mechanicalRepair(authored, report);
+  const afterRepair = validateScene(repaired, 0);
+  if (!afterRepair.hardFail && repaired.objects.length > 0) {
+    // Pruning can leave a scene technically valid but too thin to teach anything. Worth recording
+    // separately: it renders, so it is not a failure, but it is not a win either.
+    const thin = repaired.objects.length < 2;
+    return finish(repaired, thin ? "degraded" : "repaired", 2, afterRepair, actions);
+  }
+
+  // ---- rung 3: one model repair call -------------------------------------
+  let modelFixed: SceneSpec | null = null;
+  try {
+    modelFixed = await modelRepairOnce(authored, report);
+  } catch {
+    /* repair is best-effort; fall through to giving up */
+  }
+  if (modelFixed) {
+    const afterModel = validateScene(modelFixed, 0);
+    if (!afterModel.hardFail && modelFixed.objects.length > 0) {
+      return finish(modelFixed, "model-repaired", 3, afterModel);
+    }
+  }
+
+  // ---- rung 4: refuse to render something known to be broken --------------
+  // The target is "no missing OR INACCURATE visualisations". A scene whose expressions provably do
+  // not evaluate is the inaccurate half of that, so it is not shown at all.
+  console.warn("[scene-director] scene unrecoverable after mechanical + model repair — showing nothing");
+  return finish(null, "failed", 4, report, actions);
 }

@@ -1,5 +1,11 @@
 /**
- * Deterministic scene validation — the non-LLM half of the grader.
+ * Deterministic scene validation.
+ *
+ * This lives in src/lib, not in the harness, because PRODUCTION runs it now: a scene is validated
+ * before a student ever sees it (see sceneRepair.ts and directScene's ladder). The coverage harness
+ * imports this same module, so the offline grader and the live app can never drift apart in what
+ * they consider a valid scene.
+ *
  * Catches the failures no rubric should have to argue about:
  *   - expressions that don't compile or throw at runtime (mathjs, same
  *     engine the renderer uses);
@@ -11,8 +17,8 @@
  *   - no manipulable at all (slider/drag/time) — the Director's own mandate.
  */
 import { create, all } from "mathjs";
-import type { SceneSpec, Primitive } from "../../src/lib/sceneSpec";
-import { resolveChoreography } from "../../src/lib/choreo";
+import type { SceneSpec, Primitive } from "./sceneSpec";
+import { resolveChoreography } from "./choreo";
 
 const math = create(all, {});
 
@@ -21,6 +27,11 @@ export interface ExprIssue {
   expr: string;
   kind: "compile-error" | "runtime-error" | "nan-at-default";
   detail?: string;
+  /** Index path to the owning primitive (`objects[2].children[0]` -> [2, 0]). Present for issues
+   *  raised from a primitive's own fields, absent for scene-level ones. This is what lets the
+   *  mechanical repair pass prune EXACTLY the broken object instead of failing the whole scene —
+   *  `where` alone is kind-based ("curve.x") and cannot distinguish two curves. */
+  path?: number[];
 }
 
 export interface ValidationReport {
@@ -44,15 +55,20 @@ interface ExprCtx {
   samples: Array<Record<string, number>>;
   /** NaN at these samples is tolerated (curves break at asymptotes by design) */
   nanOk?: boolean;
+  /** index path of the primitive this expression belongs to — see ExprIssue.path */
+  path?: number[];
 }
 
 const ACCENT = "#fbbf24";
 
-function walkPrims(prims: Primitive[], visit: (p: Primitive) => void) {
-  for (const p of prims) {
-    visit(p);
-    if (p.kind === "group") walkPrims(p.children ?? [], visit);
-  }
+/** Visits every primitive depth-first, passing the index path that reaches it — `[2, 0]` means
+ *  `objects[2].children[0]`. Existing callers that ignore the second argument are unaffected. */
+export function walkPrims(prims: Primitive[], visit: (p: Primitive, path: number[]) => void, base: number[] = []) {
+  prims.forEach((p, i) => {
+    const path = [...base, i];
+    visit(p, path);
+    if (p.kind === "group") walkPrims(p.children ?? [], visit, path);
+  });
 }
 
 export function validateScene(scene: SceneSpec, droppedBySanitizer: number): ValidationReport {
@@ -100,14 +116,30 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
     });
   };
 
-  walkPrims(scene.objects, (p) => {
+  walkPrims(scene.objects, (p, path) => {
     const w = p.kind;
+    // Everything this visit pushes belongs to THIS primitive; tagged by range at the end rather than
+    // threaded through each individual push site.
+    const ctxStart = ctxs.length;
     switch (p.kind) {
       case "point":
         pushTriple(`${w}.at`, p.at);
         break;
       case "points": {
-        const iSamples = [0, Math.floor((p.count - 1) / 2), p.count - 1].map((i) => ({ ...baseScope, i }));
+        // `count` may itself be an expression (the live-count family, where the family grows with a
+        // slider). Arithmetic straight on it produced NaN sample indices, so every expression reading
+        // `i` evaluated to NaN and got reported as `nan-at-default` — a FALSE hard-failure on exactly
+        // the dynamic scenes this primitive exists for. Resolve it the same way the bars case does.
+        let cnt = typeof p.count === "number" ? p.count : 0;
+        if (typeof p.count === "string") {
+          try {
+            cnt = Math.round(Number(math.evaluate(p.count, { ...baseScope })) || 0);
+          } catch {
+            cnt = 0; // unevaluable count is reported separately as an expression issue below
+          }
+        }
+        const idx = cnt > 1 ? [0, Math.floor((cnt - 1) / 2), cnt - 1] : [0];
+        const iSamples = idx.map((i) => ({ ...baseScope, i }));
         for (const key of ["x", "y", "z", "colorBy"] as const) {
           const e = p[key];
           if (typeof e === "string") ctxs.push({ where: `${w}.${key}`, expr: e, samples: iSamples });
@@ -214,6 +246,7 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
         });
         break;
     }
+    for (let k = ctxStart; k < ctxs.length; k++) ctxs[k].path ??= path;
   });
 
   // ---- evaluate everything ----
@@ -235,6 +268,7 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
         expr: c.expr,
         kind: "compile-error",
         detail: e instanceof Error ? e.message : String(e),
+        path: c.path,
       });
       continue;
     }
@@ -257,12 +291,13 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
           expr: c.expr,
           kind: "runtime-error",
           detail: e instanceof Error ? e.message : String(e),
+          path: c.path,
         });
         break;
       }
     }
     if (nanAtDefault) {
-      exprIssues.push({ where: c.where, expr: c.expr, kind: "nan-at-default" });
+      exprIssues.push({ where: c.where, expr: c.expr, kind: "nan-at-default", path: c.path });
     }
   }
 

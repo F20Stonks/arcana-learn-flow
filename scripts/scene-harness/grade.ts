@@ -13,7 +13,7 @@ import { callChatFn } from "./director";
 import { parseModelJson } from "../../src/lib/vizExtract";
 import type { SceneSpec } from "../../src/lib/sceneSpec";
 import type { BatteryConcept } from "./battery";
-import type { ValidationReport } from "./validate";
+import type { ValidationReport } from "../../src/lib/sceneValidate";
 
 export const FAILURE_CLASSES = [
   "off-concept", // scene is about something else

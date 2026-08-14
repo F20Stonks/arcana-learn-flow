@@ -1219,6 +1219,8 @@ Return ONLY a JSON object — no prose, no markdown fences:
               subtopic: subtopic?.title,
               level: track?.level ?? undefined,
               recentTranscript: recent,
+              sessionId,
+              subtopicId,
             });
             if (!scene) return;
             const id = `${Date.now()}-dir`;

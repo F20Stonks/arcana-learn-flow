@@ -15,7 +15,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BATTERY, type BatteryConcept } from "./battery";
 import { runDirector } from "./director";
-import { validateScene, type ValidationReport } from "./validate";
+import { validateScene, type ValidationReport } from "../../src/lib/sceneValidate";
 import { gradeScene, type Grade } from "./grade";
 import type { SceneSpec } from "../../src/lib/sceneSpec";
 
