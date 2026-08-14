@@ -15,8 +15,6 @@ const ACCENTS: { name: string; hsl: string }[] = [
   { name: "Violet", hsl: "hsl(270 84% 67%)" },
 ];
 
-const EMOJIS = ["🧠", "🚀", "🦊", "🐙", "🪐", "⚡", "🌱", "🔥", "🌙", "🎯"];
-
 /**
  * Tailwind v4 moved the design tokens from bare HSL triplets ("239 84% 67%", wrapped by the
  * config as `hsl(var(--primary))`) to complete colour values. Accents saved under the old
@@ -38,7 +36,6 @@ export default function CustomizeMenu() {
   const { user, profile, refreshProfile } = useAuth();
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
-  const [emoji, setEmoji] = useState(profile?.avatar_url || "🧠");
   const [accent, setAccent] = useState<string>(() => {
     const stored = localStorage.getItem("cortexed_accent");
     return stored ? normalizeAccent(stored) : ACCENTS[0].hsl;
@@ -48,7 +45,6 @@ export default function CustomizeMenu() {
 
   useEffect(() => {
     setDisplayName(profile?.display_name || "");
-    setEmoji(profile?.avatar_url || "🧠");
   }, [profile]);
 
   const applyAccent = (hsl: string) => {
@@ -71,9 +67,13 @@ export default function CustomizeMenu() {
   const save = async () => {
     if (!user) return;
     setSaving(true);
+    // Deliberately does NOT touch avatar_url. This menu used to write an emoji into that column,
+    // but SettingsPage renders the same column as an <img src> under an "Avatar URL" field — two
+    // features fighting over one value, so picking an emoji here left a broken image there.
+    // Identity (name, avatar) belongs to Settings; this menu is appearance only.
     await supabase
       .from("profiles")
-      .update({ display_name: displayName.trim() || null, avatar_url: emoji })
+      .update({ display_name: displayName.trim() || null })
       .eq("user_id", user.id);
     await refreshProfile();
     setSaving(false);
@@ -171,23 +171,6 @@ export default function CustomizeMenu() {
                     placeholder="Your name"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-hidden focus:border-primary"
                   />
-                </div>
-
-                <div>
-                  <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Avatar</label>
-                  <div className="flex flex-wrap gap-2">
-                    {EMOJIS.map((e) => (
-                      <button
-                        key={e}
-                        onClick={() => setEmoji(e)}
-                        className={`h-10 w-10 rounded-lg border text-xl flex items-center justify-center transition-colors ${
-                          emoji === e ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
-                        }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div>

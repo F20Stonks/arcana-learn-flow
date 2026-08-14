@@ -11,14 +11,16 @@
  *    never did either)
  *  - an empty state for a brand-new user with zero tracks (Manus always had 5)
  *  - real archive/delete, with the existing destructive-action confirmation dialog
- *  - the GeneralChat panel "Ask Cortexed" opens, and the Hub/Customize/Settings/Sign-out
- *    icons in CommandBar actually do something (see that file)
+ *  - a real "Ask Cortexed" chat column beside the hero (Manus had a toast() stub; this was
+ *    briefly a button that toggled a panel below, which hid the app's one general-purpose
+ *    chat behind a click), and the Hub/Customize/Settings/Sign-out icons in CommandBar
+ *    actually do something (see that file)
  * The tracks grid, ghost "new track" card, and archived toggle are otherwise Manus's exact
  * markup — only the data feeding them is real.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ChevronRight, Trash2, Loader2 } from "lucide-react";
+import { Plus, ChevronRight, Trash2, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +30,6 @@ import UpNextCard from "@/components/UpNextCard";
 import TrackCard from "@/components/TrackCard";
 import GeneralChat from "@/components/GeneralChat";
 import SafeBoundary from "@/components/SafeBoundary";
-import QuestionBankCard from "@/components/QuestionBankCard";
 import { SubtopicLite, TrackLite } from "@/lib/nextAction";
 import { useNextAction } from "@/hooks/useNextAction";
 import {
@@ -41,6 +42,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Lifted out of UpNextCard: the greeting is now a page-level heading above the hero row, so the
+// empty state gets the same one instead of its own separate "Welcome, …".
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "Working late";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 type Track = Tables<"learning_tracks"> & {
   topicCount: number;
@@ -58,7 +69,6 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
 
   useEffect(() => {
@@ -211,33 +221,54 @@ export default function Dashboard() {
           </div>
         )}
 
-        {plan ? (
-          <UpNextCard plan={plan} displayName={profile?.display_name || "learner"} onToggleChat={() => setChatOpen((v) => !v)} />
-        ) : (
-          <section className="reveal" style={{ animationDelay: "60ms" }}>
-            <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
-              Welcome, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
-            </h1>
-            <p className="mt-1 text-[15px] text-muted-foreground">
-              {activeTracks.length > 0 ? "Every session is complete — add something new whenever you're ready." : "Choose what you're studying and a complete path is built for you."}
-            </p>
-            <button
-              onClick={() => navigate("/onboarding?new=1")}
-              className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              New track
-            </button>
-          </section>
-        )}
+        {/* Greeting — one page-level heading above the hero row, whether or not there's a plan */}
+        <h1 className="reveal font-display mb-6 text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
+          {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
+        </h1>
 
-        {chatOpen && (
-          <section className="glass-card reveal mt-6 rounded-2xl p-6">
-            <SafeBoundary label="Cortexed chat">
-              <GeneralChat />
-            </SafeBoundary>
-          </section>
-        )}
+        {/* Hero row: what to do next on the left, the always-open chat on the right. Both columns
+            stretch to the taller of the two so they read as one instrument panel; below lg the
+            chat stacks underneath rather than squeezing the session title into two words a line. */}
+        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0">
+            {plan ? (
+              <UpNextCard plan={plan} />
+            ) : (
+              <section className="reveal flex h-full flex-col" style={{ animationDelay: "60ms" }}>
+                <div className="glass-card flex flex-1 flex-col items-start justify-center rounded-3xl border-border p-7 sm:p-10">
+                  <p className="text-[15px] text-muted-foreground">
+                    {activeTracks.length > 0
+                      ? "Every session is complete — add something new whenever you're ready."
+                      : "Choose what you're studying and a complete path is built for you."}
+                  </p>
+                  <button
+                    onClick={() => navigate("/onboarding?new=1")}
+                    className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New track
+                  </button>
+                </div>
+              </section>
+            )}
+          </div>
+
+          <aside
+            className="reveal glass-card flex min-h-[420px] flex-col overflow-hidden rounded-3xl border-border"
+            style={{ animationDelay: "120ms" }}
+            aria-label="Ask Cortexed"
+          >
+            <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
+              <MessageCircle className="h-4 w-4 text-primary" />
+              <h2 className="text-[14px] font-medium text-foreground">Ask Cortexed</h2>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col p-4">
+              <SafeBoundary label="Cortexed chat">
+                <GeneralChat fill />
+              </SafeBoundary>
+            </div>
+          </aside>
+        </div>
 
         {/* Learning tracks */}
         <section className="mt-16">
@@ -300,18 +331,12 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Practice — corpus-wide surfaces that aren't scoped to any one track. */}
-        <section className="mt-12">
-          <div className="reveal mb-4" style={{ animationDelay: "520ms" }}>
-            <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
-              Practice <span className="font-serif-accent font-normal">papers</span>
-            </h2>
-          </div>
-          <SafeBoundary label="STEP question bank" compact>
-            <QuestionBankCard delay={560} />
-          </SafeBoundary>
-        </section>
-
+        {/* A "Practice papers" section used to sit here holding exactly one card, which opened the
+            QUESTION BANK — a heading that named one thing and linked to another. Both destinations
+            already have permanent homes: the question bank is a sidebar entry under Practice, and
+            per-track papers are a chip on each TrackCard. Removed rather than relabelled, so the
+            dashboard stays "what's next + my tracks" instead of a third copy of the nav.
+            (QuestionBankCard.tsx is still in the repo if this should come back.) */}
         {/* Archived */}
         {archivedTracks.length > 0 && (
           <section className="reveal mt-12" style={{ animationDelay: "600ms" }}>

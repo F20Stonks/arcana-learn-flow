@@ -47,7 +47,10 @@ function toApiContent(m: ChatMessage): string | Array<Record<string, unknown>> {
 // Self-contained general-purpose Q&A chat, wired to the `chat` edge function with no session
 // context. Lives on the Dashboard now (moved out of the Hub sidebar, which cramped it). Accepts
 // an attached image (e.g. a photo of a homework problem) alongside the question.
-export default function GeneralChat() {
+//
+// `fill` is for the Dashboard's always-open side panel: instead of the self-sizing
+// max-h-72 transcript, the transcript takes whatever height the parent gives it.
+export default function GeneralChat({ fill = false }: { fill?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", content: "Ask me anything — about a specific topic, general study strategy, or what to focus on next. You can attach a photo of a problem too." },
   ]);
@@ -55,11 +58,15 @@ export default function GeneralChat() {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Scrolls the transcript itself rather than scrollIntoView() on a bottom sentinel: the panel is
+  // mounted on page load now, and scrollIntoView also scrolls ancestor scrollers, so it would drag
+  // the whole dashboard down to the chat before the user has touched anything.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
   }, [messages]);
 
   const attachImage = async (file: File | null | undefined) => {
@@ -148,8 +155,11 @@ export default function GeneralChat() {
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="max-h-72 overflow-y-auto space-y-3 pr-1 mb-3">
+    <div className={`flex flex-col ${fill ? "h-full min-h-0" : ""}`}>
+      <div
+        ref={listRef}
+        className={`overflow-y-auto space-y-3 pr-1 mb-3 ${fill ? "min-h-0 flex-1" : "max-h-72"}`}
+      >
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
@@ -162,7 +172,6 @@ export default function GeneralChat() {
             </div>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
 
       {pendingImage && (

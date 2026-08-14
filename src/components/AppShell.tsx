@@ -318,13 +318,22 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
           aria-hidden={focusMode && !peek}
         >
           <NavList iconOnly={collapsed} />
-          <button
-            onClick={() => setCollapsed((v) => !v)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="mx-3 mb-3 flex h-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
+          {/* Stays at the foot of the rail (the user's call). The only change is the tooltip: every
+              other control in a collapsed rail has one, and this was the one unlabelled icon that
+              had to be guessed at. */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setCollapsed((v) => !v)}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!collapsed}
+                className="mx-3 mb-3 flex h-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{collapsed ? "Expand sidebar" : "Collapse sidebar"}</TooltipContent>
+          </Tooltip>
         </aside>
 
         {/* Focus-mode hover strip: brushing the left edge brings the rail back. */}

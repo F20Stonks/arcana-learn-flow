@@ -18,26 +18,23 @@
  *    `cta` text. Everything else — layout, type, colour — is unchanged.
  *  - The hero hero-orbital.png referenced by the mockup isn't in the delivered assets, so
  *    the ambient artwork is inline SVG on the same orbit motif, same position/mask/opacity.
- *  - "Ask Cortexed" was a toast() stub; it now toggles the real GeneralChat panel via a
- *    prop from Dashboard (GeneralChat itself isn't something Manus designed a home for,
- *    so Dashboard renders it below this card rather than this file inventing a slot for it).
+ *  - "Ask Cortexed" was a toast() stub in the mockup, then a button here that toggled a
+ *    panel below. It's now a real, always-open chat column beside this card (Dashboard owns
+ *    that layout), so neither the button nor the greeting live here any more — the greeting
+ *    is a page-level heading above the whole row, shared with the empty state.
  */
-import { Play, ArrowUpRight, Clock, MessageCircle, ChevronRight } from "lucide-react";
+import { Play, ArrowUpRight, Clock, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NextActionPlan } from "@/lib/nextAction";
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 5) return "Working late";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
 function OrbitalArt() {
   return (
+    // Sized/offset so the bright core lands just outside the card's top-right corner. The original
+    // 720x460 at -right-24 put the core ~60% across the card, which was empty space at the old
+    // full-bleed width but sits directly behind the headline now that the chat column takes 360px.
+    // Anchoring by overhang (~32% of the art's width) keeps it in the corner at any card width.
     <svg
-      className="ambient-drift pointer-events-none absolute -right-24 -top-24 h-[460px] w-[720px] opacity-70"
+      className="ambient-drift pointer-events-none absolute -right-[140px] -top-[72px] h-[280px] w-[440px] opacity-70"
       viewBox="0 0 720 460"
       fill="none"
       aria-hidden
@@ -67,45 +64,17 @@ function OrbitalArt() {
   );
 }
 
-export default function UpNextCard({
-  plan,
-  displayName,
-  onToggleChat,
-}: {
-  plan: NextActionPlan;
-  displayName: string;
-  onToggleChat: () => void;
-}) {
+export default function UpNextCard({ plan }: { plan: NextActionPlan }) {
   const navigate = useNavigate();
   const { primary, secondary } = plan;
   const hasMinutes = primary.estimatedMinutes !== null;
 
   return (
-    <section className="reveal" style={{ animationDelay: "60ms" }}>
-      {/* Greeting line — replaces the old "Welcome back" card to reduce load */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
-            {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{displayName}</span>
-          </h1>
-        </div>
-        <button
-          onClick={onToggleChat}
-          className="flex h-10 items-center gap-2 rounded-full border border-border bg-accent/40 px-4 text-[14px] font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground">
-          <MessageCircle className="h-4 w-4 text-primary" />
-          Ask Cortexed
-        </button>
-      </div>
-
-      {/* Up next card */}
-      <div className="glass-card upnext-glow relative overflow-hidden rounded-3xl border-border">
+    <section className="reveal flex h-full flex-col" style={{ animationDelay: "60ms" }}>
+      {/* Up next card — flex-1 so it matches the height of the chat column beside it */}
+      <div className="glass-card upnext-glow relative flex-1 overflow-hidden rounded-3xl border-border">
         <OrbitalArt />
         <div className="relative p-7 sm:p-10">
-          <div className="micro-label mb-6 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="dot-glow-primary inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-            Up next
-          </div>
-
           <h2 className="font-display max-w-2xl text-[26px] font-semibold leading-[1.15] tracking-[-0.03em] text-foreground sm:text-[38px]">
             {primary.label}
           </h2>

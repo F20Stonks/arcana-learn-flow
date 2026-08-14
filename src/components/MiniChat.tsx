@@ -1,7 +1,7 @@
 import { getBearerToken } from "@/lib/authHeader";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, X, HelpCircle } from "lucide-react";
+import { Send, Loader2, X, HelpCircle, CalendarPlus } from "lucide-react";
 import MathRenderer from "./MathRenderer";
 
 interface MiniChatProps {
@@ -160,9 +160,10 @@ Use $...$ for inline math and $$...$$ for block math. Keep responses SHORT.`,
         <div className="px-4 pb-2">
           <button
             onClick={onScheduleReview}
-            className="w-full py-1.5 rounded-lg bg-warning/10 text-warning text-xs font-medium hover:bg-warning/20 transition-colors"
+            className="flex w-full items-center justify-center gap-1.5 py-1.5 rounded-lg bg-warning/10 text-warning text-xs font-medium hover:bg-warning/20 transition-colors"
           >
-            📅 Schedule review for this topic
+            <CalendarPlus className="h-3.5 w-3.5" />
+            Schedule review for this topic
           </button>
         </div>
       )}

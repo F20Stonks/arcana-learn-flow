@@ -172,15 +172,20 @@ function ComingSoonPanel({ icon: Icon, title, body }: { icon: typeof Bell; title
   );
 }
 
+// Older profiles have a bare emoji in avatar_url — the Customize menu used to write one there,
+// into the same column this panel treats as an image URL. Anything that isn't a real URL is
+// ignored here rather than being fed to <img> or shown under an "Avatar URL" label.
+const asImageUrl = (v: string | null | undefined) => (/^https?:\/\//i.test(v || "") ? (v as string) : "");
+
 function AccountPanel() {
   const { user, profile, refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [avatarUrl, setAvatarUrl] = useState(asImageUrl(profile?.avatar_url));
   const [learnerNotes, setLearnerNotes] = useState(profile?.learner_notes || "");
   const [saving, setSaving] = useState(false);
 
   const dirty = displayName !== (profile?.display_name || "")
-    || avatarUrl !== (profile?.avatar_url || "")
+    || avatarUrl !== asImageUrl(profile?.avatar_url)
     || learnerNotes !== (profile?.learner_notes || "");
 
   const handleSave = async () => {

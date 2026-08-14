@@ -156,7 +156,9 @@ export default function OnboardingPage() {
       user_id: user.id,
       title: meta.title,
       subject: meta.subject,
-      emoji: meta.emoji || "📚",
+      // No 📚 default: track identity is drawn by lib/subjectIcons.tsx (lucide glyphs, keyed off
+      // subject), and nothing renders this column any more — a hardcoded emoji was dead data.
+      emoji: meta.emoji || null,
       exam_board: meta.examBoard ?? null,
       level: meta.level ?? null,
       exam_date: meta.examDate ?? null,

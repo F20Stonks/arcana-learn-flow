@@ -251,7 +251,9 @@ function CalendarTab({ tracks, reviews, subtopicTitles }: { tracks: TrackRow[]; 
   for (const t of tracks) {
     if (t.exam_date) {
       const d = new Date(t.exam_date);
-      if (!isNaN(d.getTime())) events.push({ date: d, label: `${t.emoji || "📚"} ${t.title} exam`, kind: "exam" });
+      // No emoji prefix: the row already carries a colour-coded CalendarClock, so a 📚 in front of
+      // the title was a second, less precise icon competing with it.
+      if (!isNaN(d.getTime())) events.push({ date: d, label: `${t.title} exam`, kind: "exam" });
     }
   }
   for (const r of reviews) {
