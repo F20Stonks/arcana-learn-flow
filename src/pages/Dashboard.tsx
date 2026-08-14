@@ -245,12 +245,21 @@ export default function Dashboard() {
           <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
             {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
           </h1>
+          {/* The 1px border is the animation: an iridescent conic sweep rotates behind the button
+              and is visible only where p-px leaves it exposed (see .holo-edge). The inner span
+              carries the real surface, so the shimmer never touches the label. */}
           <button
             onClick={() => setChatOpen(true)}
-            className="flex h-10 items-center gap-2 rounded-full border border-border bg-accent/40 px-4 text-[14px] font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+            className="group relative h-10 shrink-0 overflow-hidden rounded-full p-px transition-transform duration-200 hover:scale-[1.02]"
           >
-            <MessageCircle className="h-4 w-4 text-primary" />
-            Ask Cortexed
+            <span
+              className="holo-edge pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[220%] -translate-x-1/2 -translate-y-1/2"
+              aria-hidden
+            />
+            <span className="relative flex h-full items-center gap-2 rounded-full bg-background px-4 text-[14px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+              <MessageCircle className="h-4 w-4 text-primary" />
+              Ask Cortexed
+            </span>
           </button>
         </div>
 

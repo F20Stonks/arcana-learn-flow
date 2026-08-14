@@ -565,6 +565,36 @@
   .dot-glow-primary {
     box-shadow: 0 0 8px color-mix(in oklab, var(--primary) 80%, transparent);
   }
+  /*
+    Holographic edge — the sweep behind the "Ask Cortexed" trigger's 1px inset. Same mechanic as
+    session/ThinkingBlock.tsx's running light (rotating conic gradient, revealed only at the
+    border), but the stops sit either side of --primary in hue so it reads as iridescent film
+    rather than a single-colour chase.
+
+    The hues are MIXED against --primary rather than hardcoded rainbow stops: the app's rule is one
+    accent colour, and there are five themes whose --primary differs, so a fixed rainbow would
+    clash on Paper/Neon. Mixing keeps the shimmer in whatever family the active theme is in.
+
+    Pairs with `overflow-hidden` + `p-px` on the parent, and an element sized well past the
+    parent's diagonal so rotation never exposes a corner.
+  */
+  .holo-edge {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      color-mix(in oklab, var(--primary) 55%, oklch(0.72 0.19 300)) 40deg,
+      color-mix(in oklab, var(--primary) 75%, oklch(0.85 0.14 195)) 95deg,
+      color-mix(in oklab, var(--primary) 55%, oklch(0.75 0.18 350)) 150deg,
+      transparent 215deg,
+      transparent 360deg
+    );
+    animation: orbit 5.5s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .holo-edge {
+      animation: none;
+    }
+  }
   .readout {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
