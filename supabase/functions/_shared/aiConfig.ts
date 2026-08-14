@@ -115,7 +115,9 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
 // (the result is cached after the first call). Always returns the "turn" tier —
 // the only tier those paths use.
 export function getAIConfigSync(): AIConfig {
-  const hit = cached.turn;
+  // Express is the default provider when its key is set, so its cache slot is checked first —
+  // otherwise sync callers would silently fall back to a config the async path never handed out.
+  const hit = expressCached.turn ?? cached.turn;
   if (!hit) throw new Error("getAIConfig() must be awaited before calling getAIConfigSync()");
   return hit;
 }
