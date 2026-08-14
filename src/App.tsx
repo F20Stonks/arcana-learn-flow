@@ -114,7 +114,10 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+    {/* 300ms, not Radix's 700ms default: in a collapsed sidebar the tooltip IS the label — it's
+        the only way to read the nav — so three-quarters of a second turns the rail into a guess.
+        Radix still skips the delay entirely for adjacent tooltips once one is open. */}
+    <TooltipProvider delayDuration={300}>
       <AuthProvider>
         <Toaster />
         <Sonner />

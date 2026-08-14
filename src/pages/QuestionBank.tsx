@@ -237,7 +237,7 @@ export default function QuestionBank() {
           <ArrowLeft className="h-3.5 w-3.5" /> {backHome === "/waitlist" ? "Back" : "Dashboard"}
         </button>
         <header className="reveal" style={{ animationDelay: "60ms" }}>
-          <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-[32px]">
             Question <span className="font-serif-accent font-normal text-foreground/80">bank</span>
           </h1>
           <p className="mt-1 max-w-2xl text-[15px] text-muted-foreground">

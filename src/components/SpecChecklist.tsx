@@ -96,7 +96,11 @@ export default function SpecChecklist({ trackId, topics, hasExamBoard }: { track
           <p className="text-xs font-medium text-foreground">{done}/{total}</p>
         </div>
         <div className="w-full h-2 rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }} />
+          {/* scaleX, not width: width animates layout+paint every frame, transform runs on the GPU. */}
+          <div
+            className="h-full w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out"
+            style={{ transform: `scaleX(${total > 0 ? done / total : 0})` }}
+          />
         </div>
       </div>
 

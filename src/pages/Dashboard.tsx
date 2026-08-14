@@ -242,7 +242,7 @@ export default function Dashboard() {
         {/* Greeting — one page-level heading above the hero, whether or not there's a plan. The
             chat is a floating overlay now rather than a column, so this row owns the way in. */}
         <div className="reveal mb-6 flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-[32px]">
             {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
           </h1>
           {/* The 1px border is the animation: an iridescent conic sweep rotates behind the button
@@ -266,7 +266,7 @@ export default function Dashboard() {
         {plan ? (
           <UpNextCard plan={plan} />
         ) : (
-          <section className="reveal" style={{ animationDelay: "60ms" }}>
+          <section className="reveal" style={{ animationDelay: "50ms" }}>
             <div className="glass-card flex flex-col items-start rounded-3xl border-border p-7 sm:p-10">
               <p className="text-[15px] text-muted-foreground">
                 {activeTracks.length > 0
@@ -275,7 +275,7 @@ export default function Dashboard() {
               </p>
               <button
                 onClick={() => navigate("/onboarding?new=1")}
-                className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+                className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
                 New track
@@ -315,7 +315,10 @@ export default function Dashboard() {
               aria-hidden
             />
 
-            <div className="relative flex h-[min(72vh,640px)] flex-col rounded-3xl bg-card/90 backdrop-blur-xl">
+            {/* Opaque, not translucent: the scrim behind already separates this from the page, and
+                stacking a blurred surface on a blurred surface costs legibility and a second blur
+                pass for nothing. */}
+            <div className="relative flex h-[min(72vh,640px)] flex-col rounded-3xl bg-card">
               <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
                 <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
                 <h2 className="flex-1 truncate text-[14px] font-medium text-foreground">Ask Cortexed</h2>
@@ -339,7 +342,7 @@ export default function Dashboard() {
 
         {/* Learning tracks */}
         <section className="mt-16">
-          <div className="reveal mb-6 flex items-center justify-between" style={{ animationDelay: "180ms" }}>
+          <div className="reveal mb-6 flex items-center justify-between" style={{ animationDelay: "100ms" }}>
             <div className="flex items-baseline gap-3">
               <h2 className="font-display text-[20px] font-semibold tracking-[-0.02em] text-foreground">
                 Learning <span className="font-serif-accent font-normal">tracks</span>
@@ -357,7 +360,7 @@ export default function Dashboard() {
           </div>
 
           {activeTracks.length === 0 ? (
-            <div className="glass-card reveal rounded-2xl p-10 text-center" style={{ animationDelay: "220ms" }}>
+            <div className="glass-card reveal rounded-2xl p-10 text-center" style={{ animationDelay: "150ms" }}>
               <p className="text-[14px] text-muted-foreground">
                 {archivedTracks.length > 0 ? "No active tracks — restore one below, or start a new one." : "No tracks yet."}
               </p>
@@ -385,7 +388,7 @@ export default function Dashboard() {
               <button
                 onClick={() => navigate("/onboarding?new=1")}
                 className="reveal group flex min-h-[210px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground/80"
-                style={{ animationDelay: `${220 + activeTracks.length * 70}ms` }}>
+                style={{ animationDelay: `${150 + Math.min(activeTracks.length, 6) * 40}ms` }}>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-accent/40 transition-colors group-hover:border-primary/30 group-hover:text-primary">
                   <Plus className="h-5 w-5" />
                 </span>
@@ -406,7 +409,7 @@ export default function Dashboard() {
             (QuestionBankCard.tsx is still in the repo if this should come back.) */}
         {/* Archived */}
         {archivedTracks.length > 0 && (
-          <section className="reveal mt-12" style={{ animationDelay: "600ms" }}>
+          <section className="reveal mt-12" style={{ animationDelay: "200ms" }}>
             <button
               onClick={() => setArchivedOpen((v) => !v)}
               aria-expanded={archivedOpen}

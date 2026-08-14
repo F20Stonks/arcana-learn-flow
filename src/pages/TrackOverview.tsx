@@ -580,7 +580,11 @@ export default function TrackOverview() {
                   </div>
                 </div>
                 <div className="w-full h-2 rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                  {/* scaleX, not width — GPU-composited instead of relaying out on every frame. */}
+                  <div
+                    className="h-full w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out"
+                    style={{ transform: `scaleX(${pct / 100})` }}
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{completedSubs} of {totalSubs} subtopics complete</p>
               </div>

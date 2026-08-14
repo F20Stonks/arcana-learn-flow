@@ -94,7 +94,7 @@ export default function UpNextCard({ plan }: { plan: NextActionPlan }) {
           <div className="mt-8">
             <button
               onClick={() => navigate(primary.to)}
-              className="glow-cyan glow-cyan-hover flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90">
+              className="glow-cyan glow-cyan-hover flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90">
               <Play className="h-4 w-4 fill-current" />
               {primary.cta}
               <ChevronRight className="h-4 w-4 opacity-60" />

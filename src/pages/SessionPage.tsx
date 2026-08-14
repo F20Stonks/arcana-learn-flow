@@ -1811,9 +1811,12 @@ Return ONLY a JSON object — no prose, no markdown fences:
           scrolling to find. Opening it grows the PAGE downward in normal flow: scroll down to reach
           the keyboard, scroll back up to see the chat + Math Theater with the keyboard just out of
           view (rather than a disconnected overlay that can cover or orphan other UI). */}
+      {/* Height (not transform) on purpose: this spacer has to occupy real layout space to push
+          the transcript clear of the keyboard. ease-out at 200ms to track the OS keyboard, which
+          also opens fast-then-settle — ease-in-out lagged behind it. */}
       <div
         ref={kbdDockRef}
-        className="shrink-0 overflow-hidden transition-[height] duration-300 ease-in-out bg-card border-t border-border"
+        className="shrink-0 overflow-hidden border-t border-border bg-card transition-[height] duration-200 ease-out"
         style={{ height: `${kbdHeight}px` }}
       />
 

@@ -45,7 +45,7 @@ const COLLAPSE_KEY = "cortexed.sidebarCollapsed";
 function BrandMark() {
   return (
     <svg
-      className="h-7 w-7 transition-transform duration-500 group-hover:rotate-[24deg]"
+      className="h-7 w-7 transition-transform duration-200 ease-out group-hover:rotate-[14deg]"
       viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
@@ -334,7 +334,13 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
           <div className="fixed inset-0 z-20 hidden lg:block" onClick={() => setPeek(false)} aria-hidden />
         )}
 
-        <main className="min-w-0 flex-1">{children}</main>
+        {/* `key` on the pathname remounts this wrapper on every navigation, so the 180ms fade
+            replays per route. Without it the app cut between Home / Concepts / Map / Reviews with
+            no transition at all — four destinations under one rail that read as four unrelated
+            apps. Opacity only, and short, because this runs on every navigation. */}
+        <main key={location.pathname} className="reveal-page min-w-0 flex-1">
+          {children}
+        </main>
       </div>
 
       {/* ── Mobile drawer — the fix for controls being unreachable on a phone ───────── */}
