@@ -20,21 +20,48 @@
  * later — don't build that speculatively.
  */
 
-interface OpenAIMessage {
+type OpenAIContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+export interface OpenAIMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: string | OpenAIContentPart[];
+}
+
+type GeminiPart = { text: string } | { inlineData: { mimeType: string; data: string } };
+
+function partsFromContent(content: string | OpenAIContentPart[]): GeminiPart[] {
+  if (typeof content === "string") return [{ text: content }];
+  return content.map((p): GeminiPart => {
+    if (p.type === "image_url") {
+      const url = p.image_url.url;
+      const m = url.match(/^data:([^;]+);base64,(.*)$/);
+      // Only inline data URLs are supported here; a remote URL is passed through as text so the
+      // call degrades instead of throwing (Gemini needs bytes or a GCS URI, not an arbitrary URL).
+      if (m) return { inlineData: { mimeType: m[1], data: m[2] } };
+      return { text: url };
+    }
+    return { text: p.text };
+  });
+}
+
+function textFromContent(content: string | OpenAIContentPart[]): string {
+  return typeof content === "string"
+    ? content
+    : content.map((p) => (p.type === "text" ? p.text : "")).join("\n");
 }
 
 function toGeminiContents(messages: OpenAIMessage[]): {
   systemInstruction?: { parts: [{ text: string }] };
-  contents: { role: "user" | "model"; parts: [{ text: string }] }[];
+  contents: { role: "user" | "model"; parts: GeminiPart[] }[];
 } {
-  const systemParts = messages.filter((m) => m.role === "system").map((m) => m.content);
+  const systemParts = messages.filter((m) => m.role === "system").map((m) => textFromContent(m.content));
   const contents = messages
     .filter((m) => m.role !== "system")
     .map((m) => ({
       role: (m.role === "assistant" ? "model" : "user") as "user" | "model",
-      parts: [{ text: m.content }] as [{ text: string }],
+      parts: partsFromContent(m.content),
     }));
   return systemParts.length
     ? { systemInstruction: { parts: [{ text: systemParts.join("\n\n") }] }, contents }
@@ -126,4 +153,44 @@ export async function callVertexExpressChat(opts: {
     status: 200,
     headers: { "Content-Type": "text/event-stream" },
   });
+}
+
+
+/**
+ * Non-streaming counterpart of callVertexExpressChat: takes the same OpenAI-shaped inputs every
+ * other call site in this repo already builds, and returns a Response whose JSON body is the
+ * OpenAI `{ choices: [{ message: { content } }] }` shape those call sites already parse. Failures
+ * are passed through as the raw upstream Response, so `.ok`/`.status`/`.text()` behave normally.
+ */
+export async function callVertexExpressJSON(opts: {
+  apiKey: string;
+  model: string;
+  messages: OpenAIMessage[];
+  jsonMode?: boolean;
+}): Promise<Response> {
+  const { systemInstruction, contents } = toGeminiContents(opts.messages);
+  const url =
+    `https://aiplatform.googleapis.com/v1/publishers/google/models/${opts.model}:generateContent?key=${opts.apiKey}`;
+
+  const upstream = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...(systemInstruction ? { systemInstruction } : {}),
+      contents,
+      ...(opts.jsonMode ? { generationConfig: { responseMimeType: "application/json" } } : {}),
+    }),
+  });
+
+  if (!upstream.ok) return upstream;
+
+  const data = await upstream.json().catch(() => null);
+  const text = (data?.candidates?.[0]?.content?.parts ?? [])
+    .map((p: { text?: string }) => p?.text ?? "")
+    .join("");
+
+  return new Response(
+    JSON.stringify({ choices: [{ message: { role: "assistant", content: text } }] }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
 }

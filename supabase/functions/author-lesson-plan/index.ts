@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 // Authors — and globally caches — the lesson plan for one subtopic. See docs/lesson-plan-layer.md.
 //
 // The economics are the point: this is ONE expensive call per subtopic EVER, amortised across every
@@ -409,15 +410,10 @@ Deno.serve(async (req: Request) => {
     // paying frontier-model prices to fight a prompt that is not landing — better to return nothing
     // and let the session run plan-less than to spend more or, worse, store a half-plan.
     for (let attempt = 0; attempt < 2 && !plan; attempt++) {
-      const res = await fetch(ai.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: ai.model,
+      const res = await aiFetch(ai, {
           messages,
           response_format: { type: "json_object" },
-        }),
-      });
+        });
 
       if (!res.ok) {
         const detail = await res.text();

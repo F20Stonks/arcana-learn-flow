@@ -11,6 +11,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
+import { aiFetch } from "../_shared/aiFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -146,18 +147,13 @@ Deno.serve(async (req: Request) => {
       },
       ...page_images.map((img) => ({ type: "image_url", image_url: { url: `data:image/png;base64,${img}` } })),
     ];
-    const res = await fetch(ai.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ai.model,
+    const res = await aiFetch(ai, {
         messages: [
           { role: "system", content: SEGMENT_SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!res.ok) {
       const detail = await res.text();

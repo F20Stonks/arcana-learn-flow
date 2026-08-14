@@ -42,9 +42,10 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
   // account/org-policy fighting required. Explicit double opt-in: the caller must both pass
   // allowExpress AND have the secret set. Speaks Gemini's native wire format, NOT the OpenAI shape
   // every other provider here returns — callers MUST route through _shared/vertexExpress.ts, never
-  // `fetch(ai.url, ...)` directly. Currently only chat/index.ts opts in (see that file for why).
+  // `fetch(ai.url, ...)` directly — _shared/aiFetch.ts does that routing for every call site, which
+  // is why express is now the default whenever the key is set (opts.allowExpress === false opts out).
   const expressKey = Deno.env.get("GCP_EXPRESS_API_KEY");
-  if (opts?.allowExpress && expressKey) {
+  if (opts?.allowExpress !== false && expressKey) {
     const hit = expressCached[tier];
     if (hit) return hit;
     const cfg: AIConfig = {
@@ -114,7 +115,9 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
 // (the result is cached after the first call). Always returns the "turn" tier —
 // the only tier those paths use.
 export function getAIConfigSync(): AIConfig {
-  const hit = cached.turn;
+  // Express is the default provider when its key is set, so its cache slot is checked first —
+  // otherwise sync callers would silently fall back to a config the async path never handed out.
+  const hit = expressCached.turn ?? cached.turn;
   if (!hit) throw new Error("getAIConfig() must be awaited before calling getAIConfigSync()");
   return hit;
 }

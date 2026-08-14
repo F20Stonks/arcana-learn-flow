@@ -24,6 +24,7 @@
 // resolveOfficialSpec returns null and jarvis-director falls back to its prior ungrounded behaviour.
 
 import { getAIConfig, getAIConfigSync } from "./aiConfig.ts";
+import { aiFetch } from "./aiFetch.ts";
 
 type BoardSubjectLevel = { board: string | null; subject: string | null; level: string | null };
 
@@ -136,11 +137,7 @@ async function extractBoardSubjectLevel(
   const ai = getAIConfigSync();
   const conversation = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
 
-  const res = await fetch(ai.url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: ai.model,
+  const res = await aiFetch(ai, {
       messages: [
         {
           role: "system",
@@ -149,8 +146,7 @@ async function extractBoardSubjectLevel(
         { role: "user", content: conversation },
       ],
       response_format: { type: "json_object" },
-    }),
-  });
+    });
 
   if (!res.ok) return { board: null, subject: null, level: null };
   const data = await res.json();

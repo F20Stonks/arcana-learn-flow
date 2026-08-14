@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
@@ -94,11 +95,7 @@ async function resolveConcepts(
         concept: { name: a.spec.name, type: a.spec.type, definition: a.spec.definition },
         candidates: a.candidates.map((c) => ({ id: c.id, name: c.name, definition: c.definition })),
       }));
-      const res = await fetch(ai.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: ai.model,
+      const res = await aiFetch(ai, {
           messages: [
             {
               role: "system",
@@ -111,8 +108,7 @@ Respond ONLY with JSON: {"decisions":[{"index":number,"concept_id":string|null,"
             { role: "user", content: JSON.stringify(payload) },
           ],
           response_format: { type: "json_object" },
-        }),
-      });
+        });
       if (res.ok) {
         const data = await res.json();
         const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
@@ -188,11 +184,7 @@ async function tickMatchingSpecItems(
     const transcript = messages.map((m) => `${m.role}: ${m.content}`).join("\n\n");
     const payload = complex.map((i, idx) => ({ index: idx, requirement: i.text, evidenceRequirements: i.evidence_requirements }));
     try {
-      const res = await fetch(ai.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: ai.model,
+      const res = await aiFetch(ai, {
           messages: [
             {
               role: "system",
@@ -201,8 +193,7 @@ async function tickMatchingSpecItems(
             { role: "user", content: `Requirements:\n${JSON.stringify(payload)}\n\nSession transcript:\n${transcript}` },
           ],
           response_format: { type: "json_object" },
-        }),
-      });
+        });
       if (res.ok) {
         const data = await res.json();
         const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
@@ -399,18 +390,13 @@ Respond ONLY with valid JSON:
   "concepts_required": [{"name": string, "type": string, "definition": string, "aliases": string[]}]${planJsonFields}
 }`;
 
-    const aiRes = await fetch(ai.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ai.model,
+    const aiRes = await aiFetch(ai, {
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Session conversation:\n${(messages || []).map((m: any) => `${m.role}: ${m.content}`).join("\n\n")}\n\nAssess this session now.` },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!aiRes.ok) {
       console.error("Assessment AI error:", aiRes.status);

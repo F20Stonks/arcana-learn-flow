@@ -1,6 +1,7 @@
 import { resolveOfficialSpec } from "../_shared/specResolver.ts";
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { aiFetch } from "../_shared/aiFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -74,20 +75,12 @@ ${groundingBlock}
 
 IMPORTANT: Only generate the track after you've asked about their timeline/exam date. If they haven't mentioned timing, ask about it first.` : "Help the student with their learning goals."}`;
 
-    const response = await fetch(ai.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ai.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ai.model,
+    const response = await aiFetch(ai, {
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.map((m: any) => ({ role: m.role, content: m.content })),
         ],
-      }),
-    });
+      });
 
     if (!response.ok) {
       if (response.status === 429) {

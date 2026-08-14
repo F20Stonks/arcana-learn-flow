@@ -1,6 +1,7 @@
 import { getAIConfig } from "../_shared/aiConfig.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import { DIAGRAM_CAPABILITY } from "../_shared/diagramCapability.ts";
+import { aiFetch } from "../_shared/aiFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,14 +23,7 @@ Deno.serve(async (req: Request) => {
     if (body.mode === "assess") {
       const { question, correctAnswer, userAnswer, explanation, subject, level } = body;
 
-      const response = await fetch(ai.url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ai.key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: ai.model,
+      const response = await aiFetch(ai, {
           messages: [
             {
               role: "system",
@@ -41,8 +35,7 @@ Deno.serve(async (req: Request) => {
             }
           ],
           response_format: { type: "json_object" },
-        }),
-      });
+        });
 
       if (!response.ok) {
         console.error("Assess error:", response.status);
@@ -111,21 +104,13 @@ Distribute questions across the selected topics. Favour questions that require C
 
 ${DIAGRAM_CAPABILITY}`;
 
-    const response = await fetch(ai.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ai.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ai.model,
+    const response = await aiFetch(ai, {
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Generate ${questionCount} ${difficulty} difficulty ${subject} questions now.` },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!response.ok) {
       if (response.status === 429) {

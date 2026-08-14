@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/aiFetch.ts";
 // author-syllabus-tree — builds the topic/subtopic decomposition for a learning goal, and caches it
 // globally when the goal names a real external syllabus. See docs/syllabus-tree-layer.md.
 //
@@ -116,15 +117,10 @@ function parseJsonLoose(content: string): any | null {
 async function askJson(system: string, user: string): Promise<any | null> {
   try {
     const ai = await getAIConfig("authoring");
-    const res = await fetch(ai.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ai.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ai.model,
+    const res = await aiFetch(ai, {
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
     if (!res.ok) {
       console.error("syllabus authoring AI error:", res.status, await res.text());
       return null;
