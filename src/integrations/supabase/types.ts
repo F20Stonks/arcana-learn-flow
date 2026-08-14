@@ -447,6 +447,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_question_concepts: {
+        Row: {
+          concept_id: string
+          id: string
+          reference_question_id: string
+          role: string
+        }
+        Insert: {
+          concept_id: string
+          id?: string
+          reference_question_id: string
+          role?: string
+        }
+        Update: {
+          concept_id?: string
+          id?: string
+          reference_question_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_question_concepts_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_question_concepts_reference_question_id_fkey"
+            columns: ["reference_question_id"]
+            isOneToOne: false
+            referencedRelation: "reference_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reference_question_requests: {
         Row: {
           blocked: boolean
@@ -475,13 +511,18 @@ export type Database = {
         Row: {
           created_at: string
           difficulty: string | null
+          full_pdf_storage_path: string | null
           has_diagram: boolean
           id: string
+          language: string | null
+          learning_track: string | null
           license_note: string | null
           question_number: string | null
           question_text: string
+          resource_type: string | null
           solution_text: string | null
           source_competition: string
+          source_country: string | null
           source_url: string
           storage_path: string | null
           subject: string
@@ -491,13 +532,18 @@ export type Database = {
         Insert: {
           created_at?: string
           difficulty?: string | null
+          full_pdf_storage_path?: string | null
           has_diagram?: boolean
           id?: string
+          language?: string | null
+          learning_track?: string | null
           license_note?: string | null
           question_number?: string | null
           question_text: string
+          resource_type?: string | null
           solution_text?: string | null
           source_competition: string
+          source_country?: string | null
           source_url: string
           storage_path?: string | null
           subject: string
@@ -507,13 +553,18 @@ export type Database = {
         Update: {
           created_at?: string
           difficulty?: string | null
+          full_pdf_storage_path?: string | null
           has_diagram?: boolean
           id?: string
+          language?: string | null
+          learning_track?: string | null
           license_note?: string | null
           question_number?: string | null
           question_text?: string
+          resource_type?: string | null
           solution_text?: string | null
           source_competition?: string
+          source_country?: string | null
           source_url?: string
           storage_path?: string | null
           subject?: string
@@ -935,9 +986,71 @@ export type Database = {
           },
         ]
       }
+      user_question_attempts: {
+        Row: {
+          attempt_end: string | null
+          attempt_start: string
+          created_at: string
+          id: string
+          is_completed: boolean
+          notes: string | null
+          reference_question_id: string
+          score: number | null
+          time_spent_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_end?: string | null
+          attempt_start?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          reference_question_id: string
+          score?: number | null
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_end?: string | null
+          attempt_start?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          reference_question_id?: string
+          score?: number | null
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_question_attempts_reference_question_id_fkey"
+            columns: ["reference_question_id"]
+            isOneToOne: false
+            referencedRelation: "reference_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      user_resource_analytics: {
+        Row: {
+          average_score: number | null
+          completed_attempts: number | null
+          difficulty: string | null
+          learning_track: string | null
+          subject: string | null
+          total_attempts: number | null
+          total_time_spent: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_active_subscription: {
