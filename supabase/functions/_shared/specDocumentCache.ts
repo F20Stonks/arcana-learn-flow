@@ -78,9 +78,18 @@ export async function resolveSpecDocumentCached(
   tavilyApiKey: string,
   topicTitles: string[],
 ): Promise<SpecExcerpt | null> {
-  const b = norm(board);
   const s = norm(subject);
-  if (!b || !s) return resolveSpecDocument(board, subject, level, tavilyApiKey, topicTitles);
+  // SUBJECT is the identity; BOARD is optional by design. A university course ("Mathematical Tripos
+  // Part IA", "MIT 18.02") has no awarding board at all, and the previous `!b ||` guard sent every
+  // one of those straight past the cache — resolving live AND never writing back, so the identical
+  // Tavily search and multi-hundred-KB PDF parse was paid again on every single run, forever.
+  // `spec_documents.board` is NOT NULL, so a boardless course is keyed on the empty string; read and
+  // write agree on that, which is all the cache actually requires.
+  const b = norm(board);
+  if (!s) {
+    console.error("spec document cache bypassed: no subject given — resolving live, result NOT cached");
+    return resolveSpecDocument(board, subject, level, tavilyApiKey, topicTitles);
+  }
 
   const cached = await getCachedSpecDocument(supabase, b, s, level);
   if (cached) {
@@ -89,6 +98,15 @@ export async function resolveSpecDocumentCached(
   }
 
   const resolved = await resolveSpecDocument(board, subject, level, tavilyApiKey, topicTitles);
-  if (resolved) await cacheSpecDocument(supabase, b, s, level, resolved);
+  const identity = `${b || "(no board)"} / ${s} / ${level || "(no level)"}`;
+  if (!resolved) {
+    // The most consequential silent outcome in the entire grounding path: no document means the
+    // syllabus tree gets authored from the model's own recall instead of the real specification.
+    // Until now the only trace of that was a `coverage.verdict` buried inside a cached row.
+    console.error(`spec document NOT resolved: ${identity} — tree will be authored UNGROUNDED`);
+    return null;
+  }
+  await cacheSpecDocument(supabase, b, s, level, resolved);
+  console.log(`spec_documents cached: ${identity} -> ${resolved.sourceUrl}`);
   return resolved;
 }

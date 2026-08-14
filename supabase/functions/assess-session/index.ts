@@ -451,76 +451,157 @@ Respond ONLY with valid JSON:
 
     if (supabase && sessionId) {
       const nowIso = new Date().toISOString();
-      try {
-        if (!isReview && complete && userId && realSubtopicId) {
+
+      // Every persistence step below runs INDEPENDENTLY and reports its own outcome.
+      //
+      // Two failures of the previous shape made this pipeline silently dead in production, and the
+      // empty `concepts` / `user_concept_knowledge` / `subtopic_reviews` tables were the only symptom:
+      //
+      //  1. ONE shared try/catch wrapped every step, so the first throw skipped all the rest — up to
+      //     and including the session's own completed_at and XP. A student could finish a session, be
+      //     shown a summary, and have almost nothing recorded, with one vague line in the logs.
+      //  2. supabase-js does NOT throw on a failed write — it returns `{ error }` — and every call
+      //     site here discarded that value. A rejected insert was literally indistinguishable from a
+      //     successful one.
+      //
+      // `check` turns a discarded error back into a real one; `step` confines it to its own stage and
+      // records what happened. Nothing here can swallow a failure any more.
+      const steps: Record<string, string> = {};
+      const step = async (name: string, fn: () => Promise<string | void>) => {
+        try {
+          steps[name] = (await fn()) || "ok";
+        } catch (e) {
+          steps[name] = `FAILED: ${e instanceof Error ? e.message : String(e)}`;
+          console.error(`[assess-pipeline] step "${name}" failed:`, e);
+        }
+      };
+      const check = (label: string, res: { error: unknown }) => {
+        const err = res.error as { message?: string; code?: string } | null;
+        if (err) throw new Error(`${label} → ${err.code ? `[${err.code}] ` : ""}${err.message ?? JSON.stringify(err)}`);
+      };
+
+      // Hoisted so a concept-resolution failure can no longer cost the student their notes: notes are
+      // still saved, just without concept links.
+      let taughtIds: string[] = [];
+
+      if (!isReview && complete && userId && realSubtopicId) {
+        const uid = userId;
+        const stid = realSubtopicId;
+
+        await step("concepts", async () => {
+          if (!conceptsTaught.length && !conceptsRequired.length) return "skipped: model returned no concepts";
           const idByName = await resolveConcepts(supabase, conceptsTaught, conceptsRequired);
-          const taughtIds = [...new Set(conceptsTaught.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
+          taughtIds = [...new Set(conceptsTaught.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
           const requiredIds = [...new Set(conceptsRequired.map((c) => idByName.get(norm(c.name))).filter(Boolean) as string[])];
 
           const scRows = [
-            ...taughtIds.map((id) => ({ subtopic_id: realSubtopicId, concept_id: id, role: "teaches" })),
-            ...requiredIds.filter((id) => !taughtIds.includes(id)).map((id) => ({ subtopic_id: realSubtopicId, concept_id: id, role: "requires" })),
+            ...taughtIds.map((id) => ({ subtopic_id: stid, concept_id: id, role: "teaches" })),
+            ...requiredIds.filter((id) => !taughtIds.includes(id)).map((id) => ({ subtopic_id: stid, concept_id: id, role: "requires" })),
           ];
-          if (scRows.length) await supabase.from("subtopic_concepts").upsert(scRows, { onConflict: "subtopic_id,concept_id,role", ignoreDuplicates: true });
-
+          if (scRows.length) {
+            check("subtopic_concepts upsert", await supabase.from("subtopic_concepts")
+              .upsert(scRows, { onConflict: "subtopic_id,concept_id,role", ignoreDuplicates: true }));
+          }
           if (taughtIds.length) {
-            await supabase.from("user_concept_knowledge").upsert(
-              taughtIds.map((id) => ({ user_id: userId, concept_id: id, source_subtopic_id: realSubtopicId })),
+            check("user_concept_knowledge upsert", await supabase.from("user_concept_knowledge").upsert(
+              taughtIds.map((id) => ({ user_id: uid, concept_id: id, source_subtopic_id: stid })),
               { onConflict: "user_id,concept_id", ignoreDuplicates: true },
-            );
+            ));
           }
+          // Distinguishes "the model extracted nothing" from "the resolver dropped everything" — the
+          // two hypotheses that a silent empty table could never tell apart.
+          return `${conceptsTaught.length} taught + ${conceptsRequired.length} required extracted → ${taughtIds.length} resolved ids`;
+        });
 
-          if (notes.length) {
-            await supabase.from("notes").insert(
-              notes.map((n) => ({ user_id: userId, subtopic_id: realSubtopicId, title: n.title, content: n.content, linked_concept_ids: taughtIds })),
-            );
-          }
+        await step("notes", async () => {
+          if (!notes.length) return "skipped: model returned no notes";
+          check("notes insert", await supabase.from("notes").insert(
+            notes.map((n) => ({ user_id: uid, subtopic_id: stid, title: n.title, content: n.content, linked_concept_ids: taughtIds })),
+          ));
+          return `${notes.length} saved`;
+        });
 
-          await supabase.from("subtopics").update({ status: "complete", completed_at: nowIso }).eq("id", realSubtopicId);
+        await step("subtopic-status", async () => {
+          check("subtopics update", await supabase.from("subtopics")
+            .update({ status: "complete", completed_at: nowIso }).eq("id", stid));
+        });
 
-          try { await tickMatchingSpecItems(supabase, realSubtopicId, messages); }
-          catch (e) { console.error("tickMatchingSpecItems failed:", e); }
+        await step("spec-checklist", async () => { await tickMatchingSpecItems(supabase, stid, messages); });
 
-          const { data: existingReview } = await supabase.from("subtopic_reviews").select("id").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
-          if (!existingReview) {
-            await supabase.from("subtopic_reviews").insert({
-              user_id: userId, subtopic_id: realSubtopicId, interval_days: 7,
-              next_review_due_at: new Date(Date.now() + 7 * DAY_MS).toISOString(), last_completed_at: nowIso,
-            });
-          }
-        }
-
-        if (isReview && userId && realSubtopicId) {
-          const { data: row } = await supabase.from("subtopic_reviews").select("id, interval_days").eq("user_id", userId).eq("subtopic_id", realSubtopicId).maybeSingle();
-          if (row) {
-            const current = (row as any).interval_days || 7;
-            const next = complete ? current * REVIEW_GROWTH[confidence] : current * REVIEW_LAPSE_FACTOR;
-            const newInterval = Math.max(MIN_INTERVAL_DAYS, Math.min(MAX_INTERVAL_DAYS, Math.round(next)));
-            await supabase.from("subtopic_reviews").update({
-              interval_days: newInterval,
-              next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
-              ...(complete ? { last_completed_at: nowIso } : {}),
-            }).eq("id", (row as any).id);
-          }
-        }
-
-        await supabase.from("sessions").update({ completed_at: nowIso, xp_earned: xpEarned }).eq("id", sessionId);
-        if (userId) {
-          const { data: p } = await supabase.from("profiles").select("total_xp, learner_style_notes").eq("user_id", userId).maybeSingle();
-          if (p) {
-            const update: Record<string, unknown> = {};
-            if (xpEarned > 0) update.total_xp = ((p as any).total_xp || 0) + xpEarned;
-            if (learnerObservations.length) {
-              const prior = ((p as any).learner_style_notes || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
-              const combined = [...prior, ...learnerObservations.map((o) => `- ${o}`)];
-              update.learner_style_notes = combined.slice(-MAX_LEARNER_OBSERVATIONS).join("\n");
-            }
-            if (Object.keys(update).length) await supabase.from("profiles").update(update).eq("user_id", userId);
-          }
-        }
-      } catch (pipeErr) {
-        console.error("completion pipeline error (assessment still returned):", pipeErr);
+        await step("review-schedule", async () => {
+          const { data: existingReview, error: readErr } = await supabase.from("subtopic_reviews")
+            .select("id").eq("user_id", uid).eq("subtopic_id", stid).maybeSingle();
+          check("subtopic_reviews read", { error: readErr });
+          if (existingReview) return "skipped: review row already exists";
+          check("subtopic_reviews insert", await supabase.from("subtopic_reviews").insert({
+            user_id: uid, subtopic_id: stid, interval_days: 7,
+            next_review_due_at: new Date(Date.now() + 7 * DAY_MS).toISOString(), last_completed_at: nowIso,
+          }));
+          return "scheduled +7d";
+        });
       }
+
+      if (isReview && userId && realSubtopicId) {
+        const uid = userId;
+        const stid = realSubtopicId;
+        await step("review-advance", async () => {
+          const { data: row, error: readErr } = await supabase.from("subtopic_reviews")
+            .select("id, interval_days").eq("user_id", uid).eq("subtopic_id", stid).maybeSingle();
+          check("subtopic_reviews read", { error: readErr });
+          if (!row) return "skipped: no review row for this subtopic";
+          const current = (row as any).interval_days || 7;
+          const next = complete ? current * REVIEW_GROWTH[confidence] : current * REVIEW_LAPSE_FACTOR;
+          const newInterval = Math.max(MIN_INTERVAL_DAYS, Math.min(MAX_INTERVAL_DAYS, Math.round(next)));
+          check("subtopic_reviews update", await supabase.from("subtopic_reviews").update({
+            interval_days: newInterval,
+            next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
+            ...(complete ? { last_completed_at: nowIso } : {}),
+          }).eq("id", (row as any).id));
+          return `${current}d → ${newInterval}d`;
+        });
+      }
+
+      // Closing the session and awarding XP no longer sits downstream of the knowledge writes — a
+      // concept failure must never cost a student the session they actually finished.
+      await step("session-close", async () => {
+        check("sessions update", await supabase.from("sessions")
+          .update({ completed_at: nowIso, xp_earned: xpEarned }).eq("id", sessionId));
+      });
+
+      await step("profile", async () => {
+        if (!userId) return "skipped: no user";
+        const uid = userId;
+        const { data: p, error: readErr } = await supabase.from("profiles")
+          .select("total_xp, learner_style_notes").eq("user_id", uid).maybeSingle();
+        check("profiles read", { error: readErr });
+        if (!p) return "skipped: no profile row";
+        const update: Record<string, unknown> = {};
+        if (xpEarned > 0) update.total_xp = ((p as any).total_xp || 0) + xpEarned;
+        if (learnerObservations.length) {
+          const prior = ((p as any).learner_style_notes || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+          const combined = [...prior, ...learnerObservations.map((o) => `- ${o}`)];
+          update.learner_style_notes = combined.slice(-MAX_LEARNER_OBSERVATIONS).join("\n");
+        }
+        if (!Object.keys(update).length) return "skipped: nothing to update";
+        check("profiles update", await supabase.from("profiles").update(update).eq("user_id", uid));
+      });
+
+      // The receipt: one greppable line per assessed session. This is the instrument that answers
+      // "is the knowledge tracker filling up, and if not, which step is at fault" — a question the
+      // previous shape could not answer even in principle.
+      console.log("[assess-pipeline]", JSON.stringify({
+        sessionId,
+        isReview,
+        complete,
+        completionWithheldBecause: complete
+          ? null
+          : checkpointsReported && result.complete === true && checkpointsUnmet.length
+            ? `checkpoints unmet: ${checkpointsUnmet.join(", ")}`
+            : "model judged the session incomplete",
+        hasPlan: plan !== null,
+        conceptsExtracted: conceptsTaught.length + conceptsRequired.length,
+        steps,
+      }));
     }
 
     // Checkpoint outcomes are NOT persisted: there is no column for them yet (`sessions` has no jsonb

@@ -47,7 +47,17 @@ export async function getTavilyKey(): Promise<string | null> {
 
   const { createClient } = await import("npm:@supabase/supabase-js@2.45.0");
   const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
-  const { data } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
+  // NOTE: `app_secrets` does not exist in this project's database (verified against the live schema).
+  // This branch therefore never yields a key — it is reachable only when TAVILY_API_KEY is unset as an
+  // env secret, and it fails there too. The discarded `error` made that indistinguishable from "the
+  // table exists and simply has no row", which is why it never got noticed. Say so out loud instead:
+  // with no key, EVERY grounding path (syllabus trees, spec checklists, past papers) silently degrades
+  // to ungrounded output.
+  const { data, error } = await supabase.from("app_secrets").select("value").eq("key", "TAVILY_API_KEY").maybeSingle();
+  if (error) {
+    console.error("TAVILY_API_KEY unset and app_secrets lookup failed — ALL grounding will run ungrounded:", error.message);
+    return null;
+  }
   return data?.value || null;
 }
 
