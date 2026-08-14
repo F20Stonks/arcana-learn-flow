@@ -6,18 +6,47 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network, BookOpen, BarChart3 } from "lucide-react";
+import { LayoutGrid, Brain, CalendarDays, Loader2, CalendarClock, GraduationCap, Search, Network } from "lucide-react";
 import ConceptGraph from "@/components/ConceptGraph";
+
+const HUB_TITLE: Record<"knowledge" | "map" | "calendar", string> = {
+  knowledge: "Concepts",
+  map: "Competence",
+  calendar: "Reviews",
+};
 
 type TrackRow = { id: string; title: string; emoji: string | null; exam_date: string | null; subject: string };
 type KnownConcept = { name: string; type: string; known_at: string };
 type ReviewRow = { subtopic_id: string; next_review_due_at: string; interval_days: number };
 type SubtopicTitle = { id: string; title: string };
 
-export default function HubSidebar() {
+export type HubTab = "knowledge" | "map" | "calendar";
+
+interface HubSidebarProps {
+  /** Controlled open state. Omit to keep the component's own icon trigger and internal state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Which tab to land on. The app shell links straight to a tab so each Hub surface is a named
+   *  destination in the sidebar rather than something you have to know is behind an icon. */
+  tab?: HubTab;
+  onTabChange?: (tab: HubTab) => void;
+}
+
+export default function HubSidebar({ open: openProp, onOpenChange, tab: tabProp, onTabChange }: HubSidebarProps = {}) {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const [openState, setOpenState] = useState(false);
+  const open = controlled ? openProp : openState;
+  const setOpen = (v: boolean) => {
+    if (!controlled) setOpenState(v);
+    onOpenChange?.(v);
+  };
+  const [tabState, setTabState] = useState<HubTab>("knowledge");
+  const tab = tabProp ?? tabState;
+  const setTab = (v: HubTab) => {
+    setTabState(v);
+    onTabChange?.(v);
+  };
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [tracks, setTracks] = useState<TrackRow[]>([]);
@@ -25,10 +54,13 @@ export default function HubSidebar() {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [subtopicTitles, setSubtopicTitles] = useState<SubtopicTitle[]>([]);
 
+  // Load only once the panel is actually opened. The shell mounts this on every page now, and the
+  // badge count comes from useDueReviewCount, so eagerly running four queries per page load would
+  // be pure waste.
   useEffect(() => {
-    if (!loaded && user) loadData();
+    if (open && !loaded && user) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [open, user]);
 
   const now = new Date();
   const dueReviewCount = reviews.filter((r) => new Date(r.next_review_due_at) <= now).length;
@@ -73,25 +105,29 @@ export default function HubSidebar() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <SheetTrigger asChild>
-            <button
-              className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Knowledge hub"
-            >
-              <LayoutGrid className="h-[17px] w-[17px]" />
-              {dueReviewCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" title={`${dueReviewCount} review${dueReviewCount === 1 ? "" : "s"} due`} />
-              )}
-            </button>
-          </SheetTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Hub</TooltipContent>
-      </Tooltip>
+      {!controlled && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SheetTrigger asChild>
+              <button
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label="Knowledge hub"
+              >
+                <LayoutGrid className="h-[17px] w-[17px]" />
+                {dueReviewCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" title={`${dueReviewCount} review${dueReviewCount === 1 ? "" : "s"} due`} />
+                )}
+              </button>
+            </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Hub</TooltipContent>
+        </Tooltip>
+      )}
       <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
-          <SheetTitle>Hub</SheetTitle>
+          {/* Titled by what you came for, not by the container. The sidebar entry that opened this
+              says "Competence"; landing on a panel called "Hub" would make you re-orient. */}
+          <SheetTitle>{HUB_TITLE[tab]}</SheetTitle>
         </SheetHeader>
 
         {loading && !loaded ? (
@@ -100,15 +136,10 @@ export default function HubSidebar() {
           </div>
         ) : (
           <>
-          <div className="flex gap-2 p-2 border-b border-border/50">
-             <button onClick={() => { setOpen(false); navigate('/resource-bank'); }} className="flex-1 flex items-center justify-center gap-2 h-9 rounded-md bg-secondary/50 hover:bg-secondary text-sm font-medium transition-colors">
-                <BookOpen className="w-4 h-4" /> Resources
-             </button>
-             <button onClick={() => { setOpen(false); navigate('/analytics'); }} className="flex-1 flex items-center justify-center gap-2 h-9 rounded-md bg-secondary/50 hover:bg-secondary text-sm font-medium transition-colors">
-                <BarChart3 className="w-4 h-4" /> Analytics
-             </button>
-          </div>
-          <Tabs defaultValue="knowledge" className="flex-1 flex flex-col min-h-0 mt-2">
+          {/* The Resources / Analytics shortcuts that used to sit here are gone: they're permanent
+              sidebar destinations now, and repeating them inside the panel was one more thing to
+              read on a surface whose whole job is to be scannable. */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as HubTab)} className="flex-1 flex flex-col min-h-0 mt-2">
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="knowledge"><Brain className="h-3.5 w-3.5 mr-1.5" />Knowledge</TabsTrigger>
               <TabsTrigger value="map"><Network className="h-3.5 w-3.5 mr-1.5" />Map</TabsTrigger>

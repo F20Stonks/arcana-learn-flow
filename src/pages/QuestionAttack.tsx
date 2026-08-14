@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, Zap, CheckCircle2, XCircle, ChevronRight, Target, Brain, HelpCircle, Search, Check, Minus } from "lucide-react";
@@ -305,6 +306,7 @@ export default function QuestionAttack() {
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
+    <AppShell>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -723,5 +725,6 @@ export default function QuestionAttack() {
         )}
       </main>
     </div>
+    </AppShell>
   );
 }

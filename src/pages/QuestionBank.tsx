@@ -29,7 +29,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import { ArrowLeft, ChevronRight, ExternalLink, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import CommandBar from "@/components/CommandBar";
+import AppShell from "@/components/AppShell";
 import ReferenceQuestionText from "@/components/ReferenceQuestionText";
 
 interface QuestionSummary {
@@ -219,7 +219,7 @@ export default function QuestionBank() {
   const hasFilters = !!(competition || selectedArea || tag || year || query);
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <AppShell>
       <div
         className="pointer-events-none fixed inset-0"
         aria-hidden
@@ -228,8 +228,6 @@ export default function QuestionBank() {
             "radial-gradient(ellipse 70% 45% at 50% -10%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 65%)",
         }}
       />
-
-      <CommandBar />
 
       <main className="relative mx-auto max-w-5xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <button
@@ -397,7 +395,7 @@ export default function QuestionBank() {
           )}
         </section>
       </main>
-    </div>
+    </AppShell>
   );
 }
 
@@ -449,9 +447,7 @@ export function QuestionBankDetail() {
   const indexOnly = question ? isIndexOnly(question) : false;
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <CommandBar />
-
+    <AppShell>
       <main className="relative mx-auto max-w-3xl px-5 pb-28 pt-8 sm:px-8">
         <Link
           to={backTo}
@@ -551,6 +547,6 @@ export function QuestionBankDetail() {
           </article>
         )}
       </main>
-    </div>
+    </AppShell>
   );
 }

@@ -9,6 +9,14 @@ interface KnowledgeMapProps {
   trackTitle?: string;
   onSubtopicClick: (subtopicId: string) => void;
   onVerifyClick?: (subtopicId: string) => void;
+  /**
+   * Controlled fullscreen. TrackOverview no longer renders this map inline — the sidebar is the
+   * navigator there, and showing both was the same topic/subtopic tree twice in two visual
+   * languages. The map earns its place as a full-width "shape of the whole course" view instead,
+   * which is the only size this horizontally-scrolling layout actually reads well at.
+   */
+  fullscreen?: boolean;
+  onFullscreenChange?: (fullscreen: boolean) => void;
 }
 
 /**
@@ -18,8 +26,17 @@ interface KnowledgeMapProps {
  * - Hover a non-complete node → "I know this" button triggers verification flow.
  * - Fullscreen toggle. Scrolls horizontally when many topics.
  */
-export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVerifyClick }: KnowledgeMapProps) {
-  const [fullscreen, setFullscreen] = useState(false);
+export default function KnowledgeMap({
+  topics, trackTitle, onSubtopicClick, onVerifyClick,
+  fullscreen: fullscreenProp, onFullscreenChange,
+}: KnowledgeMapProps) {
+  const controlled = fullscreenProp !== undefined;
+  const [fullscreenState, setFullscreenState] = useState(false);
+  const fullscreen = controlled ? fullscreenProp : fullscreenState;
+  const setFullscreen = (v: boolean) => {
+    if (!controlled) setFullscreenState(v);
+    onFullscreenChange?.(v);
+  };
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -27,6 +44,7 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullscreen]);
 
   // "Frontier": first non-complete subtopic in the first topic that isn't fully done.
@@ -74,7 +92,7 @@ export default function KnowledgeMap({ topics, trackTitle, onSubtopicClick, onVe
           {/* No track-level progress bar here — TrackOverview owns the single progress meter, directly
               above this component. Per-topic bars below stay: those say something the page-level
               meter doesn't. */}
-          <button onClick={() => setFullscreen(f => !f)} className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#0d1b2a] border border-[#14b892]/25 text-[#5eead4] hover:text-[#73ffb8] hover:border-[#2dd4a8] transition-colors" title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
+          <button onClick={() => setFullscreen(!fullscreen)} className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#0d1b2a] border border-[#14b892]/25 text-[#5eead4] hover:text-[#73ffb8] hover:border-[#2dd4a8] transition-colors" title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
         </div>

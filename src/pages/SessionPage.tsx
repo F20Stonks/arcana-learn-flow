@@ -2,6 +2,7 @@ import { getBearerToken } from "@/lib/authHeader";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowUp, Loader2, Clock, Zap, Box, AlertTriangle, CheckCircle2, Sparkles, Check, Circle, Shapes, NotebookPen, Compass, Sigma, ChevronsUpDown, SlidersHorizontal, Frame, Layers, MessageSquare, Maximize2, Minimize2 } from "lucide-react";
@@ -1373,7 +1374,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
   const thinking = isStreaming && messages[messages.length - 1]?.role !== "assistant";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <AppShell focusMode>
       <div className="h-screen flex flex-col overflow-hidden">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
@@ -1828,7 +1829,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
           onRemoveViz={removeVizInsight}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
 

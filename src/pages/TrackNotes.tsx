@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, BookOpen, Search, Box } from "lucide-react";
@@ -138,12 +139,13 @@ export default function TrackNotes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <AppShell><div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppShell>;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <AppShell>
+    <div className="flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto md:min-h-screen">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto md:sticky md:top-14 md:h-[calc(100vh-3.5rem)]">
         <div className="p-4 border-b border-border">
           <button onClick={() => navigate(`/track/${trackId}`)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3">
             <ArrowLeft className="h-4 w-4" /> Back to track
@@ -266,6 +268,7 @@ export default function TrackNotes() {
         )}
       </main>
     </div>
+    </AppShell>
   );
 }
 

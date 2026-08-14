@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import CommandBar from "@/components/CommandBar";
+import AppShell from "@/components/AppShell";
 import UpNextCard from "@/components/UpNextCard";
 import TrackCard from "@/components/TrackCard";
 import GeneralChat from "@/components/GeneralChat";
@@ -175,18 +175,17 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen bg-background">
-        <CommandBar />
+      <AppShell>
         <main className="relative mx-auto flex max-w-6xl items-center gap-3 px-5 pb-24 pt-24 sm:px-8">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           <p className="text-[14px] text-muted-foreground">Opening your workspace…</p>
         </main>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <AppShell>
       {/* Ambient canvas glow — depth without noise. color-mix against the live tokens so this
           re-tints per theme instead of a fixed cyan/violet blob (which reads oddly on light
           backgrounds like Light/Paper). */}
@@ -198,8 +197,6 @@ export default function Dashboard() {
             "radial-gradient(ellipse 70% 45% at 50% -10%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 65%), radial-gradient(ellipse 45% 35% at 88% 68%, color-mix(in oklab, var(--foreground) 5%, transparent), transparent 70%)",
         }}
       />
-
-      <CommandBar />
 
       <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         {loadError && (
@@ -386,6 +383,6 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AppShell>
   );
 }

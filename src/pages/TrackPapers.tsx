@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -286,13 +287,14 @@ export default function TrackPapers() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <AppShell><div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppShell>;
 
   // --- Taking / reviewing an active paper ---
   if (activePaper) {
     const score = answersSoFar.filter((a) => a.correct).length;
     return (
-      <div className="min-h-screen bg-background">
+      <AppShell>
+    <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setActivePaper(null)} className="text-muted-foreground hover:text-foreground shrink-0"><ArrowLeft className="h-4 w-4" /></button>
@@ -406,11 +408,13 @@ export default function TrackPapers() {
           )}
         </main>
       </div>
+      </AppShell>
     );
   }
 
   // --- Papers hub: real past papers + generate ---
   return (
+    <AppShell>
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background px-4 sm:px-6 py-3 flex items-center gap-3">
         <button onClick={() => navigate(`/track/${trackId}`)} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
@@ -664,5 +668,6 @@ export default function TrackPapers() {
         )}
       </main>
     </div>
+    </AppShell>
   );
 }

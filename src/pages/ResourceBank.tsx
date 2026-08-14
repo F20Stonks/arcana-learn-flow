@@ -7,6 +7,7 @@ import { BookOpen, FileText, Globe, Search, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AppShell from '@/components/AppShell';
 
 export default function ResourceBank() {
   const [resources, setResources] = useState<Record<string, unknown>[]>([]);
@@ -49,6 +50,7 @@ export default function ResourceBank() {
   });
 
   return (
+    <AppShell>
     <div className="container mx-auto p-6 max-w-7xl animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -171,5 +173,6 @@ export default function ResourceBank() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

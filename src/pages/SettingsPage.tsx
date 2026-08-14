@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,16 +40,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 sm:px-8 py-4 flex items-center gap-3">
-          <button onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm font-semibold text-foreground">Settings</span>
-        </div>
-      </header>
-
+    <AppShell>
       <main className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
         <h1 className="text-xl font-bold text-foreground mb-6">Settings</h1>
 
@@ -78,7 +70,7 @@ export default function SettingsPage() {
           <span className="text-sm font-medium">Sign out</span>
         </button>
       </main>
-    </div>
+    </AppShell>
   );
 }
 
@@ -146,16 +138,12 @@ const SUB_PAGE_TITLES: Record<Exclude<View, "list">, string> = {
 
 function SubPage({ view, onBack }: { view: Exclude<View, "list">; onBack: () => void }) {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 sm:px-8 py-4 flex items-center gap-3">
-          <button onClick={onBack} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm font-semibold text-foreground">{SUB_PAGE_TITLES[view]}</span>
-        </div>
-      </header>
+    <AppShell>
       <main className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
+        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft className="h-3.5 w-3.5" /> Settings
+        </button>
+        <h1 className="mb-6 text-xl font-bold text-foreground">{SUB_PAGE_TITLES[view]}</h1>
         {view === "account" && <AccountPanel />}
         {view === "privacy" && <PrivacyPanel />}
         {view === "notifications" && (
@@ -166,7 +154,7 @@ function SubPage({ view, onBack }: { view: Exclude<View, "list">; onBack: () => 
           />
         )}
       </main>
-    </div>
+    </AppShell>
   );
 }
 

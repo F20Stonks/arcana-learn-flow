@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Target, Clock, Trophy, Brain, BarChart3, Flame, BookOpen } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import AppShell from "@/components/AppShell";
 
 interface SessionRow {
   started_at: string;
@@ -113,6 +114,7 @@ export default function AnalyticsDashboard() {
   const hasResourceActivity = resourceStats.some((r) => r.total_attempts > 0);
 
   return (
+    <AppShell>
     <div className="container mx-auto max-w-7xl p-6 animate-in fade-in duration-500">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Performance Analytics</h1>
@@ -246,5 +248,6 @@ export default function AnalyticsDashboard() {
         </CardContent>
       </Card>
     </div>
+    </AppShell>
   );
 }
