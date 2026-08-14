@@ -1,8 +1,10 @@
+import { getGCPAccessToken } from "./googleAuth.ts";
+
 export type AIConfig = {
   url: string;
   key: string;
   model: string;
-  provider: "xai";
+  provider: "xai" | "vertex";
 };
 
 /**
@@ -19,11 +21,13 @@ export type AITier = "turn" | "authoring";
 
 const cached: Partial<Record<AITier, AIConfig>> = {};
 
-// Reads the xAI API key from the app_secrets table (service role). Falls back to
-// the XAI_API_KEY env var if the table is unavailable.
+// A Vertex-backed config's `key` is a bearer token that expires in ~1hr — an
+// isolate that stays warm past that must not keep serving the stale one out
+// of `cached`. Every other provider's key is a static env var, safe to trust
+// forever, so only vertex bypasses the top-level cache hit below.
 export async function getAIConfig(tier: AITier = "turn"): Promise<AIConfig> {
   const hit = cached[tier];
-  if (hit) return hit;
+  if (hit && hit.provider !== "vertex") return hit;
 
   // The authoring model is settable without a redeploy via Lovable's Cloud → Secrets panel (a free
   // settings action). Left unset, authoring runs on the same model as everything else — which makes
@@ -31,6 +35,27 @@ export async function getAIConfig(tier: AITier = "turn"): Promise<AIConfig> {
   const authoringOverride = Deno.env.get("AUTHORING_MODEL");
   const strongerIfSet = (base: string) =>
     tier === "authoring" && authoringOverride ? authoringOverride : base;
+
+  // Vertex AI — routes spend through GCP billing (e.g. trial credit) instead of the Lovable
+  // gateway. Checked first: presence of the service-account secret is the explicit opt-in.
+  const gcpProject = Deno.env.get("GCP_PROJECT_ID");
+  if (Deno.env.get("GCP_SERVICE_ACCOUNT_JSON") && gcpProject) {
+    const region = Deno.env.get("GCP_REGION") || "us-central1";
+    const token = await getGCPAccessToken();
+    // Vertex's own OpenAI-compat endpoint takes bare model ids (no "google/" prefix — that's the
+    // Lovable gateway's OpenRouter-style convention, a different surface). Model catalog moves;
+    // VERTEX_MODEL overrides without a redeploy the same way AUTHORING_MODEL does. UNVERIFIED
+    // default — confirm the exact id in Model Garden before trusting it.
+    const model = strongerIfSet(Deno.env.get("VERTEX_MODEL") || "gemini-2.5-flash");
+    const cfg: AIConfig = {
+      url: `https://${region}-aiplatform.googleapis.com/v1beta1/projects/${gcpProject}/locations/${region}/endpoints/openapi/chat/completions`,
+      key: token,
+      model,
+      provider: "vertex",
+    };
+    cached[tier] = cfg;
+    return cfg;
+  }
 
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (lovableKey) {
@@ -56,7 +81,9 @@ export async function getAIConfig(tier: AITier = "turn"): Promise<AIConfig> {
     return cfg;
   }
 
-  throw new Error("No AI provider key configured (LOVABLE_API_KEY or XAI_API_KEY required)");
+  throw new Error(
+    "No AI provider key configured (GCP_SERVICE_ACCOUNT_JSON+GCP_PROJECT_ID, LOVABLE_API_KEY, or XAI_API_KEY required)",
+  );
 }
 
 // Synchronous accessor for code paths that already awaited getAIConfig() once
