@@ -34,6 +34,7 @@ import type {
   GroupPrim,
 } from "@/lib/sceneSpec";
 import { buildColorMap, type VizTheme } from "@/lib/vizThemes";
+import { resolveChoreography } from "@/lib/choreo";
 import MathRenderer from "@/components/MathRenderer";
 
 /* ---------------- theming helpers ---------------- */
@@ -336,7 +337,8 @@ function StagedPrim({
   style: Style;
   theme: VizTheme;
 }) {
-  const visible = (prim.step ?? 1) - 1 <= stepIdx;
+  const gone = prim.exitStep !== undefined && stepIdx >= prim.exitStep - 1;
+  const visible = !gone && (prim.step ?? 1) - 1 <= stepIdx;
   const progress = useEntrance(visible);
   if (!visible) return null;
   return <PrimitiveR prim={prim} scope={scope} style={style} theme={theme} progress={progress} />;
@@ -1395,8 +1397,73 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
   // remount primitives per scene so entrance animations replay
   const specKey = useMemo(() => ++specSeq, [spec]);
 
+  /* -------- step choreography: the uu playback clock --------
+   * `uu` is the current step's 0→1 progress, fed into every expression's
+   * scope exactly like `time` and the sliders. Tweens are lowered onto the
+   * primitive tree as stable uu-blend expressions by resolveChoreography, so
+   * per-frame work is just this one scope value changing. */
+  const currentStep = hasSteps ? steps[stepIdx] : undefined;
+  const stepDuration = currentStep?.duration ?? 0;
+  const timed = stepDuration > 0.05;
+  const [uu, setUu] = useState(1);
+  const [stepPlaying, setStepPlaying] = useState(true);
+  const uuRef = useRef(1);
+
+  // Entering a step arms its clock (timed) or pins uu at the final state (static).
+  useEffect(() => {
+    uuRef.current = timed ? 0 : 1;
+    setUu(uuRef.current);
+    setStepPlaying(true);
+  }, [stepIdx, specKey, timed]);
+
+  // rAF playback, ~30fps state emits (same cadence as SceneClock). Holds at
+  // the end of the beat: advancing is always the student's move, never the
+  // clock's (segmenting — the pause between beats is where thinking happens).
+  useEffect(() => {
+    if (!timed || !stepPlaying || uuRef.current >= 1) return;
+    let raf = 0;
+    let last = performance.now();
+    let lastEmit = 0;
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      uuRef.current = Math.min(1, uuRef.current + dt / stepDuration);
+      if (now - lastEmit > 33 || uuRef.current >= 1) {
+        lastEmit = now;
+        setUu(uuRef.current);
+      }
+      if (uuRef.current < 1) raf = requestAnimationFrame(tick);
+      else setStepPlaying(false);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [timed, stepPlaying, stepIdx, stepDuration]);
+
+  const togglePlay = () => {
+    if (!timed) return;
+    if (uuRef.current >= 1) {
+      uuRef.current = 0;
+      setUu(0);
+      setStepPlaying(true);
+    } else {
+      setStepPlaying((p) => !p);
+    }
+  };
+  const scrubTo = (v: number) => {
+    uuRef.current = v;
+    setUu(v);
+    setStepPlaying(false);
+  };
+  const timedRef = useRef(timed);
+  timedRef.current = timed;
+  const togglePlayRef = useRef(togglePlay);
+  togglePlayRef.current = togglePlay;
+
   const usesTime = useMemo(() => sceneUsesTime(spec), [spec]);
-  const scope: Scope = { ...params, time };
+  const scope: Scope = { ...params, time, uu };
+
+  // Completed steps baked, current step lowered to uu-blends — pure in (spec, stepIdx).
+  const objects = useMemo(() => resolveChoreography(spec, stepIdx), [spec, stepIdx]);
 
   const cam: [number, number, number] = spec.camera ?? (spec.flat ? [0, 0, 8] : [6, 6, 6]);
   const initialCam = useRef(cam);
@@ -1416,6 +1483,30 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec]);
 
+  // Beat camera: fly (eased, ~0.9s) to a step's declared viewpoint on entry.
+  // The frame is part of the choreography — where to look is direction, not decoration.
+  const flyRaf = useRef(0);
+  useEffect(() => {
+    const target = hasSteps ? spec.steps?.[stepIdx]?.camera : undefined;
+    const controls = controlsRef.current;
+    if (!target || !controls) return;
+    cancelAnimationFrame(flyRaf.current);
+    const camObj = controls.object;
+    const from = camObj.position.clone();
+    const to = new THREE.Vector3(target[0], target[1], target[2]);
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / 900);
+      const s = p * p * (3 - 2 * p);
+      camObj.position.lerpVectors(from, to, s);
+      controls.update();
+      if (p < 1) flyRaf.current = requestAnimationFrame(tick);
+    };
+    flyRaf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(flyRaf.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIdx, spec]);
+
   // Defensive clamp: if a locked gate is somehow active on remount with a stale stepIdx already
   // past the reachable max (shouldn't normally happen since every spec change resets to 0), pull
   // it back rather than leaving the payoff visible.
@@ -1429,11 +1520,18 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
   useEffect(() => {
     if (!hasSteps) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== " ") return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "MATH-FIELD" || target?.isContentEditable;
       if (isTyping) return;
+      if (e.key === " ") {
+        // Space plays/pauses/replays the current beat — only claimed on timed steps.
+        if (!timedRef.current) return;
+        e.preventDefault();
+        togglePlayRef.current();
+        return;
+      }
       e.preventDefault();
       if (e.key === "ArrowLeft") setStepIdx((i) => Math.max(0, i - 1));
       else setStepIdx((i) => Math.min(maxStepIdx, i + 1));
@@ -1503,7 +1601,7 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
         <SceneCtx.Provider value={sceneCtx}>
           <LabelLayer>
             <Suspense fallback={null}>
-              {spec.objects.map((o, i) => (
+              {objects.map((o, i) => (
                 <StagedPrim key={`${specKey}-${i}`} prim={o} stepIdx={stepIdx} scope={scope} style={style} theme={theme} />
               ))}
             </Suspense>
@@ -1593,6 +1691,29 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
                 )}
               </button>
             </div>
+            {/* beat transport — one combined play/pause/replay control + scrub. Playback
+                holds at the end of each beat; ▶ on a finished beat replays it. */}
+            {timed && (
+              <div className="flex w-full max-w-[300px] items-center gap-1.5">
+                <button
+                  onClick={togglePlay}
+                  title={stepPlaying ? "Pause" : uu >= 1 ? "Replay this step" : "Play"}
+                  className={btnCls}
+                >
+                  {stepPlaying ? <Pause className="h-3 w-3" /> : uu >= 1 ? <SkipBack className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.001}
+                  value={uu}
+                  onChange={(e) => scrubTo(Number(e.target.value))}
+                  aria-label="Step playback position"
+                  className="h-1 min-w-0 flex-1 cursor-pointer accent-sky-400"
+                />
+              </div>
+            )}
             <div className="flex items-center gap-1">
               {steps.map((_, i) => {
                 const locked = i > maxStepIdx;

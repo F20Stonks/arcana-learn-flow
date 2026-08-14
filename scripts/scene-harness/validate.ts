@@ -12,6 +12,7 @@
  */
 import { create, all } from "mathjs";
 import type { SceneSpec, Primitive } from "../../src/lib/sceneSpec";
+import { resolveChoreography } from "../../src/lib/choreo";
 
 const math = create(all, {});
 
@@ -76,6 +77,7 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
     }
   });
   baseScope["time"] ??= 0;
+  baseScope["uu"] ??= 1; // choreography progress — default scope samples the final state
 
   // slider sweep scopes (min/default/max) to catch range-edge blowups
   const sweeps: Array<Record<string, number>> = [{ ...baseScope }];
@@ -84,6 +86,8 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
     sweeps.push({ ...baseScope, [s.key]: s.max });
   }
   sweeps.push({ ...baseScope, time: 2.5 });
+  sweeps.push({ ...baseScope, uu: 0 });
+  sweeps.push({ ...baseScope, uu: 0.5 });
 
   // ---- collect every expression with its legal extra vars ----
   const ctxs: ExprCtx[] = [];
@@ -325,5 +329,51 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
     colorCount: colors.size,
     accentObjectCount,
     hardFail,
+  };
+}
+
+/* ---------------- choreography validation ----------------
+ * Deterministic checks for step tweens: every tween must target an existing
+ * id, motion needs a duration, and the RESOLVED primitive tree of every step
+ * (baked values + uu-blend expressions) must survive the same expression
+ * checks as the authored tree — a blend that doesn't compile is a scene that
+ * silently freezes mid-morph.
+ */
+export interface ChoreoReport {
+  flags: string[];
+  exprIssues: ExprIssue[];
+  hardFail: boolean;
+}
+
+export function validateChoreography(scene: SceneSpec): ChoreoReport {
+  const steps = scene.steps ?? [];
+  const flags: string[] = [];
+  const exprIssues: ExprIssue[] = [];
+
+  const ids = new Set<string>();
+  walkPrims(scene.objects, (p) => {
+    const id = (p as { id?: unknown }).id;
+    if (typeof id === "string") ids.add(id);
+  });
+  steps.forEach((s, j) => {
+    // Tweens on a durationless step are legal (they snap-bake) but usually a
+    // Director mistake — motion was intended, none will play. Soft flag.
+    if ((s.tweens?.length ?? 0) > 0 && (s.duration ?? 0) <= 0.05) {
+      flags.push(`tweens-without-duration:step${j + 1}`);
+    }
+    for (const tw of s.tweens ?? []) {
+      if (!ids.has(tw.target)) flags.push(`tween-unknown-target:step${j + 1}:${tw.target}`);
+    }
+  });
+
+  for (let j = 0; j < steps.length; j++) {
+    const rep = validateScene({ ...scene, objects: resolveChoreography(scene, j) }, 0);
+    for (const issue of rep.exprIssues) exprIssues.push({ ...issue, where: `step${j + 1}:${issue.where}` });
+  }
+
+  return {
+    flags,
+    exprIssues,
+    hardFail: exprIssues.length > 0 || flags.some((f) => f.startsWith("tween-unknown-target")),
   };
 }

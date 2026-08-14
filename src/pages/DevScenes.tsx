@@ -13,6 +13,82 @@ import { directScene } from "@/lib/sceneDirector";
 
 const SCENES: { name: string; spec: SceneSpec }[] = [
   {
+    // Choreography showcase 1 — FORMAL TWEENS: step 2 morphs the group matrix
+    // and both basis arrows over 3s (bake persists into step 3), step 3 flies
+    // the camera out and reveals the eigen-directions.
+    name: "Choreo: linear map morph (tweens, camera fly, bake)",
+    spec: {
+      kind: "scene",
+      title: "A matrix is a machine that moves the whole plane",
+      caption: "Play step 2 — every gridpoint rides to its destination; two directions refuse to turn.",
+      why: "A linear map is determined by where the basis vectors land; watching the interpolation shows every point carried linearly, and the eigen-directions are the lines the map only stretches.",
+      flat: true,
+      camera: [0, 0, 9],
+      steps: [
+        { title: "The plane and its basis", caption: "A lattice of points, the unit square, and î, ĵ." },
+        {
+          title: "Watch A act",
+          caption: "Every point moves linearly to its image — nothing tears, nothing bends.",
+          duration: 3,
+          tweens: [
+            { target: "plane", to: { matrix: [3, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] } },
+            { target: "ihat", to: { to: [3, 0, 0.02] } },
+            { target: "jhat", to: { to: [1, 2, 0.02] } },
+          ],
+        },
+        { title: "The invariant directions", caption: "Along (1,0) and (1,−1), A only stretches — eigenvectors.", camera: [0, 0, 12] },
+      ],
+      objects: [
+        { kind: "axes", size: 5, labels: ["x", "y", "z"] },
+        {
+          kind: "group",
+          id: "plane",
+          matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+          children: [
+            { kind: "points", count: 121, x: "mod(i,11)-5", y: "floor(i/11)-5", size: 0.07, color: "#38bdf8" },
+            { kind: "polygon", vertices: [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], color: "#fbbf24", opacity: 0.3 },
+          ],
+        },
+        { kind: "arrow", id: "ihat", from: [0, 0, 0.02], to: [1, 0, 0.02], color: "#34d399", label: "\\hat{\\imath}" },
+        { kind: "arrow", id: "jhat", from: [0, 0, 0.02], to: [0, 1, 0.02], color: "#f472b6", label: "\\hat{\\jmath}" },
+        { kind: "curve", x: "t", y: "0", z: "0.01", tMin: -5.5, tMax: 5.5, samples: 8, color: "#fbbf24", width: 2.5, dash: true, step: 3 },
+        { kind: "curve", x: "t", y: "-t", z: "0.01", tMin: -4, tMax: 4, samples: 8, color: "#fbbf24", width: 2.5, dash: true, step: 3 },
+        { kind: "text", at: [0, -6.2, 0], content: "A=\\begin{pmatrix}3&1\\\\0&2\\end{pmatrix}", latex: true, color: "#e2e8f0", size: 0.3 },
+      ],
+    },
+  },
+  {
+    // Choreography showcase 2 — DIRECT-uu idiom: no formal tweens; expressions
+    // read uu themselves (h: 2→0.02 as step 2 plays). Exercises exitStep (the
+    // secant scaffolding leaves when the tangent appears) and live drag DURING
+    // playback (a stays a free parameter throughout).
+    name: "Choreo: secant → tangent (direct-uu, drag, exitStep)",
+    spec: {
+      kind: "scene",
+      title: "The tangent is where the secant was heading",
+      caption: "Step 2 slides B home; the slope readout converges. Then drag A — the tangent is yours.",
+      why: "The derivative is not a formula but a limit you can watch: chord slopes stabilise as the second point arrives, and what remains is the line the curve was already leaning on.",
+      flat: true,
+      camera: [0, 0, 8],
+      sliders: [{ key: "a", label: "Point a", min: -2, max: 2, step: 0.01, default: 1 }],
+      steps: [
+        { title: "A curve and a point", caption: "f(x) = x²/2, with A pinned at x = a (drag it any time)." },
+        { title: "B slides home", caption: "The secant pivots as B → A; watch its slope settle.", duration: 3.5 },
+        { title: "Your turn", caption: "The secant has become the tangent. Drag A along the curve." },
+      ],
+      objects: [
+        { kind: "axes", size: 4, labels: ["x", "y", "z"] },
+        { kind: "curve", x: "t", y: "t^2/2", tMin: -3, tMax: 3, samples: 200, color: "#38bdf8", width: 2.5 },
+        { kind: "point", at: ["a", "a^2/2", 0.03], color: "#f472b6", size: 0.12, label: "A", drag: ["a", "ay"] },
+        { kind: "point", at: ["a+(2-1.98*(uu^2*(3-2*uu)))", "(a+(2-1.98*(uu^2*(3-2*uu))))^2/2", 0.03], color: "#34d399", size: 0.1, label: "B", step: 2, exitStep: 3 },
+        { kind: "curve", x: "t", y: "a^2/2+(a+(2-1.98*(uu^2*(3-2*uu)))/2)*(t-a)", tMin: -3.5, tMax: 3.5, samples: 8, color: "#34d399", width: 2, step: 2, exitStep: 3 },
+        { kind: "text", at: [-2.5, 3.4, 0], content: "m_{AB}=${a+(2-1.98*(uu^2*(3-2*uu)))/2}", latex: true, color: "#34d399", size: 0.26, step: 2, exitStep: 3 },
+        { kind: "curve", x: "t", y: "a^2/2+a*(t-a)", tMin: -3.5, tMax: 3.5, samples: 8, color: "#fbbf24", width: 2.5, step: 3 },
+        { kind: "text", at: [-2.5, 3.4, 0], content: "f'(a)=a=${a}", latex: true, color: "#fbbf24", size: 0.26, step: 3 },
+      ],
+    },
+  },
+  {
     name: "FTA surface + winding (colormap, slider)",
     spec: {
       kind: "scene",

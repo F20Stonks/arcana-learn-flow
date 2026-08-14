@@ -8,6 +8,10 @@
  *   - parameter variables: t (curves), u/v (surfaces), x/y/z (fields, regions)
  *   - any slider key declared in `sliders`
  *   - `time` — seconds since the scene mounted (for ambient animation)
+ *   - `uu` — the current step's playback progress, 0→1 over the step's
+ *     `duration` (1 on steps without one). The choreography variable: tweens
+ *     compile down to blends in it, and hand-authored expressions may read it
+ *     directly for within-step motion.
  */
 
 export interface SliderSpec {
@@ -25,6 +29,40 @@ export interface StepSpec {
   title: string;
   /** optional one-sentence explanation shown under the title */
   caption?: string;
+  /**
+   * Seconds of choreographed playback when this step is entered. While the
+   * step plays, the reserved scope variable `uu` runs 0→1 linearly (easing
+   * belongs to each tween). Steps without a duration are static: uu = 1.
+   * Playback auto-pauses at the end of the step — advancing to the next
+   * beat is always the student's move, never the clock's.
+   */
+  duration?: number;
+  /** camera position to fly to (eased, ~0.9s) when this step is entered */
+  camera?: [number, number, number];
+  /** parameter morphs that play over this step's duration */
+  tweens?: TweenSpec[];
+}
+
+/**
+ * A parameter morph on one identified object (`id` on the primitive). When
+ * the step is entered the targeted params travel from their current values
+ * to `to`: numbers and expressions blend continuously ((1−w)·from + w·to,
+ * w eased from uu), [x,y,z]-style arrays blend per component, and
+ * `color`/`label`/`content` snap. After the step completes — and in every
+ * later step — the `to` values are BAKED: objects keep the state they
+ * morphed into, so identity persists and scrubbing/revisiting is pure.
+ */
+export interface TweenSpec {
+  /** id of the primitive this tween drives */
+  target: string;
+  /** param values reached by the end of the tween */
+  to: Record<string, unknown>;
+  /** seconds into the step before the morph starts (default 0) */
+  delay?: number;
+  /** seconds the morph runs (default: to the end of the step) */
+  duration?: number;
+  /** "smooth" (default, smoothstep) or "linear" */
+  ease?: "smooth" | "linear";
 }
 
 /**
@@ -35,6 +73,14 @@ export interface StepSpec {
  */
 export interface Staged {
   step?: number;
+  /** stable identity for choreography — step tweens target primitives by id */
+  id?: string;
+  /**
+   * Hide this primitive from the n-th step (1-based) onward. An object may
+   * enter with `step` and leave with `exitStep` — scaffolding that gives way
+   * to what it became (the secant that exits when the tangent appears).
+   */
+  exitStep?: number;
 }
 
 /** Plain colour string (hex, rgb, hsl, or a named CSS colour). */
@@ -405,6 +451,10 @@ const isTriple = (v: unknown): boolean =>
 function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
   if (!p || typeof p !== "object") return null;
   const prim = p as Record<string, unknown>;
+  if (prim.id !== undefined && typeof prim.id !== "string") delete prim.id;
+  if (prim.exitStep !== undefined && (!Number.isFinite(prim.exitStep as number) || (prim.exitStep as number) < 2)) {
+    delete prim.exitStep;
+  }
   if (prim.step !== undefined && (!Number.isFinite(prim.step as number) || (prim.step as number) < 1)) {
     delete prim.step;
   }
@@ -542,7 +592,38 @@ export function sanitizeScene(spec: SceneSpec): SceneSpec {
   if (spec.steps !== undefined) {
     spec.steps = (Array.isArray(spec.steps) ? spec.steps : [])
       .filter((s): s is StepSpec => !!s && typeof s === "object" && typeof s.title === "string")
-      .slice(0, 12);
+      .slice(0, 12)
+      .map((s) => {
+        if (s.duration !== undefined) {
+          const d = num(s.duration, 0);
+          if (d < 0.2) delete s.duration;
+          else s.duration = clamp(d, 0.2, 20);
+        }
+        if (s.camera !== undefined && (!Array.isArray(s.camera) || s.camera.length !== 3 || !s.camera.every((c) => Number.isFinite(c)))) {
+          delete s.camera;
+        }
+        if (s.tweens !== undefined) {
+          s.tweens = (Array.isArray(s.tweens) ? s.tweens : [])
+            .filter(
+              (tw): tw is TweenSpec =>
+                !!tw && typeof tw === "object" && typeof (tw as TweenSpec).target === "string" &&
+                !!(tw as TweenSpec).to && typeof (tw as TweenSpec).to === "object",
+            )
+            .slice(0, 8)
+            .map((tw) => {
+              if (tw.delay !== undefined) tw.delay = Math.max(0, num(tw.delay, 0));
+              if (tw.duration !== undefined) {
+                const d = num(tw.duration, 0);
+                if (d <= 0) delete tw.duration;
+                else tw.duration = Math.min(d, 20);
+              }
+              if (tw.ease !== "linear") delete tw.ease; // default smooth
+              return tw;
+            });
+          if (s.tweens.length === 0) delete s.tweens;
+        }
+        return s;
+      });
     if (spec.steps.length === 0) delete spec.steps;
   }
   spec.sliders = (Array.isArray(spec.sliders) ? spec.sliders : [])
