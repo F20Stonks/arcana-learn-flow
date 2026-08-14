@@ -4,7 +4,7 @@ export type AIConfig = {
   url: string;
   key: string;
   model: string;
-  provider: "xai" | "vertex";
+  provider: "xai" | "vertex" | "vertex-express";
 };
 
 /**
@@ -20,15 +20,17 @@ export type AIConfig = {
 export type AITier = "turn" | "authoring";
 
 const cached: Partial<Record<AITier, AIConfig>> = {};
+// Kept OUT of `cached` deliberately: a "vertex-express" config must never be handed to a caller
+// that didn't explicitly ask for it (opts.allowExpress) — it speaks a wire protocol (native Gemini,
+// via _shared/vertexExpress.ts) that a plain `fetch(ai.url, {...OpenAI-shape})` caller can't parse.
+// A shared cache slot would leak it to the next unrelated getAIConfig() call in the same warm isolate.
+const expressCached: Partial<Record<AITier, AIConfig>> = {};
 
 // A Vertex-backed config's `key` is a bearer token that expires in ~1hr — an
 // isolate that stays warm past that must not keep serving the stale one out
 // of `cached`. Every other provider's key is a static env var, safe to trust
 // forever, so only vertex bypasses the top-level cache hit below.
-export async function getAIConfig(tier: AITier = "turn"): Promise<AIConfig> {
-  const hit = cached[tier];
-  if (hit && hit.provider !== "vertex") return hit;
-
+export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?: boolean }): Promise<AIConfig> {
   // The authoring model is settable without a redeploy via Lovable's Cloud → Secrets panel (a free
   // settings action). Left unset, authoring runs on the same model as everything else — which makes
   // for a weaker plan, never a broken one.
@@ -36,8 +38,30 @@ export async function getAIConfig(tier: AITier = "turn"): Promise<AIConfig> {
   const strongerIfSet = (base: string) =>
     tier === "authoring" && authoringOverride ? authoringOverride : base;
 
-  // Vertex AI — routes spend through GCP billing (e.g. trial credit) instead of the Lovable
-  // gateway. Checked first: presence of the service-account secret is the explicit opt-in.
+  // Vertex AI Express Mode — plain API-key auth, billed against GCP (e.g. trial credit), no service
+  // account/org-policy fighting required. Explicit double opt-in: the caller must both pass
+  // allowExpress AND have the secret set. Speaks Gemini's native wire format, NOT the OpenAI shape
+  // every other provider here returns — callers MUST route through _shared/vertexExpress.ts, never
+  // `fetch(ai.url, ...)` directly. Currently only chat/index.ts opts in (see that file for why).
+  const expressKey = Deno.env.get("GCP_EXPRESS_API_KEY");
+  if (opts?.allowExpress && expressKey) {
+    const hit = expressCached[tier];
+    if (hit) return hit;
+    const cfg: AIConfig = {
+      url: "", // unused — vertexExpress.ts builds its own URL; present only to satisfy the AIConfig shape
+      key: expressKey,
+      model: strongerIfSet(Deno.env.get("VERTEX_EXPRESS_MODEL") || "gemini-2.5-flash"),
+      provider: "vertex-express",
+    };
+    expressCached[tier] = cfg;
+    return cfg;
+  }
+
+  const hit = cached[tier];
+  if (hit && hit.provider !== "vertex") return hit;
+
+  // Vertex AI (OAuth/service account) — routes spend through GCP billing (e.g. trial credit) instead
+  // of the Lovable gateway. Checked first: presence of the service-account secret is the explicit opt-in.
   const gcpProject = Deno.env.get("GCP_PROJECT_ID");
   if (Deno.env.get("GCP_SERVICE_ACCOUNT_JSON") && gcpProject) {
     const region = Deno.env.get("GCP_REGION") || "us-central1";

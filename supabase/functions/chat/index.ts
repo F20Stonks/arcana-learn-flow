@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { getAIConfig } from "../_shared/aiConfig.ts";
+import { callVertexExpressChat } from "../_shared/vertexExpress.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import {
   hasPlanIdentity,
@@ -157,7 +158,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { messages, context, systemOverride } = await req.json();
-    const ai = await getAIConfig();
+    // chat is the one call site currently opted into Vertex Express (see aiConfig.ts) — the live
+    // teaching loop, the thing worth testing against real GCP trial credit first. The other 7 AI
+    // functions stay on the gateway untouched; migrate them deliberately later, not as a side effect.
+    const ai = await getAIConfig("turn", { allowExpress: true });
 
     const intensity = context?.intensity === "guided" || context?.intensity === "rigorous"
       ? context.intensity
@@ -314,21 +318,29 @@ prose instead — never sketch it in characters.
 
 Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
 
-    const response = await fetch(ai.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ai.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: pickModel(intensity, ai.model),
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-        ],
-        stream: true,
-      }),
-    });
+    const turnMessages = [
+      { role: "system" as const, content: systemPrompt },
+      ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+    ];
+
+    // vertex-express speaks Gemini's native wire format, not the OpenAI shape every other provider
+    // here does — callVertexExpressChat does that translation and hands back a plain Response, so
+    // everything below (the ok/429/402 checks, the final `new Response(response.body, ...)`) is
+    // identical either way.
+    const response = ai.provider === "vertex-express"
+      ? await callVertexExpressChat({ apiKey: ai.key, model: ai.model, messages: turnMessages })
+      : await fetch(ai.url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ai.key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: pickModel(intensity, ai.model),
+            messages: turnMessages,
+            stream: true,
+          }),
+        });
 
     if (!response.ok) {
       if (response.status === 429) {
