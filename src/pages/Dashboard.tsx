@@ -11,17 +11,15 @@
  *    never did either)
  *  - an empty state for a brand-new user with zero tracks (Manus always had 5)
  *  - real archive/delete, with the existing destructive-action confirmation dialog
- *  - a real "Ask Cortexed" chat column beside the hero (Manus had a toast() stub; this was
- *    briefly a button that toggled a panel below, which hid the app's one general-purpose
- *    chat behind a click), and the Hub/Customize/Settings/Sign-out icons in CommandBar
- *    actually do something (see that file)
+ *  - a real "Ask Cortexed" chat (Manus had a toast() stub). It has been an inline panel below
+ *    the fold and a column beside the hero; it is now a panel that hovers over a blurred
+ *    dashboard, carrying the same running-light border the app uses while the model thinks.
  * The tracks grid, ghost "new track" card, and archived toggle are otherwise Manus's exact
  * markup — only the data feeding them is real.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ChevronRight, Trash2, Loader2, MessageCircle, Maximize2, Minimize2, Minus, ChevronUp } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, ChevronRight, Trash2, Loader2, MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,14 +41,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-/**
- * How the "Ask Cortexed" panel is sized. `minimized` persists (it's a standing preference about
- * how you want your dashboard laid out); `fullscreen` deliberately does NOT — reopening the app
- * into a full-screen chat you set up days ago would be a surprise, so it resets to `normal`.
- */
-type ChatMode = "normal" | "minimized" | "fullscreen";
-const CHAT_MODE_KEY = "cortexed.dashboardChatMinimized";
 
 // Lifted out of UpNextCard: the greeting is now a page-level heading above the hero row, so the
 // empty state gets the same one instead of its own separate "Welcome, …".
@@ -79,23 +69,16 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
-  const [chatMode, setChatMode] = useState<ChatMode>(() =>
-    localStorage.getItem(CHAT_MODE_KEY) === "1" ? "minimized" : "normal",
-  );
+  const [chatOpen, setChatOpen] = useState(false);
 
+  // Escape closes, and the page behind is scroll-locked so dismissing returns you where you were.
+  // Guarded on `typing` so Escape in the chat input doesn't shut the panel mid-question.
   useEffect(() => {
-    if (chatMode !== "fullscreen") localStorage.setItem(CHAT_MODE_KEY, chatMode === "minimized" ? "1" : "0");
-  }, [chatMode]);
-
-  // Escape leaves fullscreen, and the page behind it is locked so exiting doesn't drop you at a
-  // different scroll position than you left. Guarded on `typing` so Escape in the chat input
-  // doesn't yank the panel out from under you mid-question.
-  useEffect(() => {
-    if (chatMode !== "fullscreen") return;
+    if (!chatOpen) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
-      if (e.key === "Escape" && !typing) setChatMode("normal");
+      if (e.key === "Escape" && !typing) setChatOpen(false);
     };
     window.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
@@ -104,7 +87,7 @@ export default function Dashboard() {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [chatMode]);
+  }, [chatOpen]);
 
   useEffect(() => {
     if (!user) return;
@@ -256,110 +239,93 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Greeting — one page-level heading above the hero row, whether or not there's a plan */}
-        <h1 className="reveal font-display mb-6 text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
-          {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
-        </h1>
-
-        {/* Hero row: what to do next on the left, the always-open chat on the right. Both columns
-            stretch to the taller of the two so they read as one instrument panel; below lg the
-            chat stacks underneath rather than squeezing the session title into two words a line.
-            When the chat is minimised the row drops to one column so up-next takes the full width;
-            when it's fullscreen the aside leaves the flow entirely (see chatMode). */}
-        <div
-          className={`grid grid-cols-1 items-stretch gap-5 ${
-            chatMode === "normal" ? "lg:grid-cols-[minmax(0,1fr)_360px]" : ""
-          }`}
-        >
-          <div className="min-w-0">
-            {plan ? (
-              <UpNextCard plan={plan} />
-            ) : (
-              <section className="reveal flex h-full flex-col" style={{ animationDelay: "60ms" }}>
-                <div className="glass-card flex flex-1 flex-col items-start justify-center rounded-3xl border-border p-7 sm:p-10">
-                  <p className="text-[15px] text-muted-foreground">
-                    {activeTracks.length > 0
-                      ? "Every session is complete — add something new whenever you're ready."
-                      : "Choose what you're studying and a complete path is built for you."}
-                  </p>
-                  <button
-                    onClick={() => navigate("/onboarding?new=1")}
-                    className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New track
-                  </button>
-                </div>
-              </section>
-            )}
-          </div>
-
-          {/* One <aside>, three shapes — deliberately NOT a portal and never unmounted. Rendering
-              fullscreen through a portal would give GeneralChat a new parent, React would remount
-              it, and the conversation so far would be thrown away by the act of enlarging it. So
-              fullscreen is just `fixed inset-0` on this same element, and minimised keeps it
-              mounted behind a collapsed header. */}
-          <aside
-            className={
-              chatMode === "fullscreen"
-                ? "fixed inset-0 z-50 flex flex-col overflow-hidden border-0 bg-background"
-                : `reveal glass-card flex flex-col overflow-hidden rounded-3xl border-border ${
-                    chatMode === "minimized" ? "" : "min-h-[420px]"
-                  }`
-            }
-            style={chatMode === "fullscreen" ? undefined : { animationDelay: "120ms" }}
-            aria-label="Ask Cortexed"
+        {/* Greeting — one page-level heading above the hero, whether or not there's a plan. The
+            chat is a floating overlay now rather than a column, so this row owns the way in. */}
+        <div className="reveal mb-6 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-display text-[28px] font-semibold leading-tight text-foreground sm:text-[32px]">
+            {greeting()}, <span className="font-serif-accent font-normal text-foreground/80">{profile?.display_name || "learner"}</span>
+          </h1>
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex h-10 items-center gap-2 rounded-full border border-border bg-accent/40 px-4 text-[14px] font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
-            <div
-              className={`flex items-center gap-2 px-5 py-3.5 ${
-                chatMode === "minimized" ? "" : "border-b border-border"
-              } ${chatMode === "fullscreen" ? "mx-auto w-full max-w-3xl" : ""}`}
-            >
-              <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
-              <h2 className="flex-1 truncate text-[14px] font-medium text-foreground">Ask Cortexed</h2>
+            <MessageCircle className="h-4 w-4 text-primary" />
+            Ask Cortexed
+          </button>
+        </div>
 
-              {chatMode !== "minimized" && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setChatMode(chatMode === "fullscreen" ? "normal" : "fullscreen")}
-                      aria-label={chatMode === "fullscreen" ? "Exit fullscreen" : "Fullscreen"}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    >
-                      {chatMode === "fullscreen" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{chatMode === "fullscreen" ? "Exit fullscreen" : "Fullscreen"}</TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Available in every mode, fullscreen included — "minimise anytime". */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setChatMode(chatMode === "minimized" ? "normal" : "minimized")}
-                    aria-label={chatMode === "minimized" ? "Open chat" : "Minimise chat"}
-                    aria-expanded={chatMode !== "minimized"}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  >
-                    {chatMode === "minimized" ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">{chatMode === "minimized" ? "Open chat" : "Minimise"}</TooltipContent>
-              </Tooltip>
+        {plan ? (
+          <UpNextCard plan={plan} />
+        ) : (
+          <section className="reveal" style={{ animationDelay: "60ms" }}>
+            <div className="glass-card flex flex-col items-start rounded-3xl border-border p-7 sm:p-10">
+              <p className="text-[15px] text-muted-foreground">
+                {activeTracks.length > 0
+                  ? "Every session is complete — add something new whenever you're ready."
+                  : "Choose what you're studying and a complete path is built for you."}
+              </p>
+              <button
+                onClick={() => navigate("/onboarding?new=1")}
+                className="glow-cyan glow-cyan-hover mt-6 flex h-12 items-center gap-2.5 rounded-full bg-primary px-7 text-[15px] font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4" />
+                New track
+              </button>
             </div>
+          </section>
+        )}
 
-            {/* `hidden` rather than unmounted, for the same reason as the portal note above. */}
+        {/*
+          Ask Cortexed — a panel that hovers over a blurred dashboard.
+
+          Always mounted, `hidden` when closed rather than unmounted: closing and reopening must
+          not throw away the conversation, and a portal or a conditional render would remount
+          GeneralChat and do exactly that.
+        */}
+        <div
+          className={chatOpen ? "fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" : "hidden"}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ask Cortexed"
+        >
+          <div
+            className="absolute inset-0 bg-background/70 backdrop-blur-md"
+            onClick={() => setChatOpen(false)}
+            aria-hidden
+          />
+
+          {/* p-px + a rotating conic gradient behind it = a light running around the border. Same
+              loading language as session/ThinkingBlock.tsx, so waiting and asking look related. */}
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl p-px shadow-2xl">
             <div
-              className={`min-h-0 flex-1 flex-col p-4 ${chatMode === "minimized" ? "hidden" : "flex"} ${
-                chatMode === "fullscreen" ? "mx-auto w-full max-w-3xl" : ""
-              }`}
-            >
-              <SafeBoundary label="Cortexed chat">
-                <GeneralChat fill />
-              </SafeBoundary>
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[220%] w-[220%] -translate-x-1/2 -translate-y-1/2 animate-orbit motion-reduce:animate-none"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, transparent 0deg, transparent 250deg, var(--primary) 320deg, transparent 360deg)",
+              }}
+              aria-hidden
+            />
+
+            <div className="relative flex h-[min(72vh,640px)] flex-col rounded-3xl bg-card/90 backdrop-blur-xl">
+              <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
+                <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
+                <h2 className="flex-1 truncate text-[14px] font-medium text-foreground">Ask Cortexed</h2>
+                <button
+                  onClick={() => setChatOpen(false)}
+                  aria-label="Close"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex min-h-0 flex-1 flex-col p-4">
+                <SafeBoundary label="Cortexed chat">
+                  <GeneralChat fill />
+                </SafeBoundary>
+              </div>
             </div>
-          </aside>
+          </div>
         </div>
 
         {/* Learning tracks */}
