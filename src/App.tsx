@@ -108,7 +108,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/refund" element={<RefundPage />} />
       {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
-      {import.meta.env.DEV && <Route path="/dev/tmp" element={<TmpScene />} />}
+      <Route path="/dev/tmp" element={<TmpScene />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
