@@ -17,6 +17,7 @@
  */
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import AssistantPalette from "@/components/AssistantPalette";
 import {
   Home,
   Network,
@@ -249,6 +250,9 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
           </button>
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Sits before the readouts because it is the only control here you reach FOR — the
+                streak and points are things you glance at, not things you press. */}
+            <AssistantPalette />
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
