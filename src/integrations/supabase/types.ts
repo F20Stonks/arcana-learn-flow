@@ -520,6 +520,9 @@ export type Database = {
           question_number: string | null
           question_text: string
           resource_type: string | null
+          solution_added_at: string | null
+          solution_provenance: string | null
+          solution_source_url: string | null
           solution_text: string | null
           source_competition: string
           source_country: string | null
@@ -541,6 +544,9 @@ export type Database = {
           question_number?: string | null
           question_text: string
           resource_type?: string | null
+          solution_added_at?: string | null
+          solution_provenance?: string | null
+          solution_source_url?: string | null
           solution_text?: string | null
           source_competition: string
           source_country?: string | null
@@ -562,6 +568,9 @@ export type Database = {
           question_number?: string | null
           question_text?: string
           resource_type?: string | null
+          solution_added_at?: string | null
+          solution_provenance?: string | null
+          solution_source_url?: string | null
           solution_text?: string | null
           source_competition?: string
           source_country?: string | null
@@ -570,6 +579,138 @@ export type Database = {
           subject?: string
           topic_tags?: string[]
           year?: number | null
+        }
+        Relationships: []
+      }
+      resource_sources: {
+        Row: {
+          attribution: string
+          created_at: string
+          homepage: string | null
+          id: string
+          license_code: string
+          license_url: string | null
+          mirror_allowed: boolean
+          name: string
+          notes: string | null
+          url_patterns: string[]
+        }
+        Insert: {
+          attribution: string
+          created_at?: string
+          homepage?: string | null
+          id?: string
+          license_code: string
+          license_url?: string | null
+          mirror_allowed?: boolean
+          name: string
+          notes?: string | null
+          url_patterns?: string[]
+        }
+        Update: {
+          attribution?: string
+          created_at?: string
+          homepage?: string | null
+          id?: string
+          license_code?: string
+          license_url?: string | null
+          mirror_allowed?: boolean
+          name?: string
+          notes?: string | null
+          url_patterns?: string[]
+        }
+        Relationships: []
+      }
+      scene_outcomes: {
+        Row: {
+          attempts: number | null
+          created_at: string
+          flags: string[]
+          hard_fail: boolean
+          id: string
+          issue_kinds: string[]
+          outcome: string
+          prim_count: number | null
+          repair_actions: string[]
+          request: string
+          rung: number
+          session_id: string | null
+          source: string
+          subtopic_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string
+          flags?: string[]
+          hard_fail?: boolean
+          id?: string
+          issue_kinds?: string[]
+          outcome: string
+          prim_count?: number | null
+          repair_actions?: string[]
+          request: string
+          rung: number
+          session_id?: string | null
+          source?: string
+          subtopic_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string
+          flags?: string[]
+          hard_fail?: boolean
+          id?: string
+          issue_kinds?: string[]
+          outcome?: string
+          prim_count?: number | null
+          repair_actions?: string[]
+          request?: string
+          rung?: number
+          session_id?: string | null
+          source?: string
+          subtopic_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      session_turn_flags: {
+        Row: {
+          created_at: string
+          excerpt: string | null
+          id: string
+          message_index: number | null
+          note: string | null
+          role: string | null
+          session_id: string | null
+          subtopic_id: string | null
+          tags: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          message_index?: number | null
+          note?: string | null
+          role?: string | null
+          session_id?: string | null
+          subtopic_id?: string | null
+          tags?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          message_index?: number | null
+          note?: string | null
+          role?: string | null
+          session_id?: string | null
+          subtopic_id?: string | null
+          tags?: string[]
+          user_id?: string
         }
         Relationships: []
       }
@@ -793,26 +934,44 @@ export type Database = {
       }
       subtopic_reviews: {
         Row: {
+          difficulty: number | null
+          fsrs_state: number | null
           id: string
           interval_days: number
+          lapses: number
           last_completed_at: string | null
+          last_review: string | null
           next_review_due_at: string
+          reps: number
+          stability: number | null
           subtopic_id: string
           user_id: string
         }
         Insert: {
+          difficulty?: number | null
+          fsrs_state?: number | null
           id?: string
           interval_days?: number
+          lapses?: number
           last_completed_at?: string | null
+          last_review?: string | null
           next_review_due_at: string
+          reps?: number
+          stability?: number | null
           subtopic_id: string
           user_id: string
         }
         Update: {
+          difficulty?: number | null
+          fsrs_state?: number | null
           id?: string
           interval_days?: number
+          lapses?: number
           last_completed_at?: string | null
+          last_review?: string | null
           next_review_due_at?: string
+          reps?: number
+          stability?: number | null
           subtopic_id?: string
           user_id?: string
         }
