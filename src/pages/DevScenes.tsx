@@ -13,6 +13,66 @@ import { directScene } from "@/lib/sceneDirector";
 
 const SCENES: { name: string; spec: SceneSpec }[] = [
   {
+    // Every DragConstraint form in one scene, so the projection maths can be
+    // checked by eye: each point must be ON its object from the first frame
+    // (not only after being touched) and must refuse to leave it while dragged.
+    // The dashed guides are the objects each point is constrained to — if a
+    // point ever sits off its guide, projectDrag or the seeding is wrong.
+    name: "Constraints: glider forms (circle, segment, curve, axis, grid)",
+    spec: {
+      kind: "scene",
+      title: "A constrained point cannot leave its object",
+      caption: "Drag each point — every one is pinned to the dashed object beside it.",
+      why: "A glider is declared, not projected by hand: the drag params are pushed onto the constraint before any expression reads them.",
+      flat: true,
+      camera: [0, 0, 11],
+      sliders: [{ key: "r", label: "circle radius", min: 0.5, max: 2.5, step: 0.1, default: 1.8 }],
+      objects: [
+        { kind: "axes", size: 5, labels: ["x", "y", "z"] },
+
+        // on: circle — radius is a SLIDER, so the constraint itself is live.
+        { kind: "arc", center: [-3.4, 2, 0], radius: "r", from: 0, to: "2*pi", color: "#94a3b8", dash: true },
+        {
+          kind: "point", at: ["ca", "cb", 0.02], color: "#fbbf24", size: 0.13, label: "circle",
+          drag: ["ca", "cb"], constrain: { on: "circle", center: [-3.4, 2], radius: "r" },
+        },
+
+        // on: segment — must clamp at both endpoints, not run past them.
+        { kind: "segment", from: [0.6, 1.2, 0], to: [3.8, 2.8, 0], color: "#94a3b8", dash: true },
+        {
+          kind: "point", at: ["sa", "sb", 0.02], color: "#fbbf24", size: 0.13, label: "segment",
+          drag: ["sa", "sb"], constrain: { on: "segment", from: [0.6, 1.2], to: [3.8, 2.8] },
+        },
+
+        // on: curve — the general glider, solved by sampling.
+        { kind: "curve", x: "t", y: "0.35*t^2-3.2", tMin: -3, tMax: 3, samples: 120, color: "#94a3b8", dash: true },
+        {
+          kind: "point", at: ["pa", "pb", 0.02], color: "#fbbf24", size: 0.13, label: "curve",
+          drag: ["pa", "pb"], constrain: { on: "curve", x: "t", y: "0.35*t^2-3.2", tMin: -3, tMax: 3 },
+        },
+
+        // on: horizontal — y freezes at wherever the drag began.
+        { kind: "segment", from: [-4.6, -1.2, 0], to: [-1, -1.2, 0], color: "#94a3b8", dash: true },
+        {
+          kind: "point", at: [-3.2, -1.2, 0.02], color: "#38bdf8", size: 0.12, label: "horizontal",
+          drag: ["ha", "hb"], constrain: { on: "horizontal" },
+        },
+
+        // on: grid — snaps to whole numbers.
+        { kind: "grid", plane: "xy", size: 5, divisions: 10, color: "#334155" },
+        {
+          kind: "point", at: [2, -1, 0.02], color: "#34d399", size: 0.12, label: "grid",
+          drag: ["ga", "gb"], constrain: { on: "grid", step: 1 },
+        },
+
+        {
+          kind: "text", at: [0, -4.6, 0], size: 0.26, color: "#94a3b8",
+          content: "circle=(${ca},${cb})  curve=(${pa},${pb})  grid=(${ga},${gb})",
+        },
+      ],
+    },
+  },
+  {
     // Choreography showcase 1 — FORMAL TWEENS: step 2 morphs the group matrix
     // and both basis arrows over 3s (bake persists into step 3), step 3 flies
     // the camera out and reveals the eigen-directions.

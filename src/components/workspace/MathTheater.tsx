@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import SimulationFactory from "./SimulationFactory";
 import Scene3D from "./Scene3D";
+import { projectDrag } from "@/lib/dragConstraint";
+import { evaluate as mathEvaluate } from "mathjs";
 import SceneErrorBoundary from "./SceneErrorBoundary";
 import MathRenderer from "@/components/MathRenderer";
 import { mathTheme, MathMode } from "@/lib/mathTheme";
@@ -15,6 +17,26 @@ import type { SimulationPayload } from "@/lib/simulationPayload";
 import { isSceneSpec, type SceneSpec, type Primitive } from "@/lib/sceneSpec";
 import { VIZ_THEMES, loadVizTheme, saveVizTheme } from "@/lib/vizThemes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+/**
+ * Seeding runs once per scene, so it evaluates constraint geometry directly
+ * rather than reaching for the renderer's compiled cache. A bad expression here
+ * must not throw — seeding happens during render setup.
+ *
+ * Keep this BELOW every import. Declaring it between two import statements is
+ * what a previous revision did, and Fast Refresh's transform dropped the binding
+ * entirely — the scene rendered as a blank canvas with "evalSeedExpr is not
+ * defined", and only after a hard reload, so HMR masked it during development.
+ */
+const evalSeedExpr = (expr: number | string, scope: Record<string, number>): number => {
+  if (typeof expr === "number") return expr;
+  try {
+    const v = mathEvaluate(expr, scope);
+    return typeof v === "number" && Number.isFinite(v) ? v : NaN;
+  } catch {
+    return NaN;
+  }
+};
 
 type Payload = SimulationPayload | SceneSpec;
 
@@ -157,14 +179,29 @@ export default function MathTheater({
       const visit = (prims: Primitive[]) => {
         for (const p of prims) {
           if (p.kind === "point" && Array.isArray(p.drag)) {
+            const seeded: number[] = [];
             p.drag.slice(0, 2).forEach((key, i) => {
-              if (out[key] === undefined) {
-                const c = p.at[i];
-                // literal coords seed themselves; projected/expression coords
-                // seed 1 so idioms like atan2(b,a) start at a healthy 45°
-                out[key] = typeof c === "number" && Number.isFinite(c) ? c : 1;
-              }
+              const c = p.at[i];
+              // literal coords seed themselves; projected/expression coords
+              // seed 1 so idioms like atan2(b,a) start at a healthy 45°
+              const v = out[key] === undefined ? (typeof c === "number" && Number.isFinite(c) ? c : 1) : out[key];
+              seeded[i] = v;
+              if (out[key] === undefined) out[key] = v;
             });
+            // A glider must satisfy its constraint from the FIRST frame, not from
+            // the first drag — otherwise a point declared on a circle of radius
+            // 2.5 renders at the seed (1,1), visibly off the curve it is
+            // supposed to live on, until the student happens to touch it.
+            // Projecting the seed through the same function the drag uses keeps
+            // the params and the drawn position in agreement throughout.
+            if (p.constrain && seeded.length >= 2) {
+              const start = { x: seeded[0], y: seeded[1] };
+              const fixed = projectDrag(start, p.constrain, out, start, evalSeedExpr);
+              if (Number.isFinite(fixed.x) && Number.isFinite(fixed.y)) {
+                out[p.drag[0]] = Math.round(fixed.x * 100) / 100;
+                out[p.drag[1]] = Math.round(fixed.y * 100) / 100;
+              }
+            }
           }
           if (p.kind === "group") visit(p.children);
         }

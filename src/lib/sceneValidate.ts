@@ -122,9 +122,42 @@ export function validateScene(scene: SceneSpec, droppedBySanitizer: number): Val
     // threaded through each individual push site.
     const ctxStart = ctxs.length;
     switch (p.kind) {
-      case "point":
+      case "point": {
         pushTriple(`${w}.at`, p.at);
+        // A constraint's own geometry is made of expressions too, and a NaN in
+        // it is worse than a NaN in a coordinate: the point stays draggable but
+        // silently projects to nowhere. Sweep it like any other expression.
+        const c = p.constrain;
+        if (c) {
+          if (c.on === "grid" && typeof c.step === "string") {
+            ctxs.push({ where: `${w}.constrain.step`, expr: c.step, samples: sweeps });
+          }
+          if (c.on === "circle") {
+            if (typeof c.radius === "string") {
+              ctxs.push({ where: `${w}.constrain.radius`, expr: c.radius, samples: sweeps });
+            }
+            if (c.center) pushTriple(`${w}.constrain.center`, c.center);
+          }
+          if (c.on === "segment") {
+            pushTriple(`${w}.constrain.from`, c.from);
+            pushTriple(`${w}.constrain.to`, c.to);
+          }
+          if (c.on === "curve") {
+            const t0 = typeof c.tMin === "number" ? c.tMin : Number(math.evaluate(c.tMin, baseScope));
+            const t1 = typeof c.tMax === "number" ? c.tMax : Number(math.evaluate(c.tMax, baseScope));
+            const span = Number.isFinite(t0) && Number.isFinite(t1) && t0 !== t1 ? [t0, t1] : [0, 1];
+            const tS = lin(span[0], span[1], 7).map((t) => ({ ...baseScope, t }));
+            for (const key of ["x", "y"] as const) {
+              ctxs.push({ where: `${w}.constrain.${key}`, expr: c[key], samples: tS });
+            }
+            for (const key of ["tMin", "tMax"] as const) {
+              const e = c[key];
+              if (typeof e === "string") ctxs.push({ where: `${w}.constrain.${key}`, expr: e, samples: sweeps });
+            }
+          }
+        }
         break;
+      }
       case "points": {
         // `count` may itself be an expression (the live-count family, where the family grows with a
         // slider). Arithmetic straight on it produced NaN sample indices, so every expression reading

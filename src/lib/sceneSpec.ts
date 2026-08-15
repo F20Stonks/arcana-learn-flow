@@ -86,6 +86,51 @@ export interface Staged {
 /** Plain colour string (hex, rgb, hsl, or a named CSS colour). */
 export type Color = string;
 
+/**
+ * Where a dragged point is allowed to go — a "glider", in JSXGraph's sense: a
+ * point that lives ON another object rather than anywhere in the plane. The
+ * shape of the field follows Mafs's `constrain` prop.
+ *
+ * WHY THIS EXISTS. Constraining a drag was already possible, by hand-writing
+ * the projection inside `at` — pinning a point to the circle of radius 2 meant
+ * `at: ["2*cos(atan2(b,a))", "2*sin(atan2(b,a))", 0]`, with the raw drag
+ * writing (a,b) underneath. That works, but it asks whoever authors the scene
+ * to get inverse trigonometry right for every constrained point, and a wrong
+ * projection still renders — it just renders something false. Declaring the
+ * constraint moves that arithmetic into the renderer, where it is written once
+ * and tested once. Prefer it over projecting by hand.
+ *
+ * Numeric fields accept mathjs expressions, so the constraint itself may
+ * depend on a slider: a glider on a circle whose radius the student controls.
+ */
+export type DragConstraint =
+  /** Lock one axis; the other keeps the value it had when the drag started. */
+  | { on: "horizontal" }
+  | { on: "vertical" }
+  /** Snap to a lattice. `step` defaults to 1. */
+  | { on: "grid"; step?: number | string }
+  /** Ride the circle of this centre and radius. `center` defaults to the origin. */
+  | { on: "circle"; center?: [number | string, number | string]; radius: number | string }
+  /** Ride the segment between two endpoints, clamped to the endpoints. */
+  | {
+      on: "segment";
+      from: [number | string, number | string];
+      to: [number | string, number | string];
+    }
+  /**
+   * Ride an arbitrary parametric curve — the general glider. The renderer
+   * samples the curve over [tMin,tMax] and snaps to the nearest point on it, so
+   * this covers parabolas, sine waves and spirals without any projection maths.
+   */
+  | {
+      on: "curve";
+      x: string;
+      y: string;
+      tMin: number | string;
+      tMax: number | string;
+      samples?: number;
+    };
+
 export interface PointPrim extends Staged {
   kind: "point";
   /** literal numbers OR mathjs expressions */
@@ -98,11 +143,19 @@ export interface PointPrim extends Staged {
    * the point's dragged (x, y) position — usable in every other expression.
    * Pair with `at: ["a", "b", 0]` and (ideally) sliders declaring a and b;
    * undeclared keys are seeded from the point's initial position.
-   * To CONSTRAIN a drag (e.g. keep the point on a circle), project inside
-   * `at`: drag writes raw (a,b), and `at: ["2*cos(atan2(b,a))",
-   * "2*sin(atan2(b,a))", 0]` snaps the rendered point onto radius 2.
+   * To CONSTRAIN a drag, prefer the `constrain` field below — it does the
+   * projection for you. Projecting by hand inside `at` still works (drag writes
+   * raw (a,b), and `at: ["2*cos(atan2(b,a))", "2*sin(atan2(b,a))", 0]` snaps the
+   * rendered point onto radius 2) but you have to get the trigonometry right.
    */
   drag?: [string, string];
+  /**
+   * Restrict where a drag may go. Only meaningful alongside `drag` — the
+   * constraint is applied to the pointer position BEFORE the two param keys are
+   * written, so every expression downstream sees already-projected values and
+   * nothing else has to know the point is constrained.
+   */
+  constrain?: DragConstraint;
 }
 
 /**
@@ -445,6 +498,35 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const isExpr = (v: unknown): v is string | number =>
   typeof v === "number" || (typeof v === "string" && v.trim().length > 0);
 
+/** A [x,y] pair of literals-or-expressions, as constraint geometry uses. */
+const isPair = (v: unknown): boolean =>
+  Array.isArray(v) && v.length >= 2 && isExpr(v[0]) && isExpr(v[1]);
+
+/**
+ * Structural check on a DragConstraint. Deliberately strict: an unrecognised
+ * `on` is rejected rather than defaulted, because silently substituting a
+ * different constraint would move the point somewhere the author didn't mean.
+ */
+function isDragConstraint(v: unknown): boolean {
+  if (!v || typeof v !== "object") return false;
+  const c = v as Record<string, unknown>;
+  switch (c.on) {
+    case "horizontal":
+    case "vertical":
+      return true;
+    case "grid":
+      return c.step === undefined || isExpr(c.step);
+    case "circle":
+      return isExpr(c.radius) && (c.center === undefined || isPair(c.center));
+    case "segment":
+      return isPair(c.from) && isPair(c.to);
+    case "curve":
+      return isExpr(c.x) && isExpr(c.y) && isExpr(c.tMin) && isExpr(c.tMax);
+    default:
+      return false;
+  }
+}
+
 const isTriple = (v: unknown): boolean =>
   Array.isArray(v) && v.length >= 2 && v.slice(0, 3).every((c) => c === undefined || isExpr(c));
 
@@ -467,6 +549,10 @@ function sanitizePrimitive(p: unknown, depth: number): Primitive | null {
           delete prim.drag;
         }
       }
+      // A bad constraint costs the constraint, never the point: an unconstrained
+      // draggable point is a degraded scene, a dropped point is a broken one.
+      // A constraint without a drag is inert rather than wrong, so it is left alone.
+      if (prim.constrain !== undefined && !isDragConstraint(prim.constrain)) delete prim.constrain;
       return prim as unknown as Primitive;
     case "points":
       if (!isExpr(prim.x) || !isExpr(prim.y)) return null;

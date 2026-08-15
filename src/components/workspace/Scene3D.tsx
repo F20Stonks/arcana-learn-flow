@@ -33,6 +33,7 @@ import type {
   TextPrim,
   GroupPrim,
 } from "@/lib/sceneSpec";
+import { projectDrag } from "@/lib/dragConstraint";
 import { buildColorMap, type VizTheme } from "@/lib/vizThemes";
 import { resolveChoreography } from "@/lib/choreo";
 import MathRenderer from "@/components/MathRenderer";
@@ -352,6 +353,7 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
   const draggingRef = useRef(false);
   const planeRef = useRef(new THREE.Plane());
   const hitRef = useRef(new THREE.Vector3());
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   const pos = vec3At(p.at, scope);
   const draggable = Array.isArray(p.drag) && p.drag.length >= 2;
@@ -378,6 +380,8 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
                   ? new THREE.Vector3(0, 0, 1)
                   : e.camera.getWorldDirection(new THREE.Vector3()).negate();
                 planeRef.current.setFromNormalAndCoplanarPoint(normal, e.object.getWorldPosition(new THREE.Vector3()));
+                // Axis-lock constraints need the position the drag began from.
+                dragStartRef.current = { x: pos.x, y: pos.y };
               }
             : undefined
         }
@@ -387,8 +391,22 @@ function PointR({ p, scope, style, progress }: { p: PointPrim; scope: Scope; sty
                 if (!draggingRef.current || !p.drag) return;
                 if (e.ray.intersectPlane(planeRef.current, hitRef.current)) {
                   const r = (v: number) => Math.round(v * 100) / 100;
-                  ctx.setParam(p.drag[0], r(hitRef.current.x));
-                  ctx.setParam(p.drag[1], r(hitRef.current.y));
+                  // Project BEFORE writing the params, so every expression that
+                  // reads them sees a position that already satisfies the
+                  // constraint — nothing downstream needs to know about it.
+                  const next = p.constrain
+                    ? projectDrag(
+                        { x: hitRef.current.x, y: hitRef.current.y },
+                        p.constrain,
+                        scope,
+                        dragStartRef.current,
+                        // Reuse the renderer's compiled-expression cache — the
+                        // curve case evaluates two expressions per sample.
+                        (e, s) => compileExprCached(e).fn(s),
+                      )
+                    : { x: hitRef.current.x, y: hitRef.current.y };
+                  ctx.setParam(p.drag[0], r(next.x));
+                  ctx.setParam(p.drag[1], r(next.y));
                 }
               }
             : undefined
