@@ -37,6 +37,7 @@ import { extractViz } from "@/lib/vizExtract";
 import type { SceneSpec } from "@/lib/sceneSpec";
 import { isSceneSpec } from "@/lib/sceneSpec";
 import { directScene } from "@/lib/sceneDirector";
+import { SessionFlagProvider } from "@/components/session/TurnFlagButton";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -1377,6 +1378,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
 
   return (
     <AppShell focusMode>
+      <SessionFlagProvider value={{ sessionId, subtopicId: subtopicId ?? null }}>
       <div className="h-screen flex flex-col overflow-hidden">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 min-w-0">
@@ -1834,6 +1836,7 @@ Return ONLY a JSON object — no prose, no markdown fences:
           onRemoveViz={removeVizInsight}
         />
       )}
+      </SessionFlagProvider>
     </AppShell>
   );
 }

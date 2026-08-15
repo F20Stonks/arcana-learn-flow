@@ -2,6 +2,7 @@ import { Shapes, Check, BookmarkPlus } from "lucide-react";
 import MathRenderer from "@/components/MathRenderer";
 import { useSmoothReveal } from "@/lib/useSmoothReveal";
 import type { CanvasMessage, Turn } from "@/lib/sessionTurns";
+import TurnFlagButton from "./TurnFlagButton";
 
 /**
  * A turn's prose, revealed at reading pace while it streams.
@@ -105,6 +106,14 @@ export default function TurnBody({
               <BookmarkPlus className="h-3.5 w-3.5" />
               Keep
             </button>
+            {/* Not shown while the turn is still streaming — judging a half-written answer would
+                record a reaction to something the student never actually read. */}
+            {!streaming && (
+              <TurnFlagButton
+                messageIndex={assistantIndex}
+                excerpt={cleanText(messages[assistantIndex].content)}
+              />
+            )}
           </div>
         </>
       )}
