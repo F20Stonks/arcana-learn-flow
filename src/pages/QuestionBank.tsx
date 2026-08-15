@@ -1,36 +1,53 @@
 /**
  * Question bank — the student-facing browser over the ingested `reference_questions` corpus, spanning
- * every source competition (STEP, Putnam, IMO, …), not just STEP.
+ * every source competition (STEP, Putnam, IMO, …).
  *
- * Distinct from QuestionAttack (AI-generated questions against a user's own track): every question
- * here is a real, verbatim past-paper/competition question, so nothing on this surface is generated,
- * graded or scored. Read-only browse + read in v1.
+ * Distinct from QuestionAttack (AI-generated questions against a user's own track): every question here is
+ * a real, verbatim past-paper/competition question, so nothing on this surface is generated or auto-graded.
  *
- * Data access goes entirely through the `reference-questions` edge function, NOT direct table queries —
- * this used to fetch the whole corpus into the browser just to compute filter-chip counts client-side,
- * which is also exactly the shape a scraper wants (one authenticated request, whole table). The edge
- * function does server-side filtering/aggregation (via reference_question_list/facets RPCs) and rate
- * limits per user, weighting full-question-text ("detail") requests heavier than list/facet ones.
+ * Data access goes entirely through the `reference-questions` edge function, NOT direct table queries — the
+ * function does server-side filtering/aggregation and rate limits per user, weighting full-question-text
+ * ("detail") requests heavier than list/facet ones.
  *
- * Two things worth knowing before editing:
- *  - `topic_tags` is each source's OWN free-text vocabulary, not the app's subtopic taxonomy. tag[0] is
- *    the broad area (STEP declares its own, e.g. "Pure Mathematics"; Putnam/IMO rows just carry the
- *    competition name until per-problem topic tagging is built as an AI-assisted follow-up) — the
- *    scrapers write it first deliberately — and the remaining tags are specific topics. Do NOT try to
- *    line these up with `subtopics` rows; that's an unsolved design problem, not an oversight.
- *  - Not every row has real question text. STEP rows are fully reproduced (the source has no
- *    redistribution restriction found). Putnam/IMO rows are index-only — their archives explicitly
- *    restrict (Putnam) or simply don't grant (IMO) redistribution of problem text, so those rows carry
- *    metadata plus a link to the official source instead (see `isIndexOnly` below, keyed off
- *    `license_note`, and scripts/scrape-putnam-index.mjs / scrape-imo-index.mjs).
+ * Three things worth knowing before editing:
+ *
+ *  - BROWSING USES THE CANONICAL TAXONOMY, NOT THE SOURCE'S TAGS. `topic_tags` is each source's own
+ *    free-text vocabulary; measured on the live corpus it had 366 distinct tags, 218 of them used exactly
+ *    once, and asking for the "Pure Mathematics" area returned 195 filter chips in a single row. Filters now
+ *    walk area -> strand -> topic out of `reference_topic_aliases` (see
+ *    supabase/migrations/20260815120000_question_taxonomy.sql), which caps a topic row at 9 chips and does
+ *    not grow as more questions are seeded. Raw tags are still shown on a question as provenance — that is
+ *    the only place they belong now.
+ *
+ *  - AREA COMES FROM THE TOPIC, NOT FROM tag[0]. STEP tags by the paper SECTION a question was printed in,
+ *    and papers mix, so 82 questions were filed under the wrong subject. The old Area row also listed
+ *    "Putnam" and "IMO" as peers of "Pure Mathematics", because those rows put the competition name in
+ *    tag[0]. Questions the taxonomy cannot place surface honestly under `Unclassified` rather than being
+ *    hidden — today that is the Putnam/IMO rows, which carry no per-problem topic tags yet.
+ *
+ *  - PROGRESS IS SELF-DECLARED. The corpus has no solutions (zero rows have `solution_text`) and these are
+ *    long-form proof questions, so there is nothing to grade against. The status control records what the
+ *    student says, and the copy says so. Writes go to `user_question_attempts`, which is an attempt LOG
+ *    (`user_resource_analytics` counts its rows), so completion counts DISTINCT questions, not attempts.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight, ExternalLink, Loader2, Search, X } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  CircleDashed,
+  ExternalLink,
+  Loader2,
+  Search,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import ReferenceQuestionText from "@/components/ReferenceQuestionText";
+
+type Status = "unseen" | "attempted" | "solved";
 
 interface QuestionSummary {
   id: string;
@@ -39,43 +56,83 @@ interface QuestionSummary {
   question_number: string | null;
   topic_tags: string[];
   has_diagram: boolean;
+  difficulty: string | null;
+  area: string | null;
+  strands: string[] | null;
+  topics: string[] | null;
+  index_only: boolean;
+  attempts: number;
+  solved: boolean;
 }
 
-interface QuestionFull extends QuestionSummary {
+interface QuestionFull {
+  id: string;
+  source_competition: string;
+  year: number | null;
+  question_number: string | null;
   subject: string;
   difficulty: string | null;
+  topic_tags: string[];
   question_text: string;
   solution_text: string | null;
+  has_diagram: boolean;
   storage_path: string | null;
   source_url: string;
   license_note: string | null;
 }
 
+interface Classification {
+  area: string | null;
+  strands: string[] | null;
+  topics: string[] | null;
+}
+
 interface Facets {
   competitions: [string, number][];
   areas: [string, number][];
+  strands: [string, number][];
+  topics: [string, number][];
   years: number[];
-  tagsInArea: [string, number][];
 }
 
-const EMPTY_FACETS: Facets = { competitions: [], areas: [], years: [], tagsInArea: [] };
+interface Progress {
+  total: number;
+  attempted: number;
+  solved: number;
+  byCompetition: { competition: string; total: number; attempted: number; solved: number }[];
+  byArea: { area: string; total: number; attempted: number; solved: number }[];
+}
 
-const area = (q: { topic_tags: string[] | null }) => q.topic_tags?.[0] || "Other";
-const specificTags = (q: { topic_tags: string[] | null }) => (q.topic_tags || []).slice(1);
+const EMPTY_FACETS: Facets = { competitions: [], areas: [], strands: [], topics: [], years: [] };
+
+// The taxonomy's sentinel for "could not be classified" (see the migration). Given a friendlier face here
+// rather than in the database, so the stored value stays a plain, greppable marker.
+const UNCLASSIFIED = "Unclassified";
+const areaLabel = (a: string) => (a === UNCLASSIFIED ? "Not yet classified" : a);
+
 const label = (q: { source_competition: string; year: number | null; question_number: string | null }) =>
   `${q.source_competition}${q.year ? ` ${q.year}` : ""}${q.question_number ? ` · Q${q.question_number}` : ""}`;
-// Index-only rows (Putnam, IMO, …) never got their question text copied in — see the scrapers' shared
-// LICENSE_NOTE wording, the one signal both intentionally carry for this check.
-const isIndexOnly = (q: { license_note: string | null }) => !!q.license_note?.includes("not reproduced here");
 
-// Friendly copy for the one error shape worth distinguishing from a generic load failure.
+// A question with no reproducible text links out instead of pretending to render. This is a CONTENT test:
+// the previous version keyed off `license_note` containing "not reproduced here", which matched 24 IMO rows
+// whose text is in fact fully present — hiding real questions behind a link — and matched none of Putnam's
+// 492 rows. `index_only` from the list RPC applies the same content test server-side.
+const hasNoText = (text: string | null | undefined) =>
+  !text || text.trim().length < 40 || text.includes("not reproduced");
+
+const STATUS_FILTERS: { value: string; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "unseen", label: "Not started" },
+  { value: "attempted", label: "Attempting" },
+  { value: "solved", label: "Solved" },
+];
+
 const RATE_LIMIT_MESSAGE = "Slow down a little — you've hit the read limit. Try again in a few minutes.";
 
 async function callBank<T>(body: Record<string, unknown>): Promise<{ data: T | null; error: string | null }> {
   const resp = await supabase.functions.invoke("reference-questions", { body });
   if (resp.error) {
-    // supabase-js surfaces a non-2xx as resp.error without the parsed body in some versions — status is
-    // still on the underlying context where available, but the safest cross-version check is the message.
+    // supabase-js surfaces a non-2xx as resp.error without the parsed body in some versions.
     const status = (resp.error as { context?: { status?: number } })?.context?.status;
     if (status === 429) return { data: null, error: RATE_LIMIT_MESSAGE };
     return { data: null, error: resp.error.message || "Request failed." };
@@ -85,7 +142,15 @@ async function callBank<T>(body: Record<string, unknown>): Promise<{ data: T | n
 
 /* ─────────────────────────── shared bits ─────────────────────────── */
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
@@ -101,8 +166,63 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 }
 
 function Tag({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full bg-accent/60 px-2.5 py-1 text-[11px] text-muted-foreground">{children}</span>;
+}
+
+function Count({ n }: { n: number }) {
+  return <span className="readout ml-1 text-[11px] opacity-60">{n}</span>;
+}
+
+/** A filter row that only renders when it has options — keeps the stack from reserving empty space. */
+function FilterRow({
+  title,
+  options,
+  value,
+  allLabel,
+  onPick,
+  boxed,
+}: {
+  title: string;
+  options: [string, number][];
+  value: string;
+  allLabel: string;
+  onPick: (v: string) => void;
+  boxed?: boolean;
+}) {
+  if (options.length === 0) return null;
   return (
-    <span className="rounded-full bg-accent/60 px-2.5 py-1 text-[11px] text-muted-foreground">{children}</span>
+    <div
+      className={`flex flex-wrap items-center gap-2 ${
+        boxed ? "rounded-xl border border-border bg-accent/15 p-3" : ""
+      }`}
+    >
+      <span className="micro-label mr-1">{title}</span>
+      <Chip active={!value} onClick={() => onPick("")}>
+        {allLabel}
+      </Chip>
+      {options.map(([name, n]) => (
+        <Chip key={name} active={value === name} onClick={() => onPick(value === name ? "" : name)}>
+          {areaLabel(name)}
+          <Count n={n} />
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+/** Thin two-tone bar: solved fills from the left, attempted-but-unsolved shades the next slice. */
+function ProgressBar({ total, attempted, solved }: { total: number; attempted: number; solved: number }) {
+  const pct = (n: number) => (total > 0 ? Math.min(100, (n / total) * 100) : 0);
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent/50">
+      <div className="flex h-full">
+        <div className="h-full bg-primary transition-[width] duration-500" style={{ width: `${pct(solved)}%` }} />
+        <div
+          className="h-full bg-primary/30 transition-[width] duration-500"
+          style={{ width: `${pct(Math.max(0, attempted - solved))}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -114,28 +234,29 @@ export default function QuestionBank() {
   const [params, setParams] = useSearchParams();
   const { profile } = useAuth();
   // This page is reachable by waitlisted users (see App.tsx — deliberately gated by ProtectedRoute, not
-  // DashboardGuard) who don't have a real /dashboard to go back to yet; send them to /waitlist instead
-  // of bouncing them through a redirect they didn't ask for.
+  // DashboardGuard) who don't have a real /dashboard to go back to yet.
   const backHome = profile && profile.waitlist_status !== "approved" ? "/waitlist" : "/dashboard";
 
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [cursor, setCursor] = useState<number | null>(null);
   const [facets, setFacets] = useState<Facets>(EMPTY_FACETS);
+  const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
 
-  // Filters live in the URL so a filtered view is shareable and survives the back button out of a
-  // question. Empty string = "all" for each.
+  // Filters live in the URL so a filtered view is shareable and survives the back button out of a question.
   const competition = params.get("competition") || "";
   const selectedArea = params.get("area") || "";
-  const tag = params.get("tag") || "";
+  const strand = params.get("strand") || "";
+  const topic = params.get("topic") || "";
   const year = params.get("year") || "";
+  const status = params.get("status") || "";
   const query = params.get("q") || "";
 
-  // The search box updates the URL (and therefore `query`) on every keystroke for a responsive feel, but
-  // the network call is debounced off a separate value — otherwise every keystroke is a billed request.
+  // The search box updates the URL on every keystroke for a responsive feel, but the network call is
+  // debounced off a separate value — otherwise every keystroke is a billed request.
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 300);
@@ -146,41 +267,63 @@ export default function QuestionBank() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    // Changing the area invalidates whatever specific tag was picked inside the old one.
-    if (key === "area") next.delete("tag");
+    // Each level invalidates the ones below it: a different area can't keep the old strand, and a different
+    // strand can't keep the old topic.
+    if (key === "area") {
+      next.delete("strand");
+      next.delete("topic");
+    }
+    if (key === "strand") next.delete("topic");
     setParams(next, { replace: true });
   };
 
-  // Facets only depend on competition/area (see reference_question_facets' signature) — tag/year/search
-  // changes don't need a re-fetch here.
+  const filterBody = useMemo(
+    () => ({
+      competition: competition || undefined,
+      area: selectedArea || undefined,
+      strand: strand || undefined,
+      topic: topic || undefined,
+      year: year ? Number(year) : undefined,
+      search: debouncedQuery || undefined,
+      status: status || undefined,
+    }),
+    [competition, selectedArea, strand, topic, year, debouncedQuery, status],
+  );
+
+  // Facets depend only on competition/area/strand (see reference_question_facets' signature).
   useEffect(() => {
     (async () => {
       const { data, error } = await callBank<{ facets: Facets }>({
         mode: "facets",
         competition: competition || undefined,
         area: selectedArea || undefined,
+        strand: strand || undefined,
       });
-      if (data) setFacets(data.facets);
+      if (data) setFacets({ ...EMPTY_FACETS, ...data.facets });
       else if (error) console.error("Facet load failed:", error);
     })();
-  }, [competition, selectedArea]);
+  }, [competition, selectedArea, strand]);
 
-  // The list re-fetches from the start whenever any filter changes.
+  // Progress is whole-bank, so it doesn't refetch on filter changes — only after a status write.
+  const loadProgress = useCallback(async () => {
+    const { data, error } = await callBank<{ progress: Progress }>({ mode: "progress" });
+    if (data) setProgress(data.progress);
+    else if (error) console.error("Progress load failed:", error);
+  }, []);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       setLoadError("");
-      const { data, error } = await callBank<{ questions: QuestionSummary[]; totalCount: number; nextCursor: number | null }>({
-        mode: "list",
-        filters: {
-          competition: competition || undefined,
-          area: selectedArea || undefined,
-          tag: tag || undefined,
-          year: year ? Number(year) : undefined,
-          search: debouncedQuery || undefined,
-        },
-        cursor: 0,
-      });
+      const { data, error } = await callBank<{
+        questions: QuestionSummary[];
+        totalCount: number;
+        nextCursor: number | null;
+      }>({ mode: "list", filters: filterBody, cursor: 0 });
       if (data) {
         setQuestions(data.questions);
         setTotalCount(data.totalCount);
@@ -191,22 +334,16 @@ export default function QuestionBank() {
       }
       setLoading(false);
     })();
-  }, [competition, selectedArea, tag, year, debouncedQuery]);
+  }, [filterBody]);
 
   const loadMore = async () => {
     if (cursor === null) return;
     setLoadingMore(true);
-    const { data, error } = await callBank<{ questions: QuestionSummary[]; totalCount: number; nextCursor: number | null }>({
-      mode: "list",
-      filters: {
-        competition: competition || undefined,
-        area: selectedArea || undefined,
-        tag: tag || undefined,
-        year: year ? Number(year) : undefined,
-        search: debouncedQuery || undefined,
-      },
-      cursor,
-    });
+    const { data, error } = await callBank<{
+      questions: QuestionSummary[];
+      totalCount: number;
+      nextCursor: number | null;
+    }>({ mode: "list", filters: filterBody, cursor });
     if (data) {
       setQuestions((prev) => [...prev, ...data.questions]);
       setCursor(data.nextCursor);
@@ -216,7 +353,9 @@ export default function QuestionBank() {
     setLoadingMore(false);
   };
 
-  const hasFilters = !!(competition || selectedArea || tag || year || query);
+  const hasFilters = !!(competition || selectedArea || strand || topic || year || status || query);
+  // Strands/topics are meaningless for the Unclassified bucket — those rows have no taxonomy placement.
+  const canDrillDown = !!selectedArea && selectedArea !== UNCLASSIFIED;
 
   return (
     <AppShell>
@@ -236,62 +375,98 @@ export default function QuestionBank() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {backHome === "/waitlist" ? "Back" : "Dashboard"}
         </button>
+
         <header className="reveal" style={{ animationDelay: "60ms" }}>
           <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-[32px]">
             Question <span className="font-serif-accent font-normal text-foreground/80">bank</span>
           </h1>
           <p className="mt-1 max-w-2xl text-[15px] text-muted-foreground">
-            Real questions from STEP, Putnam, the IMO and more. Browse by competition and topic, then
-            read one properly.
+            Real questions from STEP, Putnam, the IMO and more. Browse by topic, then read one properly and
+            mark how you got on.
           </p>
         </header>
 
+        {/* Completion. Deliberately the first thing under the title: the bank is big enough that "where am I
+            in this" is the question a returning student actually has. */}
+        {progress && progress.total > 0 && (
+          <section className="reveal glass-card mt-7 rounded-2xl p-5" style={{ animationDelay: "100ms" }}>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="micro-label">Your progress</span>
+              <span className="text-[13px] text-muted-foreground">
+                <span className="readout text-foreground">{progress.solved}</span> solved
+                {progress.attempted > progress.solved && (
+                  <>
+                    {" · "}
+                    <span className="readout text-foreground">{progress.attempted - progress.solved}</span> in
+                    progress
+                  </>
+                )}
+                {" · "}
+                <span className="readout">{progress.total}</span> in the bank
+              </span>
+            </div>
+            <div className="mt-3">
+              <ProgressBar total={progress.total} attempted={progress.attempted} solved={progress.solved} />
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {progress.byCompetition.map((c) => (
+                <button
+                  key={c.competition}
+                  onClick={() => setFilter("competition", competition === c.competition ? "" : c.competition)}
+                  className="rounded-xl border border-border bg-accent/15 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-accent/30"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[13px] font-medium text-foreground">{c.competition}</span>
+                    <span className="readout shrink-0 text-[11px] text-muted-foreground">
+                      {c.solved}/{c.total}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <ProgressBar total={c.total} attempted={c.attempted} solved={c.solved} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Filters */}
         <section className="reveal mt-8 space-y-4" style={{ animationDelay: "140ms" }}>
-          {facets.competitions.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="micro-label mr-1">Competition</span>
-              <Chip active={!competition} onClick={() => setFilter("competition", "")}>
-                All
-              </Chip>
-              {facets.competitions.map(([c, n]) => (
-                <Chip
-                  key={c}
-                  active={competition === c}
-                  onClick={() => setFilter("competition", competition === c ? "" : c)}
-                >
-                  {c} <span className="readout ml-1 text-[11px] opacity-60">{n}</span>
-                </Chip>
-              ))}
-            </div>
+          <FilterRow
+            title="Competition"
+            options={facets.competitions}
+            value={competition}
+            allLabel="All"
+            onPick={(v) => setFilter("competition", v)}
+          />
+          <FilterRow
+            title="Area"
+            options={facets.areas}
+            value={selectedArea}
+            allLabel="All"
+            onPick={(v) => setFilter("area", v)}
+          />
+          {canDrillDown && (
+            <FilterRow
+              title="Strand"
+              options={facets.strands}
+              value={strand}
+              allLabel={`All of ${selectedArea}`}
+              onPick={(v) => setFilter("strand", v)}
+              boxed
+            />
           )}
-
-          {facets.areas.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="micro-label mr-1">Area</span>
-              <Chip active={!selectedArea} onClick={() => setFilter("area", "")}>
-                All
-              </Chip>
-              {facets.areas.map(([a, n]) => (
-                <Chip key={a} active={selectedArea === a} onClick={() => setFilter("area", selectedArea === a ? "" : a)}>
-                  {a} <span className="readout ml-1 text-[11px] opacity-60">{n}</span>
-                </Chip>
-              ))}
-            </div>
-          )}
-
-          {facets.tagsInArea.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-accent/15 p-3">
-              <span className="micro-label mr-1">Topic</span>
-              <Chip active={!tag} onClick={() => setFilter("tag", "")}>
-                All in {selectedArea}
-              </Chip>
-              {facets.tagsInArea.map(([t, n]) => (
-                <Chip key={t} active={tag === t} onClick={() => setFilter("tag", tag === t ? "" : t)}>
-                  {t} <span className="readout ml-1 text-[11px] opacity-60">{n}</span>
-                </Chip>
-              ))}
-            </div>
+          {/* Topics are only offered once a strand is chosen. Showing every topic in an area put 42 chips on
+              screen at once; per strand the worst case is 9. */}
+          {canDrillDown && strand && (
+            <FilterRow
+              title="Topic"
+              options={facets.topics}
+              value={topic}
+              allLabel={`All of ${strand}`}
+              onPick={(v) => setFilter("topic", v)}
+              boxed
+            />
           )}
 
           <div className="flex flex-wrap items-center gap-3">
@@ -300,7 +475,7 @@ export default function QuestionBank() {
               <input
                 value={query}
                 onChange={(e) => setFilter("q", e.target.value)}
-                placeholder="Search topics — e.g. complex numbers, projectiles, Poisson"
+                placeholder="Search questions — e.g. Jensen, projectile, Poisson"
                 className="h-10 w-full rounded-full border border-border bg-accent/25 pl-9 pr-3 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:border-primary/40 focus:outline-none"
               />
             </div>
@@ -325,6 +500,15 @@ export default function QuestionBank() {
               </button>
             )}
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="micro-label mr-1">Progress</span>
+            {STATUS_FILTERS.map((s) => (
+              <Chip key={s.value} active={status === s.value} onClick={() => setFilter("status", s.value)}>
+                {s.label}
+              </Chip>
+            ))}
+          </div>
         </section>
 
         {/* Results */}
@@ -344,6 +528,11 @@ export default function QuestionBank() {
                 <span className="readout text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
                   {totalCount} question{totalCount === 1 ? "" : "s"}
                 </span>
+                {selectedArea === UNCLASSIFIED && (
+                  <span className="text-[12px] text-muted-foreground">
+                    No topic tags from the source yet — browse by competition and year.
+                  </span>
+                )}
               </div>
 
               {questions.length === 0 ? (
@@ -359,18 +548,50 @@ export default function QuestionBank() {
                       state={{ from: location.search }}
                       className="group flex items-center gap-4 bg-accent/10 px-5 py-4 transition-colors hover:bg-accent/30"
                     >
+                      {/* Status gutter — a fixed-width column so the labels below it always align, whether or
+                          not a given row has an icon. */}
+                      <div className="flex w-4 shrink-0 justify-center" aria-hidden>
+                        {q.solved ? (
+                          <CheckCircle2 className="h-4 w-4 text-primary" />
+                        ) : q.attempts > 0 ? (
+                          <CircleDashed className="h-4 w-4 text-primary/60" />
+                        ) : null}
+                      </div>
+
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="readout text-[13px] font-medium text-foreground">{label(q)}</span>
+                          {q.solved && (
+                            <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-primary">
+                              solved
+                            </span>
+                          )}
+                          {!q.solved && q.attempts > 0 && (
+                            <span className="rounded-full bg-accent/60 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              attempting
+                            </span>
+                          )}
+                          {q.difficulty && (
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              {q.difficulty}
+                            </span>
+                          )}
                           {q.has_diagram && (
                             <span className="rounded-full border border-primary/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-primary">
                               diagram
                             </span>
                           )}
+                          {q.index_only && (
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              link only
+                            </span>
+                          )}
                         </div>
+                        {/* Canonical topics, not raw source tags — the taxonomy is what the filters use, so
+                            the row should show the same vocabulary you filtered with. */}
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          <Tag>{area(q)}</Tag>
-                          {specificTags(q).map((t) => (
+                          {q.area && <Tag>{areaLabel(q.area)}</Tag>}
+                          {(q.topics || []).slice(0, 3).map((t) => (
                             <Tag key={t}>{t}</Tag>
                           ))}
                         </div>
@@ -401,12 +622,22 @@ export default function QuestionBank() {
 
 /* ─────────────────────────── single question ─────────────────────────── */
 
+const STATUS_CHOICES: { value: Status; label: string }[] = [
+  { value: "unseen", label: "Not started" },
+  { value: "attempted", label: "Attempting" },
+  { value: "solved", label: "Solved" },
+];
+
 export function QuestionBankDetail() {
   const { questionId } = useParams();
   const location = useLocation();
   const backTo = `/question-bank${(location.state as { from?: string } | null)?.from || ""}`;
 
   const [question, setQuestion] = useState<QuestionFull | null>(null);
+  const [classification, setClassification] = useState<Classification | null>(null);
+  const [status, setStatus] = useState<Status>("unseen");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [statusError, setStatusError] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [notFound, setNotFound] = useState(false);
@@ -420,10 +651,12 @@ export function QuestionBankDetail() {
       setNotFound(false);
       setLoadError("");
       setImageUrl(null);
-      const { data, error } = await callBank<{ question: QuestionFull; imageUrl: string | null }>({
-        mode: "detail",
-        id: questionId,
-      });
+      const { data, error } = await callBank<{
+        question: QuestionFull;
+        imageUrl: string | null;
+        status: Status;
+        classification: Classification | null;
+      }>({ mode: "detail", id: questionId });
       if (cancelled) return;
       if (error === RATE_LIMIT_MESSAGE) {
         setLoadError(error);
@@ -437,6 +670,8 @@ export function QuestionBankDetail() {
       }
       setQuestion(data.question);
       setImageUrl(data.imageUrl);
+      setStatus(data.status || "unseen");
+      setClassification(data.classification);
       setLoading(false);
     })();
     return () => {
@@ -444,7 +679,24 @@ export function QuestionBankDetail() {
     };
   }, [questionId]);
 
-  const indexOnly = question ? isIndexOnly(question) : false;
+  const pickStatus = async (next: Status) => {
+    if (!questionId || next === status) return;
+    const previous = status;
+    setStatus(next); // Optimistic — the control is the only thing affected, and it reverts on failure.
+    setSavingStatus(true);
+    setStatusError("");
+    const { error } = await callBank<{ status: Status }>({ mode: "setStatus", id: questionId, status: next });
+    if (error) {
+      setStatus(previous);
+      setStatusError("Couldn't save that just now.");
+    }
+    setSavingStatus(false);
+  };
+
+  const noText = question ? hasNoText(question.question_text) : false;
+  // Raw source tags, minus the leading one (the source's own area/competition label) — kept as provenance
+  // now that filtering runs off the canonical taxonomy instead.
+  const sourceTags = (question?.topic_tags || []).slice(1);
 
   return (
     <AppShell>
@@ -474,16 +726,17 @@ export function QuestionBankDetail() {
             <header className="border-b border-border pb-5">
               <h1 className="font-display text-[24px] font-semibold text-foreground">{label(question)}</h1>
               <div className="mt-2.5 flex flex-wrap gap-1.5">
-                <Tag>{area(question)}</Tag>
-                {specificTags(question).map((t) => (
+                {classification?.area && <Tag>{areaLabel(classification.area)}</Tag>}
+                {(classification?.topics || []).map((t) => (
                   <Tag key={t}>{t}</Tag>
                 ))}
+                {question.difficulty && <Tag>{question.difficulty}</Tag>}
               </div>
             </header>
 
-            {indexOnly ? (
-              // No verbatim text for this source (see isIndexOnly) — lead with the link out instead of
-              // burying it in the footer, since there's no in-app reading to lead with.
+            {noText ? (
+              // Nothing reproducible stored for this one — lead with the link out rather than burying it,
+              // since there is no in-app reading to lead with.
               <div className="py-8">
                 <p className="text-[15px] leading-relaxed text-muted-foreground">{question.question_text}</p>
                 <a
@@ -505,8 +758,8 @@ export function QuestionBankDetail() {
               <figure className="rounded-2xl border border-border bg-accent/15 p-4">
                 <figcaption className="micro-label mb-3">Diagram — from the original paper</figcaption>
                 {imageUrl ? (
-                  // Never redrawn or reconstructed: this is the mirrored page image itself. White
-                  // background because the scans are black-on-white and invert badly on the dark canvas.
+                  // Never redrawn or reconstructed: this is the mirrored page image itself. White background
+                  // because the scans are black-on-white and invert badly on the dark canvas.
                   <img
                     src={imageUrl}
                     alt={`Original page image for ${label(question)}`}
@@ -529,8 +782,33 @@ export function QuestionBankDetail() {
               </details>
             )}
 
+            {/* Status. Self-declared on purpose — the corpus carries no solutions, so there is nothing here
+                to mark an answer against, and the copy says as much rather than implying a grade. */}
+            <section className="mt-8 rounded-2xl border border-border bg-accent/15 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="micro-label">How did you get on?</span>
+                  <p className="mt-1 text-[12px] text-muted-foreground">
+                    Your own call — this isn't marked. It counts toward your progress through the bank.
+                  </p>
+                </div>
+                {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {STATUS_CHOICES.map((s) => (
+                  <Chip key={s.value} active={status === s.value} onClick={() => pickStatus(s.value)}>
+                    {s.value === "solved" && status === "solved" && (
+                      <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                    )}
+                    {s.label}
+                  </Chip>
+                ))}
+              </div>
+              {statusError && <p className="mt-3 text-[12px] text-destructive">{statusError}</p>}
+            </section>
+
             <footer className="mt-10 border-t border-border pt-5">
-              {!indexOnly && (
+              {!noText && (
                 <a
                   href={question.source_url}
                   target="_blank"
@@ -540,8 +818,18 @@ export function QuestionBankDetail() {
                   <ExternalLink className="h-3.5 w-3.5" /> View the original source
                 </a>
               )}
+              {sourceTags.length > 0 && (
+                <div className="mt-4">
+                  <span className="micro-label">The source's own tags</span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {sourceTags.map((t) => (
+                      <Tag key={t}>{t}</Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
               {question.license_note && (
-                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/60">{question.license_note}</p>
+                <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground/60">{question.license_note}</p>
               )}
             </footer>
           </article>

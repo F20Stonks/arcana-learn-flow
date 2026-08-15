@@ -91,10 +91,15 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Narrowing helper — every filter arrives as untrusted JSON and the RPCs want NULL, not "".
+  const str = (v: unknown) => (typeof v === "string" && v ? v : null);
+
   if (mode === "facets") {
-    const p_competition = typeof body.competition === "string" && body.competition ? body.competition : null;
-    const p_area = typeof body.area === "string" && body.area ? body.area : null;
-    const { data, error } = await supabase.rpc("reference_question_facets", { p_competition, p_area });
+    const { data, error } = await supabase.rpc("reference_question_facets", {
+      p_competition: str(body.competition),
+      p_area: str(body.area),
+      p_strand: str(body.strand),
+    });
     if (error) return json({ error: error.message }, 500);
     return json({ facets: data });
   }
@@ -102,11 +107,16 @@ Deno.serve(async (req: Request) => {
   if (mode === "list") {
     const filters = (body.filters || {}) as Record<string, unknown>;
     const { data, error } = await supabase.rpc("reference_question_list", {
-      p_competition: typeof filters.competition === "string" && filters.competition ? filters.competition : null,
-      p_area: typeof filters.area === "string" && filters.area ? filters.area : null,
-      p_tag: typeof filters.tag === "string" && filters.tag ? filters.tag : null,
+      p_competition: str(filters.competition),
+      p_area: str(filters.area),
+      p_strand: str(filters.strand),
+      p_topic: str(filters.topic),
       p_year: typeof filters.year === "number" ? filters.year : null,
-      p_search: typeof filters.search === "string" && filters.search ? filters.search : null,
+      p_search: str(filters.search),
+      p_status: ["unseen", "attempted", "solved"].includes(String(filters.status)) ? String(filters.status) : null,
+      // Always the verified caller, never a client-supplied id — this is what scopes the solved/attempted
+      // flags and the status filter to the person actually browsing.
+      p_user_id: callerId,
       p_cursor: typeof body.cursor === "number" ? body.cursor : 0,
       p_limit: 60,
     });
@@ -134,7 +144,55 @@ Deno.serve(async (req: Request) => {
       const { data: signed } = await supabase.storage.from(IMAGE_BUCKET).createSignedUrl(data.storage_path, 3600);
       imageUrl = signed?.signedUrl || null;
     }
-    return json({ question: data, imageUrl });
+
+    // The caller's own progress on this question, so the detail page can show its status control already in
+    // the right state instead of flashing "not started" and correcting itself.
+    const { data: attempts } = await supabase
+      .from("user_question_attempts")
+      .select("is_completed")
+      .eq("user_id", callerId)
+      .eq("reference_question_id", id);
+    const rows = attempts || [];
+    const status = rows.length === 0
+      ? "unseen"
+      : rows.some((r: { is_completed: boolean }) => r.is_completed)
+        ? "solved"
+        : "attempted";
+
+    // Canonical classification for the header chips — the raw source tags stay available on `question`
+    // itself as provenance.
+    const { data: cls } = await supabase
+      .from("reference_question_classification")
+      .select("area, strands, topics")
+      .eq("question_id", id)
+      .maybeSingle();
+
+    return json({ question: data, imageUrl, status, attempts: rows.length, classification: cls || null });
+  }
+
+  // "How much of the bank have I done" — aggregates only over the caller's own attempts.
+  if (mode === "progress") {
+    const { data, error } = await supabase.rpc("reference_question_progress", { p_user_id: callerId });
+    if (error) return json({ error: error.message }, 500);
+    return json({ progress: data });
+  }
+
+  // The bank's only write path. Status is SELF-DECLARED: these are long-form proof questions with no answer
+  // key in the corpus (zero rows have solution_text), so there is nothing to auto-grade against and
+  // pretending otherwise would be dishonest progress.
+  if (mode === "setStatus") {
+    const id = typeof body.id === "string" ? body.id : null;
+    const status = typeof body.status === "string" ? body.status : "";
+    if (!id) return json({ error: "id is required" }, 400);
+    if (!["unseen", "attempted", "solved"].includes(status)) return json({ error: "invalid status" }, 400);
+
+    const { error } = await supabase.rpc("reference_question_set_status", {
+      p_user_id: callerId,
+      p_question_id: id,
+      p_status: status,
+    });
+    if (error) return json({ error: error.message }, 500);
+    return json({ status });
   }
 
   return json({ error: "unknown mode" }, 400);
