@@ -1392,7 +1392,9 @@ export default function Scene3D({ spec, params, onParam, theme, lockFinalStep = 
   const hasSteps = steps.length > 0;
   // The highest step index currently reachable by student navigation. Locked turns can advance
   // up through the second-to-last step (the build-up) but not the final one (the payoff).
-  const maxStepIdx = lockFinalStep && steps.length > 1 ? steps.length - 2 : steps.length - 1;
+  // Stepless scenes still have a single implicit beat (index 0) — without the Math.max the clamp
+  // below would pull stepIdx to -1 and hide every primitive, leaving a black stage.
+  const maxStepIdx = Math.max(0, lockFinalStep && steps.length > 1 ? steps.length - 2 : steps.length - 1);
   const [stepIdx, setStepIdx] = useState(0);
   // remount primitives per scene so entrance animations replay
   const specKey = useMemo(() => ++specSeq, [spec]);
