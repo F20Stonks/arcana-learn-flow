@@ -1,5 +1,6 @@
 import { aiFetch } from "../_shared/aiFetch.ts";
 import { getAIConfig, getAIConfigSync } from "../_shared/aiConfig.ts";
+import { scheduleNextReview } from "../_shared/reviewSchedule.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 import {
@@ -17,12 +18,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const MIN_INTERVAL_DAYS = 3;
-const MAX_INTERVAL_DAYS = 365;
-const REVIEW_GROWTH: Record<"low" | "medium" | "high", number> = { low: 1.3, medium: 1.6, high: 2.5 };
-const REVIEW_LAPSE_FACTOR = 0.4;
+// Scheduling constants used to live here (fixed 1.3/1.6/2.5 growth, 0.4 lapse). They now belong to
+// _shared/reviewSchedule.ts, which owns both FSRS and that same arithmetic as its fallback — keeping
+// a second copy here would leave two contradictory answers to "when is this due again".
 const MAX_LEARNER_OBSERVATIONS = 5;
 
 type ExtractedConcept = { name: string; type?: string; definition?: string; aliases?: string[] };
@@ -533,11 +531,23 @@ Respond ONLY with valid JSON:
             .select("id").eq("user_id", uid).eq("subtopic_id", stid).maybeSingle();
           check("subtopic_reviews read", { error: readErr });
           if (existingReview) return "skipped: review row already exists";
+          // First review of this subtopic: an empty memory state rated by how the session went, so
+          // the very first interval already reflects confidence instead of a flat seven days.
+          const sched = await scheduleNextReview(
+            { interval_days: 0, stability: null, difficulty: null, reps: 0, lapses: 0, fsrs_state: null, last_review: null },
+            true,
+            confidence,
+          );
           check("subtopic_reviews insert", await supabase.from("subtopic_reviews").insert({
-            user_id: uid, subtopic_id: stid, interval_days: 7,
-            next_review_due_at: new Date(Date.now() + 7 * DAY_MS).toISOString(), last_completed_at: nowIso,
+            user_id: uid, subtopic_id: stid,
+            interval_days: sched.interval_days,
+            next_review_due_at: sched.next_review_due_at,
+            last_completed_at: nowIso,
+            stability: sched.stability, difficulty: sched.difficulty,
+            reps: sched.reps, lapses: sched.lapses,
+            fsrs_state: sched.fsrs_state, last_review: sched.last_review,
           }));
-          return "scheduled +7d";
+          return `scheduled +${sched.interval_days}d (${sched.engine})`;
         });
       }
 
@@ -546,18 +556,34 @@ Respond ONLY with valid JSON:
         const stid = realSubtopicId;
         await step("review-advance", async () => {
           const { data: row, error: readErr } = await supabase.from("subtopic_reviews")
-            .select("id, interval_days").eq("user_id", uid).eq("subtopic_id", stid).maybeSingle();
+            .select("id, interval_days, stability, difficulty, reps, lapses, fsrs_state, last_review")
+            .eq("user_id", uid).eq("subtopic_id", stid).maybeSingle();
           check("subtopic_reviews read", { error: readErr });
           if (!row) return "skipped: no review row for this subtopic";
-          const current = (row as any).interval_days || 7;
-          const next = complete ? current * REVIEW_GROWTH[confidence] : current * REVIEW_LAPSE_FACTOR;
-          const newInterval = Math.max(MIN_INTERVAL_DAYS, Math.min(MAX_INTERVAL_DAYS, Math.round(next)));
+          const r = row as any;
+          const current = r.interval_days || 7;
+          const sched = await scheduleNextReview(
+            {
+              interval_days: current,
+              stability: r.stability ?? null,
+              difficulty: r.difficulty ?? null,
+              reps: r.reps ?? 0,
+              lapses: r.lapses ?? 0,
+              fsrs_state: r.fsrs_state ?? null,
+              last_review: r.last_review ?? null,
+            },
+            complete,
+            confidence,
+          );
           check("subtopic_reviews update", await supabase.from("subtopic_reviews").update({
-            interval_days: newInterval,
-            next_review_due_at: new Date(Date.now() + newInterval * DAY_MS).toISOString(),
+            interval_days: sched.interval_days,
+            next_review_due_at: sched.next_review_due_at,
+            stability: sched.stability, difficulty: sched.difficulty,
+            reps: sched.reps, lapses: sched.lapses,
+            fsrs_state: sched.fsrs_state, last_review: sched.last_review,
             ...(complete ? { last_completed_at: nowIso } : {}),
-          }).eq("id", (row as any).id));
-          return `${current}d → ${newInterval}d`;
+          }).eq("id", r.id));
+          return `${current}d → ${sched.interval_days}d (${sched.engine})`;
         });
       }
 
