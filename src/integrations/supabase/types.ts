@@ -582,6 +582,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_topic_aliases: {
+        Row: {
+          area: string
+          kind: string
+          raw_tag: string
+          strand: string
+          topic: string | null
+        }
+        Insert: {
+          area: string
+          kind?: string
+          raw_tag: string
+          strand: string
+          topic?: string | null
+        }
+        Update: {
+          area?: string
+          kind?: string
+          raw_tag?: string
+          strand?: string
+          topic?: string | null
+        }
+        Relationships: []
+      }
+      reference_topic_strands: {
+        Row: {
+          area: string
+          position: number
+          strand: string
+        }
+        Insert: {
+          area: string
+          position: number
+          strand: string
+        }
+        Update: {
+          area?: string
+          position?: number
+          strand?: string
+        }
+        Relationships: []
+      }
       resource_sources: {
         Row: {
           attribution: string
@@ -1216,6 +1258,15 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      reference_question_classified: {
+        Args: never
+        Returns: {
+          area: string
+          question_id: string
+          strands: string[]
+          topics: string[]
+        }[]
+      }
       reference_question_facets: {
         Args: { p_area?: string; p_competition?: string }
         Returns: Json
@@ -1238,6 +1289,14 @@ export type Database = {
           topic_tags: string[]
           total_count: number
           year: number
+        }[]
+      }
+      reference_topic_coverage: {
+        Args: never
+        Returns: {
+          occurrences: number
+          raw_tag: string
+          sample_competition: string
         }[]
       }
     }
