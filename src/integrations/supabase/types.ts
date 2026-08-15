@@ -1239,6 +1239,15 @@ export type Database = {
       }
     }
     Views: {
+      reference_question_classification: {
+        Row: {
+          area: string | null
+          question_id: string | null
+          strands: string[] | null
+          topics: string[] | null
+        }
+        Relationships: []
+      }
       user_resource_analytics: {
         Row: {
           average_score: number | null
@@ -1268,7 +1277,7 @@ export type Database = {
         }[]
       }
       reference_question_facets: {
-        Args: { p_area?: string; p_competition?: string }
+        Args: { p_area?: string; p_competition?: string; p_strand?: string }
         Returns: Json
       }
       reference_question_list: {
@@ -1278,19 +1287,39 @@ export type Database = {
           p_cursor?: number
           p_limit?: number
           p_search?: string
+          p_status?: string
+          p_strand?: string
           p_tag?: string
+          p_topic?: string
+          p_user_id?: string
           p_year?: number
         }
         Returns: {
+          area: string
+          attempts: number
+          difficulty: string
           has_diagram: boolean
           id: string
+          index_only: boolean
           question_number: string
+          solved: boolean
           source_competition: string
+          strands: string[]
           topic_tags: string[]
+          topics: string[]
           total_count: number
           year: number
         }[]
       }
+      reference_question_progress: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      reference_question_set_status: {
+        Args: { p_question_id: string; p_status: string; p_user_id: string }
+        Returns: Json
+      }
+      reference_question_sort_key: { Args: { q: string }; Returns: string[] }
       reference_topic_coverage: {
         Args: never
         Returns: {
@@ -1298,6 +1327,10 @@ export type Database = {
           raw_tag: string
           sample_competition: string
         }[]
+      }
+      refresh_reference_question_classification: {
+        Args: never
+        Returns: undefined
       }
     }
     Enums: {
