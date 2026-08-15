@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { resolvePastPapers } from "../_shared/pastPaperResolver.ts";
+import { loadSources, mayMirror } from "../_shared/licensePolicy.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
@@ -55,17 +56,28 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Licence gate. Being able to download a PDF says nothing about being allowed to host it —
+    // "publicly available" is not a licence, and this function previously mirrored anything that
+    // fetched successfully. Mirroring is now denied unless the URL matches a registered source whose
+    // licence permits hosting; everything else still reaches the student as a link.
+    const sources = await loadSources(supabase);
+
     const rows: Record<string, unknown>[] = [];
     for (const p of resolved) {
       let storagePath: string | null = null;
       if (p.bytes && p.contentType?.includes("pdf")) {
-        const path = `${board}/${subject}/${level || "general"}/${crypto.randomUUID()}.pdf`;
-        const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(path, p.bytes, {
-          contentType: "application/pdf",
-          upsert: false,
-        });
-        if (!uploadErr) storagePath = path;
-        else console.error("mirror upload failed, falling back to link-out:", p.sourceUrl, uploadErr);
+        const decision = mayMirror(p.sourceUrl, sources);
+        if (!decision.allowed) {
+          console.log(`[licence] not mirroring ${p.sourceUrl} — ${decision.reason}`);
+        } else {
+          const path = `${board}/${subject}/${level || "general"}/${crypto.randomUUID()}.pdf`;
+          const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(path, p.bytes, {
+            contentType: "application/pdf",
+            upsert: false,
+          });
+          if (!uploadErr) storagePath = path;
+          else console.error("mirror upload failed, falling back to link-out:", p.sourceUrl, uploadErr);
+        }
       }
       rows.push({
         board, subject, level: level || null,
