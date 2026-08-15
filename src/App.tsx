@@ -23,7 +23,6 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
-import TmpScene from "./pages/TmpScene";
 import PricingPage from "./pages/PricingPage";
 import WaitlistPage from "./pages/WaitlistPage";
 import TermsPage from "./pages/legal/TermsPage";
@@ -108,7 +107,6 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/refund" element={<RefundPage />} />
       {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
-      <Route path="/dev/tmp" element={<TmpScene />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
