@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 // `Map as MapIcon`: importing lucide's `Map` under its own name shadows the global Map constructor
 // for this whole module, so `new Map(...)` below throws "Only a void function can be called with
 // the 'new' keyword". Dashboard.tsx hit exactly this before — alias it and the footgun is gone.
-import { ArrowLeft, Check, Loader2, BookOpen, Target, Map as MapIcon, Circle, Trash2, FileText, ClipboardList, MoreHorizontal, Plus, ArchiveRestore, Archive, Zap, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, Loader2, BookOpen, Target, Map as MapIcon, Circle, Trash2, FileText, ClipboardList, MoreHorizontal, Plus, ArchiveRestore, Archive, Zap, RotateCcw, Pencil } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import KnowledgeMap from "@/components/KnowledgeMap";
 import SpecChecklist from "@/components/SpecChecklist";
@@ -26,8 +26,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import TrackEditDialog from "@/components/track/TrackEditDialog";
+import TrackResourcesDialog from "@/components/track/TrackResourcesDialog";
 import { toast } from "sonner";
 import { SubjectIcon } from "@/lib/subjectIcons";
 
@@ -157,6 +160,8 @@ export default function TrackOverview() {
   const [mapOpen, setMapOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingTrack, setEditingTrack] = useState(false);
+  const [editingResources, setEditingResources] = useState(false);
   const [availableOptions, setAvailableOptions] = useState<string[]>([]);
   const [optionBusy, setOptionBusy] = useState<string | null>(null);
   /** subtopic_id -> due date, for reviews of THIS track that are due now. */
@@ -389,6 +394,25 @@ export default function TrackOverview() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {/* Same deferred-open reasoning as Delete below: a Radix dialog opened in the dropdown's own
+                close tick leaves the dropdown overlay swallowing clicks. */}
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setTimeout(() => setEditingTrack(true), 0);
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5 mr-2" /> Edit track
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setTimeout(() => setEditingResources(true), 0);
+              }}
+            >
+              <BookOpen className="h-3.5 w-3.5 mr-2" /> Books for this track
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={(e) => {
@@ -716,6 +740,31 @@ export default function TrackOverview() {
           />
         </SafeBoundary>
       )}
+
+      {/* Passes ALL topics, not activeTopics — the point of this dialog is to bring hidden ones back,
+          which is impossible if the list it renders has already filtered them out. */}
+      <TrackEditDialog
+        open={editingTrack}
+        onOpenChange={setEditingTrack}
+        trackId={trackId ?? ""}
+        trackTitle={track?.title ?? ""}
+        trackSubject={track?.subject ?? null}
+        topics={topics.map((t) => ({
+          id: t.id,
+          title: t.title,
+          archived_at: t.archived_at,
+          subtopicCount: t.subtopics.length,
+          completedCount: t.subtopics.filter((s) => s.status === "complete").length,
+        }))}
+        onSaved={loadTrack}
+      />
+
+      <TrackResourcesDialog
+        open={editingResources}
+        onOpenChange={setEditingResources}
+        trackId={trackId ?? ""}
+        trackTitle={track?.title ?? ""}
+      />
 
       <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <AlertDialogContent>

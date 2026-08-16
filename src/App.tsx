@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useSearchParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,6 +24,9 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
+// Lazy so pdf.js (~1.2 MB of engine, plus its worker) is fetched when someone actually opens a
+// document, not on every page load of the app.
+const ResourceReader = lazy(() => import("./pages/ResourceReader"));
 import PricingPage from "./pages/PricingPage";
 import WaitlistPage from "./pages/WaitlistPage";
 import TermsPage from "./pages/legal/TermsPage";
@@ -96,6 +100,17 @@ function AppRoutes() {
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
       <Route path="/resource-bank" element={<ProtectedRoute><ResourceBank /></ProtectedRoute>} />
+      {/* The reader runs full-height outside AppShell — see ResourceReader for why the sidebar is
+          dropped here. ProtectedRoute, not DashboardGuard: reading a document needs a session, not a
+          completed onboarding. */}
+      <Route
+        path="/resource/:resourceId"
+        element={
+          <ProtectedRoute>
+            <Suspense fallback={null}><ResourceReader /></Suspense>
+          </ProtectedRoute>
+        }
+      />
       {/* The Knowledge group. These were tabs inside a right-hand slide-over; they're routes now so
           they can be linked, refreshed and navigated back out of like anything else. */}
       <Route path="/concepts" element={<DashboardGuard><ConceptsPage /></DashboardGuard>} />

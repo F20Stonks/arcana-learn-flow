@@ -1132,6 +1132,9 @@ Return ONLY a JSON object — no prose, no markdown fences:
           context: {
             subtopic: subtopic?.title, topic: topic?.title,
             subject: track?.subject, level: track?.level, examBoard: track?.exam_board,
+            // Lets chat retrieve passages from books attached to this track. Omitted or unattached
+            // simply means no book block in the prompt.
+            trackId: track?.id,
             mode: isReview ? "review" : undefined,
             reviewNotes: isReview ? notes.map((n) => `- ${n.title}: ${n.content}`).join("\n") : undefined,
             intensity,

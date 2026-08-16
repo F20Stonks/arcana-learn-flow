@@ -1,0 +1,67 @@
+/**
+ * Text layer styling for pdf.js v5.
+ *
+ * pdf.js does not ship a stylesheet in the package (there is no web/ directory in pdfjs-dist), so these
+ * rules have to exist somewhere or the invisible selection layer renders as a pile of visible black text
+ * stacked on top of the page image.
+ *
+ * The contract v5 expects:
+ *   - spans are positioned with PERCENTAGE left/top, so the container must exactly cover the canvas;
+ *   - font sizes are `calc(Npx * var(--total-scale-factor))`, so that variable must be set on the
+ *     container at the current render scale, or every glyph box is sized for a 100% zoom page and
+ *     selection drifts further out of alignment the further you zoom.
+ */
+
+.pdf-text-layer {
+  /* pdf.js sizes this container itself, as
+       width: round(down, var(--total-scale-factor) * <pageWidth>px, var(--scale-round-x))
+     Leave --scale-round-x undefined and that whole declaration is invalid, so it is dropped and the
+     element silently falls back to inheriting its containing block's size — which is only ever correct
+     by accident. 1px is what pdf.js's own viewer uses: round to whole device pixels. */
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 1;
+}
+
+.pdf-text-layer span,
+.pdf-text-layer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+/* Images carry no selectable text; letting them take a text cursor implies otherwise. */
+.pdf-text-layer span[role="img"] {
+  user-select: none;
+  cursor: default;
+}
+
+/* pdf.js appends this sentinel so a drag past the last line still terminates the selection. */
+.pdf-text-layer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: -1;
+  cursor: default;
+  user-select: none;
+}
+
+/* The glyphs themselves are transparent, so the highlight IS the visible feedback.
+   color-mix, not `hsl(var(--primary) / .35)`: the theme tokens in index.css hold COMPLETE colour values
+   (`--primary: hsl(198 93% 60%)`), not bare channels, so the slash-alpha form would nest hsl() inside
+   hsl() and resolve to nothing. */
+.pdf-text-layer ::selection {
+  background: color-mix(in srgb, var(--primary) 35%, transparent);
+}
