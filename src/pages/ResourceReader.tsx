@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import PdfViewer from "@/components/resources/PdfViewer";
 import ResourceAssistant from "@/components/resources/ResourceAssistant";
+import CreateTrackFromBook from "@/components/resources/CreateTrackFromBook";
 import { getResourceUrl, KIND_LABEL, type Resource } from "@/lib/resources";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Sparkles,
-  Bookmark, Download, Globe, Lock, PanelRightClose,
+  Bookmark, Download, Globe, Lock, PanelRightClose, GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ const ZOOM_STEPS = [0.6, 0.75, 0.9, 1.1, 1.3, 1.6, 2.0, 2.5];
 export default function ResourceReader() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [resource, setResource] = useState<Resource | null>(null);
@@ -35,6 +37,7 @@ export default function ResourceReader() {
   const [pageText, setPageText] = useState("");
   const [selection, setSelection] = useState("");
   const [assistantOpen, setAssistantOpen] = useState(true);
+  const [makingTrack, setMakingTrack] = useState(false);
 
   const furthestRef = useRef(1);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,10 +75,17 @@ export default function ResourceReader() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!cancelled && progress?.last_page) {
-        setPage(progress.last_page);
-        setPageInput(String(progress.last_page));
-        furthestRef.current = progress.furthest_page ?? progress.last_page;
+      if (!cancelled) {
+        furthestRef.current = progress?.furthest_page ?? progress?.last_page ?? 1;
+        // ?page=N wins over the saved position: it means something deliberately sent the reader HERE —
+        // a subtopic opening the pages it teaches, or a bookmark — and silently landing them somewhere
+        // else instead would make those links look broken.
+        const requested = Number(searchParams.get("page"));
+        const target = Number.isFinite(requested) && requested >= 1 ? requested : progress?.last_page;
+        if (target) {
+          setPage(target);
+          setPageInput(String(target));
+        }
       }
       if (!cancelled) setLoading(false);
     })();
@@ -219,6 +229,14 @@ export default function ResourceReader() {
           <div className="flex items-center gap-1 border-l pl-2">
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setMakingTrack(true)} aria-label="Make a track from this book">
+                  <GraduationCap className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Make a track from this book</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={addBookmark} aria-label="Bookmark this page">
                   <Bookmark className="h-4 w-4" />
                 </Button>
@@ -273,6 +291,15 @@ export default function ResourceReader() {
             </aside>
           )}
         </div>
+
+        {fileUrl && (
+          <CreateTrackFromBook
+            open={makingTrack}
+            onOpenChange={setMakingTrack}
+            resource={resource}
+            fileUrl={fileUrl}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

@@ -4,6 +4,11 @@ import { loadPdf, extractPageText, type PDFDocumentProxy } from "@/lib/pdf";
 import { Skeleton } from "@/components/ui/skeleton";
 import "./pdf-text-layer.css";
 
+/** Never rasterise below 2x the presented size, whatever the display reports. */
+const MIN_RENDER_SCALE = 2;
+/** ~24 MP. Comfortably inside browser canvas limits, including mobile Safari's tighter ceiling. */
+const MAX_CANVAS_PIXELS = 24_000_000;
+
 interface PdfViewerProps {
   url: string;
   page: number;
@@ -97,17 +102,32 @@ export default function PdfViewer({
         const textDiv = textLayerRef.current;
         if (!canvas || !textDiv) return;
 
-        // Render at device resolution, present at CSS resolution. Without this a PDF looks soft on any
-        // HiDPI screen, which on dense mathematical typesetting reads as blurry rather than merely small.
+        // Rasterisation resolution, which is NOT the same as the presented size.
+        //
+        // devicePixelRatio alone is not enough. On a typical 1.25 dpr laptop at 110% zoom, an A4 page
+        // rasterises to ~818px across — about 99 DPI, where a native PDF viewer targets 150-220. That is
+        // exactly the "why does my PDF look worse here than everywhere else" difference, and it hurts
+        // most on dense mathematical typesetting, where thin strokes and subscripts are the first things
+        // to mush. So take a floor of 2x the presented size regardless of the display.
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.floor(viewport.width * dpr);
-        canvas.height = Math.floor(viewport.height * dpr);
+        let outputScale = Math.max(dpr, MIN_RENDER_SCALE);
+
+        // ...but bound the allocation. A large page at 250% zoom would otherwise ask for a canvas of
+        // tens of megapixels, and browsers silently fail to allocate past their limit — which presents
+        // as a BLANK page, a far worse outcome than a slightly soft one.
+        const area = viewport.width * viewport.height;
+        if (area * outputScale * outputScale > MAX_CANVAS_PIXELS) {
+          outputScale = Math.sqrt(MAX_CANVAS_PIXELS / area);
+        }
+
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = `${Math.floor(viewport.width)}px`;
         canvas.style.height = `${Math.floor(viewport.height)}px`;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.setTransform(outputScale, 0, 0, outputScale, 0, 0);
 
         renderTask = pdfPage.render({ canvasContext: ctx, viewport, canvas });
         await renderTask.promise;

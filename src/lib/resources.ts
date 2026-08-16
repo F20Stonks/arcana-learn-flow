@@ -19,6 +19,16 @@ export type ResourceKind =
 
 export type ResourceVisibility = "private" | "global";
 
+export type ResourceRole = "primary" | "solutions" | "mark_scheme" | "appendix" | "companion";
+
+export const ROLE_LABEL: Record<ResourceRole, string> = {
+  primary: "Main document",
+  solutions: "Solutions",
+  mark_scheme: "Mark scheme",
+  appendix: "Appendix",
+  companion: "Companion",
+};
+
 export interface Resource {
   id: string;
   title: string;
@@ -40,6 +50,9 @@ export interface Resource {
   chunk_count: number;
   created_by: string | null;
   created_at: string;
+  /** Pack membership. A companion (solutions, mark scheme, …) names the document it belongs to. */
+  parent_id: string | null;
+  role: ResourceRole;
 }
 
 export interface ResourceProgress {
