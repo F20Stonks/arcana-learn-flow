@@ -45,6 +45,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
+import PapersView from "@/components/questionbank/PapersView";
 import ReferenceQuestionText from "@/components/ReferenceQuestionText";
 
 type Status = "unseen" | "attempted" | "solved";
@@ -247,6 +248,12 @@ export default function QuestionBank() {
   const [loadError, setLoadError] = useState("");
 
   // Filters live in the URL so a filtered view is shareable and survives the back button out of a question.
+  // `view` is one of them: which lens you were using is part of what you'd share or come back to.
+  //
+  // PAPERS IS THE DEFAULT. The topic lens answers "drill this technique"; the paper lens answers "work a
+  // real paper end to end", which is what a student sitting STEP actually does — and it is the one the
+  // flat list made impossible.
+  const view = params.get("view") === "topics" ? "topics" : "papers";
   const competition = params.get("competition") || "";
   const selectedArea = params.get("area") || "";
   const strand = params.get("strand") || "";
@@ -430,6 +437,39 @@ export default function QuestionBank() {
           </section>
         )}
 
+        {/* Lens switch. Both views read the SAME filter state in the URL, so picking a paper here and
+            then switching to Topics keeps you inside that paper rather than resetting you to everything. */}
+        <div className="reveal mt-8 flex items-center gap-1 rounded-full border border-border bg-accent/15 p-1 w-fit" style={{ animationDelay: "120ms" }}>
+          {(["papers", "topics"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setFilter("view", v === "papers" ? "" : v)}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${
+                view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {v === "papers" ? "Papers" : "Topics"}
+            </button>
+          ))}
+        </div>
+
+        {view === "papers" && !(competition && year) ? (
+          <section className="reveal mt-6" style={{ animationDelay: "160ms" }}>
+            <PapersView
+              userId={profile?.user_id}
+              onOpenPaper={(comp, yr) => {
+                // Opening a paper drops into the list view already filtered to it — the paper IS the
+                // filter, so there is nothing further for the student to set.
+                const next = new URLSearchParams(params);
+                next.set("competition", comp);
+                next.set("year", String(yr));
+                next.set("view", "topics");
+                setParams(next, { replace: false });
+              }}
+            />
+          </section>
+        ) : (
+        <>
         {/* Filters */}
         <section className="reveal mt-8 space-y-4" style={{ animationDelay: "140ms" }}>
           <FilterRow
@@ -615,6 +655,8 @@ export default function QuestionBank() {
             </>
           )}
         </section>
+        </>
+        )}
       </main>
     </AppShell>
   );
