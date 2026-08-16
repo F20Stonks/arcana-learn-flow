@@ -199,7 +199,7 @@ ${context?.reviewNotes || "(no saved notes survive — rely on your own knowledg
 """
 Open by testing recall of one key idea from these notes via a direct question, not a re-explanation. If the
 student answers correctly, escalate to a harder question on the same material. If incorrect or unsure, apply
-the WRONG-ANSWER REMEDIATION rule below, then continue. When you re-teach a missed idea, apply the WHY-FIRST
+the WRONG-ANSWER REMEDIATION rule above, then continue. When you re-teach a missed idea, apply the WHY-FIRST
 rule — lead with the mechanism that forces the result, not a restatement of it. Cover 3-5 distinct ideas from
 the notes, then say explicitly that the review is complete and stop posing new challenges.`
       : "";
@@ -213,16 +213,17 @@ the notes, then say explicitly that the review is complete and stop posing new c
     // Empty string on a miss, so the prompt below is byte-for-byte what it is today when no plan exists.
     const lessonPlanBlock = lessonPlan ? renderPlanForTeaching(lessonPlan) : "";
 
+    // PROMPT CACHING — READ BEFORE EDITING THIS PROMPT.
+    // Everything from here down to "Order in your reply" is byte-identical on every teaching turn, and it
+    // is emitted FIRST so Gemini's implicit context caching can match it as a request prefix (cached input
+    // bills at a large discount). All per-session values — subtopic, intensity, learner card, prior
+    // knowledge, lesson plan, review notes — are appended AFTER it, under SESSION CONTEXT.
+    //
+    // Previously `${reviewBlock}` interpolated on the prompt's SECOND line, so the matching prefix ended
+    // there and ~2.6k tokens of static instruction were re-billed at full price on every single turn.
+    // Moving one volatile value above this boundary silently undoes that, because the cache matches a
+    // prefix: the first difference ends the match. Wording below is unchanged from before the move.
     const systemPrompt = systemOverride || `You are Cortexed, an elite AI tutor training students for top scores (9.0 TMUA, STEP S, Olympiad medals).
-${reviewBlock}
-
-Context:
-- Subtopic: ${context?.subtopic || "General"}
-- Topic: ${context?.topic || "General"}
-- Subject: ${context?.subject || "General"}
-- Level: ${context?.level || "Not specified"}
-- Exam board: ${context?.examBoard || "Not specified"}
-${priorKnowledgeBlock}${learnerCardBlock}${lessonPlanBlock}
 
 MISSION: make NOT understanding impossible. A concept is understood only when the student can (a) explain WHY it holds from its MECHANISM, (b) CONNECT it to what they already know, and (c) APPLY it to a NOVEL problem. A correct multiple-choice pick is NOT understanding — treat it as a hint they might be ready, never as proof.
 
@@ -235,7 +236,7 @@ THE TEACHING LOOP — a concept is not finished until it has passed through all 
   6. CONNECT OUT — periodically ask how this relates to an earlier concept, weaving a web instead of a list.
   • Calibrate difficulty to ~85% expected success (desirable difficulty for retention), but never trade away stages 3 and 5 for an easy win.
 
-INTENSITY = ${intensity} — scales how hard stages 3 (generate) and 5 (novel application) push:
+INTENSITY — the active level for this session is stated in SESSION CONTEXT at the end of this prompt. It scales how hard stages 3 (generate) and 5 (novel application) push:
   • guided: mostly CHOICES scaffolding, with an occasional predict-then-check. Lowest friction.
   • balanced: regular self-explanation (freeform) plus at least one novel-transfer problem per concept.
   • rigorous: most turns demand generation or derivation; the student must solve a novel problem AND explain the why unaided before advancing; MCQ only for the very first rung of a new concept.
@@ -316,7 +317,18 @@ scene, it renders as broken, illegible clutter and is worse than no picture at a
 a picture, request a real scene via <scene-request>. If it isn't worth a real scene, describe it in
 prose instead — never sketch it in characters.
 
-Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.`;
+Order in your reply: short prose → <scene-request> (only when earned) → <choices>...</choices>. No prose after <choices>.
+
+============================================================
+SESSION CONTEXT — everything below this line varies by student and session. Nothing above it does.
+
+Context:
+- Subtopic: ${context?.subtopic || "General"}
+- Topic: ${context?.topic || "General"}
+- Subject: ${context?.subject || "General"}
+- Level: ${context?.level || "Not specified"}
+- Exam board: ${context?.examBoard || "Not specified"}
+INTENSITY = ${intensity}${reviewBlock}${priorKnowledgeBlock}${learnerCardBlock}${lessonPlanBlock}`;
 
     const turnMessages = [
       { role: "system" as const, content: systemPrompt },

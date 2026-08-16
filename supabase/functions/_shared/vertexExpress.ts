@@ -79,12 +79,19 @@ function translateStream(upstream: ReadableStream<Uint8Array>): ReadableStream<U
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = "";
+  // Prompt-cache accounting. Gemini reports how much of the input it served from cache in
+  // usageMetadata.cachedContentTokenCount, on the trailing chunks of the stream. Without logging it
+  // there is no way to tell whether caching is working — a prompt whose static prefix got broken by an
+  // edit still answers correctly, it just silently costs full price. Watch this ratio after any change
+  // to the system prompt in chat/index.ts.
+  let usage: { promptTokenCount?: number; cachedContentTokenCount?: number } | null = null;
 
   const emitEvent = (controller: ReadableStreamDefaultController<Uint8Array>, rawEvent: string) => {
     const dataLine = rawEvent.split("\n").find((l) => l.startsWith("data:"));
     if (!dataLine) return;
     try {
       const evt = JSON.parse(dataLine.slice(5).trim());
+      if (evt?.usageMetadata) usage = evt.usageMetadata;
       const text = evt?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (typeof text === "string" && text.length > 0) {
         const chunk = { choices: [{ delta: { content: text } }] };
@@ -119,6 +126,12 @@ function translateStream(upstream: ReadableStream<Uint8Array>): ReadableStream<U
         // replies can be a single chunk with nothing after it) would otherwise be silently dropped.
         if (buffer.trim().length > 0) emitEvent(controller, buffer);
       } finally {
+        if (usage) {
+          const total = usage.promptTokenCount ?? 0;
+          const cached = usage.cachedContentTokenCount ?? 0;
+          const pct = total > 0 ? Math.round((cached / total) * 100) : 0;
+          console.log(`[vertex-express] prompt tokens ${total}, cached ${cached} (${pct}%)`);
+        }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       }
