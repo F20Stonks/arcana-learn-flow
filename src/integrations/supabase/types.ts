@@ -1520,15 +1520,6 @@ export type Database = {
       }
     }
     Views: {
-      reference_question_classification: {
-        Row: {
-          area: string | null
-          question_id: string | null
-          strands: string[] | null
-          topics: string[] | null
-        }
-        Relationships: []
-      }
       user_resource_analytics: {
         Row: {
           average_score: number | null
