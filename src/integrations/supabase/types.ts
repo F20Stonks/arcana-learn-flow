@@ -624,6 +624,147 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          note: string | null
+          page: number
+          quote: string | null
+          resource_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          note?: string | null
+          page: number
+          quote?: string | null
+          resource_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          note?: string | null
+          page?: number
+          quote?: string | null
+          resource_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_bookmarks_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_chunks: {
+        Row: {
+          book: string
+          chapter: string | null
+          char_len: number
+          content: string
+          created_at: string
+          embedding: string | null
+          heading: string | null
+          id: string
+          license_note: string
+          owner_id: string | null
+          page: number | null
+          resource_id: string | null
+          section: string | null
+          source: string
+          source_url: string | null
+          subject: string
+        }
+        Insert: {
+          book: string
+          chapter?: string | null
+          char_len: number
+          content: string
+          created_at?: string
+          embedding?: string | null
+          heading?: string | null
+          id?: string
+          license_note: string
+          owner_id?: string | null
+          page?: number | null
+          resource_id?: string | null
+          section?: string | null
+          source: string
+          source_url?: string | null
+          subject: string
+        }
+        Update: {
+          book?: string
+          chapter?: string | null
+          char_len?: number
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          heading?: string | null
+          id?: string
+          license_note?: string
+          owner_id?: string | null
+          page?: number | null
+          resource_id?: string | null
+          section?: string | null
+          source?: string
+          source_url?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_chunks_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_progress: {
+        Row: {
+          furthest_page: number
+          last_page: number
+          opened_count: number
+          resource_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          furthest_page?: number
+          last_page?: number
+          opened_count?: number
+          resource_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          furthest_page?: number
+          last_page?: number
+          opened_count?: number
+          resource_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_progress_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_sources: {
         Row: {
           attribution: string
@@ -662,6 +803,89 @@ export type Database = {
           url_patterns?: string[]
         }
         Relationships: []
+      }
+      resources: {
+        Row: {
+          author: string | null
+          byte_size: number | null
+          chunk_count: number
+          content_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: string
+          level: string | null
+          license_note: string | null
+          license_status: string
+          owner_id: string | null
+          page_count: number | null
+          source_id: string | null
+          storage_bucket: string
+          storage_path: string
+          subject: string | null
+          text_status: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          author?: string | null
+          byte_size?: number | null
+          chunk_count?: number
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          level?: string | null
+          license_note?: string | null
+          license_status?: string
+          owner_id?: string | null
+          page_count?: number | null
+          source_id?: string | null
+          storage_bucket?: string
+          storage_path: string
+          subject?: string | null
+          text_status?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          author?: string | null
+          byte_size?: number | null
+          chunk_count?: number
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          level?: string | null
+          license_note?: string | null
+          license_status?: string
+          owner_id?: string | null
+          page_count?: number | null
+          source_id?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          subject?: string | null
+          text_status?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "resource_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scene_outcomes: {
         Row: {
@@ -1148,6 +1372,45 @@ export type Database = {
           },
         ]
       }
+      track_resources: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          note: string | null
+          resource_id: string
+          track_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          note?: string | null
+          resource_id: string
+          track_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          note?: string | null
+          resource_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_resources_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "learning_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_concept_knowledge: {
         Row: {
           concept_id: string
@@ -1237,6 +1500,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          granted_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       reference_question_classification: {
@@ -1266,6 +1547,50 @@ export type Database = {
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
+      }
+      is_admin: { Args: { p_user?: string }; Returns: boolean }
+      match_resource_chunks: {
+        Args: {
+          p_book?: string
+          p_match_count?: number
+          p_owner_id?: string
+          p_query_embedding?: string
+          p_query_text?: string
+          p_resource_id?: string
+          p_subject?: string
+        }
+        Returns: {
+          book: string
+          chapter: string
+          content: string
+          heading: string
+          id: string
+          license_note: string
+          page: number
+          resource_id: string
+          score: number
+          section: string
+          source_url: string
+          subject: string
+        }[]
+      }
+      match_track_resource_chunks: {
+        Args: {
+          p_match_count?: number
+          p_query_text: string
+          p_track_id: string
+          p_user_id: string
+        }
+        Returns: {
+          book: string
+          chapter: string
+          content: string
+          heading: string
+          license_note: string
+          page: number
+          score: number
+          section: string
+        }[]
       }
       reference_question_classified: {
         Args: never
