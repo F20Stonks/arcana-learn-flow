@@ -102,7 +102,11 @@ export default function CreateTrackFromBook({
     try {
       for (const [index, chapter] of included.entries()) {
         const { data: topic, error: topicErr } = await (supabase.from("topics" as never) as any)
-          .insert({ track_id: track.id, title: chapter.title, order_index: index, status: "not_started" })
+          // "unlocked", not "not_started": topics_status_check allows only
+          // locked/unlocked/in_progress/complete, and syllabusTrack.ts already uses "unlocked" for a
+          // freshly created topic. An invented value throws, the catch below deletes the track, and the
+          // student just sees "couldn't build the track".
+          .insert({ track_id: track.id, title: chapter.title, order_index: index, status: "unlocked" })
           .select("id")
           .single();
         if (topicErr || !topic) throw topicErr ?? new Error("topic insert failed");
@@ -118,7 +122,7 @@ export default function CreateTrackFromBook({
             topic_id: topic.id,
             title: s.title,
             order_index: i,
-            status: "not_started",
+            status: "unlocked",
             resource_id: resource.id,
             page_start: s.pageStart,
             page_end: s.pageEnd,
