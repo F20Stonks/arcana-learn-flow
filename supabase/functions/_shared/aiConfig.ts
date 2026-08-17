@@ -54,7 +54,7 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
       // Top-tier Pro model for every call (user-directed): quality over cost. Pro pricing is
       // several times Flash's, so if spend becomes a problem pin something cheaper via the
       // VERTEX_EXPRESS_MODEL secret rather than editing this line.
-      model: strongerIfSet(Deno.env.get("VERTEX_EXPRESS_MODEL") || "gemini-3.1-pro-extended"),
+      model: strongerIfSet(Deno.env.get("VERTEX_EXPRESS_MODEL") || "gemini-3.1-pro-preview"),
       provider: "vertex-express",
     };
     expressCached[tier] = cfg;
@@ -74,7 +74,7 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
     // Lovable gateway's OpenRouter-style convention, a different surface). Model catalog moves;
     // VERTEX_MODEL overrides without a redeploy the same way AUTHORING_MODEL does. Kept in step with
     // the Express default above, including its pricing caveat.
-    const model = strongerIfSet(Deno.env.get("VERTEX_MODEL") || "gemini-3.1-pro-extended");
+    const model = strongerIfSet(Deno.env.get("VERTEX_MODEL") || "gemini-3.1-pro-preview");
     const cfg: AIConfig = {
       url: `https://${region}-aiplatform.googleapis.com/v1beta1/projects/${gcpProject}/locations/${region}/endpoints/openapi/chat/completions`,
       key: token,
