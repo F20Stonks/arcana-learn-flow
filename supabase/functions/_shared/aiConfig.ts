@@ -51,12 +51,10 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
     const cfg: AIConfig = {
       url: "", // unused — vertexExpress.ts builds its own URL; present only to satisfy the AIConfig shape
       key: expressKey,
-      // Gemini 3.7 Flash. NOTE THE PRICE, because it is not a free upgrade from the 2.5-flash this
-      // used to default to: $0.75/$3.75 per 1M in/out on introductory pricing to 2026-12-31, versus
-      // 2.5-flash's $0.30/$2.50 — so ~2.5x input, ~1.5x output. On 2027-01-01 introductory pricing
-      // ends and it becomes $1.50/$7.50, i.e. 5x input and 3x output against 2.5-flash. Revisit this
-      // line before that date, or set VERTEX_EXPRESS_MODEL to pin something cheaper.
-      model: strongerIfSet(Deno.env.get("VERTEX_EXPRESS_MODEL") || "gemini-3.7-flash"),
+      // Top-tier Pro model for every call (user-directed): quality over cost. Pro pricing is
+      // several times Flash's, so if spend becomes a problem pin something cheaper via the
+      // VERTEX_EXPRESS_MODEL secret rather than editing this line.
+      model: strongerIfSet(Deno.env.get("VERTEX_EXPRESS_MODEL") || "gemini-3.1-pro-extended"),
       provider: "vertex-express",
     };
     expressCached[tier] = cfg;
@@ -76,7 +74,7 @@ export async function getAIConfig(tier: AITier = "turn", opts?: { allowExpress?:
     // Lovable gateway's OpenRouter-style convention, a different surface). Model catalog moves;
     // VERTEX_MODEL overrides without a redeploy the same way AUTHORING_MODEL does. Kept in step with
     // the Express default above, including its pricing caveat.
-    const model = strongerIfSet(Deno.env.get("VERTEX_MODEL") || "gemini-3.7-flash");
+    const model = strongerIfSet(Deno.env.get("VERTEX_MODEL") || "gemini-3.1-pro-extended");
     const cfg: AIConfig = {
       url: `https://${region}-aiplatform.googleapis.com/v1beta1/projects/${gcpProject}/locations/${region}/endpoints/openapi/chat/completions`,
       key: token,
