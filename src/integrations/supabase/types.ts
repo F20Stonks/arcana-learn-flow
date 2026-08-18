@@ -903,6 +903,8 @@ export type Database = {
           license_status: string
           owner_id: string | null
           page_count: number | null
+          parent_id: string | null
+          role: string
           source_id: string | null
           storage_bucket: string
           storage_path: string
@@ -927,6 +929,8 @@ export type Database = {
           license_status?: string
           owner_id?: string | null
           page_count?: number | null
+          parent_id?: string | null
+          role?: string
           source_id?: string | null
           storage_bucket?: string
           storage_path: string
@@ -951,6 +955,8 @@ export type Database = {
           license_status?: string
           owner_id?: string | null
           page_count?: number | null
+          parent_id?: string | null
+          role?: string
           source_id?: string | null
           storage_bucket?: string
           storage_path?: string
@@ -961,6 +967,13 @@ export type Database = {
           visibility?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "resources_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resources_source_id_fkey"
             columns: ["source_id"]
@@ -1340,7 +1353,10 @@ export type Database = {
           estimated_minutes: number | null
           id: string
           order_index: number
+          page_end: number | null
+          page_start: number | null
           prerequisite_subtopic_ids: string[] | null
+          resource_id: string | null
           status: string
           title: string
           topic_id: string
@@ -1350,7 +1366,10 @@ export type Database = {
           estimated_minutes?: number | null
           id?: string
           order_index?: number
+          page_end?: number | null
+          page_start?: number | null
           prerequisite_subtopic_ids?: string[] | null
+          resource_id?: string | null
           status?: string
           title: string
           topic_id: string
@@ -1360,12 +1379,22 @@ export type Database = {
           estimated_minutes?: number | null
           id?: string
           order_index?: number
+          page_end?: number | null
+          page_start?: number | null
           prerequisite_subtopic_ids?: string[] | null
+          resource_id?: string | null
           status?: string
           title?: string
           topic_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subtopics_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subtopics_topic_id_fkey"
             columns: ["topic_id"]
@@ -1631,6 +1660,17 @@ export type Database = {
       }
     }
     Functions: {
+      book_track_progress: {
+        Args: { p_track_id: string; p_user_id: string }
+        Returns: {
+          completed: boolean
+          page_end: number
+          page_start: number
+          pages_read: boolean
+          subtopic_id: string
+          title: string
+        }[]
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
@@ -1720,6 +1760,18 @@ export type Database = {
           topic_tags: string[]
           topics: string[]
           total_count: number
+          year: number
+        }[]
+      }
+      reference_question_papers: {
+        Args: { p_user_id?: string }
+        Returns: {
+          attempted: number
+          competition: string
+          question_count: number
+          solved: number
+          with_diagram: number
+          with_solutions: number
           year: number
         }[]
       }
