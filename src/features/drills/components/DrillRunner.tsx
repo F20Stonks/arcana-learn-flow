@@ -5,7 +5,11 @@ import type { DrillDefinition, DrillMode } from "../types";
 import { useDrillRun } from "../engine/useDrillRun";
 import NumericAnswerInput from "./NumericAnswerInput";
 import VennDiagramInput from "./VennDiagramInput";
+import BinaryChoiceInput from "./BinaryChoiceInput";
 import CayleyTableView from "./CayleyTableView";
+import InvariantPairView from "./InvariantPairView";
+import GraphView from "./GraphView";
+import KnotPairView from "./KnotPairView";
 import DrillSummary from "./DrillSummary";
 
 interface Props {
@@ -105,7 +109,10 @@ export default function DrillRunner({ def, mode, durationS, config, previousBest
           run.flash === "correct" ? "border-primary/60" : run.flash === "incorrect" ? "border-destructive/60" : ""
         }`}
       >
-        {problem?.visual && <CayleyTableView visual={problem.visual} />}
+        {problem?.visual?.kind === "cayley-table" && <CayleyTableView visual={problem.visual} />}
+        {problem?.visual?.kind === "invariant-pair" && <InvariantPairView visual={problem.visual} />}
+        {problem?.visual?.kind === "graph" && <GraphView visual={problem.visual} />}
+        {problem?.visual?.kind === "knot-pair" && <KnotPairView visual={problem.visual} />}
 
         <div className="min-h-[3rem] text-center text-3xl font-semibold text-foreground">
           {problem && (looksLikeLatex(problem.prompt) ? <MathRenderer content={problem.prompt} /> : problem.prompt)}
@@ -113,6 +120,9 @@ export default function DrillRunner({ def, mode, durationS, config, previousBest
 
         {problem && def.inputKind === "numeric" && <NumericAnswerInput key={problem.id} onSubmit={run.submit} />}
         {problem && def.inputKind === "venn" && <VennDiagramInput key={problem.id} onSubmit={run.submit} />}
+        {problem && def.inputKind === "binary" && def.binaryOptions && (
+          <BinaryChoiceInput key={problem.id} options={def.binaryOptions} onSubmit={run.submit} />
+        )}
       </div>
 
       <div className="text-center text-xs text-muted-foreground">

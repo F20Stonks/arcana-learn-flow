@@ -19,6 +19,8 @@ export const zetamac: DrillDefinition = {
   domain: "arithmetic",
   defaultDurationS: 120,
   inputKind: "numeric",
+  rules:
+    "You'll see a mixed arithmetic problem — addition, subtraction, multiplication, or division. Type the answer and submit. Division always divides evenly, so there's never a remainder to guess at. Custom rig lets you pick which operations and how large the numbers get; Adaptive widens the range as you build a streak; Weak-spot pulls extra problems from the operations you've missed most.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "120 seconds, all four operations — the direct comparison mode." },
     { id: "custom", label: "Custom rig", description: "Pick your own operators and number range." },

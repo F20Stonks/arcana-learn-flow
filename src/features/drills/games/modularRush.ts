@@ -12,6 +12,8 @@ export const modularRush: DrillDefinition = {
   domain: "number-theory",
   defaultDurationS: 90,
   inputKind: "numeric",
+  rules:
+    "You'll see 'a mod n' — the remainder when a is divided by n. Type the remainder. Moduli start small and Adaptive mode widens them as you build a streak; Weak-spot pulls extra problems from the specific moduli you've missed.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "90 seconds of a mod n, moduli from 2 up to about 20." },
     { id: "adaptive", label: "Adaptive staircase", description: "Starts with small moduli, widens the range on a streak." },

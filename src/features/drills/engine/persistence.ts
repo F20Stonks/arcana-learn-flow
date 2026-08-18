@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { DrillAttemptLog, DrillMode, WeakSpot } from "../types";
 
 interface FinishRunArgs {
@@ -30,7 +31,7 @@ export async function finishDrillRun({ userId, drillKey, mode, config, attempts,
       user_id: userId,
       drill_key: drillKey,
       mode,
-      config,
+      config: config as Json,
       problems_seen: attempts.length,
       problems_correct: correctCount,
       score,

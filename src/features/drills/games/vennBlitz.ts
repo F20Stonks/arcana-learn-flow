@@ -18,6 +18,8 @@ export const vennBlitz: DrillDefinition = {
   domain: "logic",
   defaultDurationS: 75,
   inputKind: "venn",
+  rules:
+    "You'll see a set expression like A ∩ Bᶜ ∩ C. Tap the region of the three-circle diagram it describes — tapping outside all three circles is a valid answer when every set is complemented. Every expression names exactly one region, never a union.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "75 seconds tapping the region a set expression describes." },
     { id: "adaptive", label: "Adaptive staircase", description: "Starts with plain sets, adds more complements as you build a streak." },

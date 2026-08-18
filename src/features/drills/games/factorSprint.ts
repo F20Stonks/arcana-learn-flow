@@ -14,6 +14,8 @@ export const factorSprint: DrillDefinition = {
   domain: "number-theory",
   defaultDurationS: 90,
   inputKind: "numeric",
+  rules:
+    "Each problem is one of three types: gcd(a, b), lcm(a, b), or a Euclidean-algorithm remainder step — 'a ÷ b, what's left over?'. Type the number. Weak-spot mode weights toward whichever of the three you're worst at.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "90 seconds mixing GCD, LCM, and Euclidean remainder steps." },
     { id: "adaptive", label: "Adaptive staircase", description: "Starts with small numbers, widens the range on a streak." },

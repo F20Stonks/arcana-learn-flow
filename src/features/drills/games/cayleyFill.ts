@@ -14,6 +14,8 @@ export const cayleyFill: DrillDefinition = {
   domain: "algebra",
   defaultDurationS: 75,
   inputKind: "numeric",
+  rules:
+    "A small addition table for the numbers 0 to n−1, mod n, is shown with one cell blanked and highlighted. Work out row ⊕ column, mod n, and type the answer. Weak-spot mode weights toward the table size (n) you've missed most.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "75 seconds filling in Z_n addition tables, n from 4 to 8." },
     { id: "adaptive", label: "Adaptive staircase", description: "Starts with a small group, widens n on a streak." },

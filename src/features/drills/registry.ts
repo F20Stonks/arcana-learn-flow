@@ -5,6 +5,9 @@ import { factorSprint } from "./games/factorSprint";
 import { sieveRace } from "./games/sieveRace";
 import { vennBlitz } from "./games/vennBlitz";
 import { cayleyFill } from "./games/cayleyFill";
+import { invariantMatch } from "./games/invariantMatch";
+import { bridgeRun } from "./games/bridgeRun";
+import { knotOrNot } from "./games/knotOrNot";
 
 export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   zetamac,
@@ -13,6 +16,9 @@ export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   "sieve-race": sieveRace,
   "venn-blitz": vennBlitz,
   "cayley-fill": cayleyFill,
+  "invariant-match": invariantMatch,
+  "bridge-run": bridgeRun,
+  "knot-or-not": knotOrNot,
 };
 
 export const DRILL_LIST = Object.values(DRILL_REGISTRY);

@@ -35,6 +35,8 @@ export const sieveRace: DrillDefinition = {
   domain: "number-theory",
   defaultDurationS: 90,
   inputKind: "numeric",
+  rules:
+    "Each problem is either a primality check — type 1 if the number is prime, 0 if it isn't — or 'largest prime factor of n', where you type that factor. Weak-spot mode weights toward whichever call type trips you up.",
   modes: [
     { id: "classic", label: "Classic sprint", description: "90 seconds mixing prime/not-prime calls with largest-prime-factor questions." },
     { id: "adaptive", label: "Adaptive staircase", description: "Starts with small numbers, widens the range on a streak." },
