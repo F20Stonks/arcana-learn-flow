@@ -22,6 +22,8 @@ import MapPage from "./pages/MapPage";
 import ReviewCalendarPage from "./pages/ReviewCalendarPage";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
+import DrillsHub from "./pages/DrillsHub";
+import DrillPlay from "./pages/DrillPlay";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 // Lazy so pdf.js (~1.2 MB of engine, plus its worker) is fetched when someone actually opens a
@@ -96,6 +98,9 @@ function AppRoutes() {
           "something real to do while you wait" hook. Everything else stays behind full approval. */}
       <Route path="/question-bank" element={<ProtectedRoute><QuestionBank /></ProtectedRoute>} />
       <Route path="/question-bank/:questionId" element={<ProtectedRoute><QuestionBankDetail /></ProtectedRoute>} />
+      {/* Timed practice games sharing one drill engine (src/features/drills) — Zetamac++ first. */}
+      <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
+      <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />

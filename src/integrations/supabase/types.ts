@@ -89,6 +89,89 @@ export type Database = {
         }
         Relationships: []
       }
+      drill_attempts: {
+        Row: {
+          correct: boolean
+          created_at: string
+          drill_key: string
+          id: string
+          latency_ms: number | null
+          problem_tag: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          correct: boolean
+          created_at?: string
+          drill_key: string
+          id?: string
+          latency_ms?: number | null
+          problem_tag: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          correct?: boolean
+          created_at?: string
+          drill_key?: string
+          id?: string
+          latency_ms?: number | null
+          problem_tag?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drill_attempts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "drill_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drill_sessions: {
+        Row: {
+          config: Json
+          created_at: string
+          drill_key: string
+          duration_s: number
+          id: string
+          mode: string
+          problems_correct: number
+          problems_seen: number
+          score: number
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          drill_key: string
+          duration_s?: number
+          id?: string
+          mode?: string
+          problems_correct?: number
+          problems_seen?: number
+          score?: number
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          drill_key?: string
+          duration_s?: number
+          id?: string
+          mode?: string
+          problems_correct?: number
+          problems_seen?: number
+          score?: number
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: []
+      }
       generated_papers: {
         Row: {
           answers: Json
@@ -1529,6 +1612,19 @@ export type Database = {
           subject: string | null
           total_attempts: number | null
           total_time_spent: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      drill_weak_spots: {
+        Row: {
+          accuracy: number | null
+          attempts: number | null
+          avg_latency_ms: number | null
+          correct_count: number | null
+          drill_key: string | null
+          last_seen: string | null
+          problem_tag: string | null
           user_id: string | null
         }
         Relationships: []
