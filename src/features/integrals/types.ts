@@ -18,7 +18,8 @@ export type TechniqueId =
   | "symmetry"
   | "feynman"
   | "reduction"
-  | "integral-of-inverse";
+  | "integral-of-inverse"
+  | "t-sub";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;

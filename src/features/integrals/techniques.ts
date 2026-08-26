@@ -300,6 +300,33 @@ export const TECHNIQUES: Technique[] = [
       "This produces a definite value, not a formula for \\int f^{-1}(x)\\,dx as a function of x — you don't get an antiderivative of f^{-1} out of it, only a number.",
     ],
   },
+  {
+    id: "t-sub",
+    name: "Weierstrass substitution",
+    tagline: "t=\\tan(x/2) turns any rational function of \\sin x, \\cos x into a rational function of t.",
+    whenToUse:
+      "A rational function of \\sin x and \\cos x — a ratio built from sums and products of them, like \\frac{1}{a+\\cos x} or \\frac{1}{\\sin x+\\cos x+1} — where no trig identity reshapes it and no root is in sight. That last part matters: this is not trig-sub, which is for \\sqrt{a^2-x^2}-shaped roots. If there's no root, it's not that technique.",
+    recipe: [
+      "Substitute t=\\tan(x/2). Then \\sin x=\\frac{2t}{1+t^2},\\ \\cos x=\\frac{1-t^2}{1+t^2},\\ dx=\\frac{2\\,dt}{1+t^2}.",
+      "Replace every trig function and dx with its t-form — the result is always a rational function of t, however messy it looks at first.",
+      "Integrate the rational function in t — usually a standard arctan or log form once it's simplified, occasionally partial fractions.",
+      "Convert back with t=\\tan(x/2) — or, for a definite integral, convert the bounds to t instead and skip converting back at all.",
+    ],
+    example: {
+      integrand: "\\frac{1}{2+\\cos x}",
+      work: [
+        "t=\\tan(x/2) gives \\cos x=\\frac{1-t^2}{1+t^2} and dx=\\frac{2\\,dt}{1+t^2}.",
+        "2+\\cos x=\\frac{2(1+t^2)+(1-t^2)}{1+t^2}=\\frac{3+t^2}{1+t^2} — the (1+t^2) cancels against dx's.",
+        "What's left is \\int\\frac{2\\,dt}{3+t^2}=\\frac{2}{\\sqrt3}\\arctan\\frac{t}{\\sqrt3}.",
+      ],
+      result: "\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right) + C",
+    },
+    pitfalls: [
+      "The substitution gives \\sin x, \\cos x, dx purely in terms of t=\\tan(x/2), not \\tan x itself — reaching for the wrong half-angle is the most common slip.",
+      "Check first whether something faster applies — a lone \\sec^2 x or an odd power of \\sin/\\cos usually falls to ordinary trig identities before you need the full machinery here.",
+      "t=\\tan(x/2) is undefined at odd multiples of \\pi — a definite integral whose interval crosses one needs splitting there first.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(
