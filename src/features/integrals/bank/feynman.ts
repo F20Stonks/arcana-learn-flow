@@ -1,0 +1,142 @@
+/**
+ * Feynman's trick — differentiation under the integral sign. Every problem here embeds the given
+ * integral in a one-parameter family I(a), so the "integrand" is really I(a) evaluated at a
+ * specific a; the worked steps show the family and the differentiation that solves it.
+ *
+ * Kept to finite intervals on purpose. The technique's flagship examples (the Dirichlet integral
+ * ∫₀^∞ sin(x)/x dx and its relatives) are improper, and grading those would need the self-check's
+ * quadrature to handle an infinite domain — a genuine engineering task, not a content one. Finite
+ * intervals still teach the real move: introduce a parameter, differentiate, integrate back.
+ */
+import type { Problem } from "../types";
+
+export const Feynman: Problem[] = [
+  {
+    id: "feynman-power-minus-one-a1",
+    kind: "definite",
+    integrand: "\\frac{x-1}{\\ln x}",
+    integrandExpr: "(x-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(2)",
+    answerLatex: "\\ln 2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    hints: [
+      "Neither x nor \\ln x integrates against the other directly — but the integrand is exactly \\frac{x^a-1}{\\ln x} at a = 1.",
+      "Differentiating x^a with respect to a brings down a factor of \\ln x, which is exactly what's needed to cancel the denominator.",
+    ],
+    steps: [
+      "Let I(a) = \\int_0^1 \\frac{x^a - 1}{\\ln x}\\,dx. The integral wanted is I(1).",
+      "I'(a) = \\int_0^1 \\frac{\\partial}{\\partial a}(x^a - 1)\\,dx / \\ln x = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}.",
+      "Integrating back: I(a) = \\ln(a+1) + C. Since I(0) = 0 (the integrand vanishes when a=0), C = 0.",
+      "So I(a) = \\ln(a+1), and I(1) = \\ln 2.",
+    ],
+  },
+  {
+    id: "feynman-power-minus-one-a2",
+    kind: "definite",
+    integrand: "\\frac{x^2-1}{\\ln x}",
+    integrandExpr: "(x^2-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(3)",
+    answerLatex: "\\ln 3",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    hints: [
+      "Same family as \\int_0^1 \\frac{x-1}{\\ln x}dx, one step further along: this is I(2).",
+    ],
+    steps: [
+      "With I(a) = \\int_0^1 \\frac{x^a-1}{\\ln x}\\,dx, the same differentiation gives I(a) = \\ln(a+1).",
+      "The integral wanted is I(2) = \\ln 3.",
+    ],
+  },
+  {
+    id: "feynman-power-minus-one-a3",
+    kind: "definite",
+    integrand: "\\frac{x^3-1}{\\ln x}",
+    integrandExpr: "(x^3-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(4)",
+    answerLatex: "2\\ln 2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    hints: ["This is I(3) in the same family — the pattern is I(a) = \\ln(a+1) whatever a is."],
+    steps: [
+      "I(a) = \\ln(a+1) as before, so I(3) = \\ln 4 = 2\\ln 2.",
+    ],
+  },
+  {
+    id: "feynman-power-minus-one-half",
+    kind: "definite",
+    integrand: "\\frac{\\sqrt{x}-1}{\\ln x}",
+    integrandExpr: "(sqrt(x)-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(3/2)",
+    answerLatex: "\\ln\\frac{3}{2}",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["feynman"],
+    hints: [
+      "\\sqrt{x} = x^{1/2}, so this is the same family evaluated at a non-integer parameter.",
+      "There's nothing special about a being a whole number in the derivation — I(a) = \\ln(a+1) for any a > -1.",
+    ],
+    steps: [
+      "This is I(a) = \\int_0^1\\frac{x^a-1}{\\ln x}dx with a = \\tfrac{1}{2}.",
+      "I(a) = \\ln(a+1) still holds, so the answer is I(\\tfrac{1}{2}) = \\ln\\tfrac{3}{2}.",
+    ],
+  },
+  {
+    id: "feynman-log-squared",
+    kind: "definite",
+    integrand: "\\ln^2 x",
+    integrandExpr: "log(x)^2",
+    lower: "0",
+    upper: "1",
+    answer: "2",
+    answerLatex: "2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    hints: [
+      "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
+      "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
+    ],
+    steps: [
+      "Let J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}.",
+      "Differentiating once under the integral sign: J'(a) = \\int_0^1 x^a\\ln x\\,dx = -\\frac{1}{(a+1)^2}.",
+      "Differentiating again: J''(a) = \\int_0^1 x^a\\ln^2 x\\,dx = \\frac{2}{(a+1)^3}.",
+      "At a = 0 this is exactly the integral wanted: \\int_0^1\\ln^2 x\\,dx = J''(0) = 2.",
+    ],
+  },
+  {
+    id: "feynman-x-cot-x",
+    kind: "definite",
+    integrand: "x\\cot x",
+    integrandExpr: "x/tan(x)",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "pi*log(2)/2",
+    answerLatex: "\\frac{\\pi}{2}\\ln 2",
+    domain: [0, Math.PI / 2],
+    difficulty: 5,
+    techniques: ["feynman"],
+    hints: [
+      "On (0, \\tfrac{\\pi}{2}), \\arctan(\\tan x) = x — so x\\cot x is \\frac{\\arctan(\\tan x)}{\\tan x}, and that has an obvious place to put a parameter.",
+      "Consider I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}dx. The target is I(1); I(0) = 0 outright.",
+    ],
+    steps: [
+      "Let I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}\\,dx, so the integral wanted is I(1).",
+      "Differentiating: I'(a) = \\int_0^{\\pi/2}\\frac{dx}{1+a^2\\tan^2 x} (the \\tan x cancels against the chain rule factor).",
+      "Substitute t = \\tan x, dt = (1+t^2)dx: I'(a) = \\int_0^\\infty\\frac{dt}{(1+a^2t^2)(1+t^2)} = \\frac{\\pi}{2(1+a)} \\text{ (partial fractions)}.",
+      "Integrating back: I(a) = \\frac{\\pi}{2}\\ln(1+a) + C, and I(0)=0 gives C=0.",
+      "So I(1) = \\frac{\\pi}{2}\\ln 2 — and since \\arctan(\\tan x)=x here, this is exactly \\int_0^{\\pi/2}x\\cot x\\,dx.",
+    ],
+  },
+];

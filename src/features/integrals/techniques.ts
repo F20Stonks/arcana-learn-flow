@@ -217,6 +217,35 @@ export const TECHNIQUES: Technique[] = [
       "After king's rule you must add the two forms — the rewritten integral alone is no easier.",
     ],
   },
+  {
+    id: "feynman",
+    name: "Feynman's trick",
+    tagline: "Turn a fixed integral into a family, and differentiate the family instead of integrating it.",
+    whenToUse:
+      "The integral has a hidden parameter — an exponent, a coefficient, a scale factor — and no direct technique makes progress once you've tried the obvious substitutions. Introduce that parameter explicitly, name the result I(a), and differentiate I with respect to a rather than working in x at all.",
+    recipe: [
+      "Rewrite the integral as I(a) for a parameter a chosen so the original problem is I at one specific value, and I is trivial (often 0) at another.",
+      "Differentiate under the integral sign: I'(a) = \\int \\frac{\\partial}{\\partial a}(\\text{integrand})\\,dx. This is legal whenever the integrand and its a-derivative stay well-behaved as a varies — assume so unless the problem says otherwise.",
+      "The a-derivative is almost always an easier integral in x than the original was.",
+      "Integrate I'(a) back with respect to a to recover I(a) up to a constant, then pin the constant using the trivial value of I.",
+      "Substitute the value of a that recovers the integral you actually wanted.",
+    ],
+    example: {
+      integrand: "\\frac{x^2-1}{\\ln x} \\text{ on } [0,1]",
+      work: [
+        "Generalize: let I(a) = \\int_0^1 \\frac{x^a - 1}{\\ln x}\\,dx, so the target is I(2).",
+        "Differentiate under the integral sign: I'(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1} — differentiating x^a brings down a factor of \\ln x, which cancels the \\ln x in the denominator.",
+        "Integrate back in a: I(a) = \\ln(a+1) + C.",
+        "I(0) = 0 outright, since the integrand vanishes identically when a = 0 — so C = 0.",
+      ],
+      result: "I(2) = \\ln 3",
+    },
+    pitfalls: [
+      "Differentiating under the integral sign needs the integrand to stay well-behaved as a varies — this isn't the tool for an integrand with a singularity that moves with a.",
+      "Pin the constant of integration using a value of a where the integral is obviously trivial, not by guessing.",
+      "The parameter has to actually recover the original problem at some specific value — check that before differentiating anything.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

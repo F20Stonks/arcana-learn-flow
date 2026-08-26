@@ -15,7 +15,8 @@ export type TechniqueId =
   | "trig-sub"
   | "partial-fractions"
   | "complete-square"
-  | "symmetry";
+  | "symmetry"
+  | "feynman";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;

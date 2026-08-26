@@ -63,6 +63,13 @@ describe("toMathMode", () => {
     );
   });
 
+  it("keeps an exponent's a from being read as the article", () => {
+    expect(toMathMode("differentiating x^a brings down a factor")).toBe(
+      "\\text{differentiating }x^a\\text{ brings down a factor}",
+    );
+    expect(toMathMode("a term like x_a appears")).toContain("x_a");
+  });
+
   it("tells the article \"a\" from the variable a", () => {
     expect(toMathMode("A ratio of polynomials")).toBe("\\text{A ratio of polynomials}");
     expect(toMathMode("gives a log plus an arctan")).toBe("\\text{gives a log plus an arctan}");

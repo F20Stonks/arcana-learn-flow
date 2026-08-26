@@ -22,6 +22,7 @@ import { TrigSubstitution } from "./bank/trigSubstitution";
 import { PartialFractions } from "./bank/partialFractions";
 import { CompletingTheSquare } from "./bank/completingTheSquare";
 import { Definite } from "./bank/definite";
+import { Feynman } from "./bank/feynman";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -32,6 +33,7 @@ export const PROBLEMS: Problem[] = [
   ...PartialFractions,
   ...CompletingTheSquare,
   ...Definite,
+  ...Feynman,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

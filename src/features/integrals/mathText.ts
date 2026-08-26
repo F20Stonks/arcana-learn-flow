@@ -65,6 +65,7 @@ function words(s: string): Word[] {
     const next = out[k + 1];
     const text = s.slice(w.start, w.end);
     if (w.prose || (text !== "a" && text !== "A")) continue;
+    if (w.start > 0 && (s[w.start - 1] === "^" || s[w.start - 1] === "_")) continue;
     if (!next.prose || !/^ +$/.test(s.slice(w.end, next.start))) continue;
     w.prose = true;
   }
