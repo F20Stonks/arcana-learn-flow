@@ -33,7 +33,7 @@ export default function DailyIntegral() {
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <Link
           to="/integrals"
-          className="reveal mb-6 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Integral Arena
         </Link>
@@ -83,7 +83,7 @@ export default function DailyIntegral() {
 
         <Link
           to="/integrals/train"
-          className="reveal mt-8 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="reveal mt-8 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <Dumbbell className="h-3.5 w-3.5" /> Practise this kind of integral in training
         </Link>

@@ -15,7 +15,14 @@ export default function XpBar({ xp, compact = false }: { xp: number; compact?: b
           </span>
         )}
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent">
+      <div
+        role="progressbar"
+        aria-valuenow={s.xpIntoLevel}
+        aria-valuemin={0}
+        aria-valuemax={s.xpForNextLevel}
+        aria-label={`Level ${s.level} progress: ${s.xpIntoLevel} of ${s.xpForNextLevel} XP`}
+        className="h-1.5 w-full overflow-hidden rounded-full bg-accent"
+      >
         <div
           className="h-full rounded-full bg-primary transition-[width] duration-700"
           style={{ width: `${Math.max(2, Math.round(s.progress * 100))}%` }}

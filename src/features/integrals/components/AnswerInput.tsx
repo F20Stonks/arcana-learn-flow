@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { CornerDownLeft } from "lucide-react";
 import Tex from "./Tex";
 import { previewLatex } from "../answer";
@@ -27,6 +27,7 @@ export default function AnswerInput({
   placeholder = "your answer, e.g. x^3/3 + C",
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
+  const id = useId();
   useEffect(() => {
     if (!disabled) ref.current?.focus();
   }, [disabled]);
@@ -36,9 +37,14 @@ export default function AnswerInput({
 
   return (
     <div className="flex flex-col gap-2.5">
+      <label htmlFor={id} className="sr-only">
+        Your answer to the integral
+      </label>
       <div className="relative">
         <input
           ref={ref}
+          id={id}
+          aria-describedby={`${id}-preview`}
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
@@ -62,7 +68,7 @@ export default function AnswerInput({
         </button>
       </div>
 
-      <div className="min-h-[26px] px-1 text-[13px]">
+      <div id={`${id}-preview`} className="min-h-[26px] px-1 text-[13px]">
         {preview ? (
           <span className="text-muted-foreground">
             reads as <Tex className="ml-1 text-foreground">{preview}</Tex>

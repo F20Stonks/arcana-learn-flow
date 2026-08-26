@@ -30,7 +30,7 @@ export default function IntegralTraining() {
       <main className="relative mx-auto max-w-4xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <Link
           to="/integrals"
-          className="reveal mb-6 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Integral Arena
         </Link>
@@ -61,7 +61,14 @@ export default function IntegralTraining() {
                   </span>
                 </div>
                 <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{t.tagline}</p>
-                <div className="mt-3.5 h-1 w-full overflow-hidden rounded-full bg-accent">
+                <div
+                  role="progressbar"
+                  aria-valuenow={m.solved}
+                  aria-valuemin={0}
+                  aria-valuemax={m.total}
+                  aria-label={`${t.name}: ${m.solved} of ${m.total} solved`}
+                  className="mt-3.5 h-1 w-full overflow-hidden rounded-full bg-accent"
+                >
                   <div
                     className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
                     style={{ width: `${Math.round(m.mastery * 100)}%` }}
@@ -129,7 +136,7 @@ export function TrainingTechnique() {
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <Link
           to="/integrals/train"
-          className="reveal mb-6 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> All techniques
         </Link>
@@ -151,6 +158,8 @@ export function TrainingTechnique() {
           <section className="reveal mb-6 overflow-hidden rounded-2xl border border-border bg-card">
             <button
               onClick={openLesson}
+              aria-expanded={lessonOpen}
+              aria-controls={`${technique.id}-lesson`}
               className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-accent/40"
             >
               <span className="flex items-center gap-2.5">
@@ -163,7 +172,7 @@ export function TrainingTechnique() {
             </button>
 
             {lessonOpen && (
-              <div className="border-t border-border px-5 pb-5 pt-4">
+              <div id={`${technique.id}-lesson`} className="border-t border-border px-5 pb-5 pt-4">
                 <h3 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
                   When to reach for it
                 </h3>

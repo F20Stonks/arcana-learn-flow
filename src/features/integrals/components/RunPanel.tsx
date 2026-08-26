@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Flag, Timer } from "lucide-react";
 import AnswerInput from "./AnswerInput";
 import HintLadder from "./HintLadder";
@@ -20,6 +21,13 @@ interface Props {
 export default function RunPanel({ problem, run, footer, showTimer = true }: Props) {
   const over = run.status !== "running";
   const par = PAR_SECONDS[problem.difficulty];
+  const result = useRef<HTMLDivElement>(null);
+
+  // When the run ends the input it was on disappears. Without this, keyboard focus falls back to
+  // the document and a screen reader user has to hunt for the result they just earned.
+  useEffect(() => {
+    if (over) result.current?.focus();
+  }, [over]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,7 +63,7 @@ export default function RunPanel({ problem, run, footer, showTimer = true }: Pro
           <HintLadder hints={problem.hints} used={run.hintsUsed} onReveal={run.revealHint} />
           <button
             onClick={run.giveUp}
-            className="flex items-center gap-1.5 self-start text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 self-start py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
           >
             <Flag className="h-3.5 w-3.5" /> Show me the solution
           </button>
@@ -63,10 +71,10 @@ export default function RunPanel({ problem, run, footer, showTimer = true }: Pro
       )}
 
       {over && (
-        <>
+        <div ref={result} tabIndex={-1} className="flex flex-col gap-5 outline-hidden">
           {footer}
           <SolutionSteps problem={problem} />
-        </>
+        </div>
       )}
     </div>
   );

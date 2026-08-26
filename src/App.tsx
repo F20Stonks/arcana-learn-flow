@@ -136,6 +136,16 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/refund" element={<RefundPage />} />
       {import.meta.env.DEV && <Route path="/dev/scenes" element={<DevScenes />} />}
+      {/* Integral Arena runs behind DashboardGuard, which needs a session, an approved waitlist row
+          and a finished onboarding — none of which a local dev run has. These unguarded twins exist
+          so the pages can be opened and screenshotted while working on them. DEV only: the whole
+          block is dead code Vite strips from a production bundle. */}
+      {import.meta.env.DEV && <Route path="/dev/integrals" element={<IntegralsHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/daily" element={<DailyIntegral />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/train" element={<IntegralTraining />} />}
+      {import.meta.env.DEV && (
+        <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
+      )}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

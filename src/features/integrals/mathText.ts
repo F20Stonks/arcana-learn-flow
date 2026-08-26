@@ -48,9 +48,25 @@ function words(s: string): Word[] {
     while (j < s.length && isLetter(s[j])) j++;
     const text = s.slice(i, j);
     const isCommand = i > 0 && s[i - 1] === "\\";
-    const prose = !isCommand && (text.length >= 3 || SHORT_WORDS.has(text.toLowerCase()));
+    // The tail of a contraction or possessive — the "s" of "denominator's", the "t" of "don't" —
+    // is a letter or two on its own, but it is never a variable.
+    const afterApostrophe = i > 0 && (s[i - 1] === "'" || s[i - 1] === "’");
+    const prose =
+      !isCommand && (afterApostrophe || text.length >= 3 || SHORT_WORDS.has(text.toLowerCase()));
     out.push({ start: i, end: j, prose });
     i = j;
+  }
+
+  // "a" is the one letter that is usually a variable and sometimes an article. A lone "a" or "A"
+  // separated from the next *prose* word by nothing but a space is the article ("a half-integer
+  // power"); anything else — "a = 2", "a\sin\theta" — keeps it a variable.
+  for (let k = 0; k < out.length - 1; k++) {
+    const w = out[k];
+    const next = out[k + 1];
+    const text = s.slice(w.start, w.end);
+    if (w.prose || (text !== "a" && text !== "A")) continue;
+    if (!next.prose || !/^ +$/.test(s.slice(w.end, next.start))) continue;
+    w.prose = true;
   }
   return out;
 }
@@ -129,11 +145,31 @@ export function segments(raw: string): Segment[] {
     }
   }
 
-  if (runs.length === 0) return [{ type: "math", value: s }];
+  // A matched pair of brackets wrapping nothing but prose belongs to the prose. Without this,
+  // "(a multiple of)" renders as three runs and the closing bracket can wrap onto its own line,
+  // orphaned from the words it belongs to. Both brackets must be flush against the run, so a
+  // bracket that is really opening a formula — "the derivative (2x+4)" — is left alone.
+  for (const run of runs) {
+    if (run[0] > 0 && s[run[0] - 1] === "(" && s[run[1]] === ")" && !inGuard(run[0] - 1)) {
+      run[0]--;
+      run[1]++;
+    }
+  }
+
+  // Extending runs can leave two of them touching. Fold those together so the output is one
+  // prose segment rather than several, which keeps the rendered text a single wrappable block.
+  const merged: Array<[number, number]> = [];
+  for (const run of runs) {
+    const last = merged[merged.length - 1];
+    if (last && [...s.slice(last[1], run[0])].every((c) => JOINERS.includes(c))) last[1] = run[1];
+    else merged.push(run);
+  }
+
+  if (merged.length === 0) return [{ type: "math", value: s }];
 
   const out: Segment[] = [];
   let cursor = 0;
-  for (const [start, end] of runs) {
+  for (const [start, end] of merged) {
     if (start < cursor) continue;
     if (start > cursor) out.push({ type: "math", value: s.slice(cursor, start) });
     out.push({ type: "text", value: s.slice(start, end) });

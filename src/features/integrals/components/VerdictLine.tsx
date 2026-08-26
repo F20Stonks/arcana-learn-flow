@@ -7,7 +7,17 @@ import type { Verdict } from "../types";
  * different lesson from "not equivalent", so they get different messages.
  */
 export default function VerdictLine({ verdict }: { verdict: Verdict | null }) {
-  if (!verdict) return <div className="min-h-[24px]" />;
+  // One live region that is always mounted: screen readers announce changes to a region that was
+  // already there, and skip one that appears at the same moment its text does.
+  return (
+    <div role="status" aria-live="polite" className="min-h-[24px]">
+      <Message verdict={verdict} />
+    </div>
+  );
+}
+
+function Message({ verdict }: { verdict: Verdict | null }) {
+  if (!verdict) return null;
 
   if (verdict.status === "correct") {
     return (

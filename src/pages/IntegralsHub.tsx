@@ -76,17 +76,17 @@ export default function IntegralsHub() {
               <DifficultyStars level={today.difficulty} />
             </div>
 
-            <div className="my-6 overflow-x-auto text-center">
-              {record ? (
-                <Tex block className="text-foreground">
-                  {integralLatex(today)}
-                </Tex>
-              ) : (
-                <Tex block className="text-foreground blur-[7px] select-none">
-                  {integralLatex(today)}
-                </Tex>
-              )}
+            {/* Blur hides the problem from sight but not from assistive tech, which would read
+                the integral out and spoil it. Hide it outright and say what's there instead. */}
+            <div
+              className="my-6 overflow-x-auto text-center"
+              aria-hidden={record ? undefined : true}
+            >
+              <Tex block className={`text-foreground ${record ? "" : "blur-[7px] select-none"}`}>
+                {integralLatex(today)}
+              </Tex>
             </div>
+            {!record && <p className="sr-only">Today's integral is hidden until you start the run.</p>}
 
             <div className="flex items-center justify-between text-[13px]">
               {record ? (
@@ -152,7 +152,14 @@ export default function IntegralsHub() {
                     {m.solved}/{m.total}
                   </span>
                 </div>
-                <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-accent">
+                <div
+                  role="progressbar"
+                  aria-valuenow={m.solved}
+                  aria-valuemin={0}
+                  aria-valuemax={m.total}
+                  aria-label={`${TECHNIQUE_BY_ID[m.id].name}: ${m.solved} of ${m.total} solved`}
+                  className="mt-2 h-1 w-full overflow-hidden rounded-full bg-accent"
+                >
                   <div
                     className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
                     style={{ width: `${Math.round(m.mastery * 100)}%` }}
@@ -178,10 +185,11 @@ export default function IntegralsHub() {
                 <span
                   key={b.id}
                   title={b.description}
+                  aria-label={`${b.name}: ${has ? "earned" : "locked"}. ${b.description}`}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] ${
                     has
                       ? "border-primary/40 bg-primary/10 text-foreground"
-                      : "border-border text-muted-foreground/50"
+                      : "border-border text-muted-foreground/60"
                   }`}
                 >
                   <span aria-hidden>{b.icon}</span>

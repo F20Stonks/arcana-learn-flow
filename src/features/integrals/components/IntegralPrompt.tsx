@@ -5,9 +5,15 @@ import type { Problem } from "../types";
 
 export function DifficultyStars({ level }: { level: Problem["difficulty"] }) {
   return (
-    <span className="readout inline-flex items-center gap-1 text-[13px] tracking-[0.12em] text-primary">
-      {"★".repeat(level)}
-      <span className="text-muted-foreground/40">{"★".repeat(5 - level)}</span>
+    <span
+      role="img"
+      aria-label={`Difficulty ${level} out of 5`}
+      className="readout inline-flex items-center gap-1 text-[13px] tracking-[0.12em] text-primary"
+    >
+      <span aria-hidden>{"★".repeat(level)}</span>
+      <span aria-hidden className="text-muted-foreground/40">
+        {"★".repeat(5 - level)}
+      </span>
     </span>
   );
 }

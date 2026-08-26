@@ -56,12 +56,34 @@ describe("toMathMode", () => {
     expect(toMathMode("2x - y so done")).toContain("2x - y");
   });
 
+  it("keeps contractions and possessives whole", () => {
+    expect(toMathMode("the denominator's derivative")).toBe("\\text{the denominator's derivative}");
+    expect(toMathMode("you'll get constants that don't solve")).toBe(
+      "\\text{you'll get constants that don't solve}",
+    );
+  });
+
+  it("tells the article \"a\" from the variable a", () => {
+    expect(toMathMode("A ratio of polynomials")).toBe("\\text{A ratio of polynomials}");
+    expect(toMathMode("gives a log plus an arctan")).toBe("\\text{gives a log plus an arctan}");
+    // Still a variable when it multiplies something or is being assigned.
+    expect(toMathMode("the root becomes a\\cos\\theta")).toBe("\\text{the root becomes }a\\cos\\theta");
+    expect(toMathMode("with a = 2 and b = 3")).toBe("\\text{with }a = 2\\text{ and }b = 3");
+  });
+
+  it("keeps brackets with the words they wrap", () => {
+    expect(toMathMode("not (a multiple of) the derivative")).toBe(
+      "\\text{not (a multiple of) the derivative}",
+    );
+    // A bracket that is opening a formula is not swallowed.
+    expect(toMathMode("the derivative (2x+4)")).toBe("\\text{the derivative }(2x+4)");
+  });
+
   it("keeps a real hyphen inside the prose", () => {
     // A dash between two letters is a hyphen; the same character between terms is subtraction.
-    // A lone "a" stays math — it really is a variable everywhere else in this material.
-    expect(toMathMode("a half-integer power")).toBe("a\\text{ half-integer power}");
+    expect(toMathMode("a half-integer power")).toBe("\\text{a half-integer power}");
     expect(toMathMode("Back-substitute with x")).toBe("\\text{Back-substitute with }x");
-    expect(toMathMode("a plain u-substitution works")).toBe("a\\text{ plain }u\\text{-substitution works}");
+    expect(toMathMode("a plain u-substitution works")).toBe("\\text{a plain }u\\text{-substitution works}");
   });
 });
 
