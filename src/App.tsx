@@ -23,6 +23,9 @@ import ReviewCalendarPage from "./pages/ReviewCalendarPage";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import DrillsHub from "./pages/DrillsHub";
+import IntegralsHub from "./pages/IntegralsHub";
+import DailyIntegral from "./pages/DailyIntegral";
+import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import DrillPlay from "./pages/DrillPlay";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
@@ -101,6 +104,12 @@ function AppRoutes() {
       {/* Timed practice games sharing one drill engine (src/features/drills) — Zetamac++ first. */}
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
+      {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
+          training room. Self-contained: its own grader, problem bank and progression. */}
+      <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
+      <Route path="/integrals/daily" element={<DashboardGuard><DailyIntegral /></DashboardGuard>} />
+      <Route path="/integrals/train" element={<DashboardGuard><IntegralTraining /></DashboardGuard>} />
+      <Route path="/integrals/train/:techniqueId" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />

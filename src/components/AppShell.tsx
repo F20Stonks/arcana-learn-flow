@@ -31,6 +31,7 @@ import {
   Flame,
   Trophy,
   Zap,
+  Sigma,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -92,6 +93,7 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       heading: "Practice",
       items: [
         { label: "Drills", icon: Zap, to: "/drills" },
+        { label: "Integrals", icon: Sigma, to: "/integrals" },
         { label: "Question bank", icon: Library, to: "/question-bank" },
         { label: "Resources", icon: BookOpen, to: "/resource-bank" },
         { label: "Analytics", icon: BarChart3, to: "/analytics" },

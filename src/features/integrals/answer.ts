@@ -183,11 +183,11 @@ export function normalize(raw: string): string {
   if (!s) return "";
 
   // "+ C" is the whole point of an indefinite integral, and carries no information for grading.
-  s = s.replace(/[+\-]\s*(?:C|c|const|constant)\s*$/, "");
+  s = s.replace(/[+-]\s*(?:C|c|const|constant)\s*$/, "");
   s = s.replace(/^\s*(?:F\s*\(\s*x\s*\)|y)\s*=\s*/, ""); // "F(x) = ..." / "y = ..."
 
   // LaTeX scaffolding.
-  s = s.replace(/\\left|\\right|\\!|\\,|\;|\\:|\\ /g, " ");
+  s = s.replace(/\\left|\\right|\\!|\\,|\\;|\\:|\\ /g, " ");
   s = s.replace(/\\cdot|\\times/g, "*").replace(/\\div/g, "/");
   s = s.replace(/\\dfrac|\\tfrac/g, "\\frac");
   s = expandFrac(s);
