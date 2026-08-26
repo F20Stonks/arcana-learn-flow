@@ -273,6 +273,33 @@ export const TECHNIQUES: Technique[] = [
       "Walking the recurrence the wrong direction (trying to go from I_0 up to I_n by guessing) is much harder than deriving the general step once and applying it repeatedly.",
     ],
   },
+  {
+    id: "integral-of-inverse",
+    name: "Integral of inverse",
+    tagline: "Trade an integral you can't do for one you can, by way of a rectangle.",
+    whenToUse:
+      "You're asked for \\int f^{-1}(x)\\,dx (or told it's a definite integral of an inverse function) and f^{-1} has no clean closed form, or none you want to find — but f itself is easy to integrate, and injective (monotonic) on the interval in question.",
+    recipe: [
+      "Confirm f is injective (strictly monotonic) on [a,b] — the identity needs a genuine inverse.",
+      "Apply \\int_a^b f(x)\\,dx + \\int_{f(a)}^{f(b)} f^{-1}(x)\\,dx = bf(b) - af(a).",
+      "Picture it: the two integrals are the areas on either side of y=f(x) inside the rectangle [0,b]\\times[0,f(b)] (extended to include a and f(a) if they're not 0) — together they tile it exactly.",
+      "Compute the f-integral (the easy one), then solve for the f^{-1}-integral you actually wanted.",
+    ],
+    example: {
+      integrand: "W(x) \\text{ on } [0,e], \\text{ where } W = (xe^x)^{-1}",
+      work: [
+        "f(x) = xe^x is injective on [0,1] (strictly increasing), with f(0)=0 and f(1)=e.",
+        "The easy integral: \\int_0^1 xe^x\\,dx = 1 (by parts).",
+        "Apply the identity with a=0,\\ b=1: 1 + \\int_0^e W(x)\\,dx = 1\\cdot e - 0\\cdot e^0 = e.",
+      ],
+      result: "\\int_0^e W(x)\\,dx = e - 1",
+    },
+    pitfalls: [
+      "The identity needs f injective on the interval — a function that turns around has no single-valued inverse there.",
+      "Get the bounds right: the second integral runs from f(a) to f(b), not from a to b.",
+      "This produces a definite value, not a formula for \\int f^{-1}(x)\\,dx as a function of x — you don't get an antiderivative of f^{-1} out of it, only a number.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

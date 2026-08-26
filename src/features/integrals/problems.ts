@@ -24,6 +24,7 @@ import { CompletingTheSquare } from "./bank/completingTheSquare";
 import { Definite } from "./bank/definite";
 import { Feynman } from "./bank/feynman";
 import { Reduction } from "./bank/reduction";
+import { IntegralOfInverse } from "./bank/integralOfInverse";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -36,6 +37,7 @@ export const PROBLEMS: Problem[] = [
   ...Definite,
   ...Feynman,
   ...Reduction,
+  ...IntegralOfInverse,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
