@@ -39,6 +39,10 @@ export default function SolutionSteps({ problem }: { problem: Problem }) {
           <Tex className="text-foreground">{problem.answerLatex}</Tex>
         </div>
       </div>
+
+      {problem.source && (
+        <div className="mt-3 text-[12px] text-muted-foreground">Source: {problem.source}</div>
+      )}
     </div>
   );
 }

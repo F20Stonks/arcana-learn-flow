@@ -16,7 +16,8 @@ export type TechniqueId =
   | "partial-fractions"
   | "complete-square"
   | "symmetry"
-  | "feynman";
+  | "feynman"
+  | "reduction";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
@@ -59,6 +60,8 @@ export interface Problem {
   hints: string[];
   /** The worked solution, revealed after a solve or a give-up. Each line is LaTeX-in-prose. */
   steps: string[];
+  /** Where this problem came from — a competition, a paper, a lecture. Optional; not every problem needs one. */
+  source?: string;
 }
 
 export interface Technique {

@@ -23,6 +23,7 @@ import { PartialFractions } from "./bank/partialFractions";
 import { CompletingTheSquare } from "./bank/completingTheSquare";
 import { Definite } from "./bank/definite";
 import { Feynman } from "./bank/feynman";
+import { Reduction } from "./bank/reduction";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -34,6 +35,7 @@ export const PROBLEMS: Problem[] = [
   ...CompletingTheSquare,
   ...Definite,
   ...Feynman,
+  ...Reduction,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

@@ -246,6 +246,33 @@ export const TECHNIQUES: Technique[] = [
       "The parameter has to actually recover the original problem at some specific value — check that before differentiating anything.",
     ],
   },
+  {
+    id: "reduction",
+    name: "Reduction formulas",
+    tagline: "Turn \\int f^n into a recipe that calls itself on n-2 (or n-1).",
+    whenToUse:
+      "An integer power too high to attack directly — \\sin^n x, \\cos^n x, x^n e^{\\pm x} — where a single integration by parts, done in general n rather than for a specific one, hands you the same family back at a lower power. The tell is a definite integral that asks for a specific large n where writing out the identity by hand would be absurd.",
+    recipe: [
+      "Name the family I_n (or J_n) and identify which specific n the problem actually wants.",
+      "Integrate by parts once, in general n, peeling off one factor so the leftover integral is the same family at a lower n.",
+      "That produces a recurrence: I_n = (\\text{boundary term in } n) + (\\text{coefficient in } n)\\cdot I_{n-2\\text{ or }n-1}.",
+      "Walk the recurrence down to a base case you can write by hand — I_0 or I_1 — then substitute back up to the n you want.",
+    ],
+    example: {
+      integrand: "\\sin^4 x",
+      work: [
+        "I_n = \\int \\sin^n x\\,dx satisfies I_n = -\\frac{\\sin^{n-1}x\\cos x}{n} + \\frac{n-1}{n}I_{n-2} (parts with u = \\sin^{n-1}x, dv = \\sin x\\,dx).",
+        "I_0 = x and I_2 = \\frac{x}{2} - \\frac{\\sin x\\cos x}{2} come from the recurrence, or from what you already know.",
+        "I_4 = -\\frac{\\sin^3x\\cos x}{4} + \\frac{3}{4}I_2 — substitute I_2 in and simplify.",
+      ],
+      result: "-\\frac{\\sin^3 x\\cos x}{4} + \\frac{3x}{8} - \\frac{3\\sin x\\cos x}{8} + C",
+    },
+    pitfalls: [
+      "The step size differs by family: \\sin^n and \\cos^n drop by 2 (parity is preserved each time), but x^n e^{\\pm x} drops by only 1.",
+      "On \\int_0^{\\pi/2}\\sin^n x\\,dx the boundary term \\sin^{n-1}x\\cos x vanishes at both ends for every n — that's what collapses the whole recurrence to pure numbers (Wallis' formula), so don't go hunting for it in the final answer.",
+      "Walking the recurrence the wrong direction (trying to go from I_0 up to I_n by guessing) is much harder than deriving the general step once and applying it repeatedly.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(
