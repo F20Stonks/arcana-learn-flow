@@ -75,6 +75,13 @@ describe("checkIndefinite", () => {
     if (v.status === "off-by-constant-factor") expect(describeFactor(v.factor)).toBe("2");
   });
 
+  it("only calls it a dropped constant when the factor is a plausible one", () => {
+    // 274x is not a dropped constant, it is a wrong answer — say so plainly.
+    expect(checkIndefinite("274*x^3/3", "x^3/3", D).status).toBe("incorrect");
+    expect(checkIndefinite("pi*x^3/3", "x^3/3", D).status).toBe("incorrect");
+    expect(checkIndefinite("3*x^3/3", "x^3/3", D).status).toBe("off-by-constant-factor");
+  });
+
   it("flags stray symbols instead of silently failing", () => {
     const v = checkIndefinite("t^3/3", "x^3/3", D);
     expect(v.status).toBe("unparseable");
@@ -103,6 +110,7 @@ describe("checkDefinite", () => {
   it("rejects a wrong number", () => {
     expect(checkDefinite("pi/2", "pi/4").status).toBe("off-by-constant-factor");
     expect(checkDefinite("1", "0").status).toBe("incorrect");
+    expect(checkDefinite("42", "0.153").status).toBe("incorrect");
   });
 });
 

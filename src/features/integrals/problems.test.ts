@@ -54,6 +54,34 @@ describe("problem bank", () => {
     expect(PROBLEMS.length).toBeGreaterThanOrEqual(40);
   });
 
+  /**
+   * The daily draws from one difficulty pool per weekday and walks a shuffle of it, so the pool
+   * size *is* the number of weeks before that weekday comes round again. Twenty is the floor.
+   */
+  it("keeps every daily pool deep enough to last five months", () => {
+    for (const d of [1, 2, 3, 4, 5] as const) {
+      const pool = PROBLEMS.filter((p) => p.difficulty === d);
+      expect(pool.length, `difficulty ${d} pool is only ${pool.length} deep`).toBeGreaterThanOrEqual(20);
+    }
+  });
+
+  it("gives every technique enough problems for a practice session", () => {
+    for (const t of TECHNIQUES) {
+      const pool = PROBLEMS.filter((p) => p.techniques.includes(t.id));
+      expect(pool.length, t.id).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it("has no duplicated integrands", () => {
+    const seen = new Map<string, string>();
+    for (const p of PROBLEMS) {
+      const key = `${p.kind}:${p.integrandExpr.replace(/\s+/g, "")}:${p.lower ?? ""}:${p.upper ?? ""}`;
+      const prior = seen.get(key);
+      expect(prior, `${p.id} duplicates ${prior}`).toBeUndefined();
+      seen.set(key, p.id);
+    }
+  });
+
   it("uses unique ids", () => {
     const ids = PROBLEMS.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);

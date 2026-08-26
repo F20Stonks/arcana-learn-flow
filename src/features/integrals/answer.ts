@@ -310,7 +310,7 @@ export function checkIndefinite(userRaw: string, referenceRaw: string, domain: [
   if (spread <= 1e-6 * scale) return { status: "correct" };
 
   const fit = fitLinear(r, u);
-  if (fit && fit.residual <= 1e-6 * scale && Math.abs(fit.k) > 1e-9 && Math.abs(fit.k - 1) > 1e-6) {
+  if (fit && fit.residual <= 1e-6 * scale && isDroppedConstant(fit.k)) {
     return { status: "off-by-constant-factor", factor: fit.k };
   }
   return { status: "incorrect" };
@@ -341,7 +341,7 @@ export function checkDefinite(userRaw: string, referenceRaw: string): Verdict {
   if (Math.abs(got - expected) <= 1e-7 * (1 + Math.abs(expected))) return { status: "correct" };
   if (Math.abs(expected) > 1e-9) {
     const k = got / expected;
-    if (Math.abs(k - 1) > 1e-6 && Math.abs(k) > 1e-9) return { status: "off-by-constant-factor", factor: k };
+    if (isDroppedConstant(k)) return { status: "off-by-constant-factor", factor: k };
   }
   return { status: "incorrect" };
 }
@@ -363,15 +363,32 @@ export function previewLatex(raw: string): string | null {
   }
 }
 
+/** k as a small rational, or null when it isn't one. */
+function asSimpleRatio(k: number): { num: number; den: number } | null {
+  for (let den = 1; den <= 12; den++) {
+    const n = k * den;
+    const num = Math.round(n);
+    if (Math.abs(n - num) < 1e-6 && Math.abs(num) <= 24) return { num, den };
+  }
+  return null;
+}
+
+/**
+ * Whether being out by this factor is worth naming.
+ *
+ * "You're off by a factor of 2" is the most useful thing the grader ever says — it means the
+ * technique was right and a constant went missing. "You're off by a factor of 274.316" means the
+ * answer was simply wrong, and dressing that up as a near miss is worse than saying nothing. So
+ * the hint only fires for factors a dropped constant could plausibly produce.
+ */
+function isDroppedConstant(k: number): boolean {
+  if (!Number.isFinite(k) || Math.abs(k) < 1e-9 || Math.abs(k - 1) < 1e-6) return false;
+  return asSimpleRatio(k) !== null;
+}
+
 /** "1/2", "2", "-1/3" — for telling a student exactly which constant they dropped. */
 export function describeFactor(k: number): string {
-  for (let d = 1; d <= 12; d++) {
-    const n = k * d;
-    if (Math.abs(n - Math.round(n)) < 1e-6) {
-      const num = Math.round(n);
-      if (d === 1) return `${num}`;
-      return `${num}/${d}`;
-    }
-  }
-  return k.toFixed(3);
+  const ratio = asSimpleRatio(k);
+  if (!ratio) return k.toFixed(3);
+  return ratio.den === 1 ? `${ratio.num}` : `${ratio.num}/${ratio.den}`;
 }
