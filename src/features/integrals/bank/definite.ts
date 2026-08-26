@@ -1,6 +1,9 @@
 /** Definite integrals — parity, king's rule, and the ones where the antiderivative is the wrong tool. */
 import type { Problem } from "../types";
 
+const BEE_FLOOR = "UK University Integration Bee guide, §1.7 (Floor Function Integrals)";
+const BEE_FLOOR_ADAPTED = `${BEE_FLOOR} — adapted to a finite interval; the guide's own examples (eq 1.19, 1.20) are improper (giving ζ(3) and 1/(e−1) respectively), which stays out of scope until the quadrature self-check handles infinite domains`;
+
 export const Definite: Problem[] = [
   {
     id: "def-odd-vanishes",
@@ -369,6 +372,76 @@ export const Definite: Problem[] = [
       "\\frac{\\ln(1/u)}{1+1/u^2}\\cdot\\left(-\\frac{du}{u^2}\\right) = \\frac{-\\ln u\\cdot u^2}{u^2+1}\\cdot\\left(-\\frac{du}{u^2}\\right) = \\frac{\\ln u}{u^2+1}\\,du.",
       "So I = \\int_2^{1/2}\\frac{\\ln u}{u^2+1}\\,du = -\\int_{1/2}^{2}\\frac{\\ln u}{u^2+1}\\,du = -I.",
       "Hence 2I=0, so I=0 — an odd pairing about x=1, with no antiderivative needed.",
+    ],
+  },
+  {
+    id: "def-floor-warmup",
+    kind: "definite",
+    integrand: "\\lfloor x\\rfloor",
+    integrandExpr: "floor(x)",
+    lower: "0",
+    upper: "3",
+    answer: "3",
+    answerLatex: "3",
+    domain: [0, 3],
+    difficulty: 2,
+    techniques: ["symmetry"],
+    source: BEE_FLOOR_ADAPTED,
+    hints: [
+      "\\lfloor x\\rfloor has no smooth antiderivative — split [0,3] at the integers, where it's a different constant on each piece.",
+      "On [0,1) it's 0, on [1,2) it's 1, on [2,3) it's 2 — each piece is a rectangle.",
+    ],
+    steps: [
+      "\\lfloor x\\rfloor = 0 on [0,1), 1 on [1,2), 2 on [2,3) — the single points at the integers don't affect the integral.",
+      "The integral is three rectangle areas: 0\\cdot1 + 1\\cdot1 + 2\\cdot1.",
+      "= 0+1+2 = 3.",
+    ],
+  },
+  {
+    id: "def-fractional-part",
+    kind: "definite",
+    integrand: "\\{x\\}",
+    integrandExpr: "x - floor(x)",
+    lower: "1",
+    upper: "4",
+    answer: "3/2",
+    answerLatex: "\\frac{3}{2}",
+    domain: [1, 4],
+    difficulty: 3,
+    techniques: ["symmetry"],
+    source: BEE_FLOOR_ADAPTED,
+    hints: [
+      "\\{x\\}=x-\\lfloor x\\rfloor, the fractional part, is a sawtooth: it climbs linearly from 0 to 1 on each unit interval, then drops back to 0.",
+      "So on every unit interval [k,k+1) it's just the line y=x-k, and \\int_k^{k+1}(x-k)\\,dx=\\frac12 regardless of k.",
+    ],
+    steps: [
+      "On each of [1,2),[2,3),[3,4), \\{x\\} is the same sawtooth shape, shifted — a right triangle of base 1 and height 1.",
+      "Each piece contributes \\int_k^{k+1}(x-k)\\,dx = \\frac12.",
+      "Three identical pieces: 3\\times\\frac12 = \\frac32.",
+    ],
+  },
+  {
+    id: "def-floor-times-x",
+    kind: "definite",
+    integrand: "x\\lfloor x\\rfloor",
+    integrandExpr: "x*floor(x)",
+    lower: "0",
+    upper: "3",
+    answer: "13/2",
+    answerLatex: "\\frac{13}{2}",
+    domain: [0, 3],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: BEE_FLOOR_ADAPTED,
+    hints: [
+      "Split at the integers as before, but now \\lfloor x\\rfloor is a constant multiplying x on each piece — so each piece is an ordinary power-rule integral, just with a different constant multiplier.",
+      "The [0,1) piece contributes nothing at all, since \\lfloor x\\rfloor=0 there.",
+    ],
+    steps: [
+      "On [0,1): \\lfloor x\\rfloor=0, contributing 0.",
+      "On [1,2): \\int_1^2 1\\cdot x\\,dx = \\left[\\frac{x^2}{2}\\right]_1^2 = 2-\\frac12=\\frac32.",
+      "On [2,3): \\int_2^3 2x\\,dx = \\left[x^2\\right]_2^3 = 9-4=5.",
+      "Total: 0+\\frac32+5 = \\frac{13}{2}.",
     ],
   },
 ];
