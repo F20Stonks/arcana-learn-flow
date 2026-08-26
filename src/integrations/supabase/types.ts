@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1632,19 +1632,6 @@ export type Database = {
       }
     }
     Views: {
-      user_resource_analytics: {
-        Row: {
-          average_score: number | null
-          completed_attempts: number | null
-          difficulty: string | null
-          learning_track: string | null
-          subject: string | null
-          total_attempts: number | null
-          total_time_spent: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
       drill_weak_spots: {
         Row: {
           accuracy: number | null
@@ -1654,6 +1641,19 @@ export type Database = {
           drill_key: string | null
           last_seen: string | null
           problem_tag: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_resource_analytics: {
+        Row: {
+          average_score: number | null
+          completed_attempts: number | null
+          difficulty: string | null
+          learning_track: string | null
+          subject: string | null
+          total_attempts: number | null
+          total_time_spent: number | null
           user_id: string | null
         }
         Relationships: []
