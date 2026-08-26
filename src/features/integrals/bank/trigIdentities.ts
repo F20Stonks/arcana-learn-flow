@@ -1,6 +1,8 @@
 /** Powers and products of trig functions, reshaped until something substitutes. */
 import type { Problem } from "../types";
 
+const BEE_TRIG_IDENTITY = "UK University Integration Bee guide, §1.8 (Trigonometric Identities)";
+
 export const TrigIdentities: Problem[] = [
   {
     id: "trig-sin-squared",
@@ -287,6 +289,76 @@ export const TrigIdentities: Problem[] = [
       "\\tan^4 x = \\tan^2 x(\\sec^2 x - 1) = \\tan^2 x\\sec^2 x - \\tan^2 x.",
       "And \\tan^2 x = \\sec^2 x - 1, so the integrand is \\tan^2 x\\sec^2 x - \\sec^2 x + 1.",
       "Integrating termwise: \\frac{\\tan^3 x}{3} - \\tan x + x + C.",
+    ],
+  },
+  {
+    id: "trig-sec-tan-reflection",
+    kind: "definite",
+    integrand: "\\frac{x\\sin x}{3+\\cos^2 x}",
+    integrandExpr: "x*sin(x)/(3+cos(x)^2)",
+    lower: "0",
+    upper: "\\pi",
+    answer: "pi^2*sqrt(3)/18",
+    answerLatex: "\\frac{\\pi^2\\sqrt3}{18}",
+    domain: [0, Math.PI],
+    difficulty: 5,
+    techniques: ["trig-identity", "symmetry"],
+    source: `${BEE_TRIG_IDENTITY} — the x\\sin x/(3+\\cos^2 x) worked example, eq 1.22`,
+    hints: [
+      "The loose x blocks a substitution — reflect with x\\mapsto\\pi-x and add, exactly as in king's rule, to trade it for a plain \\pi.",
+      "What's left, \\int_0^\\pi\\frac{\\sin x}{3+\\cos^2 x}dx, is where the sec/tan reduction comes in: divide top and bottom by \\cos^2 x to turn it into a function of \\sec x and \\tan x.",
+    ],
+    steps: [
+      "Reflecting x\\mapsto\\pi-x (\\sin(\\pi-x)=\\sin x,\\ \\cos(\\pi-x)=-\\cos x) and adding: 2I = \\pi\\int_0^\\pi\\frac{\\sin x}{3+\\cos^2 x}dx.",
+      "Dividing by \\cos^2x: \\frac{\\sin x}{3+\\cos^2x} = \\frac{\\sec x\\tan x}{3\\sec^2x+1}, so 2I=\\pi\\int_0^\\pi\\frac{\\sec x\\tan x}{3\\sec^2x+1}dx.",
+      "\\sec x has a pole at \\tfrac{\\pi}{2}, so split there and substitute u=\\sec x on each half: 2I = 2\\pi\\int_1^\\infty\\frac{du}{3u^2+1} = 2\\pi\\left[\\frac{\\arctan(\\sqrt3u)}{\\sqrt3}\\right]_1^\\infty.",
+      "That bracket is \\frac{1}{\\sqrt3}\\left(\\frac{\\pi}{2}-\\frac{\\pi}{3}\\right)=\\frac{\\pi}{6\\sqrt3}, so 2I=\\frac{\\pi^2\\sqrt3}{9} and I=\\frac{\\pi^2\\sqrt3}{18}.",
+    ],
+  },
+  {
+    id: "trig-euler-cos-sixth",
+    kind: "definite",
+    integrand: "\\cos^6 x",
+    integrandExpr: "cos(x)^6",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "5*pi/8",
+    answerLatex: "\\frac{5\\pi}{8}",
+    domain: [0, 2 * Math.PI],
+    difficulty: 4,
+    techniques: ["trig-identity"],
+    source: `${BEE_TRIG_IDENTITY} — Euler's formula for \\int\\cos^{2n}x\\,dx, eq 1.24, at n=3`,
+    hints: [
+      "Halving the degree three times with double-angle identities works, but Euler's formula \\cos x=\\frac{e^{ix}+e^{-ix}}{2} expands \\cos^6x into a sum of exponentials in one shot via the binomial theorem.",
+      "Every term \\int_0^{2\\pi}e^{cix}dx vanishes over a full period unless c=0 — only the middle binomial term survives.",
+    ],
+    steps: [
+      "\\cos^6x = \\left(\\frac{e^{ix}+e^{-ix}}{2}\\right)^6 = \\frac{1}{64}\\sum_{k=0}^{6}\\binom{6}{k}e^{(2k-6)ix}.",
+      "\\int_0^{2\\pi}e^{(2k-6)ix}dx = 0 for every k except k=3, where the exponent is 0 and the integral is 2\\pi.",
+      "Only the k=3 term survives: \\frac{1}{64}\\binom{6}{3}\\cdot 2\\pi = \\frac{20\\cdot 2\\pi}{64} = \\frac{5\\pi}{8}.",
+    ],
+  },
+  {
+    id: "trig-euler-cos-eighth",
+    kind: "definite",
+    integrand: "\\cos^8 x",
+    integrandExpr: "cos(x)^8",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "35*pi/64",
+    answerLatex: "\\frac{35\\pi}{64}",
+    domain: [0, 2 * Math.PI],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: `${BEE_TRIG_IDENTITY} — Euler's formula for \\int\\cos^{2n}x\\,dx, eq 1.24, at n=4`,
+    hints: [
+      "Same method as \\cos^6x, one binomial row further down: expand \\left(\\frac{e^{ix}+e^{-ix}}{2}\\right)^8 and keep only the term whose exponent vanishes.",
+      "The general result is \\int_0^{2\\pi}\\cos^{2n}x\\,dx = \\frac{\\pi}{2^{2n-1}}\\binom{2n}{n} — here n=4.",
+    ],
+    steps: [
+      "\\cos^8x = \\frac{1}{256}\\sum_{k=0}^{8}\\binom{8}{k}e^{(2k-8)ix}, and only k=4 (exponent 0) survives the integral over a full period.",
+      "\\binom{8}{4}=70, so \\int_0^{2\\pi}\\cos^8x\\,dx = \\frac{1}{256}\\cdot 70\\cdot 2\\pi = \\frac{140\\pi}{256}.",
+      "= \\frac{35\\pi}{64}.",
     ],
   },
 ];
