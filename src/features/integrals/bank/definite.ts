@@ -246,6 +246,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: "Serret's integral — UK University Integration Bee guide, Exercise 6 (§1.10), solved in §3",
     hints: [
       "There is no elementary antiderivative here. Substitute x = \\tan\\theta and the interval becomes [0, \\tfrac{\\pi}{4}].",
       "That turns it into \\int_0^{\\pi/4}\\ln(1+\\tan\\theta)\\,d\\theta — now use the reflection \\theta \\mapsto \\tfrac{\\pi}{4}-\\theta.",
