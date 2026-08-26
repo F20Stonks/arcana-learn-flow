@@ -303,7 +303,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 5,
     techniques: ["trig-identity", "symmetry"],
-    source: `${BEE_TRIG_IDENTITY} — the x\\sin x/(3+\\cos^2 x) worked example, eq 1.22`,
+    source: `${BEE_TRIG_IDENTITY} — the x sin x / (3+cos^2 x) worked example, eq 1.22`,
     hints: [
       "The loose x blocks a substitution — reflect with x\\mapsto\\pi-x and add, exactly as in king's rule, to trade it for a plain \\pi.",
       "What's left, \\int_0^\\pi\\frac{\\sin x}{3+\\cos^2 x}dx, is where the sec/tan reduction comes in: divide top and bottom by \\cos^2 x to turn it into a function of \\sec x and \\tan x.",
@@ -327,7 +327,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: `${BEE_TRIG_IDENTITY} — Euler's formula for \\int\\cos^{2n}x\\,dx, eq 1.24, at n=3`,
+    source: `${BEE_TRIG_IDENTITY} — Euler's formula for cos^(2n) x, eq 1.24, at n=3`,
     hints: [
       "Halving the degree three times with double-angle identities works, but Euler's formula \\cos x=\\frac{e^{ix}+e^{-ix}}{2} expands \\cos^6x into a sum of exponentials in one shot via the binomial theorem.",
       "Every term \\int_0^{2\\pi}e^{cix}dx vanishes over a full period unless c=0 — only the middle binomial term survives.",
@@ -350,7 +350,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: `${BEE_TRIG_IDENTITY} — Euler's formula for \\int\\cos^{2n}x\\,dx, eq 1.24, at n=4`,
+    source: `${BEE_TRIG_IDENTITY} — Euler's formula for cos^(2n) x, eq 1.24, at n=4`,
     hints: [
       "Same method as \\cos^6x, one binomial row further down: expand \\left(\\frac{e^{ix}+e^{-ix}}{2}\\right)^8 and keep only the term whose exponent vanishes.",
       "The general result is \\int_0^{2\\pi}\\cos^{2n}x\\,dx = \\frac{\\pi}{2^{2n-1}}\\binom{2n}{n} — here n=4.",

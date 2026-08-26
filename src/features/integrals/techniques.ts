@@ -168,7 +168,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "complete-square",
     name: "Completing the square",
-    tagline: "Turn any quadratic into u^2 \\pm a^2 and reduce to a known form.",
+    tagline: "Turn any quadratic into a perfect square plus or minus a constant, and reduce to a known form.",
     whenToUse:
       "A quadratic in the denominator (or under a root) that does not factor nicely — x^2+2x+5, x^2+4x+13. The result is almost always an arctan, a log, or an arcsin.",
     recipe: [
@@ -249,7 +249,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "reduction",
     name: "Reduction formulas",
-    tagline: "Turn \\int f^n into a recipe that calls itself on n-2 (or n-1).",
+    tagline: "Turn a high power into a recipe that calls itself on a lower one.",
     whenToUse:
       "An integer power too high to attack directly — \\sin^n x, \\cos^n x, x^n e^{\\pm x} — where a single integration by parts, done in general n rather than for a specific one, hands you the same family back at a lower power. The tell is a definite integral that asks for a specific large n where writing out the identity by hand would be absurd.",
     recipe: [
@@ -303,7 +303,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "t-sub",
     name: "Weierstrass substitution",
-    tagline: "t=\\tan(x/2) turns any rational function of \\sin x, \\cos x into a rational function of t.",
+    tagline: "One substitution turns any rational function of sine and cosine into a rational function of t.",
     whenToUse:
       "A rational function of \\sin x and \\cos x — a ratio built from sums and products of them, like \\frac{1}{a+\\cos x} or \\frac{1}{\\sin x+\\cos x+1} — where no trig identity reshapes it and no root is in sight. That last part matters: this is not trig-sub, which is for \\sqrt{a^2-x^2}-shaped roots. If there's no root, it's not that technique.",
     recipe: [

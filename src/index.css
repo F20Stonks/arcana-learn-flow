@@ -254,6 +254,14 @@
   --primary: hsl(217 91% 48%);
   --primary-foreground: hsl(0 0% 100%);
 
+  /* The bare-:root heat ramp mixes toward --card, which washes out badly against a white
+     surface — the dim end drops below the 2:1 floor documented there (measures ~1.4:1 against
+     --accent here). Richer mix percentages bring the low end back to parity with the dark
+     theme's own accent-vs-heat-1 contrast (~1.7:1) without collapsing the top of the ramp. */
+  --heat-1: color-mix(in oklab, var(--primary) 48%, var(--card));
+  --heat-2: color-mix(in oklab, var(--primary) 66%, var(--card));
+  --heat-3: color-mix(in oklab, var(--primary) 84%, var(--card));
+
   --border: hsl(220 15% 88%);
   --input: hsl(220 15% 90%);
   --ring: hsl(217 91% 48%);

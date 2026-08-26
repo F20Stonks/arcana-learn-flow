@@ -77,7 +77,7 @@ export const Reduction: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 2,
     techniques: ["reduction"],
-    source: `Derived using the \\sin^n x reduction formula from the ${BEE_RECURRENCE}`,
+    source: `Derived using the sin^n x reduction formula from the ${BEE_RECURRENCE}`,
     hints: [
       "You could peel off one \\sin x and substitute u=\\cos x directly, but this is also just one link of the general recurrence I_n = -\\frac{\\sin^{n-1}x\\cos x}{n} + \\frac{n-1}{n}I_{n-2}, with n=3.",
       "The base case one step down is I_1 = \\int\\sin x\\,dx = -\\cos x.",
@@ -98,7 +98,7 @@ export const Reduction: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 4,
     techniques: ["reduction"],
-    source: `Derived using the \\sin^n x reduction formula from the ${BEE_RECURRENCE}`,
+    source: `Derived using the sin^n x reduction formula from the ${BEE_RECURRENCE}`,
     hints: [
       "n=5 is odd, so you could peel a factor and substitute u=\\cos x instead — but the same reduction formula works for odd n too.",
       "The base case one step down is I_3 = \\int\\sin^3x\\,dx = -\\cos x + \\frac{\\cos^3x}{3}.",
@@ -121,7 +121,7 @@ export const Reduction: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 5,
     techniques: ["reduction"],
-    source: `Derived using the \\sin^n x reduction formula from the ${BEE_RECURRENCE}`,
+    source: `Derived using the sin^n x reduction formula from the ${BEE_RECURRENCE}`,
     hints: [
       "This is two steps of the recurrence: n=6 needs I_4, and you already have I_4 from a lower-difficulty problem in this same technique.",
       "Substitute the whole I_4 expression in for I_4 and simplify the fractions — nothing new to derive, just bookkeeping.",
@@ -145,7 +145,7 @@ export const Reduction: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 3,
     techniques: ["reduction"],
-    source: `${BEE_RECURRENCE} — the \\int_0^\\pi\\sin^nx\\,dx worked example`,
+    source: `${BEE_RECURRENCE} — the definite sin^n x integral worked example, on [0, pi]`,
     hints: [
       "You don't need the antiderivative at all on this interval — the boundary term \\cos(x)\\sin^{n-1}(x) in the reduction formula is 0 at both x=0 and x=\\pi, for every n.",
       "So the recurrence reduces to a pure number: I_n = \\frac{n-1}{n}I_{n-2}, with base cases I_0=\\pi and I_1=2.",
@@ -168,7 +168,7 @@ export const Reduction: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 4,
     techniques: ["reduction"],
-    source: `${BEE_RECURRENCE} — the \\int_0^\\pi\\sin^nx\\,dx worked example`,
+    source: `${BEE_RECURRENCE} — the definite sin^n x integral worked example, on [0, pi]`,
     hints: [
       "Same collapsing boundary term as the even case — the recurrence I_n = \\frac{n-1}{n}I_{n-2} holds regardless of parity.",
       "The odd chain bottoms out at I_1 = \\int_0^\\pi\\sin x\\,dx = 2, not at I_0.",
@@ -191,7 +191,7 @@ export const Reduction: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 5,
     techniques: ["reduction"],
-    source: `${BEE_RECURRENCE} — the \\int_0^\\pi\\sin^nx\\,dx worked example`,
+    source: `${BEE_RECURRENCE} — the definite sin^n x integral worked example, on [0, pi]`,
     hints: [
       "Three links of the same even chain: I_0 \\to I_2 \\to I_4 \\to I_6.",
       "Each step multiplies by \\frac{n-1}{n} — you did the first two links in the n=4 version of this problem.",

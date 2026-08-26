@@ -42,7 +42,7 @@ export const TSubstitution: Problem[] = [
     domain: [-2, 2],
     difficulty: 3,
     techniques: ["t-sub"],
-    source: `${BEE_TSUB} — the \\int dx/(a+\\cos x) worked example, with a=2`,
+    source: `${BEE_TSUB} — the dx/(a+cos x) worked example, with a=2`,
     hints: [
       "This is the guide's own \\frac{1}{a+\\cos x} example, with a=2. Substitute t=\\tan(x/2), so \\cos x=\\frac{1-t^2}{1+t^2} and dx=\\frac{2\\,dt}{1+t^2}.",
       "The denominator 2+\\cos x simplifies to \\frac{3+t^2}{1+t^2} — the (1+t^2) cancels against dx's, leaving a plain arctan integral in t.",
