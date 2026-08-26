@@ -10,6 +10,10 @@ vi.mock("@/components/AppShell", () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { id: "test-user" }, session: null, profile: null, loading: false }),
+}));
+
 import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import { TrainingTechnique } from "@/pages/IntegralTraining";

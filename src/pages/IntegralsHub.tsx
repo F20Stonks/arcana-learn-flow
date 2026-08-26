@@ -147,16 +147,21 @@ export default function IntegralsHub() {
             </span>
           </Link>
 
-          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5 sm:col-span-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <h2 className="mt-3 font-display text-[17px] font-semibold text-muted-foreground">
-              Head to head
-            </h2>
+          <Link
+            to="/integrals/daily"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:col-span-2"
+          >
+            <Users className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Head to head</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Daily leaderboards and friend duels. Scores are already computed and stored per day —
-              this is waiting on the server side, not on the game.
+              Everyone gets the same integral, so the scores mean something. Solve today's and you take
+              a place on its board — ranked by score, then by time. One attempt per puzzle, which is
+              what stops it becoming a retry contest.
             </p>
-          </div>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              {record ? "See the board →" : "Play today's →"}
+            </span>
+          </Link>
         </section>
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">

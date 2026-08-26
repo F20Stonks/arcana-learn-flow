@@ -10,6 +10,10 @@ vi.mock("@/components/AppShell", () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { id: "test-user" }, session: null, profile: null, loading: false }),
+}));
+
 import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import IntegralTraining, { TrainingTechnique } from "@/pages/IntegralTraining";
@@ -84,6 +88,29 @@ describe("the daily", () => {
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
     expect(screen.getByText("Solved.")).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/your answer|a number/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("the leaderboard, when its tables are not deployed", () => {
+  it("says so and leaves the run intact", async () => {
+    // No Supabase in jsdom, so every call fails — which is exactly the state a player is in
+    // before the migration is applied. The daily must not care.
+    const problem = dailyProblem();
+    at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
+    fireEvent.change(screen.getByPlaceholderText(/your answer|a number/i), {
+      target: { value: problem.answer },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check/i }));
+
+    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/board isn't reachable yet/)).toBeInTheDocument());
+
+    // The score, the solve and the streak are all still banked locally.
+    const p = getProgress();
+    expect(p.xp).toBeGreaterThan(0);
+    expect(p.streak.current).toBe(1);
+    expect(p.solves[problem.id]).toBeTruthy();
+    expect(screen.getByText(/your streak is safe/)).toBeInTheDocument();
   });
 });
 

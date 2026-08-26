@@ -6,22 +6,28 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Dumbbell } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import { useAuth } from "@/hooks/useAuth";
 import RunPanel from "@/features/integrals/components/RunPanel";
 import DailyResult from "@/features/integrals/components/DailyResult";
 import SolutionSteps from "@/features/integrals/components/SolutionSteps";
 import IntegralPrompt from "@/features/integrals/components/IntegralPrompt";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
+import LeaderboardPanel from "@/features/integrals/components/LeaderboardPanel";
+import { useDailyBoard } from "@/features/integrals/hooks/useDailyBoard";
 import { dailyNumber, dailyProblem, WEEKDAY_NAMES } from "@/features/integrals/daily";
 import { liveStreak, todaysDaily } from "@/features/integrals/progress";
 import { PROBLEM_BY_ID } from "@/features/integrals/problems";
 
 export default function DailyIntegral() {
   const progress = useProgress();
+  const { user } = useAuth();
   const problem = dailyProblem();
+  const puzzleNumber = dailyNumber();
   const run = useIntegralRun(problem, "daily");
   const record = todaysDaily(progress);
   const streak = liveStreak(progress);
+  const board = useDailyBoard(puzzleNumber, record, user?.id ?? null);
 
   // A day already finished before this page mounted — rebuild it from storage rather than
   // handing out a second attempt at a scored problem.
@@ -40,7 +46,7 @@ export default function DailyIntegral() {
 
         <header className="reveal mb-6">
           <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-            Daily #{dailyNumber()}
+            Daily #{puzzleNumber}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
             {WEEKDAY_NAMES[new Date().getDay()]}
@@ -62,6 +68,7 @@ export default function DailyIntegral() {
               totalScore={record.score}
             />
             <SolutionSteps problem={recorded} />
+            <LeaderboardPanel board={board} puzzleNumber={puzzleNumber} />
           </div>
         ) : (
           <RunPanel
@@ -79,6 +86,12 @@ export default function DailyIntegral() {
               />
             }
           />
+        )}
+
+        {run.status !== "running" && (
+          <div className="mt-5">
+            <LeaderboardPanel board={board} puzzleNumber={puzzleNumber} />
+          </div>
         )}
 
         <Link
