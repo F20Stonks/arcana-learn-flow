@@ -9,6 +9,7 @@
  * Difficulty ramps across the week — Monday is a warm-up, the weekend bites.
  */
 import { PROBLEMS } from "./problems";
+import { shuffled } from "./rng";
 import type { Difficulty, Problem } from "./types";
 
 /** Day 1 of the game. Local dates throughout: a "day" is the player's day, not UTC's. */
@@ -39,27 +40,6 @@ export function dayKey(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
   ).padStart(2, "0")}`;
-}
-
-/** mulberry32 — small, fast, and identical in every browser, which is the only requirement. */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffled<T>(items: T[], seed: number): T[] {
-  const out = items.slice();
-  const rand = mulberry32(seed);
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
 }
 
 /** Sorted by id so the pool never depends on the order problems happen to be declared in. */

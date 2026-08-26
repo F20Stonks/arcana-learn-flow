@@ -8,6 +8,7 @@
  */
 import { PROBLEMS, PROBLEM_BY_ID } from "./problems";
 import { TECHNIQUES } from "./techniques";
+import { configKey, type SprintConfig } from "./sprint";
 import { dayKey } from "./daily";
 import { levelState } from "./scoring";
 import type { TechniqueId } from "./types";
@@ -30,6 +31,14 @@ export interface DailyRecord {
   score: number;
 }
 
+/** One entry per sprint configuration — a 60-second warm-up best is not a 5-minute brutal best. */
+export interface SprintBest {
+  score: number;
+  solved: number;
+  runs: number;
+  at: string;
+}
+
 export interface Progress {
   version: 1;
   xp: number;
@@ -38,6 +47,7 @@ export interface Progress {
   streak: { current: number; longest: number; lastDayKey: string | null };
   badges: Record<string, string>;
   lessonsRead: TechniqueId[];
+  sprints: Record<string, SprintBest>;
 }
 
 export function emptyProgress(): Progress {
@@ -49,6 +59,7 @@ export function emptyProgress(): Progress {
     streak: { current: 0, longest: 0, lastDayKey: null },
     badges: {},
     lessonsRead: [],
+    sprints: {},
   };
 }
 
@@ -186,6 +197,41 @@ function applySolve(p: Progress, facts: SolveFacts) {
   };
 }
 
+/**
+ * A finished sprint. Individual solves were already banked as they happened, so this only records
+ * the run itself — and reports whether it beat the standing best, which is the whole point.
+ */
+export function recordSprint(
+  config: SprintConfig,
+  run: { score: number; solved: number },
+): { best: SprintBest; beatenBy: number | null } {
+  const key = configKey(config);
+  let out!: { best: SprintBest; beatenBy: number | null };
+  update((p) => {
+    const prior = p.sprints[key];
+    const improved = !prior || run.score > prior.score;
+    const best: SprintBest = {
+      score: Math.max(prior?.score ?? 0, run.score),
+      solved: Math.max(prior?.solved ?? 0, run.solved),
+      runs: (prior?.runs ?? 0) + 1,
+      at: improved || !prior ? new Date().toISOString() : prior.at,
+    };
+    p.sprints[key] = best;
+    p.badges = { ...p.badges, ...earnedBadges(p) };
+    out = { best, beatenBy: improved && prior ? run.score - prior.score : null };
+    return p;
+  });
+  return out;
+}
+
+export function sprintBest(p: Progress, config: SprintConfig): SprintBest | undefined {
+  return p.sprints[configKey(config)];
+}
+
+export function totalSprints(p: Progress): number {
+  return Object.values(p.sprints).reduce((n, s) => n + s.runs, 0);
+}
+
 export function markLessonRead(id: TechniqueId) {
   update((p) => {
     if (!p.lessonsRead.includes(id)) p.lessonsRead.push(id);
@@ -304,6 +350,21 @@ export const BADGES: Badge[] = [
     earned: (p) =>
       Object.values(p.daily).filter((d) => d.solved && d.hintsUsed === 0 && d.wrongAttempts === 0)
         .length >= 5,
+  },
+  {
+    id: "sprinter",
+    name: "Sprinter",
+    description: "Finish ten sprints.",
+    icon: "⏱",
+    earned: (p) => totalSprints(p) >= 10,
+  },
+  {
+    id: "blitz",
+    name: "Blitz",
+    description: "Score 150 or more in a one-minute sprint.",
+    icon: "⚡",
+    earned: (p) =>
+      Object.entries(p.sprints).some(([key, s]) => key.endsWith("-60") && s.score >= 150),
   },
   {
     id: "scholar",

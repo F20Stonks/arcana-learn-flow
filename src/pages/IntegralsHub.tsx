@@ -6,7 +6,7 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { Check, Dumbbell, Flame, Sigma, Trophy, Users } from "lucide-react";
+import { Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
@@ -123,7 +123,22 @@ export default function IntegralsHub() {
             </span>
           </Link>
 
-          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5">
+          <Link
+            to="/integrals/sprint"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Timer className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Sprint</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              As many as you can before the clock runs out. Pick a difficulty band and a length; harder
+              problems are worth more, skipping costs.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Sprint →
+            </span>
+          </Link>
+
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5 sm:col-span-2">
             <Users className="h-4 w-4 text-muted-foreground" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-muted-foreground">
               Head to head

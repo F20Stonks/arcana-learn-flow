@@ -26,6 +26,7 @@ import DrillsHub from "./pages/DrillsHub";
 import IntegralsHub from "./pages/IntegralsHub";
 import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
+import IntegralSprint from "./pages/IntegralSprint";
 import DrillPlay from "./pages/DrillPlay";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
@@ -108,6 +109,7 @@ function AppRoutes() {
           training room. Self-contained: its own grader, problem bank and progression. */}
       <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
       <Route path="/integrals/daily" element={<DashboardGuard><DailyIntegral /></DashboardGuard>} />
+      <Route path="/integrals/sprint" element={<DashboardGuard><IntegralSprint /></DashboardGuard>} />
       <Route path="/integrals/train" element={<DashboardGuard><IntegralTraining /></DashboardGuard>} />
       <Route path="/integrals/train/:techniqueId" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
@@ -142,6 +144,7 @@ function AppRoutes() {
           block is dead code Vite strips from a production bundle. */}
       {import.meta.env.DEV && <Route path="/dev/integrals" element={<IntegralsHub />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/daily" element={<DailyIntegral />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/sprint" element={<IntegralSprint />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/train" element={<IntegralTraining />} />}
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
