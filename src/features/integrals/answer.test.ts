@@ -41,6 +41,61 @@ describe("normalize", () => {
   });
 });
 
+describe("normalize: what students actually type", () => {
+  // Each of these was rejected before the input layer learned about it.
+  const equivalent: Array<[string, string]> = [
+    ["x**3/3", "x^3/3"],
+    ["x^3/3 dx", "x^3/3"],
+    ["= x^3/3", "x^3/3"],
+    ["F(x) = x^3/3", "x^3/3"],
+    ["I = x^3/3", "x^3/3"],
+    ["\u222bx^2 dx = x^3/3", "x^3/3"],
+    ["\u2212x^3/3", "-x^3/3"],
+    ["x\u00b3/3", "x^3/3"],
+    ["ln x", "log(x)"],
+    ["2 ln x", "2*log(x)"],
+    ["ln2 * x", "log(2)*x"],
+    ["-ln|cos x|", "-log(abs(cos(x)))"],
+    ["sin x cos x", "sin(x)*cos(x)"],
+    ["arctan x", "atan(x)"],
+    ["\u00bdln|x|", "log(abs(x))/2"],
+    ["cosec(x)^2", "1/sin(x)^2"],
+    ["x\u00b7e^x", "x*e^x"],
+    ["\u221ax", "sqrt(x)"],
+    ["2\u221ax", "2*sqrt(x)"],
+    ["\u221a(1-x^2)", "sqrt(1-x^2)"],
+    ["sin x^2", "sin(x^2)"],
+    ["tan x - x", "tan(x)-x"],
+    ["e^x(sin x - cos x)/2", "e^x*(sin(x)-cos(x))/2"],
+  ];
+
+  it.each(equivalent)("accepts %s", (typed, reference) => {
+    expect(checkIndefinite(typed, reference, [0.4, 1.3]).status).toBe("correct");
+  });
+
+  it("binds a bare function to the smallest atom, not the whole rest of the line", () => {
+    // sin x + 1 is sin(x) + 1, never sin(x + 1).
+    expect(normalize("sin x + 1")).toBe("sin(x) + 1");
+    expect(normalize("ln x + ln 2")).toBe("log(x) + log(2)");
+    expect(normalize("tan x - x")).toBe("tan(x) - x");
+  });
+
+  it("does not mistake a digit prefix for part of an identifier", () => {
+    expect(normalize("2sqrt x")).toBe("2sqrt(x)");
+  });
+
+  it("only strips a real differential", () => {
+    expect(normalize("x^3/3 + C")).toBe("x^3/3");
+    // "d" alone is not a differential; it stays and is reported as a stray symbol.
+    expect(normalize("x^3/3 - d")).toContain("- d");
+    expect(normalize("x^3/3 + delta")).toContain("delta");
+  });
+
+  it("keeps the left side when the equals sign is trailing", () => {
+    expect(normalize("x^3/3 =")).toBe("x^3/3");
+  });
+});
+
 describe("checkIndefinite", () => {
   it("accepts the reference answer itself", () => {
     expect(checkIndefinite("x^3/3", "x^3/3", D).status).toBe("correct");
@@ -80,6 +135,16 @@ describe("checkIndefinite", () => {
     expect(checkIndefinite("274*x^3/3", "x^3/3", D).status).toBe("incorrect");
     expect(checkIndefinite("pi*x^3/3", "x^3/3", D).status).toBe("incorrect");
     expect(checkIndefinite("3*x^3/3", "x^3/3", D).status).toBe("off-by-constant-factor");
+  });
+
+  it("still refuses answers that are simply wrong", () => {
+    // The input layer is forgiving about notation, never about mathematics.
+    expect(checkIndefinite("sin x", "cos(x)", D).status).toBe("incorrect");
+    expect(checkIndefinite("ln x", "log(abs(x))/2", D).status).toBe("off-by-constant-factor");
+    expect(checkIndefinite("cost", "cos(x)", D).status).toBe("unparseable");
+    expect(checkIndefinite("x^3/3 + d", "x^3/3", D).status).toBe("unparseable");
+    // Whichever letter the differential is written with, it is scaffolding and gets dropped.
+    expect(checkIndefinite("x^3/3 dt", "x^3/3", D).status).toBe("correct");
   });
 
   it("flags stray symbols instead of silently failing", () => {

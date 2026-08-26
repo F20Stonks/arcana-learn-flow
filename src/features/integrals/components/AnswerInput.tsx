@@ -77,9 +77,10 @@ export default function AnswerInput({
           <span className="text-muted-foreground/70">…still reading that</span>
         ) : (
           <span className="text-muted-foreground/60">
-            Type it however you like: <code className="font-mono">ln|x|</code>,{" "}
-            <code className="font-mono">arctan(x)</code>, <code className="font-mono">sin^2 x</code> or pasted
-            LaTeX all work. The <code className="font-mono">+ C</code> is optional.
+            Type it however you like — <code className="font-mono">ln|x|</code>,{" "}
+            <code className="font-mono">sin x</code>, <code className="font-mono">arctan x</code>,{" "}
+            <code className="font-mono">x**3</code>, or pasted LaTeX. The{" "}
+            <code className="font-mono">+ C</code> is optional.
           </span>
         )}
       </div>

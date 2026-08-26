@@ -30,7 +30,118 @@ const ALIASES: Record<string, string> = {
   arcsec: "asec", arccsc: "acsc", arccot: "acot",
   arcsinh: "asinh", arccosh: "acosh", arctanh: "atanh",
   ln: "log", E: "e",
+  // British and continental spellings students genuinely use.
+  cosec: "csc", cosech: "csch", arccosec: "acsc", cotan: "cot",
 };
+
+const SUPERSCRIPTS: Record<string, string> = {
+  "\u2070": "0", "\u00b9": "1", "\u00b2": "2", "\u00b3": "3", "\u2074": "4",
+  "\u2075": "5", "\u2076": "6", "\u2077": "7", "\u2078": "8", "\u2079": "9",
+  "\u207b": "-", "\u207a": "+",
+};
+
+const VULGAR_FRACTIONS: Record<string, string> = {
+  "\u00bd": "(1/2)", "\u2153": "(1/3)", "\u2154": "(2/3)", "\u00bc": "(1/4)", "\u00be": "(3/4)",
+  "\u2155": "(1/5)", "\u2156": "(2/5)", "\u2157": "(3/5)", "\u2158": "(4/5)",
+  "\u2159": "(1/6)", "\u215a": "(5/6)", "\u215b": "(1/8)", "\u215c": "(3/8)",
+  "\u215d": "(5/8)", "\u215e": "(7/8)",
+};
+
+/**
+ * Characters that arrive by copy-and-paste — from a rendered answer, a PDF, a phone keyboard —
+ * and that no parser accepts. A student who pastes `−x³/3` has the right answer and deserves to
+ * be told so.
+ */
+function foldUnicode(s: string): string {
+  let out = s
+    .replace(/\u2212/g, "-")
+    .replace(/[\u00d7\u00b7\u22c5\u2219]/g, "*")
+    .replace(/\u00f7/g, "/")
+    .replace(/\u03c0/g, "pi")
+    .replace(/\u221e/g, "Infinity")
+    .replace(/\u221a/g, "sqrt ")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"');
+  out = out.replace(/[\u00bc\u00bd\u00be\u2153-\u215e]/g, (c) => VULGAR_FRACTIONS[c] ?? c);
+  // A run of superscript digits is an exponent: x\u00b3 is x^(3), and \u207b\u00b9 is ^(-1).
+  const supers = Object.keys(SUPERSCRIPTS).join("");
+  out = out.replace(new RegExp(`[${supers}]+`, "g"), (run) =>
+    `^(${[...run].map((c) => SUPERSCRIPTS[c]).join("")})`,
+  );
+  return out;
+}
+
+/**
+ * An answer written as an equation. Students hand back `F(x) = x^3/3`, `I = pi/4`, or the whole
+ * line `\int x^2 dx = x^3/3` — in every case the answer is what follows the last equals sign.
+ */
+function afterLastEquals(s: string): string {
+  let cut = -1;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== "=") continue;
+    const before = s[i - 1];
+    if ((before !== undefined && "<>=!".includes(before)) || s[i + 1] === "=") continue;
+    cut = i;
+  }
+  if (cut === -1) return s;
+  const rest = s.slice(cut + 1).trim();
+  return rest.length ? rest : s.slice(0, cut);
+}
+
+/**
+ * A known function with no brackets after it, which is how the notation is actually taught:
+ * `ln x`, `sin x cos x`, `tan x - x`. Binds the smallest following atom, including its exponent,
+ * so `sin x^2` reads as sin(x^2) the way it does on paper.
+ */
+function applyBareFunctions(s: string): string {
+  let out = "";
+  let i = 0;
+  while (i < s.length) {
+    if (!/[a-zA-Z_]/.test(s[i])) {
+      out += s[i++];
+      continue;
+    }
+    let j = i;
+    while (j < s.length && /[a-zA-Z0-9_]/.test(s[j])) j++;
+    const name = s.slice(i, j);
+    if (!FUNCTIONS.has(name)) {
+      out += name;
+      i = j;
+      continue;
+    }
+    let k = j;
+    while (s[k] === " ") k++;
+    const atom = s[k] === "(" ? null : readAtom(s, k);
+    if (!atom) {
+      out += s.slice(i, k);
+      i = k;
+      continue;
+    }
+    out += `${name}(${applyBareFunctions(atom.text)})`;
+    i = atom.end;
+  }
+  return out;
+}
+
+/** A number or an identifier, plus any exponent attached to it. */
+function readAtom(s: string, at: number): { text: string; end: number } | null {
+  const head = /^(?:\d+(?:\.\d+)?|[a-zA-Z_][a-zA-Z0-9_]*)/.exec(s.slice(at));
+  if (!head) return null;
+  let end = at + head[0].length;
+  let k = end;
+  while (s[k] === " ") k++;
+  if (s[k] === "^") {
+    k++;
+    while (s[k] === " ") k++;
+    const group = readGroup(s, k, "(", ")");
+    if (group) end = group.end + 1;
+    else {
+      const exp = /^-?(?:\d+(?:\.\d+)?|[a-zA-Z_][a-zA-Z0-9_]*)/.exec(s.slice(k));
+      if (exp) end = k + exp[0].length;
+    }
+  }
+  return { text: s.slice(at, end), end };
+}
 
 /**
  * Walks the string identifier by identifier, handing each to `f`. Regex word boundaries can't do
@@ -170,6 +281,22 @@ function inverseName(fn: string): string {
   return "a" + fn;
 }
 
+/**
+ * `ln2`, `sinx` — a function name run together with its argument, which is a thing people type
+ * because the space feels optional. Split on the longest prefix that really is a function.
+ */
+function splitGluedFunctions(s: string): string {
+  return mapIdentifiers(s, (name) => {
+    if (FUNCTIONS.has(name) || ALIASES[name] || name === "pi" || name === "e") return name;
+    for (let cut = name.length - 1; cut >= 2; cut--) {
+      const head = name.slice(0, cut);
+      const fn = FUNCTIONS.has(head) ? head : ALIASES[head];
+      if (fn) return `${fn}(${name.slice(cut)})`;
+    }
+    return name;
+  });
+}
+
 /** x(x+1) is multiplication, not a call — mathjs would try to invoke `x`. */
 function fixImplicitCalls(s: string): string {
   return mapIdentifiers(s, (name, next) => (next === "(" && !FUNCTIONS.has(name) ? `${name}*` : name));
@@ -179,12 +306,17 @@ function fixImplicitCalls(s: string): string {
  * Student syntax → mathjs syntax. Pure string work; never throws.
  */
 export function normalize(raw: string): string {
-  let s = raw.trim();
+  let s = foldUnicode(raw).trim();
   if (!s) return "";
+
+  s = s.replace(/\*\*/g, "^"); // the programmer's power operator
+  // Integral scaffolding, in case the whole line was pasted rather than just the answer.
+  s = s.replace(/\\displaystyle|\\limits|\\int|\u222b/g, " ");
+  s = afterLastEquals(s);
+  s = s.replace(/\s*\\?,?\s*d\s*[a-zA-Z]\s*$/, ""); // a trailing differential
 
   // "+ C" is the whole point of an indefinite integral, and carries no information for grading.
   s = s.replace(/[+-]\s*(?:C|c|const|constant)\s*$/, "");
-  s = s.replace(/^\s*(?:F\s*\(\s*x\s*\)|y)\s*=\s*/, ""); // "F(x) = ..." / "y = ..."
 
   // LaTeX scaffolding.
   s = s.replace(/\\left|\\right|\\!|\\,|\\;|\\:|\\ /g, " ");
@@ -200,8 +332,10 @@ export function normalize(raw: string): string {
   // Aliases first: everything downstream (function powers, bars-as-brackets) recognises functions
   // by their mathjs names.
   s = mapIdentifiers(s, (name) => ALIASES[name] ?? name);
+  s = splitGluedFunctions(s);
   s = expandFunctionPowers(s);
   s = expandBars(s);
+  s = applyBareFunctions(s);
 
   s = fixImplicitCalls(s);
   s = s.replace(/\)\s*\(/g, ")*(");
