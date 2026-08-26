@@ -178,6 +178,19 @@
   --tick: hsl(240 5% 32%);
 
   /* ── Semantics (deliberately muted — they report state, they don't shout) ── */
+  /* ── Heat ramp ──────────────────────────────────────────────────────
+     A sequential scale for the daily-integral calendar: one hue, four steps,
+     monotone in lightness. Mixed from --primary and --card rather than written
+     as hex so it follows every theme's surface and any accent the customise menu
+     sets. Against the default dark card the steps validate at OKLCH L 0.41 /
+     0.52 / 0.64 / 0.75 with the lowest at 2.12:1 — above the 2:1 floor for the
+     dim end of an ordinal ramp, but under 3:1, so every cell also carries a
+     label and the grid ships a table view. */
+  --heat-1: color-mix(in oklab, var(--primary) 36%, var(--card));
+  --heat-2: color-mix(in oklab, var(--primary) 56%, var(--card));
+  --heat-3: color-mix(in oklab, var(--primary) 76%, var(--card));
+  --heat-4: var(--primary);
+
   --destructive: hsl(358 62% 58%);
   --destructive-foreground: hsl(0 0% 100%);
   --success: hsl(152 58% 46%);

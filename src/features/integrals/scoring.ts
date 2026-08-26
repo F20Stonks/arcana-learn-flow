@@ -32,7 +32,8 @@ export interface ScoreBreakdown {
 /** Par time in seconds — beat it for the speed bonus, take twice it and the bonus is gone. */
 export const PAR_SECONDS: Record<Difficulty, number> = { 1: 30, 2: 60, 3: 120, 4: 210, 5: 330 };
 
-const BASE_POINTS: Record<Difficulty, number> = { 1: 40, 2: 80, 3: 150, 4: 260, 5: 420 };
+/** Exported so the history view can grade a day against what that day was worth. */
+export const BASE_POINTS: Record<Difficulty, number> = { 1: 40, 2: 80, 3: 150, 4: 260, 5: 420 };
 
 export function scoreAttempt(a: AttemptFacts): ScoreBreakdown {
   const base = BASE_POINTS[a.difficulty];

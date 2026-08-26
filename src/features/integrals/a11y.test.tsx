@@ -53,9 +53,13 @@ describe("the hub", () => {
     expect(screen.getByLabelText(/Level 1 progress/)).toBeInTheDocument();
   });
 
-  it("says whether a badge is earned or locked", () => {
+  it("summarises badges as a count rather than a wall of undifferentiated pills", () => {
+    // The detail — which badge, earned or locked — lives on the progress page.
     at("/integrals", <IntegralsHub />, "/integrals");
-    expect(screen.getByLabelText(/First Blood: locked/)).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /Badges/ });
+    expect(link).toHaveAttribute("href", "/integrals/progress");
+    expect(link.textContent).toMatch(/0\/\d+/);
+    expect(link.textContent).toMatch(/None yet/);
   });
 });
 

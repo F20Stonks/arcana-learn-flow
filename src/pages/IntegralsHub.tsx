@@ -6,7 +6,7 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
+import { BarChart3, Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
@@ -50,11 +50,20 @@ export default function IntegralsHub() {
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
           <XpBar xp={progress.xp} />
-          <div className="mt-5 flex flex-wrap gap-8">
-            <Stat value={`${s.streak}`} label={s.streak === 1 ? "day streak" : "day streak"} />
-            <Stat value={`${s.longestStreak}`} label="longest" />
-            <Stat value={`${s.dailiesSolved}`} label="dailies solved" />
-            <Stat value={`${s.solvedCount}/${s.totalProblems}`} label="bank cleared" />
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-6">
+            <div className="flex flex-wrap gap-8">
+              <Stat value={`${s.streak}`} label="day streak" />
+              <Stat value={`${s.longestStreak}`} label="longest" />
+              <Stat value={`${s.dailiesSolved}`} label="dailies solved" />
+              <Stat value={`${s.solvedCount}/${s.totalProblems}`} label="bank cleared" />
+            </div>
+            <Link
+              to="/integrals/progress"
+              className="group flex items-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <BarChart3 className="h-3.5 w-3.5" /> Progress
+              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
           </div>
         </section>
 
@@ -185,35 +194,30 @@ export default function IntegralsHub() {
           </div>
         </section>
 
-        <section className="reveal rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <div className="flex items-center gap-2">
+        <Link
+          to="/integrals/progress"
+          className="reveal group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:p-6"
+        >
+          <span className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-primary" />
-            <h2 className="font-display text-[17px] font-semibold text-foreground">Badges</h2>
+            <span className="font-display text-[17px] font-semibold text-foreground">Badges</span>
             <span className="readout text-[12px] tabular-nums text-muted-foreground">
               {earned.size}/{BADGES.length}
             </span>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {BADGES.map((b) => {
-              const has = earned.has(b.id);
-              return (
-                <span
-                  key={b.id}
-                  title={b.description}
-                  aria-label={`${b.name}: ${has ? "earned" : "locked"}. ${b.description}`}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] ${
-                    has
-                      ? "border-primary/40 bg-primary/10 text-foreground"
-                      : "border-border text-muted-foreground/60"
-                  }`}
-                >
-                  <span aria-hidden>{b.icon}</span>
-                  {b.name}
+          </span>
+          <span className="flex items-center gap-2">
+            <span aria-hidden className="flex gap-1.5">
+              {s.badges.slice(0, 5).map((b) => (
+                <span key={b.id} className="text-[14px]">
+                  {b.icon}
                 </span>
-              );
-            })}
-          </div>
-        </section>
+              ))}
+            </span>
+            <span className="text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              {earned.size === 0 ? "None yet →" : "See all →"}
+            </span>
+          </span>
+        </Link>
 
         {s.streak > 0 && (
           <p className="mt-6 flex items-center gap-2 text-[13px] text-muted-foreground">
