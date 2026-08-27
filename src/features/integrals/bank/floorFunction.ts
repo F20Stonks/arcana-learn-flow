@@ -164,4 +164,26 @@ export const FloorFunction: Problem[] = [
       "\\sum_{n=1}^\\infty\\frac{x^n}{n}=-\\ln(1-x); at x=\\frac12 this is \\ln2.",
     ],
   },
+  {
+    id: "floor-log2-x-def",
+    kind: "definite",
+    integrand: "\\lfloor\\log_2x\\rfloor",
+    integrandExpr: "floor(log2(x))",
+    lower: "50",
+    upper: "100",
+    answer: "286",
+    answerLatex: "286",
+    domain: [50, 100],
+    difficulty: 3,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #8" },
+    hints: [
+      "\\lfloor\\log_2x\\rfloor jumps at powers of 2 — find the one power of 2 inside [50,100].",
+    ],
+    steps: [
+      "2^6=64 is the only power of 2 in [50,100]. On [50,64), \\lfloor\\log_2x\\rfloor=5; on [64,100], it's 6.",
+      "\\int_{50}^{64}5\\,dx = 5\\cdot14=70. \\int_{64}^{100}6\\,dx = 6\\cdot36=216.",
+      "Total: 70+216=286.",
+    ],
+  },
 ];

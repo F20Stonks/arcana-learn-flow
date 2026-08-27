@@ -213,4 +213,24 @@ export const CompletingTheSquare: Problem[] = [
       "Back-substituting w=\\sqrt x+2: \\ln\\!\\left((\\sqrt x+2)^2+1\\right)-4\\arctan(\\sqrt x+2) + C.",
     ],
   },
+  {
+    id: "cs-x-over-x4-plus-x2-plus-1",
+    kind: "indefinite",
+    integrand: "\\frac{x}{x^4+x^2+1}",
+    integrandExpr: "x/(x^4+x^2+1)",
+    answer: "atan((2*x^2+1)/sqrt(3))/sqrt(3)",
+    answerLatex: "\\frac{1}{\\sqrt3}\\arctan\\!\\left(\\frac{2x^2+1}{\\sqrt3}\\right) + C",
+    domain: [0.5, 2],
+    difficulty: 4,
+    techniques: ["u-sub", "complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #16" },
+    hints: [
+      "u=x^2 turns this into \\frac12\\int\\frac{du}{u^2+u+1}, then complete the square in u.",
+    ],
+    steps: [
+      "u=x^2,\\ du=2x\\,dx: \\int\\frac{x\\,dx}{x^4+x^2+1} = \\frac12\\int\\frac{du}{u^2+u+1}.",
+      "u^2+u+1=\\left(u+\\frac12\\right)^2+\\frac34, so \\int\\frac{du}{u^2+u+1}=\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{2u+1}{\\sqrt3}\\right).",
+      "Combining the \\frac12: \\frac{1}{\\sqrt3}\\arctan\\!\\left(\\frac{2x^2+1}{\\sqrt3}\\right) + C.",
+    ],
+  },
 ];
