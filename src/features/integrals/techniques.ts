@@ -516,6 +516,33 @@ export const TECHNIQUES: Technique[] = [
       "Only even n+1 has a known closed form in \\pi; \\zeta(3), for instance, has no elementary closed form, so \\int_0^\\infty\\frac{x^2}{e^x-1}\\,dx isn't a 'type the answer' problem the way the even cases are.",
     ],
   },
+  {
+    id: "wallis-product",
+    name: "Wallis integrals",
+    tagline: "\\int_0^{\\pi/2}\\sin^n x\\,dx follows the same reduction as the full-period version — and squeezing consecutive terms is how Wallis found his product for \\pi.",
+    whenToUse:
+      "A power of \\sin x or \\cos x integrated over [0,\\pi/2] (or [0,\\pi], or a full period) — exactly the shape the recurrence technique reduces, but here the point is the family of values itself, and the surprising fact that comparing consecutive terms produces an infinite product for \\pi.",
+    recipe: [
+      "Reduce with parts exactly as in the recurrence technique: I_n=\\int_0^{\\pi/2}\\sin^nx\\,dx satisfies I_n=\\frac{n-1}{n}I_{n-2}, with base cases I_0=\\frac{\\pi}{2} and I_1=1.",
+      "On [0,\\pi/2], \\sin x\\in[0,1], so higher powers are pointwise smaller: \\sin^{n+1}x\\leq\\sin^nx\\leq\\sin^{n-1}x for every x there, hence I_{n+1}\\leq I_n\\leq I_{n-1}.",
+      "Divide through by I_{n-1}: \\frac{I_{n+1}}{I_{n-1}}\\leq\\frac{I_n}{I_{n-1}}\\leq 1. The reduction formula gives \\frac{I_{n+1}}{I_{n-1}}=\\frac{n}{n+1}\\to1, so by squeezing, \\frac{I_n}{I_{n-1}}\\to1 too.",
+      "Unrolling the even-index reduction all the way down and substituting into that ratio produces the Wallis product: \\frac{\\pi}{2}=\\prod_{k=1}^\\infty\\frac{2k}{2k-1}\\cdot\\frac{2k}{2k+1} = \\frac{2}{1}\\cdot\\frac{2}{3}\\cdot\\frac{4}{3}\\cdot\\frac{4}{5}\\cdot\\frac{6}{5}\\cdot\\frac{6}{7}\\cdots",
+    ],
+    example: {
+      integrand: "\\sin^6 x \\text{ on } \\left[0,\\frac{\\pi}{2}\\right]",
+      work: [
+        "I_n=\\frac{n-1}{n}I_{n-2}, base case I_0=\\frac{\\pi}{2}.",
+        "I_2=\\frac{1}{2}\\cdot\\frac{\\pi}{2}=\\frac{\\pi}{4}.\\quad I_4=\\frac{3}{4}\\cdot\\frac{\\pi}{4}=\\frac{3\\pi}{16}.",
+        "I_6=\\frac{5}{6}\\cdot\\frac{3\\pi}{16}=\\frac{15\\pi}{96}.",
+      ],
+      result: "\\frac{5\\pi}{32}",
+    },
+    pitfalls: [
+      "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the exact same I_n — substitute x\\to\\frac{\\pi}{2}-x to see sin and cos trade places over this particular interval — so don't re-derive the cosine case from scratch.",
+      "The squeeze argument needs sin x\\in[0,1] on the interval, which is specific to [0,\\pi/2] (or [0,\\pi]) — it's not a general fact about \\sin^nx for arbitrary bounds.",
+      "The reduction formula alone answers every 'evaluate this integral' problem; the squeeze/product derivation is the extra mile that explains *why* the Wallis product converges to \\pi, not a step you need for a numeric answer.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

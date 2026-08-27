@@ -26,7 +26,8 @@ export type TechniqueId =
   | "log-power-integrals"
   | "reciprocal-substitution"
   | "gamma-function"
-  | "zeta-series";
+  | "zeta-series"
+  | "wallis-product";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;

@@ -102,7 +102,7 @@ export const Recurrence: Problem[] = [
     answerLatex: "\\frac{3\\pi}{8}",
     domain: [0, Math.PI],
     difficulty: 3,
-    techniques: ["recurrence"],
+    techniques: ["recurrence", "wallis-product"],
     hints: [
       "Let I_n = \\int_0^\\pi \\sin^n x\\,dx. Parts with u=\\sin^{n-1}x, dv=\\sin x\\,dx gives I_n = \\frac{n-1}{n}I_{n-2}.",
       "The base case for even n is I_0 = \\pi.",
@@ -123,7 +123,7 @@ export const Recurrence: Problem[] = [
     answerLatex: "\\frac{16}{15}",
     domain: [0, Math.PI],
     difficulty: 4,
-    techniques: ["recurrence"],
+    techniques: ["recurrence", "wallis-product"],
     hints: [
       "Same recurrence I_n = \\frac{n-1}{n}I_{n-2}, but now on the odd branch — the base case is I_1 = \\int_0^\\pi \\sin x\\,dx = 2.",
       "Unwind two steps from I_5 down to I_1.",
