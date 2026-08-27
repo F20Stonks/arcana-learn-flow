@@ -126,4 +126,27 @@ export const IntroducingConstants: Problem[] = [
       "\\int\\left(4-\\frac{3}{1+3x}\\right)dx = 4x-\\ln|1+3x| + C.",
     ],
   },
+  {
+    id: "ic-cos-over-2-plus-cos-full-period",
+    kind: "definite",
+    integrand: "\\frac{\\cos x}{2+\\cos x}",
+    integrandExpr: "cos(x)/(2+cos(x))",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "2*pi*(1-2/sqrt(3))",
+    answerLatex: "2\\pi\\left(1-\\frac{2}{\\sqrt3}\\right)",
+    domain: [0, 2 * Math.PI],
+    difficulty: 5,
+    techniques: ["introducing-constants", "t-sub"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 3" },
+    hints: [
+      "Add and subtract 2 in the numerator: \\frac{\\cos x}{2+\\cos x}=1-\\frac{2}{2+\\cos x}.",
+      "The t-sub antiderivative of \\frac{1}{2+\\cos x} isn't valid across the whole [0,2\\pi] in one piece — split at \\pi where \\tan(x/2) has its own discontinuity.",
+    ],
+    steps: [
+      "\\int_0^{2\\pi}\\frac{\\cos x}{2+\\cos x}\\,dx = 2\\pi - 2\\int_0^{2\\pi}\\frac{dx}{2+\\cos x}.",
+      "By the t-sub formula, \\int\\frac{dx}{2+\\cos x}=\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right); splitting [0,2\\pi] at \\pi and doubling the [0,\\pi] piece (by symmetry) gives \\int_0^{2\\pi}\\frac{dx}{2+\\cos x}=\\frac{2\\pi}{\\sqrt3}.",
+      "So the answer is 2\\pi - 2\\cdot\\frac{2\\pi}{\\sqrt3} = 2\\pi\\left(1-\\frac{2}{\\sqrt3}\\right).",
+    ],
+  },
 ];

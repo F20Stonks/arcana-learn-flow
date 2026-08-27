@@ -148,4 +148,27 @@ export const CompletingTheSquare: Problem[] = [
       "Result: \\frac{1}{2}\\ln(x^2+2x+2)-\\arctan(x+1) + C.",
     ],
   },
+  {
+    id: "cs-log-x-over-shifted-quadratic",
+    kind: "definite",
+    integrand: "\\frac{\\ln x}{(x+1)^2+1}",
+    integrandExpr: "log(x)/((x+1)^2+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi*log(2)/8",
+    answerLatex: "\\frac{\\pi\\ln2}{8}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["complete-square"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 7" },
+    hints: [
+      "Complete the square first: x^2+2x+2=(x+1)^2+1. Then substitute x+1=\\tan\\theta.",
+      "Write \\ln(\\tan\\theta-1) as \\ln(\\sin\\theta-\\cos\\theta)-\\ln(\\cos\\theta) and use \\sin\\theta-\\cos\\theta=\\sqrt2\\sin\\!\\left(\\theta-\\frac{\\pi}{4}\\right) — the same log-sine reduction as Serret's integral.",
+    ],
+    steps: [
+      "With x+1=\\tan\\theta: I=\\int_{\\pi/4}^{\\pi/2}\\ln(\\tan\\theta-1)\\,d\\theta.",
+      "= \\int_{\\pi/4}^{\\pi/2}\\ln\\!\\left(\\sqrt2\\sin\\!\\left(\\theta-\\tfrac{\\pi}{4}\\right)\\right)d\\theta - \\int_{\\pi/4}^{\\pi/2}\\ln(\\cos\\theta)\\,d\\theta.",
+      "Both pieces reduce to log-sine integrals over an interval of length \\frac{\\pi}{4}, giving the same value as Serret's integral: \\frac{\\pi\\ln2}{8} (the author notes this coincidence in the source without a direct proof they're equal).",
+    ],
+  },
 ];

@@ -121,4 +121,27 @@ export const InverseIntegral: Problem[] = [
       "So \\int_0^{\\sqrt3}\\arctan x\\,dx = \\frac{\\pi\\sqrt3}{3} - \\ln 2.",
     ],
   },
+  {
+    id: "inv-sqrt-reciprocal-minus-one",
+    kind: "definite",
+    integrand: "\\sqrt{\\frac{1}{x}-1}",
+    integrandExpr: "sqrt(1/x-1)",
+    lower: "0",
+    upper: "1",
+    answer: "pi/2",
+    answerLatex: "\\frac{\\pi}{2}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["inverse-integral"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 9" },
+    hints: [
+      "Solving y=\\sqrt{1/x-1} for x gives x=\\frac{1}{1+y^2} — so the inverse of this function is g(t)=\\frac{1}{1+t^2}, which you already know how to integrate.",
+      "Substitute x=g(t)=\\frac{1}{1+t^2} directly (i.e. t is exactly the value of the original integrand) rather than working with f itself.",
+    ],
+    steps: [
+      "Let t=\\sqrt{1/x-1}, so x=\\frac{1}{1+t^2} and dx=-\\frac{2t}{(1+t^2)^2}\\,dt. As x:0\\to1, t:\\infty\\to0.",
+      "\\int_0^1\\sqrt{\\tfrac1x-1}\\,dx = \\int_0^\\infty\\frac{2t^2}{(1+t^2)^2}\\,dt (the bound flip cancels the minus sign).",
+      "With t=\\tan\\theta: \\frac{2t^2}{(1+t^2)^2}\\,dt = 2\\sin^2\\theta\\,d\\theta, so the integral is \\int_0^{\\pi/2}2\\sin^2\\theta\\,d\\theta = \\frac{\\pi}{2}.",
+    ],
+  },
 ];
