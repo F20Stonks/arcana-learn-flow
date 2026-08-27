@@ -98,7 +98,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["introducing-constants", "t-sub"],
-    source: { name: "original" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.9 (introducing constants)" },
     hints: [
       "Split off the denominator first, same as always: 5\\cos x+7 = 5(2+\\cos x) - 3.",
       "That leaves 5\\int dx - 3\\int\\frac{dx}{2+\\cos x} — and the second integral is a t-sub result you may already have.",

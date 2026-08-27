@@ -118,4 +118,27 @@ export const FloorFunction: Problem[] = [
       "= 0+1+4 = 5.",
     ],
   },
+  {
+    id: "floor-exp-decay-infinite",
+    kind: "definite",
+    integrand: "e^{-x}\\lfloor x\\rfloor",
+    integrandExpr: "exp(-x)*floor(x)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "1/(e-1)",
+    answerLatex: "\\frac{1}{e-1}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["floor-function"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.7 (floor function integrals)" },
+    hints: [
+      "Split at the integers as always: \\int_0^\\infty=\\sum_{k=0}^\\infty\\int_k^{k+1}, where \\lfloor x\\rfloor=k on each piece.",
+      "Each piece is an elementary exponential integral in k; what's left afterward is a geometric series.",
+    ],
+    steps: [
+      "\\int_0^\\infty e^{-x}\\lfloor x\\rfloor\\,dx = \\sum_{k=0}^\\infty k\\int_k^{k+1}e^{-x}\\,dx = \\sum_{k=0}^\\infty k\\left(e^{-k}-e^{-k-1}\\right) = (1-e^{-1})\\sum_{k=0}^\\infty ke^{-k}.",
+      "\\sum_{k=0}^\\infty ke^{-k} = \\frac{e^{-1}}{(1-e^{-1})^2} (differentiate the geometric series \\sum e^{-k}), so the product is \\frac{e^{-1}}{1-e^{-1}}.",
+      "= \\frac{1}{e-1}.",
+    ],
+  },
 ];

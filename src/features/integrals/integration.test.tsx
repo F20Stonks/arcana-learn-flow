@@ -59,10 +59,17 @@ describe("the daily", () => {
   it("rejects a wrong answer and keeps the run going", async () => {
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
     const input = screen.getByPlaceholderText(/your answer|a number/i);
-    fireEvent.change(input, { target: { value: "42" } });
+    // "42" isn't safe as a fixed wrong guess: today's problem is whichever one the deterministic
+    // daily shuffle lands on, and 42 happens to be a "nice" multiple of some real answers — which
+    // the grader (rightly) reports as "off by a constant factor" rather than "incorrect". A huge
+    // decimal offset from nothing is wrong for every kind of stored answer without needing to know
+    // what today's problem actually is.
+    fireEvent.change(input, { target: { value: "8675309.334455" } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
 
-    await waitFor(() => expect(screen.getByText(/Not equivalent|still have/)).toBeInTheDocument());
+    // The exact wording depends on which of several "wrong" verdict shapes fires (incorrect,
+    // off-by-constant-factor, unparseable) — what actually matters is that the run wasn't solved.
+    await waitFor(() => expect(screen.getByRole("status")).not.toBeEmptyDOMElement());
     expect(screen.queryByText("Solved.")).not.toBeInTheDocument();
     expect(getProgress().xp).toBe(0);
   });

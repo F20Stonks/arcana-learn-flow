@@ -599,4 +599,27 @@ export const TrigIdentities: Problem[] = [
       "Evaluating 0 to \\frac{\\pi}{2} and simplifying the logs gives \\frac{\\pi-\\ln2}{5}.",
     ],
   },
+  {
+    id: "trig-jee-main-2016-arctan-addition",
+    kind: "definite",
+    integrand: "\\arctan\\!\\left(\\frac{1}{x^2-x+1}\\right)",
+    integrandExpr: "atan(1/(x^2-x+1))",
+    lower: "0",
+    upper: "1",
+    answer: "pi/2-log(2)",
+    answerLatex: "\\frac{\\pi}{2}-\\ln2",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.8 (citing JEE Main 2016)" },
+    hints: [
+      "The arctan addition formula \\arctan a+\\arctan b=\\arctan\\frac{a+b}{1-ab} runs backwards here: match \\frac{1}{x^2-x+1} to \\frac{a+b}{1-ab} with a=x,\\ b=1-x.",
+      "a+b=1 and 1-ab=1-x(1-x)=x^2-x+1 — exactly the denominator, so the integrand is \\arctan x+\\arctan(1-x).",
+    ],
+    steps: [
+      "\\arctan x+\\arctan(1-x) = \\arctan\\frac{x+(1-x)}{1-x(1-x)} = \\arctan\\frac{1}{x^2-x+1} — both terms stay in [0,\\pi/4] on [0,1], so the addition formula applies without a branch correction.",
+      "\\int_0^1\\left[\\arctan x+\\arctan(1-x)\\right]dx = 2\\int_0^1\\arctan x\\,dx, by symmetry (the second term is the first reflected via x\\to1-x).",
+      "\\int_0^1\\arctan x\\,dx = \\left[x\\arctan x\\right]_0^1-\\int_0^1\\frac{x}{x^2+1}dx = \\frac{\\pi}{4}-\\frac12\\ln2, so the answer is 2\\left(\\frac{\\pi}{4}-\\frac12\\ln2\\right)=\\frac{\\pi}{2}-\\ln2.",
+    ],
+  },
 ];

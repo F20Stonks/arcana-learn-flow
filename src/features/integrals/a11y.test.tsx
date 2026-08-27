@@ -79,7 +79,11 @@ describe("the run", () => {
     expect(live).toHaveAttribute("aria-live", "polite");
     expect(live).toBeEmptyDOMElement();
 
-    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: "1+1" } });
+    // A fixed guess like "1+1" isn't safe: today's problem is whichever one the deterministic daily
+    // shuffle lands on, and a small guess can coincidentally equal the real answer, which would
+    // solve the run and unmount this very status region instead of just filling it. A huge decimal
+    // offset is wrong for every kind of stored answer without needing to know today's problem.
+    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: "8675309.334455" } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
     await waitFor(() => expect(screen.getByRole("status")).not.toBeEmptyDOMElement());
   });
