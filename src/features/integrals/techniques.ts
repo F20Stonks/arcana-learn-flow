@@ -246,6 +246,114 @@ export const TECHNIQUES: Technique[] = [
       "The parameter has to actually recover the original problem at some specific value — check that before differentiating anything.",
     ],
   },
+  {
+    id: "t-sub",
+    name: "The t-substitution",
+    tagline: "Weierstrass's universal move: turn any rational function of sin and cos into a rational function of t.",
+    whenToUse:
+      "A rational function of \\sin x, \\cos x and \\tan x that no identity or standard substitution cracks — especially denominators like a + b\\cos x or a + b\\sin x. It always works, so treat it as the fallback once nothing faster presents itself, not the first move.",
+    recipe: [
+      "Set t = \\tan\\frac{x}{2}.",
+      "Substitute \\sin x = \\frac{2t}{1+t^2},\\ \\cos x = \\frac{1-t^2}{1+t^2},\\ dx = \\frac{2}{1+t^2}\\,dt.",
+      "Every trig function cancels away, leaving a rational function of t — integrate that with standard forms or partial fractions.",
+      "Back-substitute t = \\tan\\frac{x}{2} (or convert the bounds directly, for a definite integral).",
+    ],
+    example: {
+      integrand: "\\frac{1}{2+\\cos x}",
+      work: [
+        "With t = \\tan\\frac{x}{2}: 2+\\cos x = \\frac{2(1+t^2) + (1-t^2)}{1+t^2} = \\frac{3+t^2}{1+t^2}.",
+        "The integral becomes \\int \\frac{2}{3+t^2}\\,dt, a plain arctan form.",
+        "That integrates to \\frac{2}{\\sqrt3}\\arctan\\frac{t}{\\sqrt3}.",
+      ],
+      result: "\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right) + C",
+    },
+    pitfalls: [
+      "t = \\tan\\frac{x}{2} is undefined at x = \\pi — never substitute across that point in one piece; split the integral there if it's inside the domain.",
+      "The universal method rarely gives the prettiest route. If a quicker identity or plain substitution is staring at you, use it instead — save this for when nothing else moves.",
+      "Don't forget the \\frac{2}{1+t^2} from dx — it's easy to substitute \\sin x and \\cos x and lose the differential.",
+    ],
+  },
+  {
+    id: "recurrence",
+    name: "Recurrence relations",
+    tagline: "Relate a hard integral to an easier one indexed one step down, then unwind.",
+    whenToUse:
+      "The integral is naturally indexed by an integer n — a power like \\sin^n x, or a family like \\frac{x^n}{1+x} — and integration by parts, or a small algebraic trick, relates I_n to I_{n-1} or I_{n-2}. Reach for this whenever a problem hands you a family rather than a single integral.",
+    recipe: [
+      "Name the family I_n. Try peeling one factor off with integration by parts, or adding/subtracting a related power algebraically, to relate I_n to a lower index.",
+      "Solve the recurrence down to a base case you can compute directly — usually I_0 or I_1.",
+      "Unwind the recurrence for the specific n you actually need.",
+      "Watch the parity: many recurrences behave differently for even and odd n, so pin down which branch you're on before unwinding.",
+    ],
+    example: {
+      integrand: "\\frac{x^2}{1+x} \\text{ on } [0,1]",
+      work: [
+        "Let I_n = \\int_0^1 \\frac{x^n}{1+x}\\,dx. Adding I_n and I_{n-1}: I_n + I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}.",
+        "So I_n = \\frac{1}{n} - I_{n-1}, and the base case is I_0 = \\int_0^1 \\frac{dx}{1+x} = \\ln 2.",
+        "I_1 = 1 - \\ln 2, so I_2 = \\frac{1}{2} - I_1 = \\ln 2 - \\frac{1}{2}.",
+      ],
+      result: "\\ln 2 - \\frac{1}{2}",
+    },
+    pitfalls: [
+      "Unwinding by hand for a large n is exactly as much work as the original problem — look for whether the recurrence collapses into a product or telescopes before grinding through every step.",
+      "A recurrence relating I_n to I_{n-2} needs BOTH I_0 and I_1 as base cases, one for each parity.",
+      "Getting the algebra sign wrong in I_n + I_{n-1} = \\dots vs I_n - I_{n-1} = \\dots silently flips every answer downstream — verify the very first step against a value you can compute directly (n=1 or n=2) before trusting the pattern.",
+    ],
+  },
+  {
+    id: "inverse-integral",
+    name: "Integral of an inverse function",
+    tagline: "Swap a hard integral for the easy area of its inverse, using the rectangle they share.",
+    whenToUse:
+      "You need \\int f(x)\\,dx for an f whose own antiderivative is annoying (\\arcsin, \\arctan, \\ln), but whose INVERSE — \\sin, \\tan, e^x — is trivial to integrate. The picture is a rectangle split by the curve y=f(x): the area under f and the area under f^{-1} (read off the y-axis) fill it between them.",
+    recipe: [
+      "Identify f and confirm it's injective (monotonic) on the interval — that's what gives it an inverse at all.",
+      "Use \\int_a^b f(x)\\,dx + \\int_{f(a)}^{f(b)} f^{-1}(x)\\,dx = b\\,f(b) - a\\,f(a).",
+      "Pick whichever of the two integrals is the easy one — usually the inverse function, since it's the one you actually know how to integrate — and compute it directly.",
+      "Solve for the integral you actually wanted.",
+    ],
+    example: {
+      integrand: "\\arcsin x \\text{ on } [0,1]",
+      work: [
+        "f(x) = \\sin x is the easy direction, with f^{-1} = \\arcsin. Here a=0, b=\\frac{\\pi}{2} (so that f(b)=1).",
+        "\\int_0^{\\pi/2}\\sin x\\,dx + \\int_0^1 \\arcsin x\\,dx = \\frac{\\pi}{2}\\cdot 1 - 0\\cdot 0 = \\frac{\\pi}{2}.",
+        "The first integral is 1 (elementary), so \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2} - 1.",
+      ],
+      result: "\\frac{\\pi}{2} - 1",
+    },
+    pitfalls: [
+      "The identity needs f INJECTIVE on the interval you're using — check that before reaching for it, or the 'inverse' isn't well defined.",
+      "Matching the bounds is the whole trick: b must satisfy f(b) equal to the upper limit you actually want on the inverse integral, not just some convenient value.",
+      "This is a shortcut around integration by parts, not a different answer — if you're unsure the identity applies, by parts on \\arcsin/\\arctan/\\ln always works too and is worth checking against.",
+    ],
+  },
+  {
+    id: "floor-function",
+    name: "Floor function integrals",
+    tagline: "The floor has no antiderivative — split the domain at every integer, where it's constant, instead.",
+    whenToUse:
+      "\\lfloor x\\rfloor, or the fractional part x - \\lfloor x\\rfloor, sits inside the integrand and the bounds span more than one integer. There is no calculus move that touches \\lfloor x\\rfloor directly — the only route in is chopping the interval into pieces where it's constant.",
+    recipe: [
+      "List every integer strictly inside the interval of integration — those are exactly where \\lfloor x\\rfloor jumps.",
+      "Split \\int_a^b into a sum of integrals over [k,k+1] (with partial pieces at the two ends), replacing \\lfloor x\\rfloor by the fixed integer k on each piece.",
+      "Integrate each ordinary piece — \\lfloor x\\rfloor is now just a constant — and sum the results.",
+      "Look for the sum to collapse: it's often a short arithmetic series, or telescopes outright.",
+    ],
+    example: {
+      integrand: "\\lfloor x\\rfloor \\text{ on } [0,3]",
+      work: [
+        "Split at the integers: [0,1),\\ [1,2),\\ [2,3], where \\lfloor x\\rfloor is 0, 1, 2 respectively.",
+        "\\int_0^3\\lfloor x\\rfloor\\,dx = 0\\cdot 1 + 1\\cdot 1 + 2\\cdot 1.",
+        "Sum the constant pieces.",
+      ],
+      result: "3",
+    },
+    pitfalls: [
+      "The split points are the INTEGERS inside the interval, not the endpoints — double-check you haven't miscounted by one at either end.",
+      "For x - \\lfloor x\\rfloor (the sawtooth), each piece [k,k+1) is just \\int_0^1 u\\,du = \\frac{1}{2} after shifting — every full unit interval contributes exactly \\frac{1}{2}, which is worth recognising on sight.",
+      "\\lfloor x\\rfloor is discontinuous at every integer, so don't try to differentiate through one — this technique is fundamentally about summing, not about finding an antiderivative.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

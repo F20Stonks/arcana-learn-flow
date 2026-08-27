@@ -1,0 +1,119 @@
+/**
+ * Integral of an inverse function: swap a hard integral for the easy area of its inverse, using the
+ * rectangle b·f(b) - a·f(a) they jointly fill. Several of these are also reachable by parts — that's
+ * fine, and worth checking against — but the point here is recognising the inverse pair on sight.
+ */
+import type { Problem } from "../types";
+
+export const InverseIntegral: Problem[] = [
+  {
+    id: "inv-sqrt-0to4",
+    kind: "definite",
+    integrand: "\\sqrt{x}",
+    integrandExpr: "sqrt(x)",
+    lower: "0",
+    upper: "4",
+    answer: "16/3",
+    answerLatex: "\\frac{16}{3}",
+    domain: [0, 4],
+    difficulty: 2,
+    techniques: ["inverse-integral"],
+    hints: [
+      "\\sqrt x is the inverse of f(x)=x^2 — and x^2 is the one you can integrate without thinking.",
+      "Match the bounds: f(2)=4, so use a=0, b=2 on the x^2 side to land on upper limit 4 on the \\sqrt x side.",
+    ],
+    steps: [
+      "With f(x)=x^2, a=0, b=2: \\int_0^2 x^2\\,dx + \\int_0^4 \\sqrt x\\,dx = 2\\cdot 4 - 0\\cdot 0 = 8.",
+      "\\int_0^2 x^2\\,dx = \\frac{8}{3}.",
+      "So \\int_0^4\\sqrt x\\,dx = 8 - \\frac{8}{3} = \\frac{16}{3}.",
+    ],
+  },
+  {
+    id: "inv-arcsin-0to1",
+    kind: "definite",
+    integrand: "\\arcsin x",
+    integrandExpr: "asin(x)",
+    lower: "0",
+    upper: "1",
+    answer: "pi/2-1",
+    answerLatex: "\\frac{\\pi}{2}-1",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["inverse-integral"],
+    hints: [
+      "\\arcsin has no antiderivative you'd want to guess — but its inverse, \\sin, integrates in one line.",
+      "Match bounds so \\sin\\!\\left(\\frac{\\pi}{2}\\right)=1: use a=0, b=\\frac{\\pi}{2} on the \\sin side.",
+    ],
+    steps: [
+      "\\int_0^{\\pi/2}\\sin x\\,dx + \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2}\\cdot 1 - 0\\cdot 0.",
+      "\\int_0^{\\pi/2}\\sin x\\,dx = 1.",
+      "So \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2} - 1.",
+    ],
+  },
+  {
+    id: "inv-arctan-0to1",
+    kind: "definite",
+    integrand: "\\arctan x",
+    integrandExpr: "atan(x)",
+    lower: "0",
+    upper: "1",
+    answer: "pi/4 - log(2)/2",
+    answerLatex: "\\frac{\\pi}{4} - \\frac{\\ln 2}{2}",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["inverse-integral"],
+    hints: [
+      "\\tan is the trivial direction here — its integral is a single \\ln|\\cos x|.",
+      "Match bounds so \\tan\\!\\left(\\frac{\\pi}{4}\\right)=1: use a=0, b=\\frac{\\pi}{4}.",
+    ],
+    steps: [
+      "\\int_0^{\\pi/4}\\tan x\\,dx + \\int_0^1\\arctan x\\,dx = \\frac{\\pi}{4}\\cdot 1 - 0\\cdot 0.",
+      "\\int_0^{\\pi/4}\\tan x\\,dx = \\left[-\\ln|\\cos x|\\right]_0^{\\pi/4} = -\\ln\\frac{1}{\\sqrt2} = \\frac{\\ln 2}{2}.",
+      "So \\int_0^1\\arctan x\\,dx = \\frac{\\pi}{4} - \\frac{\\ln 2}{2}.",
+    ],
+  },
+  {
+    id: "inv-ln-2to4",
+    kind: "definite",
+    integrand: "\\ln x",
+    integrandExpr: "log(x)",
+    lower: "2",
+    upper: "4",
+    answer: "6*log(2)-2",
+    answerLatex: "6\\ln 2 - 2",
+    domain: [2, 4],
+    difficulty: 4,
+    techniques: ["inverse-integral"],
+    hints: [
+      "\\ln is the inverse of e^x, which integrates to itself.",
+      "Match the bounds: e^{\\ln 2}=2 and e^{\\ln 4}=4, so use a=\\ln 2, b=\\ln 4 on the e^x side.",
+    ],
+    steps: [
+      "\\int_{\\ln 2}^{\\ln 4} e^x\\,dx + \\int_2^4 \\ln x\\,dx = (\\ln 4)\\cdot 4 - (\\ln 2)\\cdot 2.",
+      "\\int_{\\ln 2}^{\\ln 4}e^x\\,dx = e^{\\ln 4}-e^{\\ln 2} = 4-2 = 2.",
+      "4\\ln 4 - 2\\ln 2 = 8\\ln 2 - 2\\ln 2 = 6\\ln 2, so \\int_2^4\\ln x\\,dx = 6\\ln 2 - 2.",
+    ],
+  },
+  {
+    id: "inv-arctan-0toSqrt3",
+    kind: "definite",
+    integrand: "\\arctan x",
+    integrandExpr: "atan(x)",
+    lower: "0",
+    upper: "\\sqrt3",
+    answer: "pi*sqrt(3)/3 - log(2)",
+    answerLatex: "\\frac{\\pi\\sqrt3}{3} - \\ln 2",
+    domain: [0, Math.sqrt(3)],
+    difficulty: 5,
+    techniques: ["inverse-integral"],
+    hints: [
+      "Same pair as before, harder bound: \\tan\\!\\left(\\frac{\\pi}{3}\\right)=\\sqrt3, so use a=0, b=\\frac{\\pi}{3}.",
+      "\\int_0^{\\pi/3}\\tan x\\,dx = -\\ln\\cos\\frac{\\pi}{3} = -\\ln\\frac{1}{2} = \\ln 2.",
+    ],
+    steps: [
+      "\\int_0^{\\pi/3}\\tan x\\,dx + \\int_0^{\\sqrt3}\\arctan x\\,dx = \\frac{\\pi}{3}\\cdot\\sqrt3 - 0\\cdot 0.",
+      "\\int_0^{\\pi/3}\\tan x\\,dx = \\ln 2.",
+      "So \\int_0^{\\sqrt3}\\arctan x\\,dx = \\frac{\\pi\\sqrt3}{3} - \\ln 2.",
+    ],
+  },
+];

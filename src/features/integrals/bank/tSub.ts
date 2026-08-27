@@ -1,0 +1,135 @@
+/**
+ * The Weierstrass t-substitution: t = tan(x/2) turns any rational function of sin x and cos x into
+ * a rational function of t. It always works, which is exactly why it's the technique of last resort
+ * — every problem here is one where a plainer route (a bare identity, an obvious u-sub) doesn't apply.
+ */
+import type { Problem } from "../types";
+
+export const TSub: Problem[] = [
+  {
+    id: "tsub-csc",
+    kind: "indefinite",
+    integrand: "\\frac{1}{\\sin x}",
+    integrandExpr: "1/sin(x)",
+    answer: "log(abs(tan(x/2)))",
+    answerLatex: "\\ln\\left|\\tan\\frac{x}{2}\\right| + C",
+    domain: [0.5, 2.5],
+    difficulty: 2,
+    techniques: ["t-sub"],
+    hints: [
+      "This is the classic first example of the t-sub: set t = \\tan\\frac{x}{2}.",
+      "With \\sin x = \\frac{2t}{1+t^2} and dx = \\frac{2\\,dt}{1+t^2}, the whole thing collapses to \\int \\frac{dt}{t}.",
+    ],
+    steps: [
+      "\\frac{1}{\\sin x}\\cdot\\frac{2}{1+t^2}\\,dt = \\frac{1+t^2}{2t}\\cdot\\frac{2}{1+t^2}\\,dt = \\frac{dt}{t}.",
+      "\\int\\frac{dt}{t} = \\ln|t|.",
+      "Back-substitute: \\ln\\left|\\tan\\frac{x}{2}\\right| + C.",
+    ],
+  },
+  {
+    id: "tsub-3pluscos",
+    kind: "indefinite",
+    integrand: "\\frac{1}{3+\\cos x}",
+    integrandExpr: "1/(3+cos(x))",
+    answer: "(1/sqrt(2))*atan(tan(x/2)/sqrt(2))",
+    answerLatex: "\\frac{1}{\\sqrt2}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt2}\\right) + C",
+    domain: [-1, 1],
+    difficulty: 3,
+    techniques: ["t-sub"],
+    hints: [
+      "Nothing substitutes and no identity simplifies a + \\cos x — this is exactly what the t-sub is for.",
+      "\\cos x = \\frac{1-t^2}{1+t^2} turns 3+\\cos x into \\frac{4+2t^2}{1+t^2}; the 1+t^2 cancels against dx.",
+    ],
+    steps: [
+      "3+\\cos x = \\frac{3(1+t^2)+(1-t^2)}{1+t^2} = \\frac{4+2t^2}{1+t^2}.",
+      "The integral becomes \\int\\frac{2}{4+2t^2}\\,dt = \\int\\frac{dt}{2+t^2}.",
+      "That's an arctan form: \\frac{1}{\\sqrt2}\\arctan\\frac{t}{\\sqrt2}.",
+      "Back-substitute t=\\tan\\frac{x}{2}: \\frac{1}{\\sqrt2}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt2}\\right) + C.",
+    ],
+  },
+  {
+    id: "tsub-2minuscos",
+    kind: "indefinite",
+    integrand: "\\frac{1}{2-\\cos x}",
+    integrandExpr: "1/(2-cos(x))",
+    answer: "(2/sqrt(3))*atan(sqrt(3)*tan(x/2))",
+    answerLatex: "\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\sqrt3\\,\\tan\\frac{x}{2}\\right) + C",
+    domain: [-1, 1],
+    difficulty: 3,
+    techniques: ["t-sub"],
+    hints: [
+      "Same move as a + \\cos x, but watch the sign — it changes which coefficient ends up on t^2 versus the constant.",
+      "2 - \\cos x = \\frac{2(1+t^2)-(1-t^2)}{1+t^2} = \\frac{1+3t^2}{1+t^2}.",
+    ],
+    steps: [
+      "2-\\cos x = \\frac{1+3t^2}{1+t^2}, so the integral is \\int\\frac{2}{1+3t^2}\\,dt.",
+      "= \\frac{2}{3}\\int\\frac{dt}{\\frac{1}{3}+t^2} = \\frac{2}{\\sqrt3}\\arctan\\!\\left(\\sqrt3\\,t\\right).",
+      "Back-substitute: \\frac{2}{\\sqrt3}\\arctan\\!\\left(\\sqrt3\\,\\tan\\frac{x}{2}\\right) + C.",
+    ],
+  },
+  {
+    id: "tsub-1plussin-def",
+    kind: "definite",
+    integrand: "\\frac{1}{1+\\sin x}",
+    integrandExpr: "1/(1+sin(x))",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "1",
+    answerLatex: "1",
+    domain: [0, Math.PI / 2],
+    difficulty: 4,
+    techniques: ["t-sub"],
+    hints: [
+      "With \\sin x = \\frac{2t}{1+t^2}, the denominator 1+\\sin x becomes \\frac{(1+t)^2}{1+t^2} — a perfect square.",
+      "That leaves a very simple rational integral in t.",
+    ],
+    steps: [
+      "1+\\sin x = \\frac{(1+t)^2}{1+t^2}, so \\frac{2\\,dt}{1+t^2}\\cdot\\frac{1+t^2}{(1+t)^2} = \\frac{2\\,dt}{(1+t)^2}.",
+      "\\int\\frac{2\\,dt}{(1+t)^2} = \\frac{-2}{1+t}, so the antiderivative in x is \\frac{-2}{1+\\tan(x/2)}.",
+      "At x=\\frac{\\pi}{2}: t=1, giving -1. At x=0: t=0, giving -2.",
+      "The value is -1-(-2) = 1.",
+    ],
+  },
+  {
+    id: "tsub-5plus3cos",
+    kind: "indefinite",
+    integrand: "\\frac{1}{5+3\\cos x}",
+    integrandExpr: "1/(5+3*cos(x))",
+    answer: "(1/2)*atan(tan(x/2)/2)",
+    answerLatex: "\\frac{1}{2}\\arctan\\!\\left(\\frac{\\tan(x/2)}{2}\\right) + C",
+    domain: [-1, 1],
+    difficulty: 4,
+    techniques: ["t-sub"],
+    hints: [
+      "General a+b\\cos x: the same substitution gives \\frac{2\\,dt}{(a+b)+(a-b)t^2}.",
+      "Here a=5, b=3, so a+b=8 and a-b=2 — the coefficients simplify nicely before you even integrate.",
+    ],
+    steps: [
+      "5+3\\cos x = \\frac{5(1+t^2)+3(1-t^2)}{1+t^2} = \\frac{8+2t^2}{1+t^2}.",
+      "The integral becomes \\int\\frac{2}{8+2t^2}\\,dt = \\int\\frac{dt}{4+t^2}.",
+      "= \\frac{1}{2}\\arctan\\frac{t}{2}, so back-substituting: \\frac{1}{2}\\arctan\\!\\left(\\frac{\\tan(x/2)}{2}\\right) + C.",
+    ],
+  },
+  {
+    id: "tsub-5plus3cos-def",
+    kind: "definite",
+    integrand: "\\frac{1}{5+3\\cos x}",
+    integrandExpr: "1/(5+3*cos(x))",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "(1/2)*atan(1/2)",
+    answerLatex: "\\frac{1}{2}\\arctan\\frac{1}{2}",
+    domain: [0, Math.PI / 2],
+    difficulty: 5,
+    techniques: ["t-sub"],
+    hints: [
+      "Reuse the antiderivative from the indefinite version of this same integrand — this is just the bookkeeping at the bounds.",
+      "The t-sub doesn't promise a pretty closed form — \\arctan\\frac{1}{2} is exact, it just isn't a multiple of \\pi.",
+    ],
+    steps: [
+      "From the indefinite case, an antiderivative is \\frac{1}{2}\\arctan\\!\\left(\\frac{\\tan(x/2)}{2}\\right).",
+      "At x=\\frac{\\pi}{2}: t=1, giving \\frac{1}{2}\\arctan\\frac{1}{2}. At x=0: t=0, giving 0.",
+      "The value is \\frac{1}{2}\\arctan\\frac{1}{2} — a genuine closed form, just not a rational multiple of \\pi.",
+    ],
+  },
+];

@@ -23,6 +23,10 @@ import { PartialFractions } from "./bank/partialFractions";
 import { CompletingTheSquare } from "./bank/completingTheSquare";
 import { Definite } from "./bank/definite";
 import { Feynman } from "./bank/feynman";
+import { TSub } from "./bank/tSub";
+import { Recurrence } from "./bank/recurrence";
+import { InverseIntegral } from "./bank/inverseIntegral";
+import { FloorFunction } from "./bank/floorFunction";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -34,6 +38,10 @@ export const PROBLEMS: Problem[] = [
   ...CompletingTheSquare,
   ...Definite,
   ...Feynman,
+  ...TSub,
+  ...Recurrence,
+  ...InverseIntegral,
+  ...FloorFunction,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

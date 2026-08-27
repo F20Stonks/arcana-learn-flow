@@ -16,7 +16,11 @@ export type TechniqueId =
   | "partial-fractions"
   | "complete-square"
   | "symmetry"
-  | "feynman";
+  | "feynman"
+  | "t-sub"
+  | "recurrence"
+  | "inverse-integral"
+  | "floor-function";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
