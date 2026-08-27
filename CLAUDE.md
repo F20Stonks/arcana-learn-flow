@@ -526,3 +526,96 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     starting here should check the session uploads for new source material first; if there is none,
     report that back rather than manufacturing busywork — don't invent problems, and don't add
     speculative features.
+
+- 2026-08-27 (new session, different branch): Started on `claude/feature-gating-new-signups-4hxxdm`
+  (per this session's outer harness instructions, which — same as the earlier
+  `claude/continue-until-limit-urdt8y` note above — take precedence over this file's own branch line
+  for this session specifically). **This session's first message was not "continue"** — it was the
+  project owner live in chat, asking for two things explicitly outside this file's stated scope:
+  (1) gate every Cortexed feature except Drills/Integral Arena behind a beta flag for new signups,
+  (2) get the Integral Arena leaderboard actually working. Both are legitimate, explicit, in-session
+  owner instructions, confirmed via `AskUserQuestion` given the direct conflict with this file's "do
+  not touch anything else" line — so they were done (commits `21edecd` feature-gating +
+  `4f63252`/`69a962d` MIT source-grouping fixes below, plus applying the leaderboard migration
+  directly to the live DB via the Lovable MCP `query_database` tool, which this session had access
+  to and confirmed was the actual blocker — the migration file existed but had never been run).
+  **Non-integrals work this touched** (`src/App.tsx`, `src/components/AppShell.tsx`,
+  `src/components/ComingSoon.tsx` new, `src/pages/AuthPage.tsx`, `src/pages/QuestionBank.tsx`): the
+  old full-account `waitlist_status`-gates-everything model is gone — every signup now reaches
+  `/dashboard` and can play Drills/Integrals immediately; `BetaGate` (in App.tsx) stands a
+  `ComingSoon` page in front of every other route until `waitlist_status` (still service-role-only)
+  is flipped to `"approved"`. Flagging this explicitly since it's a real, deliberate exception to
+  this file's own scope rule, not scope creep — a future session should not assume the rule is gone,
+  just that this one instance was owner-authorized.
+
+  While investigating the leaderboard, the owner sent unrelated live feedback on the integrals
+  content itself: **the "by source" practice view was badly organized** for MIT specifically. Root
+  cause, found and fixed (commits `4f63252`, `69a962d`): `ProblemSource.round` had been set, for all
+  247 MIT-sourced problems, to that problem's own citation locator ("Qualifying Test #7") rather
+  than an actual round label — and `sourceKey()` groups by `name+year+round`, so every single MIT
+  problem was its own one-problem "source." On top of that, `source.year` was never rendered
+  anywhere in the UI, so even after fixing the grouping the 16 resulting year-cards would have shown
+  as visually identical. Both fixed: `round` is now a constant `"Qualifying Round"` per year (247
+  problems, mechanical sed, verified against the full suite before and after), and the by-source
+  cards/practice-screen title now show the year. The same `round`-as-citation-locator pattern exists
+  more mildly in SPLASH (30→11 groups) and the UK guide (28→20 groups) — left alone since the owner's
+  complaint was specifically about MIT papers, but noted here in case a future session should apply
+  the same fix there.
+
+  The owner then asked to **re-mine the entire MIT qualifying archive against newly-found source
+  material**, confirmed via `AskUserQuestion` ("full re-mine now, autonomously"). Found
+  `scraped_data/integration_bee_materials.zip` already checked into the repo (not previously known
+  to any session) with the full official archive, including **answer-key PDFs for all 16 qualifying
+  years** — the earlier mining sessions explicitly believed no answer keys existed and hand-derived
+  everything from the bare problem statements, which is the real reason coverage was thin in the
+  early years. It also has 20 entirely unmined documents: regular season, quarterfinal, semifinal
+  and finals rounds for 2022–2026, each with **no answer key** (confirmed — only qualifying rounds
+  have `_answers.pdf`).
+
+  Built a throwaway `vite-node` harness (`harness.ts`, mirrors `problems.test.ts`'s
+  `derivative()`/`quadrature()` exactly, importing the real `normalize()` from `answer.ts` rather
+  than reimplementing it) and worked through all 16 qualifying years systematically: read the
+  answer key, derive/confirm each candidate against it, batch-verify numerically, grep for
+  duplicates, write entries, run the real suite, commit, push. Commits `bd8acb0` (2010: +13),
+  `527893b` (2011: +18 — turned out **100% coverable**, 21 direct + 4 legitimate cross-year
+  duplicates already attributed elsewhere), `90fb4f1` (2012: +14), `37d35d5` (2013: +9, resolving
+  two items a prior session had flagged as unresolvable OCR garble — with the answer key in hand,
+  both were clean: "e 4√x" is e^(x^(1/4)) since this document's own "4√x" notation means fourth
+  root throughout, and the "messy csc antiderivative" is just the standard ∫csc x dx),
+  `abd2cee` (2014: 3/3, second fully-covered year), `526ff61` (2016: +1), `466b614` (2024: +3,
+  including a real "introducing constants" recognition: (x-1)^ln(x+1)/(x+1)^ln(x-1) is identically
+  1 since both sides equal e^(ln(x+1)ln(x-1))), `cc5c95e` (2023: +2, 2026: +1 plus a real
+  misattribution fix — 2026 #7 had been read as "2 ln(x)/x²" and added as a near-duplicate flagged
+  for owner judgment; re-checked against the printed answer's x^(log2-1) form and it's actually
+  "2^(ln x)/x²", a completely different problem — added the real one and reverted the wrong
+  citation back to `{name:"original"}` rather than let it stand). **2015, 2017, 2018, 2019, 2020,
+  2022, 2025 needed no changes at all** — a prior session had already hand-derived them essentially
+  to completion (18–19 of 20 each) even without the answer keys; the gaps were concentrated in the
+  early years (2010–2014), which is exactly what the earlier progress-log entries' lower per-year
+  yields predicted.
+
+  **Every genuinely-hard case already on record was re-tested against the now-known answers, not
+  just left alone on faith**: 2015 #5 (e^sinx·tanx·cscx) numerically confirmed to diverge under
+  every natural reading rather than equal e-1, so the "likely OCR misread" verdict stands with real
+  evidence now. 2024 #13 (a Gaussian centered at x=2024) is mathematically trivial but confirmed
+  failing numerically at the shared quadrature's n=4000 — same class of resolution limit as the
+  fast-oscillation/big-N cases already on record, not a new kind of problem. A few new items (2018
+  #15, 2020's OCR sum, 2024 #15/#18, 2025's item 10/12) were tried and set aside as genuinely
+  ambiguous OCR rather than guessed at.
+
+  **Net for this pass**: 16 qualifying years all re-verified against real answer keys; ~64 net-new
+  problems added; 3 years (2011, 2014, 2026) now fully covered; every remaining gap across all 16
+  years is either a documented quadrature-resolution limit or a specific OCR ambiguity, not an
+  unexamined skip. 1577/1577 tests passing, typecheck clean, zero lint findings in any file this
+  session touched (confirmed by filtering eslint's JSON output on path, not eyeballing).
+
+  **Next, if continuing this same task**: the 20 unmined non-qualifying rounds (regular
+  season/quarterfinal/semifinal/finals, 2022–2026) are the only remaining sourced material in
+  `scraped_data/integration_bee_materials.zip` — genuinely new content, not gap-filling. These have
+  **no answer key**, so each problem needs the full by-hand derivation (not just answer-key
+  confirmation) the original 2010–2020 mining sessions used before this session's discovery of the
+  answer-key zip — meaningfully higher effort per problem than this pass. Extraction already works
+  (`pymupdf`, see the Python one-liner pattern from the earlier 2026-08-27 session log entry above)
+  and the text is sitting in this session's scratchpad if still alive; if not, re-extract from the
+  zip the same way. This is a natural stopping point to check in with the owner given the effort
+  step-up, not a hard technical blocker.
