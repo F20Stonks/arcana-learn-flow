@@ -210,3 +210,42 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   `log-power-integrals` (free), then the rest of "Planned new techniques" in order, then the
   `source` field + filters, then the answer-builder UI. A future session/loop iteration should
   add its own dated entry here each time it commits, noting what shipped and what's next.
+- 2026-08-27 (continued, same day): **Note on branch** — this session was started by the harness
+  on `claude/continue-until-limit-urdt8y`, which forked from `claude/seed-lessons-clarify-bubrj3`
+  at `f6f8349` (the CLAUDE.md-runbook commit), exactly where the prior session left off. The outer
+  harness instructions for *this* session say to push to `claude/continue-until-limit-urdt8y` and
+  never push elsewhere without explicit permission — that takes precedence over this file's own
+  "work on `claude/seed-lessons-clarify-bubrj3`" line for this session specifically. All commits
+  below are on `claude/continue-until-limit-urdt8y`. If you're a future session reading this on
+  `claude/seed-lessons-clarify-bubrj3`, check whether `claude/continue-until-limit-urdt8y` has
+  moved ahead and merge/rebase from there first — don't redo work that already shipped on the
+  other branch.
+  - Verified the infinite-domain `quadrature()` fix in a throwaway script first, exactly as
+    prescribed, then applied it to `problems.test.ts` (commit `f228d93`). All finite-domain checks
+    still pass unchanged (721/721).
+  - Along the way, discovered the reciprocal-substitution flagship
+    `∫₀^∞ arctan(x)/(x(1+ln²x))dx=π²/4` is a genuinely hard numerical case, confirmed with real
+    effort (not just a quick guess): tried the prescribed algebraic substitution (fails even at
+    n=4,000,000 samples), a tanh-sinh/double-exponential transform (also falls short, converges to
+    a wrong plateau ~2.4651 instead of 2.4674 — the tail decays only like 1/(x ln²x), i.e.
+    logarithmically, which no polynomial-in-t change of variable resolves at a sane sample count).
+    A hand pre-substitution u=ln(x) *does* verify it cleanly (err ~1e-7) by turning it into
+    ∫_-∞^∞ atan(e^u)/(1+u²)du — but that's a per-problem substitution the shared `quadrature()`
+    can't know to apply generically. Resolution: this flagship lives in `techniques.ts` as the
+    `reciprocal-substitution` lesson's own worked example (fully derived by hand, not machine-
+    graded), matching the precedent already set for the Weierstrass-product content. The bank
+    itself uses the *other* flagship (`ln(x)/(1+x²)dx=0`, verifies perfectly) plus the
+    "`∫₀^∞dx/((1+x²)(1+x^a))=π/4` for any a>0" family and one reflection-formula/split-at-1 case,
+    all confirmed with real margin.
+  - Added all six planned techniques in the runbook's order — `log-power-integrals` (10 problems),
+    `reciprocal-substitution` (8), `gamma-function` (8, deliberately no Gaussian variant — that's
+    `gaussian-hypersphere`'s job), `zeta-series` (7), `wallis-product` (6 new + multi-tagged
+    `recurrence`'s two sin^n reduction problems per the runbook), `gaussian-hypersphere` (8).
+    Commits: `8993001`, `170524b`, `b864d95`, `c5faac6`, `cf48295`, `93d2f29`. Every single value
+    verified against a throwaway smoothstep-quadrature script with real margin before being
+    written into a bank file, per Workflow. 821/821 tests passing.
+  - Next up (continuing this same session/loop if runway remains, else the next one): the
+    `source` field on `Problem` + backfill across all existing problems, then the technique-
+    multiselect + source filter UI, then the `AnswerInput.tsx` integral-builder UI. No new source
+    PDFs were in this session's uploads, so no mining pass was needed this round — check for new
+    uploads at the start of the next session before resuming this list, per standing directive #2.
