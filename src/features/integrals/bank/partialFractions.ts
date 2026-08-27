@@ -12,6 +12,7 @@ export const PartialFractions: Problem[] = [
     domain: [1.4, 5],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["The denominator factors as (x-1)(x+1).", "The two constants come out as \\pm\\frac{1}{2}."],
     steps: [
       "\\frac{1}{(x-1)(x+1)} = \\frac{1/2}{x-1} - \\frac{1/2}{x+1}.",
@@ -29,6 +30,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.4, 4],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["Write it as \\frac{A}{x} + \\frac{B}{x+1} and substitute the roots."],
     steps: [
       "A(x+1) + Bx = 1. Put x = 0: A = 1. Put x = -1: B = -1.",
@@ -45,6 +47,7 @@ export const PartialFractions: Problem[] = [
     domain: [1.4, 5],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "\\frac{A}{x-1} + \\frac{B}{x+2}, then clear denominators.",
       "Substituting x = 1 and x = -2 gives each constant in one line.",
@@ -65,6 +68,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.4, 4],
     difficulty: 4,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "Factor: x^3+x = x(x^2+1). The quadratic is irreducible.",
       "An irreducible quadratic factor needs a numerator of the form Bx+C.",
@@ -85,6 +89,7 @@ export const PartialFractions: Problem[] = [
     domain: [2.4, 6],
     difficulty: 4,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "Factor the denominator first: x^2+x-6 = (x+3)(x-2).",
       "Then \\frac{A}{x+3} + \\frac{B}{x-2} and substitute x = -3, x = 2.",
@@ -105,6 +110,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.4, 4],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["Substituting the roots x = -1 and x = -2 gets both constants immediately."],
     steps: [
       "A(x+2) + B(x+1) = x.",
@@ -122,6 +128,7 @@ export const PartialFractions: Problem[] = [
     domain: [2.5, 6],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "(x-2)(x+2) — and in general \\int\\frac{dx}{x^2-a^2} = \\frac{1}{2a}\\ln\\left|\\frac{x-a}{x+a}\\right|.",
     ],
@@ -140,6 +147,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["partial-fractions", "power"],
+    source: { name: "original" },
     hints: [
       "The degrees match, so divide before you do anything clever.",
       "\\frac{x^2}{x^2+1} = 1 - \\frac{1}{x^2+1}.",
@@ -160,6 +168,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["partial-fractions", "power"],
+    source: { name: "original" },
     hints: [
       "Top degree beats bottom degree — long division first, always.",
       "Notice that x^3+x = x(x^2+1) exactly.",
@@ -179,6 +188,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["partial-fractions", "u-sub"],
+    source: { name: "original" },
     hints: [
       "An irreducible quadratic on the bottom always splits into a log part and an arctan part.",
       "Peel off the piece that is the denominator's derivative: 2x. The 1 is what's left.",
@@ -199,6 +209,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.3, 3],
     difficulty: 5,
     techniques: ["partial-fractions", "complete-square"],
+    source: { name: "original" },
     hints: [
       "x^3+1 = (x+1)(x^2-x+1), and the quadratic is irreducible.",
       "So you need \\frac{A}{x+1} + \\frac{Bx+C}{x^2-x+1} — and the quadratic piece needs completing the square at the end.",
@@ -221,6 +232,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.2, 2],
     difficulty: 5,
     techniques: ["partial-fractions", "complete-square"],
+    source: { name: "original" },
     hints: [
       "1+x^4 has no real roots, but it does factor over the reals — add and subtract 2x^2.",
       "1+x^4 = (x^2+1)^2 - 2x^2 = (x^2+\\sqrt{2}x+1)(x^2-\\sqrt{2}x+1).",
@@ -242,6 +254,7 @@ export const PartialFractions: Problem[] = [
     domain: [2, 4],
     difficulty: 2,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["Top degree beats bottom degree — divide first, the remainder is a constant."],
     steps: [
       "x^3 = (x-1)(x^2+x+1)+1.",
@@ -259,6 +272,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 3],
     difficulty: 2,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["Same-degree top and bottom: write 3x-2 as 3(x+1) plus a constant."],
     steps: [
       "3x-2 = 3(x+1)-5.",
@@ -275,6 +289,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["Doesn't factor over the reals — complete the square: x^2+x+1=\\left(x+\\frac12\\right)^2+\\frac34."],
     steps: [
       "u=x+\\frac12: \\int\\frac{du}{u^2+3/4} = \\frac{2}{\\sqrt3}\\arctan\\frac{u}{\\sqrt3/2}.",
@@ -291,6 +306,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 2],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "The denominator's derivative is 2x+2. Split the numerator into a multiple of that plus a remainder.",
       "x+4 = \\frac12(2x+2) + 3.",
@@ -311,6 +327,7 @@ export const PartialFractions: Problem[] = [
     domain: [2, 4],
     difficulty: 4,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "x^3-x = x(x-1)(x+1) — three distinct linear factors.",
       "\\frac{4x-2}{x(x-1)(x+1)} = \\frac{A}{x}+\\frac{B}{x-1}+\\frac{C}{x+1}. Plug in the roots to find A, B, C fast.",
@@ -331,6 +348,7 @@ export const PartialFractions: Problem[] = [
     domain: [3, 5],
     difficulty: 4,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "A repeated factor needs two terms: \\frac{A}{x}+\\frac{B}{x-2}+\\frac{C}{(x-2)^2}.",
       "Clear denominators, then plug in x=0 and x=2 to get A and C quickly; match a coefficient for B.",
@@ -351,6 +369,7 @@ export const PartialFractions: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: ["\\frac{1}{x(x^2+1)} = \\frac{A}{x}+\\frac{Bx+C}{x^2+1} — matching constant and x^2 coefficients pins A, B, C without much work."],
     steps: [
       "1=A(x^2+1)+(Bx+C)x. Constant term: A=1. x^2 term: 0=A+B, so B=-1. x term: 0=C.",
@@ -368,6 +387,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.5, 3],
     difficulty: 4,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "x^3+x^2+x = x(x^2+x+1), an irreducible quadratic times x.",
       "\\frac{x^2-1}{x(x^2+x+1)} = \\frac{A}{x}+\\frac{Bx+C}{x^2+x+1} — comparing coefficients gives all three at once.",

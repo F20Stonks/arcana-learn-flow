@@ -18,6 +18,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: [
       "\\frac{1}{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}.",
       "Each term integrates to \\frac{1}{k^2} (the n=1 gamma-function case), leaving \\sum\\frac{1}{k^2}=\\zeta(2).",
@@ -36,6 +37,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: [
       "\\frac{1}{e^x+1}=\\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx} — the alternating twin of the previous problem.",
       "This sums to \\eta(2)=\\frac{\\pi^2}{12}, exactly half of \\zeta(2).",
@@ -56,6 +58,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: [
       "Substitute u=2x first: this becomes \\frac{1}{4}\\int_0^\\infty\\frac{u}{e^u-1}\\,du.",
     ],
@@ -76,6 +79,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: ["Substitute u=3x: this is \\frac{1}{9}\\int_0^\\infty\\frac{u}{e^u+1}\\,du = \\frac{1}{9}\\eta(2)."],
     steps: [
       "With u=3x: the integral becomes \\frac{1}{9}\\int_0^\\infty\\frac{u}{e^u+1}\\,du.",
@@ -94,6 +98,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: [
       "Now each series term is the n=3 gamma-function integral: \\int_0^\\infty x^3e^{-kx}\\,dx=\\frac{3!}{k^4}.",
       "The remaining sum is 3!\\cdot\\zeta(4)=6\\cdot\\frac{\\pi^4}{90}.",
@@ -114,6 +119,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: ["The alternating twin: 3!\\cdot\\eta(4), and \\eta(4)=\\frac{7\\pi^4}{720}."],
     steps: [
       "\\sum_{k=1}^\\infty\\frac{(-1)^{k-1}3!}{k^4} = 6\\eta(4) = 6\\cdot\\frac{7\\pi^4}{720} = \\frac{7\\pi^4}{120}.",
@@ -131,6 +137,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["zeta-series"],
+    source: { name: "HMMT Integration Bee Practice", round: "memorize appendix" },
     hints: [
       "Substitute u=2x: the x^3 and dx together contribute a factor of \\frac{1}{16}.",
       "\\frac{1}{16}\\int_0^\\infty\\frac{u^3}{e^u-1}\\,du = \\frac{1}{16}\\cdot\\frac{\\pi^4}{15}.",

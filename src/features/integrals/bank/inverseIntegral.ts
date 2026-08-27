@@ -18,6 +18,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 4],
     difficulty: 2,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\sqrt x is the inverse of f(x)=x^2 — and x^2 is the one you can integrate without thinking.",
       "Match the bounds: f(2)=4, so use a=0, b=2 on the x^2 side to land on upper limit 4 on the \\sqrt x side.",
@@ -40,6 +41,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\arcsin has no antiderivative you'd want to guess — but its inverse, \\sin, integrates in one line.",
       "Match bounds so \\sin\\!\\left(\\frac{\\pi}{2}\\right)=1: use a=0, b=\\frac{\\pi}{2} on the \\sin side.",
@@ -62,6 +64,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\tan is the trivial direction here — its integral is a single \\ln|\\cos x|.",
       "Match bounds so \\tan\\!\\left(\\frac{\\pi}{4}\\right)=1: use a=0, b=\\frac{\\pi}{4}.",
@@ -84,6 +87,7 @@ export const InverseIntegral: Problem[] = [
     domain: [2, 4],
     difficulty: 4,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\ln is the inverse of e^x, which integrates to itself.",
       "Match the bounds: e^{\\ln 2}=2 and e^{\\ln 4}=4, so use a=\\ln 2, b=\\ln 4 on the e^x side.",
@@ -106,6 +110,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, Math.sqrt(3)],
     difficulty: 5,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "Same pair as before, harder bound: \\tan\\!\\left(\\frac{\\pi}{3}\\right)=\\sqrt3, so use a=0, b=\\frac{\\pi}{3}.",
       "\\int_0^{\\pi/3}\\tan x\\,dx = -\\ln\\cos\\frac{\\pi}{3} = -\\ln\\frac{1}{2} = \\ln 2.",

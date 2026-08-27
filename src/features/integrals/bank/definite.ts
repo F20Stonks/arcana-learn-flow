@@ -14,6 +14,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "Before integrating anything, ask what f(-x) is.",
       "Odd × even = odd, and an odd function over a symmetric interval contributes nothing.",
@@ -36,6 +37,7 @@ export const Definite: Problem[] = [
     domain: [-2, 2],
     difficulty: 3,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: ["Don't do the polynomial division. Check the parity first."],
     steps: [
       "The numerator is odd (only odd powers) and the denominator is even.",
@@ -55,6 +57,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 2,
     techniques: ["trig-identity", "symmetry"],
+    source: { name: "original" },
     hints: [
       "Either use the double-angle identity, or notice that \\sin^2 and \\cos^2 must contribute equally here.",
       "Their sum is 1, whose integral over [0, \\pi/2] is \\pi/2.",
@@ -77,6 +80,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["Parts with u = x, then evaluate at both ends."],
     steps: [
       "\\int x\\sin x\\,dx = \\sin x - x\\cos x.",
@@ -96,6 +100,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "There is no reasonable antiderivative here — that's the hint.",
       "Use \\int_0^a f(x)\\,dx = \\int_0^a f(a-x)\\,dx with a = \\tfrac{\\pi}{2}, then add the two forms.",
@@ -119,6 +124,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "Call it I, and use the reflection x \\mapsto \\tfrac{\\pi}{2}-x to get the same integral with \\cos.",
       "Adding them gives \\int_0^{\\pi/2}\\ln\\!\\left(\\tfrac{\\sin 2x}{2}\\right)dx — now substitute t = 2x.",
@@ -142,6 +148,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["power"],
+    source: { name: "original" },
     hints: ["Standard form — then evaluate the arctan at both ends."],
     steps: ["The antiderivative is \\arctan x.", "\\arctan 1 - \\arctan 0 = \\tfrac{\\pi}{4} - 0."],
   },
@@ -157,6 +164,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["Find the antiderivative by parts, then evaluate at both ends."],
     steps: [
       "\\int x e^{x}dx = (x-1)e^{x}.",
@@ -176,6 +184,7 @@ export const Definite: Problem[] = [
     domain: [1, Math.E],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "\\int\\ln x\\,dx = x\\ln x - x.",
       "Both limits are chosen so the logs come out clean.",
@@ -198,6 +207,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["partial-fractions"],
+    source: { name: "original" },
     hints: [
       "Top degree beats bottom degree — divide first.",
       "\\frac{x^3}{x^2+1} = x - \\frac{x}{x^2+1}.",
@@ -220,6 +230,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["symmetry", "trig-sub"],
+    source: { name: "original" },
     hints: [
       "You can trig-substitute — or you can look at what the graph actually is.",
       "y = \\sqrt{1-x^2} on [-1,1] is the upper half of the unit circle.",
@@ -242,6 +253,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "There is no elementary antiderivative here. Substitute x = \\tan\\theta and the interval becomes [0, \\tfrac{\\pi}{4}].",
       "That turns it into \\int_0^{\\pi/4}\\ln(1+\\tan\\theta)\\,d\\theta — now use the reflection \\theta \\mapsto \\tfrac{\\pi}{4}-\\theta.",
@@ -265,6 +277,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "King's rule with a = \\tfrac{\\pi}{4}.",
       "\\tan\\!\\left(\\tfrac{\\pi}{4}-x\\right) = \\frac{1-\\tan x}{1+\\tan x}, so 1 + \\tan\\!\\left(\\tfrac{\\pi}{4}-x\\right) = \\frac{2}{1+\\tan x}.",
@@ -287,6 +300,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "The absurd exponent is the hint: if the answer depended on it, the problem would be impossible.",
       "King's rule swaps \\tan x for \\cot x, and \\cot^{p} = 1/\\tan^{p}.",
@@ -309,6 +323,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 5,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "The loose x is what blocks a substitution — so get rid of it with king's rule on [0, \\pi].",
       "\\sin(\\pi-x) = \\sin x and \\cos(\\pi-x) = -\\cos x, so only the x changes.",
@@ -332,6 +347,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "Expand first: x(1-x)^2 = x - 2x^2 + x^3 — now split it into odd and even parts.",
       "x and x^3 are odd and vanish; only the -2x^2 term survives.",
@@ -354,6 +370,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: ["Check parity before doing anything else: \\sin x is odd, x^2+1 is even."],
     steps: [
       "Odd \\div even = odd, and the interval is symmetric about 0.",
@@ -372,6 +389,7 @@ export const Definite: Problem[] = [
     domain: [0, 2],
     difficulty: 3,
     techniques: ["symmetry", "u-sub"],
+    source: { name: "original" },
     hints: [
       "The bounds [0,2] are symmetric about x=1, not about 0 — shift first.",
       "With u = x-1, the integrand becomes u\\,e^{u^2}, which is odd in u, over [-1,1].",
@@ -394,6 +412,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 2, Math.PI / 2],
     difficulty: 2,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: ["\\frac{1}{1+\\cos x} is even (cosine is even); x on top makes the whole thing odd."],
     steps: ["The integrand is odd on a symmetric interval, so the integral is 0."],
   },
@@ -409,6 +428,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 2, Math.PI / 2],
     difficulty: 3,
     techniques: ["symmetry"],
+    source: { name: "original" },
     hints: [
       "Don't reach for product-to-sum — check parity of the whole product first.",
       "\\sin 2x is odd; \\cos 7x and \\cos 9x are both even, so their product is even.",

@@ -12,6 +12,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1, 3],
     difficulty: 3,
     techniques: ["complete-square"],
+    source: { name: "original" },
     hints: [
       "The denominator doesn't factor — complete the square instead.",
       "x^2+2x+5 = (x+1)^2 + 4, and \\int \\frac{du}{u^2+a^2} = \\frac{1}{a}\\arctan\\frac{u}{a}.",
@@ -32,6 +33,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1, 4],
     difficulty: 4,
     techniques: ["complete-square", "trig-sub"],
+    source: { name: "original" },
     hints: [
       "x^2+4x+13 = (x+2)^2 + 9.",
       "\\int \\frac{du}{\\sqrt{u^2+a^2}} = \\ln\\left(u+\\sqrt{u^2+a^2}\\right), also written \\sinh^{-1}\\frac{u}{a}.",
@@ -52,6 +54,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1, 3],
     difficulty: 4,
     techniques: ["complete-square", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Split the numerator into a multiple of the denominator's derivative, plus a constant.",
       "x+3 = \\frac{1}{2}(2x+2) + 2.",
@@ -72,6 +75,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-2, 3],
     difficulty: 3,
     techniques: ["complete-square"],
+    source: { name: "original" },
     hints: [
       "Half of 6 is 3, so the square is (x+3)^2.",
       "13 - 9 = 4, so you land on u^2 + 2^2.",
@@ -91,6 +95,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1, 3],
     difficulty: 4,
     techniques: ["complete-square", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Split the numerator around the denominator's derivative, 2x+4.",
       "x = \\frac{1}{2}(2x+4) - 2 — and that -2 is where the arctan comes from.",
@@ -111,6 +116,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1.5, 3],
     difficulty: 4,
     techniques: ["complete-square", "trig-sub"],
+    source: { name: "original" },
     hints: [
       "The x^2 term is negative, so factor -1 out of those two terms before completing the square.",
       "8 + 2x - x^2 = 9 - (x-1)^2, which is the arcsin form.",
@@ -131,6 +137,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-3, 1],
     difficulty: 3,
     techniques: ["complete-square"],
+    source: { name: "original" },
     hints: [
       "x^2+2x+2 = (x+1)^2+1.",
       "Split the numerator: x = (x+1) - 1, matching the shifted variable.",

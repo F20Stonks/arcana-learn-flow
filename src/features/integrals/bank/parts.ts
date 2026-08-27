@@ -12,6 +12,7 @@ export const Parts: Problem[] = [
     domain: [-1, 2],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["LIATE: the algebraic factor is the one to differentiate."],
     steps: [
       "u = x, dv = e^x dx, so du = dx and v = e^x.",
@@ -29,6 +30,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["There's only one factor — so make the other one dx."],
     steps: [
       "u = \\ln x, dv = dx, giving du = \\frac{dx}{x} and v = x.",
@@ -46,6 +48,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 3],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["Differentiating x makes it vanish; differentiating \\sin x gets you nowhere."],
     steps: [
       "u = x, dv = \\sin x\\,dx, so v = -\\cos x.",
@@ -63,6 +66,7 @@ export const Parts: Problem[] = [
     domain: [-1, 2],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "One round of parts leaves you with \\int 2x e^x\\,dx — do it again.",
       "Each pass drops the polynomial's degree by one.",
@@ -83,6 +87,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Inverse trig alone: take dv = dx.",
       "The leftover integral \\int \\frac{x}{1+x^2}dx is a substitution.",
@@ -103,6 +108,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Apply parts twice and you'll meet the original integral again. That's not failure.",
       "Call the integral I, get an equation in I, and solve it.",
@@ -123,6 +129,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["LIATE puts the log first: u = \\ln x."],
     steps: [
       "u = \\ln x, dv = x^2 dx, so v = \\frac{x^3}{3}.",
@@ -140,6 +147,7 @@ export const Parts: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 4,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "dv = dx again.",
       "The remaining \\int \\frac{x}{\\sqrt{1-x^2}}dx is a substitution, not a trig substitution.",
@@ -160,6 +168,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "u = \\arctan x, dv = x\\,dx.",
       "Choosing v = \\frac{x^2+1}{2} instead of \\frac{x^2}{2} makes the next step cancel completely.",
@@ -180,6 +189,7 @@ export const Parts: Problem[] = [
     domain: [0.5, 4],
     difficulty: 5,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Either substitute x = e^t first, or go straight to parts with dv = dx.",
       "Either way you land in a loop — solve for I.",
@@ -200,6 +210,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 3],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["u = x, and mind the signs when you integrate \\cos and then differentiate again."],
     steps: [
       "u = x, dv = \\cos x\\,dx, so v = \\sin x.",
@@ -216,6 +227,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["LIATE: the log is the thing to differentiate, however awkward the other factor looks."],
     steps: [
       "u = \\ln x, dv = x^{1/2}dx, so v = \\frac{2}{3}x^{3/2}.",
@@ -233,6 +245,7 @@ export const Parts: Problem[] = [
     domain: [0.4, 4],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Careful: this is not \\frac{(\\ln x)^2}{x}. There's no substitution here.",
       "u = \\ln x, dv = x^{-2}dx.",
@@ -253,6 +266,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Two rounds of parts brings the original integral back. Solve for it.",
       "Be consistent about which factor you call u on both passes, or everything cancels to 0 = 0.",
@@ -273,6 +287,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 3],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["Each pass knocks one off the degree — so you need two."],
     steps: [
       "First pass: u = x^2, v = -\\cos x, giving -x^2\\cos x + 2\\int x\\cos x\\,dx.",
@@ -290,6 +305,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "A lone logarithm means dv = dx.",
       "The leftover \\int\\frac{2x^2}{x^2+1}dx needs a division first: \\frac{2x^2}{x^2+1} = 2 - \\frac{2}{x^2+1}.",
@@ -310,6 +326,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "\\sec^2 x is easy to integrate and x is easy to differentiate — that settles the choice.",
       "The leftover \\int \\tan x\\,dx you already know.",
@@ -330,6 +347,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "dv = dx again — and expect to do it twice.",
       "The second pass is \\int \\ln x\\,dx, which you have already met.",
@@ -350,6 +368,7 @@ export const Parts: Problem[] = [
     domain: [-1, 2],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Same shape as \\int x^2 e^{x}dx, but every integration of e^{-x} costs a minus sign.",
     ],
@@ -369,6 +388,7 @@ export const Parts: Problem[] = [
     domain: [0.1, 1.5],
     difficulty: 5,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "The same loop as \\int e^{x}\\sin x\\,dx, but the constants no longer cancel neatly.",
       "Two passes give I = \\ldots - \\frac{9}{4}I, and 1 + \\frac{9}{4} = \\frac{13}{4} is where the 13 comes from.",
@@ -389,6 +409,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 5,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "That logarithm is \\sinh^{-1}x in disguise, and its derivative is remarkably clean.",
       "\\frac{d}{dx}\\ln\\!\\left(x+\\sqrt{x^2+1}\\right) = \\frac{1}{\\sqrt{x^2+1}}.",
@@ -409,6 +430,7 @@ export const Parts: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 5,
     techniques: ["parts", "trig-sub"],
+    source: { name: "original" },
     hints: [
       "u = \\arcsin x, dv = x\\,dx.",
       "Any antiderivative of x will do for v — take v = \\frac{x^2-1}{2} and watch the root cancel.",
@@ -429,6 +451,7 @@ export const Parts: Problem[] = [
     domain: [-0.5, 1.2],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["u=x, dv=e^{2x}dx, v=\\frac{e^{2x}}{2} — the algebraic factor drops out on differentiation, so one pass finishes it."],
     steps: [
       "uv-\\int v\\,du = \\frac{xe^{2x}}{2} - \\frac12\\int e^{2x}\\,dx = \\frac{xe^{2x}}{2}-\\frac{e^{2x}}{4}.",
@@ -445,6 +468,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["u=x, dv=\\cos2x\\,dx, v=\\frac{\\sin2x}{2}."],
     steps: [
       "uv-\\int v\\,du = \\frac{x\\sin2x}{2}-\\frac12\\int\\sin2x\\,dx = \\frac{x\\sin2x}{2}+\\frac{\\cos2x}{4}.",
@@ -460,6 +484,7 @@ export const Parts: Problem[] = [
     domain: [-0.5, 1.5],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Before setting up u and dv, check whether this is already a product rule you recognise.",
       "\\frac{d}{dx}\\left(x^2e^x\\right) = 2xe^x+x^2e^x.",
@@ -479,6 +504,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["\\ln\\sqrt{x}=\\frac12\\ln x — pull the constant out before setting up parts."],
     steps: [
       "\\frac12\\int\\ln x\\,dx = \\frac12(x\\ln x-x).",
@@ -495,6 +521,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 2.5],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["u=x, dv=\\csc^2x\\,dx, v=-\\cot x. The leftover \\int\\cot x\\,dx is a known u-sub."],
     steps: [
       "uv-\\int v\\,du = -x\\cot x+\\int\\cot x\\,dx.",
@@ -512,6 +539,7 @@ export const Parts: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["Apply parts three times, each time peeling off one power of x — or recognise the pattern from x^2e^x and x e^x."],
     steps: [
       "Each pass: u=(\\text{current power of }x), dv=e^x\\,dx.",
@@ -529,6 +557,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["parts", "trig-identity"],
+    source: { name: "original" },
     hints: [
       "\\sin x\\cos x=\\frac12\\sin2x first — then it's a plain x\\sin2x parts problem, scaled.",
     ],
@@ -550,6 +579,7 @@ export const Parts: Problem[] = [
     domain: [1, Math.sqrt(3)],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "\\arctan\\frac1x=\\frac{\\pi}{2}-\\arctan x for x>0 — rewrite before doing anything else.",
       "The remaining \\int\\arctan x\\,dx is a standard parts result.",
@@ -572,6 +602,7 @@ export const Parts: Problem[] = [
     domain: [0, Math.PI / 3],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "u=\\cos x turns this into \\int\\ln u\\,(-du) — a plain \\ln u parts problem in disguise.",
     ],
@@ -592,6 +623,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Apply parts twice; you'll meet \\int\\cos(\\ln x)\\,dx again on the right-hand side.",
       "Solve for the integral algebraically once it reappears, the same way you handle \\int e^x\\sin x\\,dx.",
@@ -612,6 +644,7 @@ export const Parts: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "u=\\ln(1+x), dv=x\\,dx, v=\\frac{x^2}{2}.",
       "The leftover \\int\\frac{x^2}{2(1+x)}dx needs a division first: \\frac{x^2}{1+x}=x-1+\\frac{1}{1+x}.",
@@ -632,6 +665,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 4],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "u=\\sqrt{x} first (so x=u^2, dx=2u\\,du), then parts on \\int 2u\\sin u\\,du.",
     ],
@@ -652,6 +686,7 @@ export const Parts: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 4,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "dv=\\tan x\\sec^2x\\,dx integrates in one line: v=\\frac{\\tan^2x}{2}.",
       "The leftover \\int\\tan^2x\\,dx converts via \\tan^2=\\sec^2-1.",
@@ -675,6 +710,7 @@ export const Parts: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: [
       "Integrate x^3\\cos x and 6x\\cos x separately by repeated parts, then add — the +6x is there for a reason.",
       "Watch what happens to the terms that came from differentiating x^3 down to a constant.",
@@ -698,6 +734,7 @@ export const Parts: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["The same setup as x\\ln(1+x) above, just evaluated at clean bounds — the log terms cancel neatly."],
     steps: [
       "Using \\int x\\ln(1+x)\\,dx = \\frac{x^2}{2}\\ln(1+x)-\\frac{x^2}{4}+\\frac{x}{2}-\\frac{\\ln(1+x)}{2}.",
@@ -714,6 +751,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["parts"],
+    source: { name: "original" },
     hints: ["u=x, dv=\\sec x\\tan x\\,dx, v=\\sec x — the leftover is a memorised standard integral."],
     steps: [
       "uv-\\int v\\,du = x\\sec x-\\int\\sec x\\,dx.",
@@ -731,6 +769,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 4],
     difficulty: 4,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "t=\\sqrt{x} first (x=t^2, dx=2t\\,dt), then parts on \\int 2t\\arctan t\\,dt.",
     ],
@@ -749,6 +788,7 @@ export const Parts: Problem[] = [
     domain: [0.5, 3],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Before setting up parts, check whether this is a quotient rule in disguise.",
       "\\frac{d}{dx}\\frac{e^x}{x} = \\frac{xe^x-e^x}{x^2}.",
@@ -768,6 +808,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts", "trig-identity"],
+    source: { name: "original" },
     hints: [
       "Expand the square into three separate integrals: x^2, 2x\\sin x, and \\sin^2x.",
       "The middle term needs parts; the last needs a double-angle identity.",

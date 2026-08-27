@@ -18,6 +18,7 @@ export const Recurrence: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["recurrence"],
+    source: { name: "original" },
     hints: [
       "This is the base case I_1 of the family I_n = \\int_0^1\\frac{x^n}{1+x}\\,dx.",
       "Add and subtract 1 in the numerator: \\frac{x}{1+x} = \\frac{1+x-1}{1+x} = 1 - \\frac{1}{1+x}.",
@@ -39,6 +40,7 @@ export const Recurrence: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["recurrence"],
+    source: { name: "original" },
     hints: [
       "Let I_n = \\int_0^1\\frac{x^n}{1+x}\\,dx. Adding I_n and I_{n-1} kills the denominator: I_n+I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}.",
       "You need I_1 = 1-\\ln 2 first (it's \\int_0^1\\frac{x}{1+x}dx, done by the same add-and-subtract-1 trick).",
@@ -61,6 +63,7 @@ export const Recurrence: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["recurrence"],
+    source: { name: "original" },
     hints: [
       "Same family, one step further: I_3 = \\frac{1}{3} - I_2.",
       "You already have I_2 = \\ln 2 - \\frac{1}{2} from the same recurrence.",
@@ -82,6 +85,7 @@ export const Recurrence: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["recurrence"],
+    source: { name: "original" },
     hints: [
       "I_4 = \\frac{1}{4} - I_3 — the recurrence doesn't care how far along you are.",
       "Notice the pattern: I_n alternates between (\\text{rational}) - \\ln 2 and \\ln 2 - (\\text{rational}) as n goes odd, even.",
@@ -103,6 +107,7 @@ export const Recurrence: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 3,
     techniques: ["recurrence", "wallis-product"],
+    source: { name: "original" },
     hints: [
       "Let I_n = \\int_0^\\pi \\sin^n x\\,dx. Parts with u=\\sin^{n-1}x, dv=\\sin x\\,dx gives I_n = \\frac{n-1}{n}I_{n-2}.",
       "The base case for even n is I_0 = \\pi.",
@@ -124,6 +129,7 @@ export const Recurrence: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 4,
     techniques: ["recurrence", "wallis-product"],
+    source: { name: "original" },
     hints: [
       "Same recurrence I_n = \\frac{n-1}{n}I_{n-2}, but now on the odd branch — the base case is I_1 = \\int_0^\\pi \\sin x\\,dx = 2.",
       "Unwind two steps from I_5 down to I_1.",

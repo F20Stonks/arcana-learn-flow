@@ -18,6 +18,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: [
       "This is m=1, n=1 in \\int_0^1 x^m(1-x)^n\\,dx.",
       "\\frac{m!n!}{(m+n+1)!} = \\frac{1!\\cdot 1!}{3!}.",
@@ -39,6 +40,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: ["m=2, n=1: \\frac{2!\\cdot 1!}{4!}."],
     steps: [
       "\\frac{2!\\cdot 1!}{4!} = \\frac{2}{24} = \\frac{1}{12}.",
@@ -56,6 +58,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: [
       "m=3, n=2: \\frac{3!\\cdot 2!}{6!}.",
       "Expanding (1-x)^2 and integrating term by term gives the same answer, just slower.",
@@ -76,6 +79,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: ["m=4, n=1: \\frac{4!\\cdot 1!}{6!}."],
     steps: [
       "\\frac{4!\\cdot 1!}{6!} = \\frac{24}{720} = \\frac{1}{30}.",
@@ -93,6 +97,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: [
       "The interval isn't [0,1] — rescale first with u=\\frac{x}{2}, so x=2u,\\ dx=2\\,du.",
       "x(2-x) = 2u\\cdot 2(1-u) = 4u(1-u), and there's a factor of 2 from dx on top of that.",
@@ -115,6 +120,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["beta-integrals"],
+    source: { name: "original" },
     hints: [
       "m=3, n=3 — symmetric, so this is also a check on \\int_0^1 x^m(1-x)^n = \\int_0^1 x^n(1-x)^m.",
       "\\frac{3!\\cdot 3!}{7!}.",

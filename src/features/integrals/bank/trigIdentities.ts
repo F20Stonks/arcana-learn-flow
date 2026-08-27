@@ -12,6 +12,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["The power is even, so drop the degree with a double-angle identity."],
     steps: [
       "\\sin^2 x = \\frac{1-\\cos 2x}{2}.",
@@ -29,6 +30,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 3,
     techniques: ["trig-identity", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Odd power: split off one cosine to be your du.",
       "Convert the remaining \\cos^2 x into 1 - \\sin^2 x.",
@@ -49,6 +51,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "\\sin x\\cos x is half of \\sin 2x — use that before you touch anything else.",
       "You're left with \\frac{1}{4}\\int \\sin^2 2x\\,dx, which halves again.",
@@ -69,6 +72,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Multiply top and bottom by \\sec x + \\tan x.",
       "The numerator then becomes exactly the derivative of the denominator.",
@@ -89,6 +93,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["\\tan^2 has no antiderivative you know — but \\sec^2 does."],
     steps: ["\\tan^2 x = \\sec^2 x - 1.", "\\int \\sec^2 x\\,dx - \\int dx = \\tan x - x + C."],
   },
@@ -102,6 +107,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.2],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Different frequencies rule out substitution — convert the product into a sum.",
       "\\sin A\\cos B = \\tfrac{1}{2}\\left[\\sin(A+B) + \\sin(A-B)\\right].",
@@ -121,6 +127,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Rationalise: multiply top and bottom by 1 - \\sin x.",
       "The denominator becomes \\cos^2 x, and the rest is standard forms.",
@@ -141,6 +148,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Even power — halve the degree with a double-angle identity.",
       "\\cos^2 x = \\frac{1+\\cos 2x}{2}. Note the plus, where \\sin^2 has a minus.",
@@ -161,6 +169,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["trig-identity", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Peel off \\tan^2 x and convert it with \\tan^2 = \\sec^2 - 1.",
       "That splits the problem into a substitution and an integral you already know.",
@@ -181,6 +190,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.2],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Different frequencies mean no substitution works — turn the product into a sum.",
       "\\cos A\\cos B = \\frac{1}{2}\\left[\\cos(A-B) + \\cos(A+B)\\right].",
@@ -200,6 +210,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["trig-identity", "parts"],
+    source: { name: "original" },
     hints: [
       "Split it as \\sec x \\cdot \\sec^2 x and integrate by parts.",
       "You'll meet \\int\\sec^3 x\\,dx again on the right — it's a loop, so solve for it.",
@@ -220,6 +231,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["trig-identity", "u-sub"],
+    source: { name: "original" },
     hints: [
       "An even power of \\sec is much kinder than an odd one: keep \\sec^2 x for du.",
       "Convert the rest with \\sec^2 = 1 + \\tan^2.",
@@ -240,6 +252,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "The half-angle identity 1 + \\cos x = 2\\cos^2\\frac{x}{2} clears the whole thing.",
       "You could also rationalise with 1 - \\cos x; both land in the same place.",
@@ -259,6 +272,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2.8],
     difficulty: 5,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Halve the degree once, then notice you have a \\cos^2 term and have to halve again.",
       "\\sin^4 x = \\left(\\frac{1-\\cos 2x}{2}\\right)^2.",
@@ -279,6 +293,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 5,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Apply \\tan^2 = \\sec^2 - 1 once, then again on whatever \\tan^2 is left.",
       "You should end up with \\tan^2 x\\sec^2 x - \\sec^2 x + 1.",
@@ -301,6 +316,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Odd power — peel off one \\sin x and convert the rest with \\sin^2=1-\\cos^2.",
       "u=\\cos x turns it into \\int(1-u^2)^2\\,du.",
@@ -322,6 +338,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "The odd power is on sine — peel one off and convert with \\sin^2=1-\\cos^2.",
       "\\sin^3x\\cos^5x = \\sin x(1-\\cos^2x)\\cos^5x = \\sin x(\\cos^5x-\\cos^7x).",
@@ -343,6 +360,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["Expand the square first — you'll get a plain power term, a \\sin x, and a \\sin^2 x."],
     steps: [
       "(2-\\sin x)^2 = 4 - 4\\sin x + \\sin^2 x.",
@@ -361,6 +379,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Split off \\sec x\\tan x for du, and convert the remaining \\tan^2 x with \\tan^2=\\sec^2-1.",
       "\\tan^3x\\sec x = \\tan x\\sec x(\\sec^2x-1).",
@@ -380,6 +399,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["Factor first: \\tan^2x+\\tan^4x=\\tan^2x(1+\\tan^2x), and 1+\\tan^2x=\\sec^2x."],
     steps: [
       "\\tan^2x+\\tan^4x = \\tan^2x\\sec^2x.",
@@ -399,6 +419,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["\\tan^4x=\\tan^2x\\sec^2x-\\tan^2x — split it into a substitution piece and a known form."],
     steps: [
       "\\int\\tan^4x\\,dx = \\frac{\\tan^3x}{3}-\\tan x+x.",
@@ -416,6 +437,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["\\sin A\\cos B=\\frac{1}{2}[\\sin(A+B)+\\sin(A-B)] — here A=4x, B=5x, so A-B is negative."],
     steps: [
       "\\sin4x\\cos5x = \\frac{1}{2}[\\sin9x+\\sin(-x)] = \\frac{1}{2}\\sin9x-\\frac{1}{2}\\sin x.",
@@ -432,6 +454,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["\\cos A\\cos B=\\frac{1}{2}[\\cos(A-B)+\\cos(A+B)]."],
     steps: [
       "\\cos2x\\cos3x = \\frac{1}{2}[\\cos(-x)+\\cos5x] = \\frac{1}{2}\\cos x+\\frac{1}{2}\\cos5x.",
@@ -448,6 +471,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.5],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["\\sin A\\sin B=\\frac{1}{2}[\\cos(A-B)-\\cos(A+B)]."],
     steps: [
       "\\sin6x\\sin8x = \\frac{1}{2}[\\cos(-2x)-\\cos14x] = \\frac{1}{2}\\cos2x-\\frac{1}{2}\\cos14x.",
@@ -466,6 +490,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 6],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["1+\\cos2x=2\\cos^2x, so the square root is just \\sqrt2\\,|\\cos x|."],
     steps: [
       "\\sqrt{1+\\cos2x} = \\sqrt2\\cos x on this interval, since \\cos x>0.",
@@ -482,6 +507,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Multiply through by \\cos^2x=\\frac{1}{\\sec^2x} rather than expanding \\tan and \\sec separately.",
       "\\frac{1-\\tan^2x}{\\sec^2x} = \\cos^2x-\\sin^2x.",
@@ -501,6 +527,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.5, 2.5],
     difficulty: 2,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: ["1-\\cos x = 2\\sin^2\\frac{x}{2} — the half-angle partner of \\frac{1}{1+\\cos x}."],
     steps: [
       "\\frac{1}{1-\\cos x} = \\frac{1}{2}\\csc^2\\frac{x}{2}.",
@@ -517,6 +544,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.1, 0.6],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Expand \\tan2x with the double-angle formula and watch almost everything cancel.",
       "\\tan2x = \\frac{2\\tan x}{1-\\tan^2x}.",
@@ -537,6 +565,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2],
     difficulty: 3,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Split it into two pieces: \\frac{1}{1+\\cos x} (a half-angle standard form) and \\frac{\\sin x}{1+\\cos x} (a u-sub).",
     ],
@@ -558,6 +587,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["trig-identity"],
+    source: { name: "original" },
     hints: [
       "Multiply through by \\cos x: \\frac{\\cos x}{2\\cos x+\\sin x}.",
       "Write 2\\cos x+\\sin x as R\\cos(x-\\varphi) with R=\\sqrt5, \\tan\\varphi=\\frac12 — then \\cos x/\\cos(x-\\varphi) expands via the angle-subtraction formula.",

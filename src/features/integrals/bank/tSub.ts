@@ -16,6 +16,7 @@ export const TSub: Problem[] = [
     domain: [0.5, 2.5],
     difficulty: 2,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "This is the classic first example of the t-sub: set t = \\tan\\frac{x}{2}.",
       "With \\sin x = \\frac{2t}{1+t^2} and dx = \\frac{2\\,dt}{1+t^2}, the whole thing collapses to \\int \\frac{dt}{t}.",
@@ -36,6 +37,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "Nothing substitutes and no identity simplifies a + \\cos x — this is exactly what the t-sub is for.",
       "\\cos x = \\frac{1-t^2}{1+t^2} turns 3+\\cos x into \\frac{4+2t^2}{1+t^2}; the 1+t^2 cancels against dx.",
@@ -57,6 +59,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "Same move as a + \\cos x, but watch the sign — it changes which coefficient ends up on t^2 versus the constant.",
       "2 - \\cos x = \\frac{2(1+t^2)-(1-t^2)}{1+t^2} = \\frac{1+3t^2}{1+t^2}.",
@@ -79,6 +82,7 @@ export const TSub: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "With \\sin x = \\frac{2t}{1+t^2}, the denominator 1+\\sin x becomes \\frac{(1+t)^2}{1+t^2} — a perfect square.",
       "That leaves a very simple rational integral in t.",
@@ -100,6 +104,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "General a+b\\cos x: the same substitution gives \\frac{2\\,dt}{(a+b)+(a-b)t^2}.",
       "Here a=5, b=3, so a+b=8 and a-b=2 — the coefficients simplify nicely before you even integrate.",
@@ -122,6 +127,7 @@ export const TSub: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "Reuse the antiderivative from the indefinite version of this same integrand — this is just the bookkeeping at the bounds.",
       "The t-sub doesn't promise a pretty closed form — \\arctan\\frac{1}{2} is exact, it just isn't a multiple of \\pi.",
@@ -142,6 +148,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["t-sub"],
+    source: { name: "original" },
     hints: [
       "A squared cosine, not a bare one — the double-angle identity turns it into the a+b\\cos(2x) shape you already know how to t-sub.",
       "1+\\cos^2x = 1+\\frac{1+\\cos2x}{2} = \\frac{3+\\cos2x}{2}.",

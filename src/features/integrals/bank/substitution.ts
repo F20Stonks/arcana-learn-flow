@@ -12,6 +12,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["What sits in the exponent, and what is its derivative?"],
     steps: ["u = x^2 gives du = 2x\\,dx.", "The integral is \\int e^u\\,du = e^u.", "Back-substitute: e^{x^2} + C."],
   },
@@ -25,6 +26,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 2.5],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "The numerator is almost the derivative of the denominator.",
       "u = x^2+1, so x\\,dx = \\tfrac{1}{2}du.",
@@ -45,6 +47,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["One factor is exactly the derivative of the other's inside."],
     steps: ["u = \\sin x, du = \\cos x\\,dx.", "\\int u^3\\,du = \\frac{u^4}{4}.", "So \\frac{\\sin^4 x}{4} + C."],
   },
@@ -58,6 +61,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "Write it as \\frac{\\sin x}{\\cos x} first.",
       "Now the numerator is minus the derivative of the denominator.",
@@ -78,6 +82,7 @@ export const Substitution: Problem[] = [
     domain: [1.4, 6],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["The \\frac{1}{x} is a derivative in waiting — of what?"],
     steps: ["u = \\ln x, du = \\frac{dx}{x}.", "\\int \\frac{du}{u} = \\ln|u|.", "So \\ln|\\ln x| + C."],
   },
@@ -91,6 +96,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["e^x is its own derivative, which makes the denominator the natural choice for u."],
     steps: ["u = 1+e^x, du = e^x\\,dx.", "\\int \\frac{du}{u} = \\ln|u|.", "1+e^x > 0 always, so \\ln(1+e^x) + C."],
   },
@@ -104,6 +110,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 3],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "Substitute for what's under the root, then express the loose x in terms of u as well.",
       "u = x+1 means x = u-1.",
@@ -124,6 +131,7 @@ export const Substitution: Problem[] = [
     domain: [1.2, 5],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["It's a power of something, times that something's derivative."],
     steps: ["u = \\ln x, du = \\frac{dx}{x}.", "\\int u^2\\,du = \\frac{u^3}{3}."],
   },
@@ -137,6 +145,7 @@ export const Substitution: Problem[] = [
     domain: [0.1, 1.4],
     difficulty: 3,
     techniques: ["u-sub", "power"],
+    source: { name: "original" },
     hints: [
       "Substituting u = \\sin x clears the numerator completely.",
       "What's left is the arctan standard form.",
@@ -157,6 +166,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 3],
     difficulty: 4,
     techniques: ["u-sub", "parts"],
+    source: { name: "original" },
     hints: [
       "Substitute first to get rid of the root, then look again.",
       "u = \\sqrt{x} gives dx = 2u\\,du, and \\int 2u e^u\\,du is a parts problem.",
@@ -178,6 +188,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "Add and subtract e^x in the numerator.",
       "\\frac{1}{e^x+1} = \\frac{(e^x+1) - e^x}{e^x+1} = 1 - \\frac{e^x}{e^x+1}.",
@@ -198,6 +209,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["The exponent's derivative is 3x^2, and you have x^2."],
     steps: ["u = x^3, du = 3x^2\\,dx.", "\\frac{1}{3}\\int e^u\\,du = \\frac{e^{x^3}}{3} + C."],
   },
@@ -211,6 +223,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 3],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "Differentiate the denominator and compare with the numerator.",
       "It comes out as 2x+2, which is twice what you have.",
@@ -231,6 +244,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["Substitute the function that's raised to a power, not the loose one."],
     steps: ["u = \\cos x, du = -\\sin x\\,dx.", "-\\int u^4\\,du = -\\frac{u^5}{5}."],
   },
@@ -244,6 +258,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["The exponent and the loose factor are a derivative pair."],
     steps: ["u = \\sin x, du = \\cos x\\,dx.", "\\int e^u\\,du = e^{\\sin x} + C."],
   },
@@ -257,6 +272,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 3],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "A root over a quadratic usually means a trig substitution — but not when the numerator is the inside derivative.",
     ],
@@ -276,6 +292,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 2.5],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["Don't factor x^3+1 — check its derivative first."],
     steps: [
       "u = x^3+1, du = 3x^2\\,dx.",
@@ -293,6 +310,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 3],
     difficulty: 3,
     techniques: ["u-sub", "partial-fractions"],
+    source: { name: "original" },
     hints: [
       "Top and bottom have the same degree — divide before anything else.",
       "\\frac{x}{x+1} = 1 - \\frac{1}{x+1}.",
@@ -312,6 +330,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "e^{2x} is \\left(e^{x}\\right)^2 — write it that way and the shape appears.",
       "Now u = e^{x} lands you on the arctan standard form.",
@@ -332,6 +351,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "x^4 = (x^2)^2. The loose x is half the derivative of x^2.",
       "Without that x on top this would be a genuinely hard partial-fractions problem.",
@@ -351,6 +371,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 4,
     techniques: ["u-sub", "parts"],
+    source: { name: "original" },
     hints: [
       "Split x^3 as x^2 \\cdot x: the loose x is the substitution, the x^2 becomes u.",
       "After substituting you're left with \\frac{1}{2}\\int u e^{u}\\,du — a parts problem.",
@@ -371,6 +392,7 @@ export const Substitution: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 4,
     techniques: ["u-sub", "trig-sub"],
+    source: { name: "original" },
     hints: [
       "The odd power of x is the tell: keep one x for du and convert the rest.",
       "u = 1-x^2 means x^2 = 1-u.",
@@ -391,6 +413,7 @@ export const Substitution: Problem[] = [
     domain: [1.2, 6],
     difficulty: 5,
     techniques: ["u-sub", "parts"],
+    source: { name: "original" },
     hints: [
       "The \\frac{1}{x} is the derivative of \\ln x — substitute and see what's left.",
       "You'll be looking at \\int \\ln u\\,du, which is a parts problem.",
@@ -411,6 +434,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 5,
     techniques: ["parts", "u-sub"],
+    source: { name: "original" },
     hints: [
       "Nothing substitutes and parts goes in circles. Try reading it as a derivative you already know.",
       "What is \\frac{d}{dx}\\frac{e^{x}}{1+x}?",
@@ -431,6 +455,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.4],
     difficulty: 1,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["A linear inside function — the only correction is a constant."],
     steps: ["u=2x, du=2\\,dx: \\frac12\\int\\cos u\\,du = \\frac{\\sin2x}{2} + C."],
   },
@@ -444,6 +469,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["The numerator is, up to a constant, the derivative of the denominator."],
     steps: ["u=x^4-5, du=4x^3\\,dx: \\frac14\\int\\frac{du}{u} = \\frac14\\ln|u| + C."],
   },
@@ -457,6 +483,7 @@ export const Substitution: Problem[] = [
     domain: [-0.5, 0.5],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=1-x, du=-dx — mind the sign, nobody expands a 9th power by hand."],
     steps: ["-\\int u^9\\,du = -\\frac{u^{10}}{10}.", "So -\\frac{(1-x)^{10}}{10} + C."],
   },
@@ -470,6 +497,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=5-3x, du=-3\\,dx."],
     steps: ["-\\frac13\\int\\frac{du}{u} = -\\frac13\\ln|u|.", "So -\\frac13\\ln|5-3x| + C."],
   },
@@ -483,6 +511,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=\\sqrt{x}, du=\\frac{dx}{2\\sqrt{x}} — the \\frac{1}{\\sqrt{x}} on top is exactly (twice) that derivative."],
     steps: ["2\\int\\sin u\\,du = -2\\cos u.", "So -2\\cos\\sqrt{x} + C."],
   },
@@ -496,6 +525,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.4],
     difficulty: 1,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["Write it as \\frac{\\cos x}{\\sin x}; the numerator is exactly the denominator's derivative."],
     steps: ["u=\\sin x, du=\\cos x\\,dx: \\int\\frac{du}{u} = \\ln|u|.", "So \\ln|\\sin x| + C."],
   },
@@ -509,6 +539,7 @@ export const Substitution: Problem[] = [
     domain: [1.2, 5],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["\\frac{1}{x} is the derivative of \\ln x — substitute and this becomes a bare \\int\\cos u\\,du."],
     steps: ["u=\\ln x, du=\\frac{dx}{x}: \\int\\cos u\\,du = \\sin u.", "So \\sin(\\ln x) + C."],
   },
@@ -522,6 +553,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 2],
     difficulty: 2,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["Split the fraction into two separately-recognisable pieces before doing anything else."],
     steps: [
       "\\frac{1+x}{1+x^2} = \\frac{1}{1+x^2}+\\frac{x}{1+x^2}.",
@@ -540,6 +572,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=1+7x, du=7\\,dx — a plain linear-inside power rule."],
     steps: [
       "\\frac17\\int u^{1/3}\\,du = \\frac{3}{28}u^{4/3} = \\frac{3}{28}(1+7x)^{4/3}.",
@@ -559,6 +592,7 @@ export const Substitution: Problem[] = [
     domain: [1, 2],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=\\frac1x, du=-\\frac{dx}{x^2} — the \\frac{1}{x^2} on top is exactly what's needed."],
     steps: [
       "-\\int e^u\\,du = -e^u = -e^{1/x}.",
@@ -578,6 +612,7 @@ export const Substitution: Problem[] = [
     domain: [1, 2],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=x-1, so x=u+1 — the loose x needs to be rewritten in terms of u too."],
     steps: [
       "\\int(u+1)\\sqrt{u}\\,du = \\int\\left(u^{3/2}+u^{1/2}\\right)du = \\frac25u^{5/2}+\\frac23u^{3/2}.",
@@ -596,6 +631,7 @@ export const Substitution: Problem[] = [
     domain: [Math.E, Math.E ** 4],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["u=\\ln x, du=\\frac{dx}{x} — the bounds become 1 and 4 in u."],
     steps: [
       "\\int u^{-1/2}\\,du = 2\\sqrt{u} = 2\\sqrt{\\ln x}.",
@@ -615,6 +651,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: ["Same shape as \\int\\frac{e^x}{1+e^{2x}}dx — now with real bounds to evaluate."],
     steps: [
       "u=e^x: \\int\\frac{du}{1+u^2} = \\arctan u = \\arctan(e^x).",
@@ -632,6 +669,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "\\cos x-\\sin x is exactly \\frac{d}{dx}(\\sin x+\\cos x) — name that sum w and see what the denominator becomes.",
       "(\\sin x+\\cos x)^2 = 1+\\sin2x, so \\sin2x+2 = w^2+1.",
@@ -652,6 +690,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["u-sub"],
+    source: { name: "original" },
     hints: [
       "\\sin2x=2\\sin x\\cos x is exactly the derivative of \\sin^2x — let u=\\sin^2x.",
     ],

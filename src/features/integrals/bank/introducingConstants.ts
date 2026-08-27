@@ -17,6 +17,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 3],
     difficulty: 2,
     techniques: ["introducing-constants"],
+    source: { name: "original" },
     hints: [
       "The numerator is the denominator plus a constant: x+3 = (x+1)+2.",
       "That splits into \\int 1\\,dx + 2\\int\\frac{dx}{x+1}.",
@@ -36,6 +37,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["introducing-constants"],
+    source: { name: "original" },
     hints: [
       "Write the numerator as \\lambda(x^2+1)+\\mu: 3x^2+1 = 3(x^2+1) - 2.",
       "The \\lambda piece integrates to a constant times x; the \\mu piece is a bare arctan form.",
@@ -55,6 +57,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["introducing-constants"],
+    source: { name: "original" },
     hints: [
       "2x^2+3 = 2(x^2+4) - 5 — same move as before, just with a scaled arctan form left over.",
       "\\int\\frac{dx}{x^2+4} = \\frac{1}{2}\\arctan\\frac{x}{2}, from the standard a^2+x^2 form.",
@@ -74,6 +77,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["introducing-constants"],
+    source: { name: "original" },
     hints: [
       "This time split against the DENOMINATOR'S DERIVATIVE, not the denominator itself: the leftover 2x+5 is exactly \\frac{d}{dx}(x^2+5x+3).",
       "x^2+7x+8 = (x^2+5x+3) + (2x+5).",
@@ -94,6 +98,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["introducing-constants", "t-sub"],
+    source: { name: "original" },
     hints: [
       "Split off the denominator first, same as always: 5\\cos x+7 = 5(2+\\cos x) - 3.",
       "That leaves 5\\int dx - 3\\int\\frac{dx}{2+\\cos x} — and the second integral is a t-sub result you may already have.",
@@ -114,6 +119,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 2],
     difficulty: 2,
     techniques: ["introducing-constants"],
+    source: { name: "original" },
     hints: ["1+12x is exactly 4(1+3x) minus a constant remainder — find it before doing any division."],
     steps: [
       "1+12x = 4(1+3x)-3.",

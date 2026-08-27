@@ -19,6 +19,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 2,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: [
       "I_n=\\frac{n-1}{n}I_{n-2}, base case for odd n is I_1=\\int_0^{\\pi/2}\\sin x\\,dx=1.",
     ],
@@ -36,6 +37,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: [
       "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the same I_n as \\sin^nx — substitute x\\to\\frac{\\pi}{2}-x to see why.",
       "So this is I_5, same value as \\int_0^{\\pi/2}\\sin^5x\\,dx.",
@@ -56,6 +58,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: [
       "Same recurrence as the full-period \\sin^4x problem, just over half the interval and so half the base case: I_0=\\frac{\\pi}{2} here (versus \\pi over [0,\\pi]).",
     ],
@@ -75,6 +78,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: ["Same value as I_7=\\int_0^{\\pi/2}\\sin^7x\\,dx — unroll the odd-index reduction three steps from I_1."],
     steps: [
       "I_1=1,\\ I_3=\\frac{2}{3},\\ I_5=\\frac{4}{5}\\cdot\\frac{2}{3}=\\frac{8}{15},\\ I_7=\\frac{6}{7}\\cdot\\frac{8}{15}=\\frac{48}{105}=\\frac{16}{35}.",
@@ -92,6 +96,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: ["This is the technique's own worked example — unroll the even-index reduction three steps from I_0=\\frac{\\pi}{2}."],
     steps: [
       "I_2=\\frac{1}{2}\\cdot\\frac{\\pi}{2}=\\frac{\\pi}{4},\\ I_4=\\frac{3}{4}\\cdot\\frac{\\pi}{4}=\\frac{3\\pi}{16},\\ I_6=\\frac{5}{6}\\cdot\\frac{3\\pi}{16}=\\frac{15\\pi}{96}=\\frac{5\\pi}{32}.",
@@ -109,6 +114,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["wallis-product"],
+    source: { name: "original" },
     hints: [
       "One more even step past I_6=\\frac{5\\pi}{32}: I_8=\\frac{7}{8}I_6.",
       "This is exactly the pattern the Wallis product itself is built from — each step contributes one more factor \\frac{2k}{2k-1}\\cdot\\frac{2k}{2k+1}.",

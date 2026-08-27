@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "mathjs";
 import { gradeAnswer, normalize } from "./answer";
-import { PROBLEMS } from "./problems";
+import { PROBLEMS, problemsForSource, SOURCES, sourceKey } from "./problems";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "./techniques";
 
 function fn(expr: string): (x: number) => number | null {
@@ -127,6 +127,25 @@ describe("problem bank", () => {
   it("only tags techniques that exist", () => {
     for (const p of PROBLEMS) {
       for (const t of p.techniques) expect(TECHNIQUE_BY_ID[t], `${p.id} → ${t}`).toBeTruthy();
+    }
+  });
+
+  it("gives every problem a source", () => {
+    for (const p of PROBLEMS) {
+      expect(p.source?.name, p.id).toBeTruthy();
+    }
+  });
+
+  it("finds every problem again through problemsForSource", () => {
+    // Every problem must show up under its own source key, and SOURCES must list that key once.
+    const bySource = new Map<string, number>();
+    for (const p of PROBLEMS) {
+      const key = sourceKey(p.source);
+      bySource.set(key, (bySource.get(key) ?? 0) + 1);
+    }
+    expect(new Set(SOURCES.map(sourceKey)).size).toBe(SOURCES.length);
+    for (const s of SOURCES) {
+      expect(problemsForSource(s).length, sourceKey(s)).toBe(bySource.get(sourceKey(s)));
     }
   });
 

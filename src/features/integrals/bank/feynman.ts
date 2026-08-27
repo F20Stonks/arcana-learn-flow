@@ -23,6 +23,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Neither x nor \\ln x integrates against the other directly — but the integrand is exactly \\frac{x^a-1}{\\ln x} at a = 1.",
       "Differentiating x^a with respect to a brings down a factor of \\ln x, which is exactly what's needed to cancel the denominator.",
@@ -46,6 +47,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Same family as \\int_0^1 \\frac{x-1}{\\ln x}dx, one step further along: this is I(2).",
     ],
@@ -66,6 +68,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: ["This is I(3) in the same family — the pattern is I(a) = \\ln(a+1) whatever a is."],
     steps: [
       "I(a) = \\ln(a+1) as before, so I(3) = \\ln 4 = 2\\ln 2.",
@@ -83,6 +86,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "\\sqrt{x} = x^{1/2}, so this is the same family evaluated at a non-integer parameter.",
       "There's nothing special about a being a whole number in the derivation — I(a) = \\ln(a+1) for any a > -1.",
@@ -104,6 +108,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
       "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
@@ -127,6 +132,7 @@ export const Feynman: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "On (0, \\tfrac{\\pi}{2}), \\arctan(\\tan x) = x — so x\\cot x is \\frac{\\arctan(\\tan x)}{\\tan x}, and that has an obvious place to put a parameter.",
       "Consider I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}dx. The target is I(1); I(0) = 0 outright.",

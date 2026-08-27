@@ -13,7 +13,7 @@
  * integrand and the answer. That is why the log problems live on the positive reals and the tan/sec
  * problems stop short of pi/2.
  */
-import type { Difficulty, Problem, TechniqueId } from "./types";
+import type { Difficulty, Problem, ProblemSource, TechniqueId } from "./types";
 import { StandardForms } from "./bank/standardForms";
 import { Substitution } from "./bank/substitution";
 import { Parts } from "./bank/parts";
@@ -75,6 +75,27 @@ export function problemsForTechnique(id: TechniqueId): Problem[] {
 
 export function problemsByDifficulty(d: Difficulty): Problem[] {
   return PROBLEMS.filter((p) => p.difficulty === d);
+}
+
+/** Stable identity for a source — two problems are "the same source" iff this string matches. */
+export function sourceKey(s: ProblemSource): string {
+  return `${s.name}::${s.year ?? ""}::${s.round ?? ""}`;
+}
+
+/** Every distinct source in the bank, in first-seen order — "original" included as one bucket among the rest. */
+export const SOURCES: ProblemSource[] = (() => {
+  const seen = new Map<string, ProblemSource>();
+  for (const p of PROBLEMS) {
+    const key = sourceKey(p.source);
+    if (!seen.has(key)) seen.set(key, p.source);
+  }
+  return [...seen.values()];
+})();
+
+/** A specific competition/document's problems, worked as that source's own uncurated set. */
+export function problemsForSource(s: ProblemSource): Problem[] {
+  const key = sourceKey(s);
+  return PROBLEMS.filter((p) => sourceKey(p.source) === key);
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

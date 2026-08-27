@@ -19,6 +19,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 3],
     difficulty: 2,
     techniques: ["floor-function"],
+    source: { name: "original" },
     hints: [
       "Split at the two integers inside the interval: [0,1),\\,[1,2),\\,[2,3].",
       "On each piece \\lfloor x\\rfloor is just a constant.",
@@ -40,6 +41,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 2.5],
     difficulty: 2,
     techniques: ["floor-function"],
+    source: { name: "original" },
     hints: [
       "The last piece is only half a unit wide — [2, 2.5] — so its contribution is 2\\times 0.5, not 2\\times 1.",
     ],
@@ -59,6 +61,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 4],
     difficulty: 3,
     techniques: ["floor-function"],
+    source: { name: "original" },
     hints: [
       "On each [k,k+1), x-\\lfloor x\\rfloor is just x-k — the same little ramp from 0 up to 1, shifted.",
       "\\int_0^1 u\\,du = \\frac{1}{2} for every one of those pieces, so you don't need to redo the algebra four times.",
@@ -81,6 +84,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 3],
     difficulty: 3,
     techniques: ["floor-function"],
+    source: { name: "original" },
     hints: [
       "On [k,k+1), x\\lfloor x\\rfloor = kx — a plain linear integrand, once you've fixed the piece.",
       "\\int_k^{k+1} kx\\,dx = k\\left(k+\\tfrac{1}{2}\\right).",
@@ -104,6 +108,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 3],
     difficulty: 4,
     techniques: ["floor-function"],
+    source: { name: "original" },
     hints: [
       "Same split as always — the square just changes the constant on each piece to k^2 instead of k.",
       "0^2, 1^2, 2^2 on the three unit intervals.",
