@@ -489,6 +489,33 @@ export const TECHNIQUES: Technique[] = [
       "A Gaussian integrand (e^{-x^2}, not e^{-x}) is a different animal — it doesn't reduce to a factorial by integration by parts the same way; it needs the dedicated Gaussian/hypersphere approach instead.",
     ],
   },
+  {
+    id: "zeta-series",
+    name: "Zeta-series integrals",
+    tagline: "Expand \\frac{1}{e^x\\mp 1} as a geometric series in e^{-x}, then integrate term by term.",
+    whenToUse:
+      "The integrand has \\frac{1}{e^x-1} or \\frac{1}{e^x+1} (or a scaled version, \\frac{1}{e^{ax}\\mp 1}) multiplied by a power of x, over (0,\\infty). Neither denominator is something you can attack directly — but both hide a geometric series that turns the integral into a sum of gamma-function integrals.",
+    recipe: [
+      "Factor out e^{-x}: \\frac{1}{e^x-1} = \\frac{e^{-x}}{1-e^{-x}}, which is a geometric series \\sum_{k=1}^\\infty e^{-kx} (and \\frac{1}{e^x+1} = \\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx}, the alternating version).",
+      "Multiply through by x^n and integrate term by term: \\int_0^\\infty x^n\\cdot\\frac{1}{e^x\\mp1}\\,dx = \\sum_{k=1}^\\infty(\\pm1)^{k-1}\\int_0^\\infty x^ne^{-kx}\\,dx.",
+      "Each term is a gamma-function integral: \\int_0^\\infty x^ne^{-kx}\\,dx=\\frac{n!}{k^{n+1}}.",
+      "What's left is a numerical series in \\frac{1}{k^{n+1}} — \\zeta(n+1) for the \\frac{1}{e^x-1} case, or the alternating \\eta(n+1) for \\frac{1}{e^x+1}. For even n+1 these have closed forms in \\pi (e.g. \\zeta(2)=\\frac{\\pi^2}{6}, \\zeta(4)=\\frac{\\pi^4}{90}); that's what makes the integral come out elementary.",
+    ],
+    example: {
+      integrand: "\\frac{x}{e^x-1} \\text{ on } (0,\\infty)",
+      work: [
+        "\\frac{1}{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}, so the integral is \\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx.",
+        "Each term is the n=1 gamma-function integral: \\int_0^\\infty xe^{-kx}\\,dx=\\frac{1}{k^2}.",
+        "The sum is \\sum_{k=1}^\\infty\\frac{1}{k^2}=\\zeta(2)=\\frac{\\pi^2}{6} — the same constant Euler found by comparing \\frac{\\sin x}{x}'s power series to its Weierstrass product over its roots \\pm k\\pi.",
+      ],
+      result: "\\frac{\\pi^2}{6}",
+    },
+    pitfalls: [
+      "Swapping the sum and the integral needs justifying in a rigorous treatment (everything here is positive and the series converges absolutely, so it's fine) — but it's the one nontrivial step and worth naming, not just doing silently.",
+      "\\frac{1}{e^x+1} gives the alternating series \\eta(n+1), not \\zeta(n+1) — mixing the two up gives an answer off by a factor of (1-2^{-n}).",
+      "Only even n+1 has a known closed form in \\pi; \\zeta(3), for instance, has no elementary closed form, so \\int_0^\\infty\\frac{x^2}{e^x-1}\\,dx isn't a 'type the answer' problem the way the even cases are.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

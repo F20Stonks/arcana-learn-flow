@@ -32,6 +32,7 @@ import { IntroducingConstants } from "./bank/introducingConstants";
 import { LogPowerIntegrals } from "./bank/logPowerIntegrals";
 import { ReciprocalSubstitution } from "./bank/reciprocalSubstitution";
 import { GammaFunction } from "./bank/gammaFunction";
+import { ZetaSeries } from "./bank/zetaSeries";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -52,6 +53,7 @@ export const PROBLEMS: Problem[] = [
   ...LogPowerIntegrals,
   ...ReciprocalSubstitution,
   ...GammaFunction,
+  ...ZetaSeries,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

@@ -1,0 +1,143 @@
+/**
+ * \frac{1}{e^x\mp1} expands as a geometric series in e^{-x}; integrating term by term turns
+ * \int_0^\infty\frac{x^n}{e^x\mp1}\,dx into n!\cdot\zeta(n+1) (or the alternating \eta(n+1)).
+ * Source: HMMT Integration Bee Practice ("memorize" appendix).
+ */
+import type { Problem } from "../types";
+
+export const ZetaSeries: Problem[] = [
+  {
+    id: "zeta-x-over-ex-minus-1",
+    kind: "definite",
+    integrand: "\\frac{x}{e^x-1}",
+    integrandExpr: "x/(exp(x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/6",
+    answerLatex: "\\frac{\\pi^2}{6}",
+    domain: [0, Infinity],
+    difficulty: 3,
+    techniques: ["zeta-series"],
+    hints: [
+      "\\frac{1}{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}.",
+      "Each term integrates to \\frac{1}{k^2} (the n=1 gamma-function case), leaving \\sum\\frac{1}{k^2}=\\zeta(2).",
+    ],
+    steps: ["\\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx=\\sum_{k=1}^\\infty\\frac{1}{k^2}=\\zeta(2)=\\frac{\\pi^2}{6}."],
+  },
+  {
+    id: "zeta-x-over-ex-plus-1",
+    kind: "definite",
+    integrand: "\\frac{x}{e^x+1}",
+    integrandExpr: "x/(exp(x)+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/12",
+    answerLatex: "\\frac{\\pi^2}{12}",
+    domain: [0, Infinity],
+    difficulty: 3,
+    techniques: ["zeta-series"],
+    hints: [
+      "\\frac{1}{e^x+1}=\\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx} — the alternating twin of the previous problem.",
+      "This sums to \\eta(2)=\\frac{\\pi^2}{12}, exactly half of \\zeta(2).",
+    ],
+    steps: [
+      "\\sum_{k=1}^\\infty(-1)^{k-1}\\int_0^\\infty xe^{-kx}\\,dx=\\sum_{k=1}^\\infty\\frac{(-1)^{k-1}}{k^2}=\\eta(2)=\\frac{\\pi^2}{12}.",
+    ],
+  },
+  {
+    id: "zeta-scaled-2x",
+    kind: "definite",
+    integrand: "\\frac{x}{e^{2x}-1}",
+    integrandExpr: "x/(exp(2*x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/24",
+    answerLatex: "\\frac{\\pi^2}{24}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["zeta-series"],
+    hints: [
+      "Substitute u=2x first: this becomes \\frac{1}{4}\\int_0^\\infty\\frac{u}{e^u-1}\\,du.",
+    ],
+    steps: [
+      "With u=2x: \\frac{x}{e^{2x}-1}\\,dx = \\frac{u/2}{e^u-1}\\cdot\\frac{du}{2} = \\frac{1}{4}\\cdot\\frac{u}{e^u-1}\\,du.",
+      "\\frac{1}{4}\\zeta(2) = \\frac{1}{4}\\cdot\\frac{\\pi^2}{6} = \\frac{\\pi^2}{24}.",
+    ],
+  },
+  {
+    id: "zeta-scaled-3x-alt",
+    kind: "definite",
+    integrand: "\\frac{x}{e^{3x}+1}",
+    integrandExpr: "x/(exp(3*x)+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/108",
+    answerLatex: "\\frac{\\pi^2}{108}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["zeta-series"],
+    hints: ["Substitute u=3x: this is \\frac{1}{9}\\int_0^\\infty\\frac{u}{e^u+1}\\,du = \\frac{1}{9}\\eta(2)."],
+    steps: [
+      "With u=3x: the integral becomes \\frac{1}{9}\\int_0^\\infty\\frac{u}{e^u+1}\\,du.",
+      "\\frac{1}{9}\\cdot\\frac{\\pi^2}{12} = \\frac{\\pi^2}{108}.",
+    ],
+  },
+  {
+    id: "zeta-x3-over-ex-minus-1",
+    kind: "definite",
+    integrand: "\\frac{x^3}{e^x-1}",
+    integrandExpr: "x^3/(exp(x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^4/15",
+    answerLatex: "\\frac{\\pi^4}{15}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    hints: [
+      "Now each series term is the n=3 gamma-function integral: \\int_0^\\infty x^3e^{-kx}\\,dx=\\frac{3!}{k^4}.",
+      "The remaining sum is 3!\\cdot\\zeta(4)=6\\cdot\\frac{\\pi^4}{90}.",
+    ],
+    steps: [
+      "\\sum_{k=1}^\\infty\\frac{3!}{k^4} = 6\\zeta(4) = 6\\cdot\\frac{\\pi^4}{90} = \\frac{\\pi^4}{15}.",
+    ],
+  },
+  {
+    id: "zeta-x3-over-ex-plus-1",
+    kind: "definite",
+    integrand: "\\frac{x^3}{e^x+1}",
+    integrandExpr: "x^3/(exp(x)+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "7*pi^4/120",
+    answerLatex: "\\frac{7\\pi^4}{120}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    hints: ["The alternating twin: 3!\\cdot\\eta(4), and \\eta(4)=\\frac{7\\pi^4}{720}."],
+    steps: [
+      "\\sum_{k=1}^\\infty\\frac{(-1)^{k-1}3!}{k^4} = 6\\eta(4) = 6\\cdot\\frac{7\\pi^4}{720} = \\frac{7\\pi^4}{120}.",
+    ],
+  },
+  {
+    id: "zeta-x3-scaled-2x",
+    kind: "definite",
+    integrand: "\\frac{x^3}{e^{2x}-1}",
+    integrandExpr: "x^3/(exp(2*x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^4/240",
+    answerLatex: "\\frac{\\pi^4}{240}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    hints: [
+      "Substitute u=2x: the x^3 and dx together contribute a factor of \\frac{1}{16}.",
+      "\\frac{1}{16}\\int_0^\\infty\\frac{u^3}{e^u-1}\\,du = \\frac{1}{16}\\cdot\\frac{\\pi^4}{15}.",
+    ],
+    steps: [
+      "With u=2x: x^3\\,dx = \\frac{u^3}{8}\\cdot\\frac{du}{2} = \\frac{u^3}{16}\\,du.",
+      "\\frac{1}{16}\\cdot\\frac{\\pi^4}{15} = \\frac{\\pi^4}{240}.",
+    ],
+  },
+];
