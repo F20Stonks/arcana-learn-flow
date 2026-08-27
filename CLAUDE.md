@@ -1,0 +1,212 @@
+# Active task: Integral Arena content seeding
+
+This file is a working runbook for an in-progress task, not general codebase documentation.
+It is scoped ENTIRELY to `src/features/integrals/` — the self-contained "Integral Arena"
+integration-bee training game. **Do not touch anything else in this repo** (in particular the
+main "Cortexed" app / Supabase backend elsewhere in the tree — out of scope, explicitly ruled
+out by the project owner).
+
+**If you are starting a session on this branch and the user's first message is just "continue"
+(or anything similarly short), that means: read this whole file, then start working through the
+plan below immediately, autonomously, without asking clarifying questions.** Keep going —
+verify, write, test, commit, push, repeat — until you hit a hard stop (out of runway, or a
+decision only the project owner can make). This is authorized: the owner wants this looped
+until the usage limit runs out, with commits along the way so nothing is ever at risk of being
+lost. Update the "Progress log" section at the bottom of this file as you go, so the next
+session (or the next loop iteration) knows exactly what's done without re-deriving it.
+
+Repo: `F20Stonks/arcana-learn-flow`. Work on branch `claude/seed-lessons-clarify-bubrj3` — check
+it out if you're not already on it, do not create a new branch.
+
+Setup: `npm install --registry https://registry.npmjs.org` (the default private registry 403s
+in this sandbox). Then `npx vitest run src/features/integrals` should show all tests passing —
+confirm this before making changes, so you know your baseline is green.
+
+## Architecture (read this before touching anything)
+
+- `src/features/integrals/techniques.ts` — the lesson content: an array of `Technique` objects
+  (`tagline`, `whenToUse`, `recipe`, worked `example`, `pitfalls`). This is the "lesson" a
+  student reads before practicing.
+- `src/features/integrals/types.ts` — `TechniqueId` union type. Every technique id used
+  anywhere must be listed here.
+- `src/features/integrals/bank/*.ts` — one file per technique (roughly), each exporting a
+  `Problem[]`. This is the practice-problem content.
+- `src/features/integrals/problems.ts` — aggregates every bank file into one `PROBLEMS` array.
+- `src/features/integrals/problems.test.ts` — **the bank grades itself.** Every indefinite
+  answer is checked by numerically differentiating it and comparing to the integrand across the
+  problem's domain; every definite answer is checked by numerically integrating (quadrature) the
+  integrand and comparing to the stored value. This is the safety net for content quality —
+  never hand-write an answer without verifying it this way first (see Workflow below).
+- `src/features/integrals/answer.ts` — the LIVE grading path (`checkIndefinite`/
+  `checkDefinite`), used when a real user submits an answer in the app. Important:
+  `checkDefinite` does NOT read `Problem.domain` at all — domain is purely a test-time
+  verification detail with zero effect on live grading. This is why the infinite-domain fix
+  below is safe to make.
+- `src/features/integrals/answer.ts` also has a `FUNCTIONS` whitelist (what mathjs will
+  recognise as a function name, e.g. `sin`, `gamma`, `erf`) used both for live grading and for
+  the `fn()` helper in `problems.test.ts`. Extend this when a problem needs a function it
+  doesn't yet have (see "Nothing gets dropped" below).
+
+## Already done (do not redo)
+
+1. Six new techniques with full lessons + verified problem banks: `t-sub`, `recurrence`,
+   `inverse-integral`, `floor-function`, `beta-integrals`, `introducing-constants`.
+2. ~80 more problems mined into the *existing* technique banks from four source PDFs (Fresno
+   State Integration Bee Training; HMMT Integration Bee Practice Pt1/Pt2; MIT Integration Bee
+   2025 mock). These PDFs are not necessarily attached to your session — everything usable from
+   them has already been extracted and committed; you don't need the original files to continue.
+3. Some of the `t-sub` / `recurrence` / `beta-integrals` / `introducing-constants` problems are
+   "formula-instances" (a general result was in the source text, e.g. ∫dx/(a+cos x), and
+   specific constants were plugged in to make problems) rather than literal transcriptions. The
+   project owner reviewed this and said **keep them as-is** — do not prune or revisit this. Only
+   the sourcing rule below applies going forward.
+
+## Standing directives from the project owner (all confirmed, act on them without re-asking)
+
+1. **Cover everything, don't drop anything.** SPLASH notes ("SPLASH 2011 – Superhuman
+   Integration Techniques" by Andre Kessler) and the UK guide ("UK University Integration Bee
+   Basic Techniques Guide" by Vishal Gupta & Alfie Jones) should be covered as close to fully as
+   possible. Nothing gets waved off as "out of scope" — see "Nothing gets dropped" below for how
+   to handle the genuinely hard cases.
+2. **Sourced content only, going forward — no invented problems.** Do not author a new practice
+   problem by plugging fresh numbers into a documented formula; that is still original
+   authorship. Only add a problem if it is a real transcription of a problem that appears in a
+   source document. The owner is sourcing more material himself (he has ~320 MIT Integration Bee
+   qualifier problems with solutions spanning ~16 years, and will keep sending more PDFs) — when
+   new source PDFs show up in the session's uploads, mine them exhaustively before doing anything
+   else.
+3. **No AI review/grading inside the live app**, ever — the owner will not pay for ongoing API
+   usage. Your own numeric-script verification during content authoring is fine because it's a
+   one-off development-time cost, not a per-user runtime cost.
+4. **Deterministic, error-free UX matters a lot.** The owner's top concern is a student's typed
+   answer ever being misread. There is already a robust free-text parser (`normalize()` in
+   `answer.ts`, 50 passing tests) — do not remove or weaken it. On top of it, build a structured
+   "integral builder" answer-input mode (clickable symbol palette — e, π, ^, √, common functions,
+   etc.) as a supplement, so a student who wants zero parsing ambiguity can build the answer
+   structurally instead of typing it. Both modes end up as a string compared against the stored
+   `answer` — no grading-engine change needed, this is `AnswerInput.tsx` UI work.
+5. **Two independent practice filters, not one.** (a) By technique — multi-select, so a student
+   can drill an arbitrary subset of techniques, not just one at a time or the full mix.
+   (b) By source/competition — a student can also work a specific competition's set as-is,
+   uncurated (e.g. "just the MIT Integration Bee set"), mirroring the real competition. Neither
+   should replace the other — "why should we give the user less choice."
+   - Add a `source` field to `Problem` (competition name, year, round/section — whatever's
+     available per document) and backfill it for problems already committed. For problems
+     without a specific competition provenance, something like `source: { name: "original" }`
+     is fine.
+   - Building the actual filter UI: check `IntegralTraining.tsx` (currently one technique via
+     `/integrals/train/:techniqueId`), `sprint.ts`'s `SprintConfig` / `IntegralSprint.tsx`,
+     `queue.ts`'s `orderQueue`, and `problemsForTechnique` in `problems.ts` for what's already
+     there before inventing new plumbing. This is real feature work, not just content — fine to
+     do once there's a reasonably large, stable set of techniques/sources to filter over (i.e.
+     it doesn't have to be first, but don't forget it either).
+
+## The one real engineering blocker, and how to lift it
+
+`quadrature()` inside `problems.test.ts` only maps a **finite** `[a,b]` (smoothstep
+substitution). This is why Gamma-function integrals (∫₀^∞ xⁿe⁻ˣdx = n!), Zeta-connected
+integrals (∫₀^∞ x/(eˣ−1)dx = π²/6), and reciprocal-substitution flagship examples were
+previously ruled out. **Fix it — this was next when the previous session ended.**
+
+Extend `quadrature()` to accept `Infinity`/`-Infinity` bounds and use a proper unbounded change
+of variable in that case:
+- `(0, ∞)`: `x = t/(1-t)` for `t ∈ (0,1)`, `dx = dt/(1-t)²`.
+- `(-∞, ∞)`: `x = t/(1-t²)` for `t ∈ (-1,1)`, `dx = (1+t²)/(1-t²)² dt`.
+
+Keep the existing finite-domain path unchanged (don't regress the 700+ already-passing checks).
+Since `checkDefinite` in `answer.ts` never reads `.domain`, this is a **test-only** change with
+zero risk to live grading. Verify the substitution itself against known values (∫₀^∞ e⁻ˣdx=1,
+∫₀^∞ xe⁻ˣdx=1, ∫_{-∞}^∞ 1/(1+x²)dx=π) with a standalone Node script *before* touching the real
+test file — see Workflow below.
+
+**Caveat:** naive truncation-via-substitution only reliably converges for *exponentially-decaying*
+integrands. Slowly-decaying or oscillatory ones (∫₀^∞ sin(x)/x dx, ∫₀^∞ ln(x)/(x²+1)dx-style
+tails) may not converge to tolerance without a much larger sample count or special-casing —
+always verify a candidate numerically first, and if it won't converge cleanly, that's a case
+where the tolerance/`n` needs increasing for that problem (or the substitution needs to be
+smarter), not a reason to drop the problem — see "Nothing gets dropped" below.
+
+## Planned new techniques
+
+Verify math with a throwaway Node script (see Workflow) before writing any bank file.
+
+1. **`log-power-integrals`** (SPLASH §2, "generating functions") — no engine change needed,
+   already finite-domain: ∫₀¹ xⁿ lnᵏx dx = (−1)ᵏk!/(n+1)^(k+1). Do this one first, it's free.
+2. **`reciprocal-substitution`** (u=1/x pairing, UK guide §1.2 second half) — needs the
+   infinite-domain fix above. Flagship examples: ∫₀^∞ ln(x)/(x²+1)dx = 0;
+   ∫₀^∞ arctan(x)/(x(ln²x+1))dx = π²/4.
+3. **`gamma-function`** — ∫₀^∞ xⁿe⁻ˣdx = n!, plus substitution-flavored variants
+   (∫₀^∞ e^(-αx²)dx, ∫₀^∞ x³3⁻ˣdx, etc.). Keep answers as elementary closed forms; don't rely on
+   mathjs's `gamma()` symbolically without double-checking it.
+4. **`zeta-series`** — expand 1/(eˣ∓1) as a geometric series in e⁻ˣ, integrate termwise:
+   ∫₀^∞ x/(eˣ−1)dx=π²/6, ∫₀^∞ x/(eˣ+1)dx=π²/12 (HMMT "memorize" appendix; both
+   exponentially-decaying, should truncate cleanly).
+5. **`wallis-product`** — its own full lesson (squeeze-theorem derivation from sin^n x), with
+   the sin^n/cos^n reduction integrals in `recurrence` ALSO tagged with this technique id
+   (`Problem.techniques` is already an array — multi-tag, no schema change).
+6. **`gaussian-hypersphere`** (SPLASH §4.4, n-dimensional hypersphere) — full lesson on the
+   Gaussian-integral derivation of the hypersphere volume formula
+   (`2π^(d/2)/Γ(d/2)·r^(d-1)`), with real single-variable Gaussian integrals as practice
+   (∫₀^∞ e^(-x²)dx = √π/2, ∫₀^∞ x²e^(-x²)dx, ∫₀^∞ x⁴e^(-x²)dx, etc. — literally the building
+   blocks the real derivation uses).
+
+## Nothing gets dropped — how to actually include the hard cases
+
+The owner explicitly rejected skipping content. Genuinely hard cases and how to handle them:
+
+- **Weierstrass infinite-product factorization (sin x/x)**: not a "type an answer" integral —
+  include it as lesson color inside the Zeta or Gamma lesson (it's how SPLASH derives
+  ζ(2)=π²/6), no dedicated problem bank needed for the product itself.
+- **Lambert W integrals** (e.g. HMMT ∫₀^e W(x)/x dx): mathjs's `FUNCTIONS` whitelist doesn't
+  include `lambertw`. Implement it as a real function (Newton's method, a handful of lines) and
+  register it in `answer.ts`'s `FUNCTIONS` plus `problems.test.ts`'s `fn()` helper, exactly like
+  `gamma`/`erf` already are. Then these problems are completely normal — don't skip them.
+- **gcd-based problems** (e.g. HMMT `gcd(⌊x^(1/3)⌋, ⌊x^(1/4)⌋)`): same move, implement `gcd` and
+  register it the same way.
+- **Continued-fraction / infinite-tower integrands** (e.g. `x/(1+x/(1+x/(1+...)))`,
+  `√(x+√(x+√(x+...)))`): these are fixed points of an algebraic equation, not unsolvable — e.g.
+  the continued fraction above equals `(√(1+4x)-1)/2`, an ordinary elementary function. Derive
+  the closed form first, then it's a normal `integrandExpr`.
+- **Iterated/multi-integrals** (e.g. a 5-fold nested `∫₀^π∫₀^u∫₀^w∫₀^t∫₀^y sin(x)...`): reduces
+  via Cauchy's formula for repeated integration — the n-fold iterated integral of f from 0 to x
+  equals `∫₀^x (x-t)^(n-1)/(n-1)! · f(t) dt`. Becomes one ordinary integral
+  (`∫₀^π (π-x)^4/4! · sin(x) dx` for that example) and fits the schema exactly.
+- **Sums-to-infinity inside the integrand** (e.g. `∫√(x+x²+x³+...)dx`): the inner sum is itself
+  a closed elementary form (geometric series `x/(1-x)`, etc.) — substitute that in first, then
+  it's ordinary.
+
+If, after genuinely trying the above, something truly cannot become a single mathjs-parseable
+`Problem` (no real closed form exists, or it requires evaluating something no reasonable custom
+function could express) — don't silently drop it either. Note it in the Progress log below with
+why, so the owner can make the final call rather than it just quietly vanishing.
+
+## Workflow (this has been working well — keep using it)
+
+1. Derive the closed form by hand.
+2. Write a throwaway `node /tmp/verify.mjs` script using plain `Math.*` that mirrors
+   `problems.test.ts`'s `derivative()`/`quadrature()` logic exactly (five-point central
+   difference for indefinite; smoothstep-substitution midpoint quadrature for definite, same
+   tolerances: `1e-5*(1+|target|)` and `1e-4*(1+|expected|)` respectively). Check the candidate
+   passes with real margin — if the error is within ~50% of the tolerance boundary, that's a
+   signal to find a cleaner example rather than ship something marginal.
+3. Grep `bank/*.ts` for the candidate `integrandExpr` substring before adding it, to catch
+   duplicates the exact-match test wouldn't catch by construction (different phrasing of the
+   same function, etc.). There's also the automated exact-duplicate test in `problems.test.ts`
+   ("has no duplicated integrands", keyed on `kind:integrandExpr:lower:upper") — that's the
+   final backstop, not the first line of defense.
+4. Write the `Technique` lesson entry (if new) into `techniques.ts` and the `TechniqueId` into
+   `types.ts`.
+5. Write the bank file entries, wire new files into `problems.ts`.
+6. Run `npx vitest run src/features/integrals` for real (never trust the throwaway script
+   alone) and `npx eslint <changed files>`.
+7. Commit with a descriptive message, push. Commit reasonably often (every technique, or every
+   ~20-30 problems) so work is never at risk of being lost mid-session.
+8. Append a short entry to the Progress log below.
+
+## Progress log
+
+- 2026-08-27: Session ended after committing ~80 sourced problems (commit `3eac99d`, 721/721
+  tests passing) and this runbook. Next up: the infinite-domain `quadrature()` fix, then
+  `log-power-integrals` (free), then the rest of "Planned new techniques" in order, then the
+  `source` field + filters, then the answer-builder UI. A future session/loop iteration should
+  add its own dated entry here each time it commits, noting what shipped and what's next.
