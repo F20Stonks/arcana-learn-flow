@@ -322,4 +322,24 @@ export const BetaIntegrals: Problem[] = [
       "So the antiderivative is x^{2x} + C.",
     ],
   },
+  {
+    id: "beta-log-differentiation-cos-power-x",
+    kind: "indefinite",
+    integrand: "\\cos^x(x)\\left(\\ln(\\cos x)-x\\tan x\\right)",
+    integrandExpr: "cos(x)^x*(log(cos(x))-x*tan(x))",
+    answer: "cos(x)^x",
+    answerLatex: "\\cos^x(x) + C",
+    domain: [0.2, 0.8],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #12" },
+    hints: [
+      "The same logarithmic-differentiation move: if y=\\cos(x)^x, differentiate \\ln y=x\\ln(\\cos x) first.",
+    ],
+    steps: [
+      "Let y=\\cos(x)^x. Then \\ln y=x\\ln(\\cos x), so \\frac{y'}y = \\ln(\\cos x)+x\\cdot\\frac{-\\sin x}{\\cos x} = \\ln(\\cos x)-x\\tan x.",
+      "So y'=\\cos(x)^x\\left(\\ln(\\cos x)-x\\tan x\\right) — exactly the integrand.",
+      "The antiderivative is \\cos^x(x) + C.",
+    ],
+  },
 ];

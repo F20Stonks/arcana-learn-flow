@@ -405,4 +405,27 @@ export const IntroducingConstants: Problem[] = [
       "\\int_0^1(1-x)\\,dx = \\left[x-\\frac{x^2}2\\right]_0^1 = \\frac12.",
     ],
   },
+  {
+    id: "ic-continued-fraction-golden-quadratic",
+    kind: "definite",
+    integrand: "x+\\cfrac{x}{1+\\cfrac{x}{1+\\cfrac{x}{1+\\cdots}}}",
+    integrandExpr: "x+(sqrt(1+4*x)-1)/2",
+    lower: "1",
+    upper: "3",
+    answer: "3+(13*sqrt(13)-5*sqrt(5))/12",
+    answerLatex: "3+\\frac{13\\sqrt{13}-5\\sqrt5}{12}",
+    domain: [1, 3],
+    difficulty: 5,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #20" },
+    hints: [
+      "Name the whole infinite tower c. Since the tower repeats itself one level down, c=\\frac{x}{1+c}, whatever x is.",
+      "Solve the resulting quadratic in c for a closed form, then it's an ordinary integral.",
+    ],
+    steps: [
+      "c=\\frac{x}{1+c} \\Rightarrow c^2+c-x=0 \\Rightarrow c=\\frac{\\sqrt{1+4x}-1}2 (the positive root).",
+      "So the integrand is x+\\frac{\\sqrt{1+4x}-1}2.",
+      "\\int_1^3\\left[x+\\frac{\\sqrt{1+4x}-1}2\\right]dx = \\left[\\frac{x^2}2-\\frac x2+\\frac{(1+4x)^{3/2}}{12}\\right]_1^3 = 3+\\frac{13\\sqrt{13}-5\\sqrt5}{12}.",
+    ],
+  },
 ];

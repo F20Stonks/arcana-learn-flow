@@ -195,4 +195,26 @@ export const WallisProduct: Problem[] = [
       "= 8\\cdot\\frac{2}{35} = \\frac{16}{35}.",
     ],
   },
+  {
+    id: "wallis-sin-plus-cos-eleventh-full-period",
+    kind: "definite",
+    integrand: "(\\sin x+\\cos x)^{11}",
+    integrandExpr: "(sin(x)+cos(x))^11",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, 2 * Math.PI],
+    difficulty: 4,
+    techniques: ["wallis-product", "symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #9" },
+    hints: [
+      "\\sin x+\\cos x = \\sqrt2\\sin\\!\\left(x+\\frac{\\pi}4\\right) — this is an odd power of a shifted sine.",
+    ],
+    steps: [
+      "(\\sin x+\\cos x)^{11} = 2^{11/2}\\sin^{11}\\!\\left(x+\\frac{\\pi}4\\right).",
+      "\\int_0^{2\\pi}\\sin^{11}(\\theta)\\,d\\theta=0 for any odd power over a full period (the shift by \\frac{\\pi}4 doesn't change this, since it's still one full period).",
+      "So the whole integral is 0.",
+    ],
+  },
 ];

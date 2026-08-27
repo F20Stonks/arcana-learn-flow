@@ -699,4 +699,24 @@ export const PartialFractions: Problem[] = [
       "Total: \\ln|x|+\\frac{\\ln\\!\\left(1+x^{2022}\\right)}{2022} + C.",
     ],
   },
+  {
+    id: "pf-high-degree-difference-of-squares-repeated",
+    kind: "indefinite",
+    integrand: "\\frac{x^{2024}-1}{x^{506}-1}",
+    integrandExpr: "(x^506+1)*(x^1012+1)",
+    answer: "x^1519/1519+x^1013/1013+x^507/507+x",
+    answerLatex: "\\frac{x^{1519}}{1519}+\\frac{x^{1013}}{1013}+\\frac{x^{507}}{507}+x + C",
+    domain: [0.7, 0.9],
+    difficulty: 5,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #7" },
+    hints: [
+      "2024=4\\times506, so x^{2024}-1=(x^{506})^4-1 factors as a repeated difference of squares, and one factor is exactly x^{506}-1.",
+    ],
+    steps: [
+      "With a=x^{506}: a^4-1=(a-1)(a+1)(a^2+1), so \\frac{x^{2024}-1}{x^{506}-1} = (x^{506}+1)(x^{1012}+1) — the a-1 factor cancels exactly.",
+      "Expanding: x^{1518}+x^{1012}+x^{506}+1.",
+      "\\int = \\frac{x^{1519}}{1519}+\\frac{x^{1013}}{1013}+\\frac{x^{507}}{507}+x + C.",
+    ],
+  },
 ];
