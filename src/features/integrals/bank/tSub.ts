@@ -229,4 +229,27 @@ export const TSub: Problem[] = [
       "Total: \\frac{2\\pi}{\\sqrt3}+\\frac{\\pi}{3\\sqrt3} = \\frac{7\\pi}{3\\sqrt3} = \\frac{7\\pi\\sqrt3}{9}.",
     ],
   },
+  {
+    id: "tsub-one-over-sin4-plus-cos4-full-period",
+    kind: "definite",
+    integrand: "\\frac{1}{\\sin^4x+\\cos^4x}",
+    integrandExpr: "1/(sin(x)^4+cos(x)^4)",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "2*sqrt(2)*pi",
+    answerLatex: "2\\sqrt2\\,\\pi",
+    domain: [0, 2 * Math.PI],
+    difficulty: 5,
+    techniques: ["t-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #16" },
+    hints: [
+      "\\sin^4x+\\cos^4x = 1-2\\sin^2x\\cos^2x = 1-\\frac12\\sin^2(2x), which reduces to a plain function of \\cos4x.",
+      "The result has period \\frac{\\pi}{2} in x — [0,2\\pi] covers exactly four full periods.",
+    ],
+    steps: [
+      "\\sin^4x+\\cos^4x = 1-\\frac12\\sin^2(2x) = 1-\\frac14(1-\\cos4x) = \\frac34+\\frac{\\cos4x}{4}, so the integrand is \\frac{4}{3+\\cos4x}.",
+      "With \\varphi=4x, one period of \\int\\frac{d\\varphi}{3+\\cos\\varphi}=\\frac{2\\pi}{\\sqrt{9-1}}=\\frac{2\\pi}{2\\sqrt2}=\\frac{\\pi}{\\sqrt2}, giving \\int_0^{\\pi/2}\\frac{4\\,dx}{3+\\cos4x} = \\frac{4}{4}\\cdot\\frac{\\pi}{\\sqrt2}=\\frac{\\pi}{\\sqrt2}.",
+      "[0,2\\pi] is 4 copies of that quarter-period: 4\\cdot\\frac{\\pi}{\\sqrt2} = 2\\sqrt2\\,\\pi.",
+    ],
+  },
 ];

@@ -528,4 +528,26 @@ export const PartialFractions: Problem[] = [
       "\\int = -\\ln|x-1|+2\\ln|x-2|-\\ln|x-3| + C.",
     ],
   },
+  {
+    id: "pf-x-over-shift-times-repeated-shift",
+    kind: "definite",
+    integrand: "\\frac{x}{(x-3)(x+5)^2}",
+    integrandExpr: "x/((x-3)*(x+5)^2)",
+    lower: "0",
+    upper: "2",
+    answer: "1/28-3*log(21/5)/64",
+    answerLatex: "\\frac{1}{28}-\\frac{3}{64}\\ln\\frac{21}{5}",
+    domain: [0, 2],
+    difficulty: 5,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #9" },
+    hints: [
+      "A repeated linear factor (x+5)^2 needs both \\frac{B}{x+5} and \\frac{C}{(x+5)^2} in the decomposition.",
+    ],
+    steps: [
+      "\\frac{x}{(x-3)(x+5)^2} = \\frac{3/64}{x-3}-\\frac{3/64}{x+5}+\\frac{5/8}{(x+5)^2} (solved via cover-up at x=3,x=-5, then matching the x^2 coefficient).",
+      "\\int = \\frac{3}{64}\\ln|x-3|-\\frac{3}{64}\\ln|x+5|-\\frac{5}{8(x+5)}.",
+      "Evaluating from 0 to 2 gives \\frac{1}{28}-\\frac{3}{64}\\ln\\frac{21}{5}.",
+    ],
+  },
 ];

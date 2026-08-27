@@ -777,4 +777,18 @@ export const StandardForms: Problem[] = [
       "Difference: 0-(-2)=2.",
     ],
   },
+  {
+    id: "power-2015-to-the-x",
+    kind: "indefinite",
+    integrand: "2015^x",
+    integrandExpr: "2015^x",
+    answer: "2015^x/log(2015)",
+    answerLatex: "\\frac{2015^x}{\\ln2015} + C",
+    domain: [-1, 1],
+    difficulty: 2,
+    techniques: ["power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #8" },
+    hints: ["The general exponential standard form: \\int a^x\\,dx = \\frac{a^x}{\\ln a}."],
+    steps: ["\\int2015^x\\,dx = \\frac{2015^x}{\\ln2015} + C."],
+  },
 ];

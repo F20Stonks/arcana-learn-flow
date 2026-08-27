@@ -192,4 +192,25 @@ export const CompletingTheSquare: Problem[] = [
       "u-45.5=x-53 and u+45.5=x+38, so the answer is \\frac{1}{91}\\ln\\left|\\frac{x-53}{x+38}\\right| + C.",
     ],
   },
+  {
+    id: "cs-reciprocal-5-plus-4-sqrt-x-plus-x",
+    kind: "indefinite",
+    integrand: "\\frac{1}{5+4\\sqrt x+x}",
+    integrandExpr: "1/(5+4*sqrt(x)+x)",
+    answer: "log((sqrt(x)+2)^2+1)-4*atan(sqrt(x)+2)",
+    answerLatex: "\\ln\\!\\left((\\sqrt x+2)^2+1\\right)-4\\arctan(\\sqrt x+2) + C",
+    domain: [1, 4],
+    difficulty: 5,
+    techniques: ["complete-square", "u-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #7" },
+    hints: [
+      "u=\\sqrt x turns the denominator into u^2+4u+5 — complete the square in u.",
+      "u^2+4u+5=(u+2)^2+1, and the numerator 2u\\,du splits cleanly against that shifted quadratic.",
+    ],
+    steps: [
+      "u=\\sqrt x,\\ x=u^2,\\ dx=2u\\,du: \\int\\frac{dx}{5+4\\sqrt x+x} = \\int\\frac{2u\\,du}{(u+2)^2+1}.",
+      "With w=u+2: \\int\\frac{2(w-2)}{w^2+1}\\,dw = \\ln(w^2+1)-4\\arctan w.",
+      "Back-substituting w=\\sqrt x+2: \\ln\\!\\left((\\sqrt x+2)^2+1\\right)-4\\arctan(\\sqrt x+2) + C.",
+    ],
+  },
 ];

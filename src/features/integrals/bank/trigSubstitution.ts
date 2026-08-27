@@ -573,4 +573,24 @@ export const TrigSubstitution: Problem[] = [
       "\\int\\frac{dx}{x\\sqrt{x^2-2}} = \\frac{1}{\\sqrt2}\\operatorname{arcsec}\\!\\left(\\frac{x}{\\sqrt2}\\right) + C.",
     ],
   },
+  {
+    id: "trigsub-reciprocal-sqrt-x2-plus-25",
+    kind: "indefinite",
+    integrand: "\\frac{1}{\\sqrt{x^2+25}}",
+    integrandExpr: "1/sqrt(x^2+25)",
+    answer: "log(x+sqrt(x^2+25))",
+    answerLatex: "\\ln\\!\\left(x+\\sqrt{x^2+25}\\right) + C",
+    domain: [-5, 5],
+    difficulty: 3,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #12" },
+    hints: [
+      "x=5\\tan\\theta turns \\sqrt{x^2+25} into 5\\sec\\theta, and the integral reduces to \\int\\sec\\theta\\,d\\theta.",
+    ],
+    steps: [
+      "x=5\\tan\\theta,\\ dx=5\\sec^2\\theta\\,d\\theta,\\ \\sqrt{x^2+25}=5\\sec\\theta: \\int\\frac{dx}{\\sqrt{x^2+25}} = \\int\\sec\\theta\\,d\\theta = \\ln|\\sec\\theta+\\tan\\theta|.",
+      "Back-substituting: \\ln\\left|\\frac{\\sqrt{x^2+25}}{5}+\\frac{x}{5}\\right| = \\ln\\!\\left(x+\\sqrt{x^2+25}\\right) - \\ln5.",
+      "The constant -\\ln5 absorbs into C, giving \\ln\\!\\left(x+\\sqrt{x^2+25}\\right) + C.",
+    ],
+  },
 ];
