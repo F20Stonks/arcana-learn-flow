@@ -344,3 +344,30 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     largest concrete piece of remaining work and the main thing left in this uploads batch. Each
     year's PDF is short (~1-2 pages, 16-25 problems), problems only (no printed solutions to lean
     on), spanning 2010–2020 and 2022–2026. Working through it now.
+- 2026-08-27 (continued): Mined 2010–2014 of the MIT qualifying archive (confirmed: the first
+  batch covered all three of 2010/2011/2012, not just 2010+2012 — checked via `git show 3abcc5d`
+  after the fact, 3/8/9 problems respectively). Commits `3abcc5d` (2010-2012, 20 problems),
+  `8ae65b9` (2013, 14 problems), `54ef4a5` (2014, 16 problems). 980/980 tests passing, typecheck
+  and lint clean after each commit. Workflow per commit: read the extracted `.txt` for the year
+  fresh (not from paraphrased memory — caught and corrected a real 2012/2013 problem-number
+  mix-up this way), derive closed forms by hand, verify every candidate with a throwaway
+  Node script mirroring `problems.test.ts`'s `derivative()`/`quadrature()` exactly, grep the bank
+  for duplicate `integrandExpr` before writing, write the entries, run the full suite +
+  `tsc --noEmit` + `eslint` on touched files, commit, push.
+  - Real duplicates caught and handled by re-attributing the pre-existing entry's `source` (never
+    keeping two copies of the same integral): 2013's `x arctan x`/`sqrt(x^2-1)/x`/two `definite.ts`
+    log-integrals were already present as `{name:"original"}`; 2014's `arcsinh(x)` was already
+    present as `ln(x+sqrt(x^2+1))` (same integral, different notation).
+  - Skipped (not silently — logged in each commit message): 2013 #15 (ambiguous OCR, "e\n4√x dx"
+    can't be confidently transcribed), 2013 #16/#20 (share a messy `csc` antiderivative not worth
+    forcing), 2013's indefinite duplicate of #5, 2013 #9/#13 (too classic/duplicate-risk to add
+    without a slower check); 2014 #19 (nested radical `sqrt(x+sqrt(x^2+1))`-style, no quick closed
+    form found).
+  - Each year nets 14-20 problems, not literal 100% coverage of every listed problem (some are too
+    ambiguous from OCR, some duplicate existing content, a couple would need real engineering
+    investment — e.g. new custom functions — that hasn't been justified yet by volume). This
+    matches the pragmatic triage approach already used for 2010-2012; flagging here in case the
+    owner wants a stricter "get literally everything" pass once the full archive is done.
+  - **Remaining**: 2015 through 2020, 2022 through 2026 — 11 more years, roughly 200-240 more
+    candidate problems. Continuing year-by-year in the same loop until this batch is exhausted or
+    a hard stop is hit.
