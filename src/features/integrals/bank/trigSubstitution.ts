@@ -141,7 +141,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1.3, 4],
     difficulty: 5,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "\\sqrt{x^2-a^2} means x = a\\sec\\theta.",
       "You'll land on \\int\\tan^2\\theta\\,d\\theta, which is \\sec^2\\theta - 1 in disguise.",
@@ -782,6 +782,30 @@ export const TrigSubstitution: Problem[] = [
     steps: [
       "\\sqrt3\\int\\sqrt{4-x^2}\\,dx, and the standard result \\int\\sqrt{a^2-x^2}\\,dx=\\frac12\\left(x\\sqrt{a^2-x^2}+a^2\\arcsin\\frac xa\\right) at a=2 gives \\frac12\\left(x\\sqrt{4-x^2}+4\\arcsin\\frac x2\\right).",
       "Multiplying by \\sqrt3: \\frac{\\sqrt3}2\\left(x\\sqrt{4-x^2}+4\\arcsin\\frac x2\\right) + C.",
+    ],
+  },
+  {
+    id: "trigsub-def-sqrt-x-plus-sqrt-x2-plus-1",
+    kind: "definite",
+    integrand: "\\sqrt{x+\\sqrt{x^2+1}}",
+    integrandExpr: "sqrt(x+sqrt(x^2+1))",
+    lower: "0",
+    upper: "1/\\sqrt3",
+    answer: "2/3",
+    answerLatex: "\\frac23",
+    domain: [0, 0.5773502691896258],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
+    hints: [
+      "x+\\sqrt{x^2+1} = e^{\\operatorname{arcsinh}x}, so the whole integrand is just e^{(\\operatorname{arcsinh}x)/2}.",
+      "Substitute x=\\sinh u, so \\sqrt{x^2+1}=\\cosh u and \\sinh u+\\cosh u=e^u.",
+    ],
+    steps: [
+      "x=\\sinh u,\\ dx=\\cosh u\\,du: the integrand becomes \\sqrt{e^u}=e^{u/2}, so the integral is \\int e^{u/2}\\cosh u\\,du.",
+      "\\cosh u=\\frac{e^u+e^{-u}}2, so \\int e^{u/2}\\cosh u\\,du = \\frac12\\int\\left(e^{3u/2}+e^{-u/2}\\right)du = \\frac13e^{3u/2}-e^{-u/2}.",
+      "At x=0,\\ u=0: the antiderivative is \\frac13-1=-\\frac23. At x=\\frac1{\\sqrt3},\\ \\sinh u=\\frac1{\\sqrt3},\\ \\cosh u=\\frac2{\\sqrt3}, so e^u=\\sqrt3 and the antiderivative works out to exactly 0.",
+      "The definite integral is 0-\\left(-\\frac23\\right) = \\frac23.",
     ],
   },
 ];

@@ -168,7 +168,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "u = \\arctan x, dv = x\\,dx.",
       "Choosing v = \\frac{x^2+1}{2} instead of \\frac{x^2}{2} makes the next step cancel completely.",
