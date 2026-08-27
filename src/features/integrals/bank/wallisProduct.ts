@@ -172,4 +172,27 @@ export const WallisProduct: Problem[] = [
       "Using the reflection formula \\Gamma(1/4)\\Gamma(3/4)=\\pi\\sqrt2 and \\Gamma(5/4)=\\frac14\\Gamma(1/4) to eliminate \\Gamma(1/4), this simplifies to \\sqrt{2/\\pi}\\,\\Gamma(3/4)^2.",
     ],
   },
+  {
+    id: "wallis-sin2x-cubed-cosx",
+    kind: "definite",
+    integrand: "\\sin^3(2x)\\cos x",
+    integrandExpr: "sin(2*x)^3*cos(x)",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "16/35",
+    answerLatex: "\\frac{16}{35}",
+    domain: [0, Math.PI / 2],
+    difficulty: 4,
+    techniques: ["wallis-product"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #2" },
+    hints: [
+      "\\sin(2x)=2\\sin x\\cos x, so \\sin^3(2x)\\cos x = 8\\sin^3x\\cos^4x — a plain two-power sin/cos integral.",
+      "With an odd power of \\sin x present, u=\\cos x turns this into a polynomial integral directly, no reduction formula needed.",
+    ],
+    steps: [
+      "8\\sin^3x\\cos^4x = 8\\sin x(1-\\cos^2x)\\cos^4x. With u=\\cos x,\\ du=-\\sin x\\,dx: this becomes -8(1-u^2)u^4\\,du.",
+      "\\int_0^{\\pi/2}\\to\\int_1^0, so \\int_0^{\\pi/2}8\\sin^3x\\cos^4x\\,dx = 8\\int_0^1(u^4-u^6)\\,du = 8\\left(\\frac15-\\frac17\\right).",
+      "= 8\\cdot\\frac{2}{35} = \\frac{16}{35}.",
+    ],
+  },
 ];

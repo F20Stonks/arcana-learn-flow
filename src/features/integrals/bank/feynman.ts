@@ -145,4 +145,26 @@ export const Feynman: Problem[] = [
       "So I(1) = \\frac{\\pi}{2}\\ln 2 — and since \\arctan(\\tan x)=x here, this is exactly \\int_0^{\\pi/2}x\\cot x\\,dx.",
     ],
   },
+  {
+    id: "feynman-x-to-7-minus-1",
+    kind: "definite",
+    integrand: "\\frac{x^7-1}{\\ln x}",
+    integrandExpr: "(x^7-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "3*log(2)",
+    answerLatex: "3\\ln2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #24" },
+    hints: [
+      "This is I(a)=\\int_0^1\\frac{x^a-1}{\\ln x}dx at a=7 — the same family already in this bank.",
+      "I(a)=\\ln(a+1) still holds, so the answer is I(7)=\\ln8=3\\ln2.",
+    ],
+    steps: [
+      "I(a) = \\int_0^1\\frac{x^a-1}{\\ln x}\\,dx has I(a)=\\ln(a+1), by differentiating under the integral sign with respect to a.",
+      "At a=7: I(7)=\\ln8=3\\ln2.",
+    ],
+  },
 ];

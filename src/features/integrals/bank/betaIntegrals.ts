@@ -225,4 +225,22 @@ export const BetaIntegrals: Problem[] = [
       "\\int_0^1x^2(1-x)^3\\ln x\\,dx = \\frac{1}{60}\\times\\left(-\\frac{19}{20}\\right) = -\\frac{19}{1200}.",
     ],
   },
+  {
+    id: "beta-x-1mx99",
+    kind: "definite",
+    integrand: "x(1-x)^{99}",
+    integrandExpr: "x*(1-x)^99",
+    lower: "0",
+    upper: "1",
+    answer: "1/10100",
+    answerLatex: "\\frac{1}{10100}",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #15" },
+    hints: ["m=1, n=99: \\frac{1!\\cdot 99!}{101!}."],
+    steps: [
+      "\\frac{1!\\cdot 99!}{101!} = \\frac{99!}{101\\cdot100\\cdot99!} = \\frac{1}{10100}.",
+    ],
+  },
 ];

@@ -715,4 +715,26 @@ export const StandardForms: Problem[] = [
       "Evaluating 0 to 1 gives \\frac{1}{\\ln 2}+\\frac{4}{\\ln 5}.",
     ],
   },
+  {
+    id: "power-def-log-reciprocal",
+    kind: "definite",
+    integrand: "\\ln\\!\\left(\\frac1x\\right)",
+    integrandExpr: "log(1/x)",
+    lower: "\\frac14",
+    upper: "\\frac12",
+    answer: "1/4",
+    answerLatex: "\\frac14",
+    domain: [0.25, 0.5],
+    difficulty: 3,
+    techniques: ["power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #7" },
+    hints: [
+      "\\ln(1/x)=-\\ln x, and \\int\\ln x\\,dx=x\\ln x-x — a standard form once you strip the minus sign off.",
+    ],
+    steps: [
+      "\\int\\ln(1/x)\\,dx = -\\int\\ln x\\,dx = x-x\\ln x.",
+      "At x=\\frac12: \\frac12-\\frac12\\ln\\frac12 = \\frac12+\\frac12\\ln2. At x=\\frac14: \\frac14-\\frac14\\ln\\frac14=\\frac14+\\frac12\\ln2.",
+      "Difference: \\left(\\frac12+\\frac12\\ln2\\right)-\\left(\\frac14+\\frac12\\ln2\\right) = \\frac14.",
+    ],
+  },
 ];

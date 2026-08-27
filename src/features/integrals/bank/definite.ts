@@ -577,4 +577,27 @@ export const Definite: Problem[] = [
       "= 2\\pi\\cdot\\frac{1}{\\sqrt3}\\left(\\frac{\\pi}{2}-\\frac{\\pi}{3}\\right) = \\frac{\\pi^2\\sqrt3}{9}, so 2I=\\frac{\\pi^2\\sqrt3}{9} and I=\\frac{\\pi^2\\sqrt3}{18}.",
     ],
   },
+  {
+    id: "def-king-2012-mirrored-radicals",
+    kind: "definite",
+    integrand: "\\frac{\\sqrt x}{\\sqrt{2012-x}+\\sqrt x}",
+    integrandExpr: "sqrt(x)/(sqrt(2012-x)+sqrt(x))",
+    lower: "1",
+    upper: "2011",
+    answer: "1005",
+    answerLatex: "1005",
+    domain: [1, 2011],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #9" },
+    hints: [
+      "King's rule with x\\to2012-x swaps the roles of \\sqrt x and \\sqrt{2012-x} but leaves the denominator's overall shape unchanged.",
+      "Adding the integral to its King's-rule twin makes the numerator match the denominator exactly.",
+    ],
+    steps: [
+      "Under x\\to2012-x, the integrand becomes \\frac{\\sqrt{2012-x}}{\\sqrt x+\\sqrt{2012-x}}.",
+      "Adding this to the original: the sum is \\frac{\\sqrt x+\\sqrt{2012-x}}{\\sqrt{2012-x}+\\sqrt x}=1 identically.",
+      "So 2I=\\int_1^{2011}1\\,dx=2010, giving I=1005.",
+    ],
+  },
 ];
