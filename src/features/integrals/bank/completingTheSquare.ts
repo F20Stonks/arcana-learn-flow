@@ -252,4 +252,23 @@ export const CompletingTheSquare: Problem[] = [
       "\\int\\frac{dx}{2\\left(x-\\frac12\\right)^2+\\frac12} = \\arctan\\!\\left(2x-1\\right) (matching \\int\\frac{du}{au^2+b} against the standard arctangent form).",
     ],
   },
+  {
+    id: "cs-reciprocal-sqrt-x-minus-x2",
+    kind: "indefinite",
+    integrand: "\\frac{1}{\\sqrt{x-x^2}}",
+    integrandExpr: "1/sqrt(x-x^2)",
+    answer: "asin(2*x-1)",
+    answerLatex: "\\arcsin(2x-1) + C",
+    domain: [0.2, 0.8],
+    difficulty: 3,
+    techniques: ["complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #18" },
+    hints: [
+      "Complete the square: x-x^2 = \\frac14-\\left(x-\\frac12\\right)^2 — a standard \\arcsin form once shifted.",
+    ],
+    steps: [
+      "x-x^2 = \\frac14-\\left(x-\\frac12\\right)^2.",
+      "\\int\\frac{dx}{\\sqrt{\\frac14-\\left(x-\\frac12\\right)^2}} = \\arcsin\\!\\left(\\frac{x-\\frac12}{\\frac12}\\right) = \\arcsin(2x-1) + C.",
+    ],
+  },
 ];

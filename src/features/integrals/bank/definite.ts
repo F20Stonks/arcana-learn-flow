@@ -892,4 +892,26 @@ export const Definite: Problem[] = [
       "So 2I=\\frac\\pi2, giving I=\\frac\\pi4.",
     ],
   },
+  {
+    id: "def-cos-x-plus-cosx-symmetric",
+    kind: "definite",
+    integrand: "\\cos(x+\\cos x)",
+    integrandExpr: "cos(x+cos(x))",
+    lower: "0",
+    upper: "\\pi",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, Math.PI],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #6" },
+    hints: [
+      "Try x\\to\\pi-x. \\cos(\\pi-x)=-\\cos x, so \\cos\\!\\left((\\pi-x)+\\cos(\\pi-x)\\right) = \\cos(\\pi-(x+\\cos x)).",
+    ],
+    steps: [
+      "Under x\\to\\pi-x: \\cos\\!\\left((\\pi-x)+\\cos(\\pi-x)\\right) = \\cos\\!\\left(\\pi-x-\\cos x\\right) = \\cos\\!\\left(\\pi-(x+\\cos x)\\right) = -\\cos(x+\\cos x).",
+      "So f(\\pi-x)=-f(x): f is odd about the midpoint x=\\frac\\pi2 of [0,\\pi].",
+      "An odd-about-the-midpoint function integrates to 0 over that symmetric interval.",
+    ],
+  },
 ];

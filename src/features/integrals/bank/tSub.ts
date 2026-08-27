@@ -148,7 +148,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["t-sub"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #20" },
     hints: [
       "A squared cosine, not a bare one — the double-angle identity turns it into the a+b\\cos(2x) shape you already know how to t-sub.",
       "1+\\cos^2x = 1+\\frac{1+\\cos2x}{2} = \\frac{3+\\cos2x}{2}.",

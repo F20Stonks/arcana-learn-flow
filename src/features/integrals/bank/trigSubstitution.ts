@@ -713,4 +713,23 @@ export const TrigSubstitution: Problem[] = [
       "\\int\\frac{dx}{\\sqrt{1+x^2}} = \\ln\\!\\left(x+\\sqrt{1+x^2}\\right) + C.",
     ],
   },
+  {
+    id: "trigsub-tan4-sec3-plus-tan2-sec5",
+    kind: "indefinite",
+    integrand: "\\tan^4x\\sec^3x+\\tan^2x\\sec^5x",
+    integrandExpr: "tan(x)^4/cos(x)^3+tan(x)^2/cos(x)^5",
+    answer: "tan(x)^3/cos(x)^3/3",
+    answerLatex: "\\frac{\\sec^3x\\tan^3x}{3} + C",
+    domain: [0.3, 1],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #15" },
+    hints: [
+      "Try differentiating \\sec^3x\\tan^3x with the product rule and see what falls out.",
+    ],
+    steps: [
+      "\\frac{d}{dx}\\left[\\sec^3x\\tan^3x\\right] = 3\\sec^3x\\tan x\\cdot\\tan^3x + \\sec^3x\\cdot3\\tan^2x\\sec^2x = 3\\left(\\sec^3x\\tan^4x+\\sec^5x\\tan^2x\\right).",
+      "That's exactly 3 times the integrand, so \\int\\left(\\tan^4x\\sec^3x+\\tan^2x\\sec^5x\\right)dx = \\frac{\\sec^3x\\tan^3x}{3} + C.",
+    ],
+  },
 ];

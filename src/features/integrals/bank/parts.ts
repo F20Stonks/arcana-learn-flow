@@ -1236,4 +1236,24 @@ export const Parts: Problem[] = [
       "At x=1: -\\frac{\\pi}{4}. At x=\\frac1{\\sqrt2}: -\\frac{\\pi}{4}-\\frac12. Difference: \\left(-\\frac{\\pi}{4}\\right)-\\left(-\\frac{\\pi}{4}-\\frac12\\right) = \\frac12.",
     ],
   },
+  {
+    id: "parts-one-plus-logx-log-logx",
+    kind: "indefinite",
+    integrand: "(1+\\ln x)\\ln(\\ln x)",
+    integrandExpr: "(1+log(x))*log(log(x))",
+    answer: "x*log(x)*log(log(x))-x",
+    answerLatex: "x\\ln x\\ln(\\ln x)-x + C",
+    domain: [3, 6],
+    difficulty: 5,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #16" },
+    hints: [
+      "1+\\ln x is exactly \\frac{d}{dx}(x\\ln x) — take u=\\ln(\\ln x),\\ dv=(1+\\ln x)\\,dx,\\ v=x\\ln x.",
+    ],
+    steps: [
+      "By parts with v=x\\ln x: \\int(1+\\ln x)\\ln(\\ln x)\\,dx = x\\ln x\\ln(\\ln x) - \\int x\\ln x\\cdot\\frac{1}{x\\ln x}\\,dx.",
+      "The leftover integral is just \\int dx = x.",
+      "So the answer is x\\ln x\\ln(\\ln x)-x + C.",
+    ],
+  },
 ];
