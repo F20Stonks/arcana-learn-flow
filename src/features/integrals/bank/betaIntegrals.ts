@@ -398,4 +398,21 @@ export const BetaIntegrals: Problem[] = [
       "That's exactly the integrand, so the antiderivative is x^x + C.",
     ],
   },
+  {
+    id: "beta-log-x-over-pi-over-logx-power-log-pi-e",
+    kind: "indefinite",
+    integrand: "\\frac{\\ln(x/\\pi)}{(\\ln x)^{\\ln(\\pi e)}}",
+    integrandExpr: "log(x/pi)/log(x)^log(pi*exp(1))",
+    answer: "x/log(x)^log(pi)",
+    answerLatex: "\\frac{x}{(\\ln x)^{\\ln\\pi}} + C",
+    domain: [3, 6],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
+    hints: ["Guess F(x)=\\frac{x}{(\\ln x)^{\\ln\\pi}} and differentiate it — a quotient-rule computation that collapses to exactly the integrand, the same recognise-the-derivative move as the x^x-family problems in this technique."],
+    steps: [
+      "F'(x) = (\\ln x)^{-\\ln\\pi}+x\\cdot(-\\ln\\pi)(\\ln x)^{-\\ln\\pi-1}\\cdot\\frac1x = (\\ln x)^{-\\ln\\pi-1}\\left[\\ln x-\\ln\\pi\\right].",
+      "-\\ln\\pi-1=-\\ln(\\pi e), and \\ln x-\\ln\\pi=\\ln(x/\\pi), so F'(x)=\\frac{\\ln(x/\\pi)}{(\\ln x)^{\\ln(\\pi e)}} — exactly the integrand.",
+    ],
+  },
 ];

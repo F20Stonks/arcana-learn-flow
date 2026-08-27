@@ -1515,6 +1515,23 @@ export const Parts: Problem[] = [
     ],
   },
   {
+    id: "parts-x-plus-e-plus-1-times-xe-ex",
+    kind: "indefinite",
+    integrand: "(x+e+1)x^ee^x",
+    integrandExpr: "(x+exp(1)+1)*x^exp(1)*exp(x)",
+    answer: "x^(exp(1)+1)*exp(x)",
+    answerLatex: "x^{e+1}e^x + C",
+    domain: [0.5, 3],
+    difficulty: 4,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
+    hints: ["Guess x^{e+1}e^x and differentiate it with the product rule — the coefficient e+1 in the integrand is exactly the power that falls out of x^{e+1}."],
+    steps: [
+      "\\frac{d}{dx}\\left[x^{e+1}e^x\\right] = (e+1)x^ee^x+x^{e+1}e^x = x^ee^x\\left[(e+1)+x\\right].",
+      "That's exactly the integrand, so the antiderivative is x^{e+1}e^x + C.",
+    ],
+  },
+  {
     id: "parts-reciprocal-logx-plus-loglogx",
     kind: "indefinite",
     integrand: "\\frac1{\\ln x}+\\ln(\\ln x)",
