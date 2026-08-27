@@ -93,7 +93,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: ["\\tan^2 has no antiderivative you know — but \\sec^2 does."],
     steps: ["\\tan^2 x = \\sec^2 x - 1.", "\\int \\sec^2 x\\,dx - \\int dx = \\tan x - x + C."],
   },
@@ -1389,6 +1389,24 @@ export const TrigIdentities: Problem[] = [
     steps: [
       "\\frac{\\sin x+\\cos x}{\\sin x-\\cos x}: the numerator is exactly the derivative of the denominator.",
       "So the integral is \\ln|\\sin x-\\cos x| + C.",
+    ],
+  },
+  {
+    id: "trig-cosx-cotx",
+    kind: "indefinite",
+    integrand: "\\cos x\\cot x",
+    integrandExpr: "cos(x)/tan(x)",
+    answer: "cos(x)+log(tan(x/2))",
+    answerLatex: "\\cos x+\\ln\\!\\left(\\tan\\frac x2\\right) + C",
+    domain: [0.5, 1.3],
+    difficulty: 3,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["\\cos x\\cot x = \\frac{\\cos^2x}{\\sin x} = \\csc x-\\sin x."],
+    steps: [
+      "\\cos x\\cot x = \\frac{1-\\sin^2x}{\\sin x} = \\csc x-\\sin x.",
+      "\\int\\csc x\\,dx = \\ln\\!\\left(\\tan\\frac x2\\right) (standard form) and \\int(-\\sin x)\\,dx=\\cos x.",
+      "Together: \\cos x+\\ln\\!\\left(\\tan\\frac x2\\right) + C.",
     ],
   },
 ];

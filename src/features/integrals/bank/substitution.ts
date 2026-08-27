@@ -2234,6 +2234,23 @@ export const Substitution: Problem[] = [
     ],
   },
   {
+    id: "usub-reciprocal-1-minus-eneg-x",
+    kind: "indefinite",
+    integrand: "\\frac1{1-e^{-x}}",
+    integrandExpr: "1/(1-exp(-x))",
+    answer: "log(exp(x)-1)",
+    answerLatex: "\\ln\\!\\left(e^x-1\\right) + C",
+    domain: [0.5, 3],
+    difficulty: 3,
+    techniques: ["u-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["Multiply top and bottom by e^x: \\frac1{1-e^{-x}}=\\frac{e^x}{e^x-1}, whose numerator is the derivative of the denominator."],
+    steps: [
+      "\\frac{e^x}{e^x-1}: the numerator is exactly the derivative of the denominator.",
+      "So the integral is \\ln(e^x-1) + C.",
+    ],
+  },
+  {
     id: "usub-reciprocal-x2-x4-plus-1-34",
     kind: "indefinite",
     integrand: "\\frac1{x^2(x^4+1)^{3/4}}",

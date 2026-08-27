@@ -767,4 +767,21 @@ export const TrigSubstitution: Problem[] = [
       "Converting back to x (\\sin\\theta=\\sqrt x,\\ \\cos\\theta=\\sqrt{1-x}) gives \\frac{2(\\sqrt x-1)}{\\sqrt{1-x}} + C — verified directly by differentiating.",
     ],
   },
+  {
+    id: "trigsub-sqrt-12-minus-3x2-indefinite",
+    kind: "indefinite",
+    integrand: "\\sqrt{12-3x^2}",
+    integrandExpr: "sqrt(12-3*x^2)",
+    answer: "(sqrt(3)/2)*(x*sqrt(4-x^2)+4*asin(x/2))",
+    answerLatex: "\\frac{\\sqrt3}2\\left(x\\sqrt{4-x^2}+4\\arcsin\\frac x2\\right) + C",
+    domain: [-1.5, 1.5],
+    difficulty: 3,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["Factor out \\sqrt3 first: \\sqrt{12-3x^2}=\\sqrt3\\sqrt{4-x^2}, then x=2\\sin\\theta."],
+    steps: [
+      "\\sqrt3\\int\\sqrt{4-x^2}\\,dx, and the standard result \\int\\sqrt{a^2-x^2}\\,dx=\\frac12\\left(x\\sqrt{a^2-x^2}+a^2\\arcsin\\frac xa\\right) at a=2 gives \\frac12\\left(x\\sqrt{4-x^2}+4\\arcsin\\frac x2\\right).",
+      "Multiplying by \\sqrt3: \\frac{\\sqrt3}2\\left(x\\sqrt{4-x^2}+4\\arcsin\\frac x2\\right) + C.",
+    ],
+  },
 ];

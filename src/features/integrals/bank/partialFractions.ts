@@ -788,4 +788,21 @@ export const PartialFractions: Problem[] = [
       "\\int = -\\ln x+\\frac12\\ln(x-1)+\\frac12\\ln(x+1) = \\frac12\\ln\\frac{(x-1)(x+1)}{x^2} = \\ln\\sqrt{1-\\frac1{x^2}} + C.",
     ],
   },
+  {
+    id: "pf-x3-over-1-plus-x2",
+    kind: "indefinite",
+    integrand: "\\frac{x^3}{1+x^2}",
+    integrandExpr: "x^3/(1+x^2)",
+    answer: "x^2/2-(1/2)*log(x^2+1)",
+    answerLatex: "\\frac{x^2}2-\\frac12\\ln(x^2+1) + C",
+    domain: [0, 3],
+    difficulty: 2,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["Divide first: x^3 = x(1+x^2)-x."],
+    steps: [
+      "\\frac{x^3}{1+x^2} = x-\\frac x{1+x^2}.",
+      "\\int = \\frac{x^2}2-\\frac12\\ln(x^2+1) + C.",
+    ],
+  },
 ];

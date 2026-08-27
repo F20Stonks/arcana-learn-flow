@@ -287,4 +287,20 @@ export const CompletingTheSquare: Problem[] = [
       "\\int\\frac{dx}{\\sqrt{5-(x+2)^2}} = \\arcsin\\!\\left(\\frac{x+2}{\\sqrt5}\\right) + C.",
     ],
   },
+  {
+    id: "cts-reciprocal-2-minus-2x-plus-x2",
+    kind: "indefinite",
+    integrand: "\\frac1{2-2x+x^2}",
+    integrandExpr: "1/(2-2*x+x^2)",
+    answer: "-atan(1-x)",
+    answerLatex: "-\\arctan(1-x) + C",
+    domain: [0, 3],
+    difficulty: 2,
+    techniques: ["complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["2-2x+x^2 = (x-1)^2+1."],
+    steps: [
+      "\\int\\frac{dx}{(x-1)^2+1} = \\arctan(x-1) = -\\arctan(1-x) + C.",
+    ],
+  },
 ];

@@ -270,4 +270,23 @@ export const FloorFunction: Problem[] = [
       "\\int_0^{1000}(2\\lfloor x\\rfloor+2)\\,dx = 2\\sum_{k=0}^{999}k+2000 = 2\\cdot499500+2000 = 1001000.",
     ],
   },
+  {
+    id: "floor-x-minus-floor-x-squared-0to256",
+    kind: "definite",
+    integrand: "(x-\\lfloor x\\rfloor)^2",
+    integrandExpr: "(x-floor(x))^2",
+    lower: "0",
+    upper: "256",
+    answer: "256/3",
+    answerLatex: "\\frac{256}3",
+    domain: [0, 256],
+    difficulty: 3,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
+    hints: ["x-\\lfloor x\\rfloor is the fractional part, periodic with period 1 — the integral over each whole period is the same."],
+    steps: [
+      "\\int_0^1t^2\\,dt = \\frac13 on each unit interval, by periodicity.",
+      "256 whole periods: 256\\cdot\\frac13 = \\frac{256}3.",
+    ],
+  },
 ];
