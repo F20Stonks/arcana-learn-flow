@@ -246,6 +246,339 @@ export const TECHNIQUES: Technique[] = [
       "The parameter has to actually recover the original problem at some specific value — check that before differentiating anything.",
     ],
   },
+  {
+    id: "t-sub",
+    name: "The t-substitution",
+    tagline: "Weierstrass's universal move: turn any rational function of sin and cos into a rational function of t.",
+    whenToUse:
+      "A rational function of \\sin x, \\cos x and \\tan x that no identity or standard substitution cracks — especially denominators like a + b\\cos x or a + b\\sin x. It always works, so treat it as the fallback once nothing faster presents itself, not the first move.",
+    recipe: [
+      "Set t = \\tan\\frac{x}{2}.",
+      "Substitute \\sin x = \\frac{2t}{1+t^2},\\ \\cos x = \\frac{1-t^2}{1+t^2},\\ dx = \\frac{2}{1+t^2}\\,dt.",
+      "Every trig function cancels away, leaving a rational function of t — integrate that with standard forms or partial fractions.",
+      "Back-substitute t = \\tan\\frac{x}{2} (or convert the bounds directly, for a definite integral).",
+    ],
+    example: {
+      integrand: "\\frac{1}{2+\\cos x}",
+      work: [
+        "With t = \\tan\\frac{x}{2}: 2+\\cos x = \\frac{2(1+t^2) + (1-t^2)}{1+t^2} = \\frac{3+t^2}{1+t^2}.",
+        "The integral becomes \\int \\frac{2}{3+t^2}\\,dt, a plain arctan form.",
+        "That integrates to \\frac{2}{\\sqrt3}\\arctan\\frac{t}{\\sqrt3}.",
+      ],
+      result: "\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right) + C",
+    },
+    pitfalls: [
+      "t = \\tan\\frac{x}{2} is undefined at x = \\pi — never substitute across that point in one piece; split the integral there if it's inside the domain.",
+      "The universal method rarely gives the prettiest route. If a quicker identity or plain substitution is staring at you, use it instead — save this for when nothing else moves.",
+      "Don't forget the \\frac{2}{1+t^2} from dx — it's easy to substitute \\sin x and \\cos x and lose the differential.",
+    ],
+  },
+  {
+    id: "recurrence",
+    name: "Recurrence relations",
+    tagline: "Relate a hard integral to an easier one indexed one step down, then unwind.",
+    whenToUse:
+      "The integral is naturally indexed by an integer n — a power like \\sin^n x, or a family like \\frac{x^n}{1+x} — and integration by parts, or a small algebraic trick, relates I_n to I_{n-1} or I_{n-2}. Reach for this whenever a problem hands you a family rather than a single integral.",
+    recipe: [
+      "Name the family I_n. Try peeling one factor off with integration by parts, or adding/subtracting a related power algebraically, to relate I_n to a lower index.",
+      "Solve the recurrence down to a base case you can compute directly — usually I_0 or I_1.",
+      "Unwind the recurrence for the specific n you actually need.",
+      "Watch the parity: many recurrences behave differently for even and odd n, so pin down which branch you're on before unwinding.",
+    ],
+    example: {
+      integrand: "\\frac{x^2}{1+x} \\text{ on } [0,1]",
+      work: [
+        "Let I_n = \\int_0^1 \\frac{x^n}{1+x}\\,dx. Adding I_n and I_{n-1}: I_n + I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}.",
+        "So I_n = \\frac{1}{n} - I_{n-1}, and the base case is I_0 = \\int_0^1 \\frac{dx}{1+x} = \\ln 2.",
+        "I_1 = 1 - \\ln 2, so I_2 = \\frac{1}{2} - I_1 = \\ln 2 - \\frac{1}{2}.",
+      ],
+      result: "\\ln 2 - \\frac{1}{2}",
+    },
+    pitfalls: [
+      "Unwinding by hand for a large n is exactly as much work as the original problem — look for whether the recurrence collapses into a product or telescopes before grinding through every step.",
+      "A recurrence relating I_n to I_{n-2} needs BOTH I_0 and I_1 as base cases, one for each parity.",
+      "Getting the algebra sign wrong in I_n + I_{n-1} = \\dots vs I_n - I_{n-1} = \\dots silently flips every answer downstream — verify the very first step against a value you can compute directly (n=1 or n=2) before trusting the pattern.",
+    ],
+  },
+  {
+    id: "inverse-integral",
+    name: "Integral of an inverse function",
+    tagline: "Swap a hard integral for the easy area of its inverse, using the rectangle they share.",
+    whenToUse:
+      "You need \\int f(x)\\,dx for an f whose own antiderivative is annoying (\\arcsin, \\arctan, \\ln), but whose INVERSE — \\sin, \\tan, e^x — is trivial to integrate. The picture is a rectangle split by the curve y=f(x): the area under f and the area under f^{-1} (read off the y-axis) fill it between them.",
+    recipe: [
+      "Identify f and confirm it's injective (monotonic) on the interval — that's what gives it an inverse at all.",
+      "Use \\int_a^b f(x)\\,dx + \\int_{f(a)}^{f(b)} f^{-1}(x)\\,dx = b\\,f(b) - a\\,f(a).",
+      "Pick whichever of the two integrals is the easy one — usually the inverse function, since it's the one you actually know how to integrate — and compute it directly.",
+      "Solve for the integral you actually wanted.",
+    ],
+    example: {
+      integrand: "\\arcsin x \\text{ on } [0,1]",
+      work: [
+        "f(x) = \\sin x is the easy direction, with f^{-1} = \\arcsin. Here a=0, b=\\frac{\\pi}{2} (so that f(b)=1).",
+        "\\int_0^{\\pi/2}\\sin x\\,dx + \\int_0^1 \\arcsin x\\,dx = \\frac{\\pi}{2}\\cdot 1 - 0\\cdot 0 = \\frac{\\pi}{2}.",
+        "The first integral is 1 (elementary), so \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2} - 1.",
+      ],
+      result: "\\frac{\\pi}{2} - 1",
+    },
+    pitfalls: [
+      "The identity needs f INJECTIVE on the interval you're using — check that before reaching for it, or the 'inverse' isn't well defined.",
+      "Matching the bounds is the whole trick: b must satisfy f(b) equal to the upper limit you actually want on the inverse integral, not just some convenient value.",
+      "This is a shortcut around integration by parts, not a different answer — if you're unsure the identity applies, by parts on \\arcsin/\\arctan/\\ln always works too and is worth checking against.",
+    ],
+  },
+  {
+    id: "floor-function",
+    name: "Floor function integrals",
+    tagline: "The floor has no antiderivative — split the domain at every integer, where it's constant, instead.",
+    whenToUse:
+      "\\lfloor x\\rfloor, or the fractional part x - \\lfloor x\\rfloor, sits inside the integrand and the bounds span more than one integer. There is no calculus move that touches \\lfloor x\\rfloor directly — the only route in is chopping the interval into pieces where it's constant.",
+    recipe: [
+      "List every integer strictly inside the interval of integration — those are exactly where \\lfloor x\\rfloor jumps.",
+      "Split \\int_a^b into a sum of integrals over [k,k+1] (with partial pieces at the two ends), replacing \\lfloor x\\rfloor by the fixed integer k on each piece.",
+      "Integrate each ordinary piece — \\lfloor x\\rfloor is now just a constant — and sum the results.",
+      "Look for the sum to collapse: it's often a short arithmetic series, or telescopes outright.",
+    ],
+    example: {
+      integrand: "\\lfloor x\\rfloor \\text{ on } [0,3]",
+      work: [
+        "Split at the integers: [0,1),\\ [1,2),\\ [2,3], where \\lfloor x\\rfloor is 0, 1, 2 respectively.",
+        "\\int_0^3\\lfloor x\\rfloor\\,dx = 0\\cdot 1 + 1\\cdot 1 + 2\\cdot 1.",
+        "Sum the constant pieces.",
+      ],
+      result: "3",
+    },
+    pitfalls: [
+      "The split points are the INTEGERS inside the interval, not the endpoints — double-check you haven't miscounted by one at either end.",
+      "For x - \\lfloor x\\rfloor (the sawtooth), each piece [k,k+1) is just \\int_0^1 u\\,du = \\frac{1}{2} after shifting — every full unit interval contributes exactly \\frac{1}{2}, which is worth recognising on sight.",
+      "\\lfloor x\\rfloor is discontinuous at every integer, so don't try to differentiate through one — this technique is fundamentally about summing, not about finding an antiderivative.",
+    ],
+  },
+  {
+    id: "beta-integrals",
+    name: "Beta function integrals",
+    tagline: "\\int_0^1 x^m(1-x)^n\\,dx is always a clean rational number — recognise the shape and skip the algebra.",
+    whenToUse:
+      "The integrand is a power of x times a power of (1-x) (or of u and a-u, after rescaling to [0,1]). Expanding (1-x)^n by hand and integrating term by term always works, but for anything beyond n=2 it's slower than just knowing the closed form.",
+    recipe: [
+      "Get the integral into the form \\int_0^1 x^m(1-x)^n\\,dx. An interval [a,b] rescales to [0,1] with u=\\frac{x-a}{b-a}.",
+      "Use \\int_0^1 x^m(1-x)^n\\,dx = \\frac{m!\\,n!}{(m+n+1)!} — provable by repeated integration by parts, peeling one factor of (1-x) off at a time.",
+      "Use the symmetry \\int_0^1 x^m(1-x)^n\\,dx = \\int_0^1 x^n(1-x)^m\\,dx (swap via u=1-x) as a free sanity check on the formula.",
+      "For non-integer exponents the same pattern holds with factorials replaced by the Gamma function — the integer case is the one this bank drills.",
+      "A stray \\ln x (or \\ln(1-x)) alongside the powers is a sign to differentiate the Beta identity itself: \\int_0^1 x^{m+\\varepsilon}(1-x)^n\\,dx = \\frac{\\Gamma(m+1+\\varepsilon)n!}{\\Gamma(m+n+2+\\varepsilon)}, and differentiating both sides with respect to \\varepsilon at \\varepsilon=0 brings down exactly one factor of \\ln x. The digamma values that appear are differences of digammas at (half-)integers, which are always elementary — the \\gamma constant that digamma normally carries cancels between the two terms.",
+    ],
+    example: {
+      integrand: "x^2(1-x)^3 \\text{ on } [0,1]",
+      work: [
+        "Match to the pattern with m=2, n=3.",
+        "\\frac{m!\\,n!}{(m+n+1)!} = \\frac{2!\\cdot 3!}{6!} = \\frac{2\\cdot 6}{720}.",
+        "Simplify the fraction.",
+      ],
+      result: "\\frac{1}{60}",
+    },
+    pitfalls: [
+      "The formula needs the interval to be [0,1] with the two factors exactly x and 1-x — rescale first if it isn't, don't try to patch the formula.",
+      "m and n must be nonnegative integers for the factorial form; a fractional power needs the Gamma function instead.",
+      "Don't forget the +1 in the denominator's (m+n+1)! — it's the single most common slip with this identity.",
+      "The digamma trick only stays elementary when the un-differentiated exponent is an integer or a half-integer (so \\Gamma of it is elementary too) — differentiating at a genuinely fractional exponent leaves the Euler-Mascheroni constant \\gamma sitting in the answer instead of cancelling.",
+    ],
+  },
+  {
+    id: "introducing-constants",
+    name: "Introducing constants",
+    tagline: "Split the numerator by adding and subtracting a constant, so one half is trivial and the other is a form you already know.",
+    whenToUse:
+      "A rational (or rational-in-trig) integrand whose numerator is 'almost' a multiple of the denominator, or almost the denominator's derivative, plus some leftover constant. Especially useful for isolating a piece you've already solved elsewhere — this is a great second pass once a first technique gets you most of the way.",
+    recipe: [
+      "Write the numerator as \\lambda\\cdot(\\text{denominator, or its derivative}) + \\mu, solving for \\lambda and \\mu by matching coefficients.",
+      "Split into \\lambda\\int 1\\,dx (or \\lambda\\int\\frac{D'}{D}\\,dx) plus \\mu\\int\\frac{dx}{D(x)}.",
+      "The first piece is now trivial. For the second, reuse whatever standard form or previously-solved result applies to D(x) — don't re-derive it from scratch.",
+      "The multiplicative version of the same idea — multiply and divide by a well-chosen constant — can reveal a hidden derivative; it's rarer, but worth trying when nothing else moves.",
+    ],
+    example: {
+      integrand: "\\frac{x^2+7x+8}{x^2+5x+3}",
+      work: [
+        "The numerator is the denominator plus a remainder: x^2+7x+8 = (x^2+5x+3) + (2x+5).",
+        "Split: \\int 1\\,dx + \\int\\frac{2x+5}{x^2+5x+3}\\,dx.",
+        "The second piece is exactly \\ln|x^2+5x+3|, since 2x+5 is the denominator's own derivative.",
+      ],
+      result: "x + \\ln(x^2+5x+3) + C",
+    },
+    pitfalls: [
+      "Match coefficients carefully — get \\lambda or \\mu wrong and every downstream integral is off by a constant that's easy to miss.",
+      "The 'remainder' after subtracting off \\lambda\\cdot D(x) must genuinely be a constant, or (for the derivative version) the rest must genuinely be D'(x); if it isn't, the split hasn't actually simplified anything.",
+      "This is a setup move, not a finishing one — you still have to know how to integrate \\frac{1}{D(x)} once you've isolated it.",
+    ],
+  },
+  {
+    id: "log-power-integrals",
+    name: "Log-power integrals",
+    tagline: "\\int_0^1 x^n\\ln^k x\\,dx is a closed-form rational number for every n,k \\geq 0 — a generating-function trick reads it off in one line.",
+    whenToUse:
+      "The integrand is x to a nonnegative integer power times a nonnegative integer power of \\ln x, over [0,1]. Repeated integration by parts always works, peeling one power of \\ln x off each time, but for k \\geq 2 it's a lot of bookkeeping for something with a one-line closed form.",
+    recipe: [
+      "Introduce a parameter: J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, valid for any a > -1 — this is the trivial integral hiding underneath.",
+      "Differentiate J with respect to a. Since \\frac{\\partial}{\\partial a}x^a = x^a\\ln x, each derivative brings down one more factor of \\ln x inside the integral: J^{(k)}(a) = \\int_0^1 x^a\\ln^k x\\,dx.",
+      "Differentiate the closed form the same number of times: \\frac{d^k}{da^k}\\frac{1}{a+1} = \\frac{(-1)^k k!}{(a+1)^{k+1}}.",
+      "Set a = n (the integer power actually in the problem): \\int_0^1 x^n\\ln^k x\\,dx = \\frac{(-1)^k k!}{(n+1)^{k+1}}.",
+    ],
+    example: {
+      integrand: "x^2\\ln x \\text{ on } [0,1]",
+      work: [
+        "Match to the pattern with n=2, k=1.",
+        "J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, so J'(a) = \\int_0^1 x^a\\ln x\\,dx = -\\frac{1}{(a+1)^2}.",
+        "Set a=2: J'(2) = -\\frac{1}{9}.",
+      ],
+      result: "-\\frac{1}{9}",
+    },
+    pitfalls: [
+      "The sign alternates with k — \\ln x is negative on (0,1), so odd k gives a negative answer and even k gives a positive one. Sanity-check the sign before trusting the arithmetic.",
+      "The exponent on the denominator is k+1, not k — it's easy to drop the extra +1 that comes from differentiating \\frac{1}{a+1} itself once more than you differentiated a^{\\text{power}}.",
+      "This is the same differentiate-under-the-integral-sign move as the Feynman technique, just packaged as a formula worth recognising on sight instead of re-deriving from scratch every time.",
+    ],
+  },
+  {
+    id: "reciprocal-substitution",
+    name: "Reciprocal substitution",
+    tagline: "u=\\frac{1}{x} pairs an integral over (0,\\infty) with a twin of itself — average the two and the hard part cancels.",
+    whenToUse:
+      "The integral runs over (0,\\infty), and the integrand involves \\ln x or an odd power of x in a way that looks antisymmetric under x \\to \\frac{1}{x}. If substituting u=\\frac{1}{x} turns the integral into something you can add to (or subtract from) the original to kill the ugly part, this is the move.",
+    recipe: [
+      "Substitute u = \\frac{1}{x}, so x = \\frac{1}{u} and dx = -\\frac{du}{u^2}. The bounds (0,\\infty) map to (\\infty,0), and flipping them back cancels the minus sign.",
+      "Rewrite every x in the integrand in terms of u, including \\ln x = -\\ln u if a logarithm is present.",
+      "Compare the transformed integral to the original. If it's the negative of the original, the integral is 0 outright. If it's a different but related integral, add the two expressions together — the awkward piece is often designed to cancel or double.",
+      "Solve the resulting (usually much simpler) equation for the original integral I.",
+    ],
+    example: {
+      integrand: "\\frac{1}{x(1+x^2)(1+x^3)} \\text{ style pairing, worked for } \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx",
+      work: [
+        "Let I = \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx. Substitute x=\\frac{1}{t}: \\arctan\\frac{1}{t} = \\frac{\\pi}{2}-\\arctan t, and \\ln^2 x = \\ln^2 t since \\ln\\frac{1}{t}=-\\ln t.",
+        "The measure works out to \\frac{dx}{x} = -\\frac{dt}{t}, so I = \\int_0^\\infty \\frac{\\frac{\\pi}{2}-\\arctan t}{t(1+\\ln^2 t)}\\,dt = \\frac{\\pi}{2}J - I, where J=\\int_0^\\infty \\frac{dt}{t(1+\\ln^2 t)}.",
+        "J collapses under w=\\ln t to \\int_{-\\infty}^\\infty\\frac{dw}{1+w^2}=\\pi. So 2I=\\frac{\\pi}{2}\\cdot\\pi, giving I=\\frac{\\pi^2}{4}.",
+      ],
+      result: "\\frac{\\pi^2}{4}",
+    },
+    pitfalls: [
+      "Get the bounds and the sign right: (0,\\infty)\\to(\\infty,0) under x=\\frac{1}{t}, and flipping the limits back is exactly what cancels the minus sign in dx=-\\frac{dt}{t^2} — track this once, carefully, rather than by feel.",
+      "\\ln\\frac{1}{t}=-\\ln t, so an even power of \\ln x survives the substitution unchanged while an odd power flips sign — that's usually the whole point of trying this move.",
+      "The technique only pays off when the twin integral is genuinely related to the original (equal, opposite, or a known simpler one). If substituting just produces an unrelated mess, this isn't the right tool.",
+    ],
+  },
+  {
+    id: "gamma-function",
+    name: "The Gamma function",
+    tagline: "\\int_0^\\infty x^n e^{-x}\\,dx = n! — a reduction formula in disguise, over an infinite domain.",
+    whenToUse:
+      "A polynomial (or a single power of x) times a decaying exponential, integrated over (0,\\infty). If you see x^n e^{-x} — or e^{-ax}, or a^{-x} for some other base — recognise it as an instance of this family rather than reaching for integration by parts from scratch.",
+    recipe: [
+      "The base case: \\int_0^\\infty e^{-x}\\,dx = 1.",
+      "Integration by parts (u=x^n,\\ dv=e^{-x}dx) gives the reduction \\int_0^\\infty x^n e^{-x}\\,dx = n\\int_0^\\infty x^{n-1}e^{-x}\\,dx — the boundary term vanishes at both ends since x^n e^{-x}\\to 0 as x\\to\\infty and equals 0 at x=0. Unrolling it gives \\int_0^\\infty x^n e^{-x}\\,dx = n!.",
+      "For a decay rate other than 1, substitute u=ax first: \\int_0^\\infty x^n e^{-ax}\\,dx = \\frac{n!}{a^{n+1}}.",
+      "For a base other than e, rewrite it: b^{-x} = e^{-x\\ln b}, then apply the same formula with a=\\ln b.",
+      "A trailing \\cos x or \\sin x alongside the exponential is the formula in disguise with a complex a: since \\cos x=\\mathrm{Re}(e^{ix}), \\int_0^\\infty x^ne^{-x}\\cos x\\,dx=\\mathrm{Re}\\int_0^\\infty x^ne^{-(1-i)x}\\,dx=\\mathrm{Re}\\frac{n!}{(1-i)^{n+1}} — the same \\frac{n!}{a^{n+1}} formula, with a=1-i.",
+    ],
+    example: {
+      integrand: "x^3\\,3^{-x} \\text{ on } (0,\\infty)",
+      work: [
+        "Rewrite the base: 3^{-x} = e^{-x\\ln 3}, so this is \\int_0^\\infty x^3 e^{-x\\ln 3}\\,dx.",
+        "That's the a=\\ln 3 case of \\int_0^\\infty x^n e^{-ax}\\,dx=\\frac{n!}{a^{n+1}}, with n=3.",
+        "\\frac{3!}{(\\ln 3)^4} = \\frac{6}{(\\ln 3)^4}.",
+      ],
+      result: "\\frac{6}{(\\ln 3)^4}",
+    },
+    pitfalls: [
+      "n! here means the ordinary integer factorial (0!=1, and it grows fast) — don't confuse it with the Gamma function's shift, \\Gamma(n+1)=n!, unless a problem genuinely has a non-integer exponent.",
+      "The boundary term in the by-parts reduction only vanishes because e^{-x} beats any polynomial as x\\to\\infty — this whole family depends on genuinely exponential (or faster) decay, not merely \\to 0.",
+      "A Gaussian integrand (e^{-x^2}, not e^{-x}) is a different animal — it doesn't reduce to a factorial by integration by parts the same way; it needs the dedicated Gaussian/hypersphere approach instead.",
+      "The complex-a trick only lands on an elementary real answer when \\mathrm{Re}\\frac{n!}{a^{n+1}} actually simplifies to a real number by hand (as it does for a=1-i, since (1-i)^{n+1} works out to a real or purely imaginary Gaussian integer for every n) — for a generic complex a you'd need the modulus-argument form of a^{n+1}, which is beyond a 'type the number' answer.",
+    ],
+  },
+  {
+    id: "zeta-series",
+    name: "Zeta-series integrals",
+    tagline: "Expand \\frac{1}{e^x\\mp 1} as a geometric series in e^{-x}, then integrate term by term.",
+    whenToUse:
+      "The integrand has \\frac{1}{e^x-1} or \\frac{1}{e^x+1} (or a scaled version, \\frac{1}{e^{ax}\\mp 1}) multiplied by a power of x, over (0,\\infty). Neither denominator is something you can attack directly — but both hide a geometric series that turns the integral into a sum of gamma-function integrals.",
+    recipe: [
+      "Factor out e^{-x}: \\frac{1}{e^x-1} = \\frac{e^{-x}}{1-e^{-x}}, which is a geometric series \\sum_{k=1}^\\infty e^{-kx} (and \\frac{1}{e^x+1} = \\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx}, the alternating version).",
+      "Multiply through by x^n and integrate term by term: \\int_0^\\infty x^n\\cdot\\frac{1}{e^x\\mp1}\\,dx = \\sum_{k=1}^\\infty(\\pm1)^{k-1}\\int_0^\\infty x^ne^{-kx}\\,dx.",
+      "Each term is a gamma-function integral: \\int_0^\\infty x^ne^{-kx}\\,dx=\\frac{n!}{k^{n+1}}.",
+      "What's left is a numerical series in \\frac{1}{k^{n+1}} — \\zeta(n+1) for the \\frac{1}{e^x-1} case, or the alternating \\eta(n+1) for \\frac{1}{e^x+1}. For even n+1 these have closed forms in \\pi (e.g. \\zeta(2)=\\frac{\\pi^2}{6}, \\zeta(4)=\\frac{\\pi^4}{90}); that's what makes the integral come out elementary.",
+      "The same series, differentiated once, handles \\frac{e^x}{(e^x-1)^2}: since \\frac{d}{dx}\\frac{1}{e^x-1}=-\\frac{e^x}{(e^x-1)^2}, the series \\sum e^{-kx} differentiates to \\sum ke^{-kx}, so \\int_0^\\infty x^n\\cdot\\frac{e^x}{(e^x-1)^2}\\,dx=\\sum_{k=1}^\\infty k\\int_0^\\infty x^ne^{-kx}\\,dx=n!\\,\\zeta(n).",
+      "\\ln(1-x)=-\\sum_{k=1}^\\infty\\frac{x^k}{k}, so \\int_0^1\\frac{\\ln(1-x)}{x}\\,dx=-\\sum_{k=1}^\\infty\\int_0^1x^{k-1}\\,dx/k=-\\sum\\frac{1}{k^2}=-\\zeta(2)=-\\frac{\\pi^2}{6} — the same series trick, run on [0,1] instead of (0,\\infty).",
+    ],
+    example: {
+      integrand: "\\frac{x}{e^x-1} \\text{ on } (0,\\infty)",
+      work: [
+        "\\frac{1}{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}, so the integral is \\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx.",
+        "Each term is the n=1 gamma-function integral: \\int_0^\\infty xe^{-kx}\\,dx=\\frac{1}{k^2}.",
+        "The sum is \\sum_{k=1}^\\infty\\frac{1}{k^2}=\\zeta(2)=\\frac{\\pi^2}{6} — the same constant Euler found by comparing \\frac{\\sin x}{x}'s power series to its Weierstrass product over its roots \\pm k\\pi.",
+      ],
+      result: "\\frac{\\pi^2}{6}",
+    },
+    pitfalls: [
+      "Swapping the sum and the integral needs justifying in a rigorous treatment (everything here is positive and the series converges absolutely, so it's fine) — but it's the one nontrivial step and worth naming, not just doing silently.",
+      "\\frac{1}{e^x+1} gives the alternating series \\eta(n+1), not \\zeta(n+1) — mixing the two up gives an answer off by a factor of (1-2^{-n}).",
+      "Only even n+1 has a known closed form in \\pi; \\zeta(3), for instance, has no elementary closed form, so \\int_0^\\infty\\frac{x^2}{e^x-1}\\,dx isn't a 'type the answer' problem the way the even cases are.",
+    ],
+  },
+  {
+    id: "wallis-product",
+    name: "Wallis integrals",
+    tagline: "\\int_0^{\\pi/2}\\sin^n x\\,dx follows the same reduction as the full-period version — and squeezing consecutive terms is how Wallis found his product for \\pi.",
+    whenToUse:
+      "A power of \\sin x or \\cos x integrated over [0,\\pi/2] (or [0,\\pi], or a full period) — exactly the shape the recurrence technique reduces, but here the point is the family of values itself, and the surprising fact that comparing consecutive terms produces an infinite product for \\pi.",
+    recipe: [
+      "Reduce with parts exactly as in the recurrence technique: I_n=\\int_0^{\\pi/2}\\sin^nx\\,dx satisfies I_n=\\frac{n-1}{n}I_{n-2}, with base cases I_0=\\frac{\\pi}{2} and I_1=1.",
+      "On [0,\\pi/2], \\sin x\\in[0,1], so higher powers are pointwise smaller: \\sin^{n+1}x\\leq\\sin^nx\\leq\\sin^{n-1}x for every x there, hence I_{n+1}\\leq I_n\\leq I_{n-1}.",
+      "Divide through by I_{n-1}: \\frac{I_{n+1}}{I_{n-1}}\\leq\\frac{I_n}{I_{n-1}}\\leq 1. The reduction formula gives \\frac{I_{n+1}}{I_{n-1}}=\\frac{n}{n+1}\\to1, so by squeezing, \\frac{I_n}{I_{n-1}}\\to1 too.",
+      "Unrolling the even-index reduction all the way down and substituting into that ratio produces the Wallis product: \\frac{\\pi}{2}=\\prod_{k=1}^\\infty\\frac{2k}{2k-1}\\cdot\\frac{2k}{2k+1} = \\frac{2}{1}\\cdot\\frac{2}{3}\\cdot\\frac{4}{3}\\cdot\\frac{4}{5}\\cdot\\frac{6}{5}\\cdot\\frac{6}{7}\\cdots",
+      "The two-power version \\int_0^{\\pi/2}\\cos^{2\\alpha-1}\\theta\\sin^{2\\beta-1}\\theta\\,d\\theta=\\frac{\\Gamma(\\alpha)\\Gamma(\\beta)}{2\\Gamma(\\alpha+\\beta)} comes from the same substitution that proves \\int_0^\\infty e^{-x^2}dx=\\frac{\\sqrt\\pi}{2}: write \\Gamma(\\alpha)\\Gamma(\\beta) as a product of two Gaussian integrals, switch to polar coordinates, and the angular integral left over is exactly this one.",
+    ],
+    example: {
+      integrand: "\\sin^6 x \\text{ on } \\left[0,\\frac{\\pi}{2}\\right]",
+      work: [
+        "I_n=\\frac{n-1}{n}I_{n-2}, base case I_0=\\frac{\\pi}{2}.",
+        "I_2=\\frac{1}{2}\\cdot\\frac{\\pi}{2}=\\frac{\\pi}{4}.\\quad I_4=\\frac{3}{4}\\cdot\\frac{\\pi}{4}=\\frac{3\\pi}{16}.",
+        "I_6=\\frac{5}{6}\\cdot\\frac{3\\pi}{16}=\\frac{15\\pi}{96}.",
+      ],
+      result: "\\frac{5\\pi}{32}",
+    },
+    pitfalls: [
+      "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the exact same I_n — substitute x\\to\\frac{\\pi}{2}-x to see sin and cos trade places over this particular interval — so don't re-derive the cosine case from scratch.",
+      "The squeeze argument needs sin x\\in[0,1] on the interval, which is specific to [0,\\pi/2] (or [0,\\pi]) — it's not a general fact about \\sin^nx for arbitrary bounds.",
+      "The reduction formula alone answers every 'evaluate this integral' problem; the squeeze/product derivation is the extra mile that explains *why* the Wallis product converges to \\pi, not a step you need for a numeric answer.",
+      "\\Gamma at a quarter-integer (like \\Gamma(3/4)) has no simpler closed form — an answer is allowed to contain it as-is, the same way an answer is allowed to contain \\pi or \\sqrt2.",
+    ],
+  },
+  {
+    id: "gaussian-hypersphere",
+    name: "Gaussian integrals & the hypersphere",
+    tagline: "Squaring \\int e^{-x^2}dx turns it into a 2-D integral you can do in polar coordinates — the same trick, run in d dimensions, gives the volume of a hypersphere.",
+    whenToUse:
+      "A polynomial times e^{-x^2} (or e^{-ax^2}) integrated over (0,\\infty) or (-\\infty,\\infty). There's no elementary antiderivative for e^{-x^2} itself — this family is solved by a dimension-raising trick, not by finding F(x).",
+    recipe: [
+      "Let I=\\int_{-\\infty}^\\infty e^{-x^2}\\,dx. Then I^2 = \\left(\\int_{-\\infty}^\\infty e^{-x^2}dx\\right)\\left(\\int_{-\\infty}^\\infty e^{-y^2}dy\\right) = \\iint_{\\mathbb{R}^2}e^{-(x^2+y^2)}\\,dx\\,dy.",
+      "Switch to polar coordinates: x^2+y^2=r^2 and dx\\,dy=r\\,dr\\,d\\theta, so I^2=\\int_0^{2\\pi}\\int_0^\\infty e^{-r^2}r\\,dr\\,d\\theta — and the r makes the radial integral elementary (u=r^2).",
+      "I^2 = 2\\pi\\cdot\\frac{1}{2} = \\pi, so I=\\sqrt{\\pi}, and by symmetry \\int_0^\\infty e^{-x^2}dx=\\frac{\\sqrt\\pi}{2}.",
+      "For x^{2n}e^{-x^2} or e^{-ax^2}, don't re-derive — substitute u=x^2 or u=\\sqrt{a}\\,x to reduce to this base result or to a gamma-function integral (odd powers of x actually land there: x^{2n+1}e^{-x^2} has an elementary antiderivative once u=x^2 is applied, no \\sqrt\\pi involved).",
+      "The same squaring trick generalises: \\int_{\\mathbb{R}^d}e^{-|x|^2}dx = \\pi^{d/2} (d independent 1-D Gaussians), and also equals \\int_0^\\infty e^{-r^2}\\,\\omega_{d-1}r^{d-1}\\,dr where \\omega_{d-1} is the surface area of the unit (d-1)-sphere. Matching the two (the radial integral is a gamma-function integral, \\frac{1}{2}\\Gamma(d/2)) gives \\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)} — the surface area of a radius-r sphere in d dimensions is \\frac{2\\pi^{d/2}}{\\Gamma(d/2)}r^{d-1}.",
+    ],
+    example: {
+      integrand: "\\text{The hypersphere formula, checked at } d=3",
+      work: [
+        "\\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)}. At d=3: \\omega_2=\\frac{2\\pi^{3/2}}{\\Gamma(3/2)}.",
+        "\\Gamma\\left(\\frac{3}{2}\\right)=\\frac{1}{2}\\Gamma\\left(\\frac{1}{2}\\right)=\\frac{\\sqrt\\pi}{2}, using \\Gamma(1/2)=\\sqrt\\pi (which is exactly I=\\sqrt\\pi from the derivation, in Gamma-function notation).",
+        "\\omega_2 = \\frac{2\\pi^{3/2}}{\\sqrt\\pi/2} = 4\\pi, and the surface area of a radius-r sphere is \\omega_2r^2=4\\pi r^2 — the familiar formula.",
+      ],
+      result: "4\\pi r^2",
+    },
+    pitfalls: [
+      "\\int e^{-x^2}dx has no elementary antiderivative at all — every problem in this family is solved by a substitution or symmetry trick that avoids ever needing F(x), not by finding one.",
+      "Odd powers (x,\\,x^3,\\,x^5,\\ldots) times e^{-x^2} are secretly elementary — u=x^2 turns x^{2n+1}e^{-x^2}dx into a plain gamma-function integral in u, with no \\sqrt\\pi in the answer. Only even powers carry the \\sqrt\\pi.",
+      "\\Gamma(1/2)=\\sqrt\\pi is exactly this technique's I=\\sqrt\\pi in disguise — if a problem elsewhere needs \\Gamma at a half-integer, this derivation is where that value comes from.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

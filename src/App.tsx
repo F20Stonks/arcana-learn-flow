@@ -113,6 +113,7 @@ function AppRoutes() {
       <Route path="/integrals/sprint" element={<DashboardGuard><IntegralSprint /></DashboardGuard>} />
       <Route path="/integrals/progress" element={<DashboardGuard><IntegralProgress /></DashboardGuard>} />
       <Route path="/integrals/train" element={<DashboardGuard><IntegralTraining /></DashboardGuard>} />
+      <Route path="/integrals/train/source/:sourceKey" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
       <Route path="/integrals/train/:techniqueId" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
@@ -149,6 +150,9 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/sprint" element={<IntegralSprint />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/progress" element={<IntegralProgress />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/train" element={<IntegralTraining />} />}
+      {import.meta.env.DEV && (
+        <Route path="/dev/integrals/train/source/:sourceKey" element={<TrainingTechnique />} />
+      )}
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
       )}

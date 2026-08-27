@@ -1,0 +1,143 @@
+/**
+ * Recurrence and reduction relations. Every problem here is one instance of a family I_n; the steps
+ * show the recurrence, not just the arithmetic, because that's the transferable part — the specific
+ * n asked for is almost incidental once the relation is in hand.
+ */
+import type { Problem } from "../types";
+
+export const Recurrence: Problem[] = [
+  {
+    id: "rec-x-over-1plusx",
+    kind: "definite",
+    integrand: "\\frac{x}{1+x}",
+    integrandExpr: "x/(1+x)",
+    lower: "0",
+    upper: "1",
+    answer: "1-log(2)",
+    answerLatex: "1-\\ln 2",
+    domain: [0, 1],
+    difficulty: 2,
+    techniques: ["recurrence"],
+    source: { name: "original" },
+    hints: [
+      "This is the base case I_1 of the family I_n = \\int_0^1\\frac{x^n}{1+x}\\,dx.",
+      "Add and subtract 1 in the numerator: \\frac{x}{1+x} = \\frac{1+x-1}{1+x} = 1 - \\frac{1}{1+x}.",
+    ],
+    steps: [
+      "\\frac{x}{1+x} = 1 - \\frac{1}{1+x}.",
+      "\\int_0^1\\left(1-\\frac{1}{1+x}\\right)dx = \\left[x-\\ln(1+x)\\right]_0^1 = 1-\\ln 2.",
+    ],
+  },
+  {
+    id: "rec-x2-over-1plusx",
+    kind: "definite",
+    integrand: "\\frac{x^2}{1+x}",
+    integrandExpr: "x^2/(1+x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(2)-1/2",
+    answerLatex: "\\ln 2 - \\frac{1}{2}",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["recurrence"],
+    source: { name: "original" },
+    hints: [
+      "Let I_n = \\int_0^1\\frac{x^n}{1+x}\\,dx. Adding I_n and I_{n-1} kills the denominator: I_n+I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}.",
+      "You need I_1 = 1-\\ln 2 first (it's \\int_0^1\\frac{x}{1+x}dx, done by the same add-and-subtract-1 trick).",
+    ],
+    steps: [
+      "I_n + I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}, so I_2 = \\frac{1}{2} - I_1.",
+      "I_1 = \\int_0^1\\frac{x}{1+x}\\,dx = 1-\\ln 2.",
+      "I_2 = \\frac{1}{2} - (1-\\ln 2) = \\ln 2 - \\frac{1}{2}.",
+    ],
+  },
+  {
+    id: "rec-x3-over-1plusx",
+    kind: "definite",
+    integrand: "\\frac{x^3}{1+x}",
+    integrandExpr: "x^3/(1+x)",
+    lower: "0",
+    upper: "1",
+    answer: "5/6-log(2)",
+    answerLatex: "\\frac{5}{6}-\\ln 2",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["recurrence"],
+    source: { name: "original" },
+    hints: [
+      "Same family, one step further: I_3 = \\frac{1}{3} - I_2.",
+      "You already have I_2 = \\ln 2 - \\frac{1}{2} from the same recurrence.",
+    ],
+    steps: [
+      "I_3 = \\frac{1}{3} - I_2 = \\frac{1}{3} - \\left(\\ln 2 - \\frac{1}{2}\\right).",
+      "= \\frac{1}{3}+\\frac{1}{2} - \\ln 2 = \\frac{5}{6} - \\ln 2.",
+    ],
+  },
+  {
+    id: "rec-x4-over-1plusx",
+    kind: "definite",
+    integrand: "\\frac{x^4}{1+x}",
+    integrandExpr: "x^4/(1+x)",
+    lower: "0",
+    upper: "1",
+    answer: "log(2)-7/12",
+    answerLatex: "\\ln 2 - \\frac{7}{12}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["recurrence"],
+    source: { name: "original" },
+    hints: [
+      "I_4 = \\frac{1}{4} - I_3 — the recurrence doesn't care how far along you are.",
+      "Notice the pattern: I_n alternates between (\\text{rational}) - \\ln 2 and \\ln 2 - (\\text{rational}) as n goes odd, even.",
+    ],
+    steps: [
+      "I_4 = \\frac{1}{4} - I_3 = \\frac{1}{4} - \\left(\\frac{5}{6}-\\ln 2\\right).",
+      "= \\frac{1}{4} - \\frac{5}{6} + \\ln 2 = \\ln 2 - \\frac{7}{12}.",
+    ],
+  },
+  {
+    id: "rec-sin4-0pi",
+    kind: "definite",
+    integrand: "\\sin^4 x",
+    integrandExpr: "sin(x)^4",
+    lower: "0",
+    upper: "\\pi",
+    answer: "3*pi/8",
+    answerLatex: "\\frac{3\\pi}{8}",
+    domain: [0, Math.PI],
+    difficulty: 3,
+    techniques: ["recurrence", "wallis-product"],
+    source: { name: "original" },
+    hints: [
+      "Let I_n = \\int_0^\\pi \\sin^n x\\,dx. Parts with u=\\sin^{n-1}x, dv=\\sin x\\,dx gives I_n = \\frac{n-1}{n}I_{n-2}.",
+      "The base case for even n is I_0 = \\pi.",
+    ],
+    steps: [
+      "I_n = \\frac{n-1}{n}I_{n-2}, so I_2 = \\frac{1}{2}I_0 = \\frac{\\pi}{2}.",
+      "I_4 = \\frac{3}{4}I_2 = \\frac{3}{4}\\cdot\\frac{\\pi}{2} = \\frac{3\\pi}{8}.",
+    ],
+  },
+  {
+    id: "rec-sin5-0pi",
+    kind: "definite",
+    integrand: "\\sin^5 x",
+    integrandExpr: "sin(x)^5",
+    lower: "0",
+    upper: "\\pi",
+    answer: "16/15",
+    answerLatex: "\\frac{16}{15}",
+    domain: [0, Math.PI],
+    difficulty: 4,
+    techniques: ["recurrence", "wallis-product"],
+    source: { name: "original" },
+    hints: [
+      "Same recurrence I_n = \\frac{n-1}{n}I_{n-2}, but now on the odd branch — the base case is I_1 = \\int_0^\\pi \\sin x\\,dx = 2.",
+      "Unwind two steps from I_5 down to I_1.",
+    ],
+    steps: [
+      "I_1 = \\int_0^\\pi\\sin x\\,dx = 2.",
+      "I_3 = \\frac{2}{3}I_1 = \\frac{4}{3}.",
+      "I_5 = \\frac{4}{5}I_3 = \\frac{4}{5}\\cdot\\frac{4}{3} = \\frac{16}{15}.",
+    ],
+  },
+];

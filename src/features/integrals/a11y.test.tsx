@@ -74,12 +74,21 @@ describe("the run", () => {
   });
 
   it("announces the verdict through a live region that was already mounted", async () => {
+    const problem = dailyProblem();
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
     const live = screen.getByRole("status");
     expect(live).toHaveAttribute("aria-live", "polite");
     expect(live).toBeEmptyDOMElement();
 
-    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: "1+1" } });
+    // No fixed guess is safe here: today's problem is whichever one the deterministic daily
+    // shuffle lands on. A small guess can coincidentally equal the real answer (solving the run and
+    // unmounting this very status region instead of just filling it); a huge fixed constant flips
+    // that risk around for an indefinite answer, since checkIndefinite's tolerance scales with the
+    // *guess's* own magnitude too — a wildly large constant can swamp a reference function's real
+    // (but small) variation and look flat by comparison. Perturbing the actual correct answer is
+    // the only guess that's wrong regardless of kind or magnitude — see integration.test.tsx.
+    const wrongGuess = problem.kind === "definite" ? `${problem.answer}+999999` : `${problem.answer}+x`;
+    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: wrongGuess } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
     await waitFor(() => expect(screen.getByRole("status")).not.toBeEmptyDOMElement());
   });

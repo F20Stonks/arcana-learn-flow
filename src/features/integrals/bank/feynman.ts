@@ -23,6 +23,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Neither x nor \\ln x integrates against the other directly — but the integrand is exactly \\frac{x^a-1}{\\ln x} at a = 1.",
       "Differentiating x^a with respect to a brings down a factor of \\ln x, which is exactly what's needed to cancel the denominator.",
@@ -46,6 +47,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Same family as \\int_0^1 \\frac{x-1}{\\ln x}dx, one step further along: this is I(2).",
     ],
@@ -66,6 +68,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: ["This is I(3) in the same family — the pattern is I(a) = \\ln(a+1) whatever a is."],
     steps: [
       "I(a) = \\ln(a+1) as before, so I(3) = \\ln 4 = 2\\ln 2.",
@@ -83,6 +86,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "\\sqrt{x} = x^{1/2}, so this is the same family evaluated at a non-integer parameter.",
       "There's nothing special about a being a whole number in the derivation — I(a) = \\ln(a+1) for any a > -1.",
@@ -104,6 +108,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
       "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
@@ -127,6 +132,7 @@ export const Feynman: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "On (0, \\tfrac{\\pi}{2}), \\arctan(\\tan x) = x — so x\\cot x is \\frac{\\arctan(\\tan x)}{\\tan x}, and that has an obvious place to put a parameter.",
       "Consider I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}dx. The target is I(1); I(0) = 0 outright.",
@@ -137,6 +143,28 @@ export const Feynman: Problem[] = [
       "Substitute t = \\tan x, dt = (1+t^2)dx: I'(a) = \\int_0^\\infty\\frac{dt}{(1+a^2t^2)(1+t^2)} = \\frac{\\pi}{2(1+a)} \\text{ (partial fractions)}.",
       "Integrating back: I(a) = \\frac{\\pi}{2}\\ln(1+a) + C, and I(0)=0 gives C=0.",
       "So I(1) = \\frac{\\pi}{2}\\ln 2 — and since \\arctan(\\tan x)=x here, this is exactly \\int_0^{\\pi/2}x\\cot x\\,dx.",
+    ],
+  },
+  {
+    id: "feynman-x-to-7-minus-1",
+    kind: "definite",
+    integrand: "\\frac{x^7-1}{\\ln x}",
+    integrandExpr: "(x^7-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "3*log(2)",
+    answerLatex: "3\\ln2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #24" },
+    hints: [
+      "This is I(a)=\\int_0^1\\frac{x^a-1}{\\ln x}dx at a=7 — the same family already in this bank.",
+      "I(a)=\\ln(a+1) still holds, so the answer is I(7)=\\ln8=3\\ln2.",
+    ],
+    steps: [
+      "I(a) = \\int_0^1\\frac{x^a-1}{\\ln x}\\,dx has I(a)=\\ln(a+1), by differentiating under the integral sign with respect to a.",
+      "At a=7: I(7)=\\ln8=3\\ln2.",
     ],
   },
 ];

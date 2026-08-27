@@ -57,12 +57,25 @@ describe("the daily", () => {
   });
 
   it("rejects a wrong answer and keeps the run going", async () => {
+    const problem = dailyProblem();
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
     const input = screen.getByPlaceholderText(/your answer|a number/i);
-    fireEvent.change(input, { target: { value: "42" } });
+    // No fixed guess is safe here: today's problem is whichever one the deterministic daily
+    // shuffle lands on. A fixed constant like "42" can coincidentally be a "nice" multiple of a
+    // real definite answer (off-by-constant-factor, not incorrect); a huge fixed constant flips
+    // that risk around for an indefinite answer, since checkIndefinite's tolerance scales with the
+    // *guess's* own magnitude too — a wildly large constant can swamp a reference function's real
+    // (but small) variation and look flat by comparison. Perturbing the actual correct answer is
+    // the only guess that's wrong regardless of kind or magnitude: for definite it's off by exactly
+    // 999999 (never a "nice" multiple of a small answer), and for indefinite the difference from
+    // the reference is exactly "x" — genuinely non-constant, so it can never pass the "+C" check.
+    const wrongGuess = problem.kind === "definite" ? `${problem.answer}+999999` : `${problem.answer}+x`;
+    fireEvent.change(input, { target: { value: wrongGuess } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
 
-    await waitFor(() => expect(screen.getByText(/Not equivalent|still have/)).toBeInTheDocument());
+    // The exact wording depends on which of several "wrong" verdict shapes fires (incorrect,
+    // off-by-constant-factor, unparseable) — what actually matters is that the run wasn't solved.
+    await waitFor(() => expect(screen.getByRole("status")).not.toBeEmptyDOMElement());
     expect(screen.queryByText("Solved.")).not.toBeInTheDocument();
     expect(getProgress().xp).toBe(0);
   });

@@ -30,5 +30,8 @@ scripts/scene-harness/results/
 # Vite writes these transient config artifacts when loading vite.config.ts;
 # they have been accidentally committed more than once.
 vite.config.ts.timestamp-*.mjs
+
+# Local Supabase CLI cache marker — regenerated per-machine, never meant to be shared.
+supabase/.temp/
 integration_bee_scraper/venv/
 integration_bee_scraper/downloads/
