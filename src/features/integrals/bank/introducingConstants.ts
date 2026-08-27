@@ -581,4 +581,21 @@ export const IntroducingConstants: Problem[] = [
       "So the ratio is identically 1 (for x>1, where both logs are defined), and \\int1\\,dx = x + C.",
     ],
   },
+  {
+    id: "ic-two-power-logx-over-x2",
+    kind: "indefinite",
+    integrand: "\\frac{2^{\\ln x}}{x^2}",
+    integrandExpr: "2^log(x)/x^2",
+    answer: "x^(log(2)-1)/(log(2)-1)",
+    answerLatex: "\\frac{x^{\\ln2-1}}{\\ln2-1} + C",
+    domain: [1, 5],
+    difficulty: 4,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
+    hints: ["a^{\\ln x} = x^{\\ln a} for any a>0 — rewrite the base 2 as an ordinary power of x, turning this into a plain power-rule integral."],
+    steps: [
+      "2^{\\ln x} = e^{\\ln x\\ln2} = x^{\\ln2}, so the integrand is x^{\\ln2-2}.",
+      "\\int x^{\\ln2-2}\\,dx = \\frac{x^{\\ln2-1}}{\\ln2-1} + C.",
+    ],
+  },
 ];

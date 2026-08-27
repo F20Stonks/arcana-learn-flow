@@ -1360,7 +1360,11 @@ export const Parts: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
+    // Was attributed to MIT 2026 #7 by an earlier session, on a misreading of that problem's OCR
+    // ("2 log(x)" for what is actually "2^(log x)", confirmed against the printed answer's
+    // x^(log2-1) form -- see mit-2026 "power-two-power-logx-over-x2" below, the real #7). Reverted
+    // to "original" rather than leave a citation that doesn't actually hold up.
+    source: { name: "original" },
     hints: [
       "Pull the 2 out front — it just rides along. What's left is the standard u=\\ln x,\\ dv=x^{-2}dx parts setup.",
     ],
