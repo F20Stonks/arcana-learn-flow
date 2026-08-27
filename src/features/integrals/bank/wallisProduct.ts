@@ -3,6 +3,11 @@
  * problems in recurrence.ts — same formula, half the interval. \cos^n over the same interval
  * gives identical values, by x\to\pi/2-x. The sin(x)^4/sin(x)^5 full-period problems in
  * recurrence.ts are tagged with this technique too, since they're the same reduction.
+ *
+ * The last two problems use the two-power generalisation \int_0^{\pi/2}\cos^{2\alpha-1}\theta
+ * \sin^{2\beta-1}\theta\,d\theta=\Gamma(\alpha)\Gamma(\beta)/(2\Gamma(\alpha+\beta)), derived from
+ * the same polar-coordinates trick as \int_0^\infty e^{-x^2}dx=\sqrt\pi/2 (see gaussian-hypersphere).
+ * Source: SPLASH 2011 "Superhuman Integration Techniques" (Andre Kessler), §4.3 (the Beta function).
  */
 import type { Problem } from "../types";
 
@@ -121,6 +126,50 @@ export const WallisProduct: Problem[] = [
     ],
     steps: [
       "I_8=\\frac{7}{8}\\cdot\\frac{5\\pi}{32}=\\frac{35\\pi}{256}.",
+    ],
+  },
+  {
+    id: "wallis-sin6-cos6",
+    kind: "definite",
+    integrand: "\\sin^6\\theta\\cos^6\\theta",
+    integrandExpr: "sin(x)^6*cos(x)^6",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "5*pi/2048",
+    answerLatex: "\\frac{5\\pi}{2048}",
+    domain: [0, Math.PI / 2],
+    difficulty: 5,
+    techniques: ["wallis-product"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3 (stated result)" },
+    hints: [
+      "This is the two-power Beta-trig identity with 2\\alpha-1=2\\beta-1=6, i.e. \\alpha=\\beta=\\frac{7}{2}.",
+      "\\Gamma(7/2)=\\frac{15\\sqrt\\pi}{8} and \\Gamma(7)=6!=720.",
+    ],
+    steps: [
+      "\\int_0^{\\pi/2}\\cos^6\\theta\\sin^6\\theta\\,d\\theta = \\frac{\\Gamma(7/2)^2}{2\\Gamma(7)} = \\frac{(15\\sqrt\\pi/8)^2}{2\\cdot720} = \\frac{225\\pi/64}{1440}.",
+      "= \\frac{225\\pi}{92160} = \\frac{5\\pi}{2048}.",
+    ],
+  },
+  {
+    id: "wallis-sqrt-sin",
+    kind: "definite",
+    integrand: "\\sqrt{\\sin\\theta}",
+    integrandExpr: "sqrt(sin(x))",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "sqrt(2/pi)*gamma(3/4)^2",
+    answerLatex: "\\sqrt{\\frac{2}{\\pi}}\\,\\Gamma\\!\\left(\\frac{3}{4}\\right)^2",
+    domain: [0, Math.PI / 2],
+    difficulty: 5,
+    techniques: ["wallis-product"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3 (stated result)" },
+    hints: [
+      "Match to the two-power identity with 2\\alpha-1=\\frac12 and 2\\beta-1=0, i.e. \\alpha=\\frac34,\\ \\beta=\\frac12.",
+      "\\Gamma at a quarter-integer has no simpler elementary form — the answer is allowed to contain \\Gamma(3/4) as-is, the same way it's allowed to contain \\pi.",
+    ],
+    steps: [
+      "\\int_0^{\\pi/2}\\sqrt{\\sin\\theta}\\,d\\theta = \\frac{\\Gamma(3/4)\\Gamma(1/2)}{2\\Gamma(5/4)}.",
+      "Using the reflection formula \\Gamma(1/4)\\Gamma(3/4)=\\pi\\sqrt2 and \\Gamma(5/4)=\\frac14\\Gamma(1/4) to eliminate \\Gamma(1/4), this simplifies to \\sqrt{2/\\pi}\\,\\Gamma(3/4)^2.",
     ],
   },
 ];

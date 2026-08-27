@@ -3,6 +3,11 @@
  * at both ends since exponential decay beats any polynomial). Scaling the decay rate
  * (\int_0^\infty x^n e^{-ax}\,dx = n!/a^{n+1}) and rewriting other bases (b^{-x}=e^{-x\ln b}) are
  * the two substitution-flavored variants drilled here.
+ *
+ * The last two problems use the complex-exponential trick: \cos x=\mathrm{Re}(e^{ix}), so
+ * \int_0^\infty x^ne^{-x}\cos x\,dx=\mathrm{Re}\,n!/(1-i)^{n+1} — the same n!/a^{n+1} formula with
+ * a complex a. Source: SPLASH 2011 "Superhuman Integration Techniques" (Andre Kessler), §4.1
+ * exercises 2(c) and 3.
  */
 import type { Problem } from "../types";
 
@@ -144,6 +149,51 @@ export const GammaFunction: Problem[] = [
     steps: [
       "2^{-x} = e^{-x\\ln 2}, so this is \\int_0^\\infty x^2e^{-x\\ln 2}\\,dx.",
       "\\frac{2!}{(\\ln 2)^3} = \\frac{2}{(\\ln 2)^3}.",
+    ],
+  },
+  {
+    id: "gamma-x3-ex-cosx",
+    kind: "definite",
+    integrand: "x^3e^{-x}\\cos x",
+    integrandExpr: "x^3*exp(-x)*cos(x)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "-3/2",
+    answerLatex: "-\\frac{3}{2}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["gamma-function"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.1 exercise 2(c)" },
+    hints: [
+      "\\cos x=\\mathrm{Re}(e^{ix}), so this is \\mathrm{Re}\\int_0^\\infty x^3e^{-(1-i)x}\\,dx — the n=3 gamma-function integral with complex a=1-i.",
+      "(1-i)^2=-2i, so (1-i)^4=(-2i)^2=-4 — a real number, which is why the final answer has no leftover i.",
+    ],
+    steps: [
+      "\\int_0^\\infty x^3e^{-(1-i)x}\\,dx = \\frac{3!}{(1-i)^4}.",
+      "(1-i)^4=-4, so this is \\frac{6}{-4}=-\\frac32 — already real, so taking the real part changes nothing.",
+    ],
+  },
+  {
+    id: "gamma-exp-sqrt-cos-sqrt",
+    kind: "definite",
+    integrand: "e^{-\\sqrt x}\\cos\\sqrt x",
+    integrandExpr: "exp(-sqrt(x))*cos(sqrt(x))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["gamma-function"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.1 exercise 3 (at \\varepsilon=1)" },
+    hints: [
+      "Substitute u=\\sqrt x first: x=u^2,\\ dx=2u\\,du, turning this into 2\\int_0^\\infty ue^{-u}\\cos u\\,du.",
+      "Apply the complex-exponential trick to that: \\cos u=\\mathrm{Re}(e^{iu}), giving the n=1 gamma-function integral with a=1-i.",
+    ],
+    steps: [
+      "2\\int_0^\\infty ue^{-u}\\cos u\\,du = 2\\,\\mathrm{Re}\\int_0^\\infty ue^{-(1-i)u}\\,du = 2\\,\\mathrm{Re}\\frac{1!}{(1-i)^2}.",
+      "(1-i)^2=-2i, so \\frac{1}{-2i}=\\frac{i}{2}, which is purely imaginary — its real part is 0.",
+      "So the integral is 2\\times0=0.",
     ],
   },
 ];

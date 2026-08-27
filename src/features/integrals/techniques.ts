@@ -365,6 +365,7 @@ export const TECHNIQUES: Technique[] = [
       "Use \\int_0^1 x^m(1-x)^n\\,dx = \\frac{m!\\,n!}{(m+n+1)!} — provable by repeated integration by parts, peeling one factor of (1-x) off at a time.",
       "Use the symmetry \\int_0^1 x^m(1-x)^n\\,dx = \\int_0^1 x^n(1-x)^m\\,dx (swap via u=1-x) as a free sanity check on the formula.",
       "For non-integer exponents the same pattern holds with factorials replaced by the Gamma function — the integer case is the one this bank drills.",
+      "A stray \\ln x (or \\ln(1-x)) alongside the powers is a sign to differentiate the Beta identity itself: \\int_0^1 x^{m+\\varepsilon}(1-x)^n\\,dx = \\frac{\\Gamma(m+1+\\varepsilon)n!}{\\Gamma(m+n+2+\\varepsilon)}, and differentiating both sides with respect to \\varepsilon at \\varepsilon=0 brings down exactly one factor of \\ln x. The digamma values that appear are differences of digammas at (half-)integers, which are always elementary — the \\gamma constant that digamma normally carries cancels between the two terms.",
     ],
     example: {
       integrand: "x^2(1-x)^3 \\text{ on } [0,1]",
@@ -379,6 +380,7 @@ export const TECHNIQUES: Technique[] = [
       "The formula needs the interval to be [0,1] with the two factors exactly x and 1-x — rescale first if it isn't, don't try to patch the formula.",
       "m and n must be nonnegative integers for the factorial form; a fractional power needs the Gamma function instead.",
       "Don't forget the +1 in the denominator's (m+n+1)! — it's the single most common slip with this identity.",
+      "The digamma trick only stays elementary when the un-differentiated exponent is an integer or a half-integer (so \\Gamma of it is elementary too) — differentiating at a genuinely fractional exponent leaves the Euler-Mascheroni constant \\gamma sitting in the answer instead of cancelling.",
     ],
   },
   {
@@ -473,6 +475,7 @@ export const TECHNIQUES: Technique[] = [
       "Integration by parts (u=x^n,\\ dv=e^{-x}dx) gives the reduction \\int_0^\\infty x^n e^{-x}\\,dx = n\\int_0^\\infty x^{n-1}e^{-x}\\,dx — the boundary term vanishes at both ends since x^n e^{-x}\\to 0 as x\\to\\infty and equals 0 at x=0. Unrolling it gives \\int_0^\\infty x^n e^{-x}\\,dx = n!.",
       "For a decay rate other than 1, substitute u=ax first: \\int_0^\\infty x^n e^{-ax}\\,dx = \\frac{n!}{a^{n+1}}.",
       "For a base other than e, rewrite it: b^{-x} = e^{-x\\ln b}, then apply the same formula with a=\\ln b.",
+      "A trailing \\cos x or \\sin x alongside the exponential is the formula in disguise with a complex a: since \\cos x=\\mathrm{Re}(e^{ix}), \\int_0^\\infty x^ne^{-x}\\cos x\\,dx=\\mathrm{Re}\\int_0^\\infty x^ne^{-(1-i)x}\\,dx=\\mathrm{Re}\\frac{n!}{(1-i)^{n+1}} — the same \\frac{n!}{a^{n+1}} formula, with a=1-i.",
     ],
     example: {
       integrand: "x^3\\,3^{-x} \\text{ on } (0,\\infty)",
@@ -487,6 +490,7 @@ export const TECHNIQUES: Technique[] = [
       "n! here means the ordinary integer factorial (0!=1, and it grows fast) — don't confuse it with the Gamma function's shift, \\Gamma(n+1)=n!, unless a problem genuinely has a non-integer exponent.",
       "The boundary term in the by-parts reduction only vanishes because e^{-x} beats any polynomial as x\\to\\infty — this whole family depends on genuinely exponential (or faster) decay, not merely \\to 0.",
       "A Gaussian integrand (e^{-x^2}, not e^{-x}) is a different animal — it doesn't reduce to a factorial by integration by parts the same way; it needs the dedicated Gaussian/hypersphere approach instead.",
+      "The complex-a trick only lands on an elementary real answer when \\mathrm{Re}\\frac{n!}{a^{n+1}} actually simplifies to a real number by hand (as it does for a=1-i, since (1-i)^{n+1} works out to a real or purely imaginary Gaussian integer for every n) — for a generic complex a you'd need the modulus-argument form of a^{n+1}, which is beyond a 'type the number' answer.",
     ],
   },
   {
@@ -500,6 +504,8 @@ export const TECHNIQUES: Technique[] = [
       "Multiply through by x^n and integrate term by term: \\int_0^\\infty x^n\\cdot\\frac{1}{e^x\\mp1}\\,dx = \\sum_{k=1}^\\infty(\\pm1)^{k-1}\\int_0^\\infty x^ne^{-kx}\\,dx.",
       "Each term is a gamma-function integral: \\int_0^\\infty x^ne^{-kx}\\,dx=\\frac{n!}{k^{n+1}}.",
       "What's left is a numerical series in \\frac{1}{k^{n+1}} — \\zeta(n+1) for the \\frac{1}{e^x-1} case, or the alternating \\eta(n+1) for \\frac{1}{e^x+1}. For even n+1 these have closed forms in \\pi (e.g. \\zeta(2)=\\frac{\\pi^2}{6}, \\zeta(4)=\\frac{\\pi^4}{90}); that's what makes the integral come out elementary.",
+      "The same series, differentiated once, handles \\frac{e^x}{(e^x-1)^2}: since \\frac{d}{dx}\\frac{1}{e^x-1}=-\\frac{e^x}{(e^x-1)^2}, the series \\sum e^{-kx} differentiates to \\sum ke^{-kx}, so \\int_0^\\infty x^n\\cdot\\frac{e^x}{(e^x-1)^2}\\,dx=\\sum_{k=1}^\\infty k\\int_0^\\infty x^ne^{-kx}\\,dx=n!\\,\\zeta(n).",
+      "\\ln(1-x)=-\\sum_{k=1}^\\infty\\frac{x^k}{k}, so \\int_0^1\\frac{\\ln(1-x)}{x}\\,dx=-\\sum_{k=1}^\\infty\\int_0^1x^{k-1}\\,dx/k=-\\sum\\frac{1}{k^2}=-\\zeta(2)=-\\frac{\\pi^2}{6} — the same series trick, run on [0,1] instead of (0,\\infty).",
     ],
     example: {
       integrand: "\\frac{x}{e^x-1} \\text{ on } (0,\\infty)",
@@ -527,6 +533,7 @@ export const TECHNIQUES: Technique[] = [
       "On [0,\\pi/2], \\sin x\\in[0,1], so higher powers are pointwise smaller: \\sin^{n+1}x\\leq\\sin^nx\\leq\\sin^{n-1}x for every x there, hence I_{n+1}\\leq I_n\\leq I_{n-1}.",
       "Divide through by I_{n-1}: \\frac{I_{n+1}}{I_{n-1}}\\leq\\frac{I_n}{I_{n-1}}\\leq 1. The reduction formula gives \\frac{I_{n+1}}{I_{n-1}}=\\frac{n}{n+1}\\to1, so by squeezing, \\frac{I_n}{I_{n-1}}\\to1 too.",
       "Unrolling the even-index reduction all the way down and substituting into that ratio produces the Wallis product: \\frac{\\pi}{2}=\\prod_{k=1}^\\infty\\frac{2k}{2k-1}\\cdot\\frac{2k}{2k+1} = \\frac{2}{1}\\cdot\\frac{2}{3}\\cdot\\frac{4}{3}\\cdot\\frac{4}{5}\\cdot\\frac{6}{5}\\cdot\\frac{6}{7}\\cdots",
+      "The two-power version \\int_0^{\\pi/2}\\cos^{2\\alpha-1}\\theta\\sin^{2\\beta-1}\\theta\\,d\\theta=\\frac{\\Gamma(\\alpha)\\Gamma(\\beta)}{2\\Gamma(\\alpha+\\beta)} comes from the same substitution that proves \\int_0^\\infty e^{-x^2}dx=\\frac{\\sqrt\\pi}{2}: write \\Gamma(\\alpha)\\Gamma(\\beta) as a product of two Gaussian integrals, switch to polar coordinates, and the angular integral left over is exactly this one.",
     ],
     example: {
       integrand: "\\sin^6 x \\text{ on } \\left[0,\\frac{\\pi}{2}\\right]",
@@ -541,6 +548,7 @@ export const TECHNIQUES: Technique[] = [
       "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the exact same I_n — substitute x\\to\\frac{\\pi}{2}-x to see sin and cos trade places over this particular interval — so don't re-derive the cosine case from scratch.",
       "The squeeze argument needs sin x\\in[0,1] on the interval, which is specific to [0,\\pi/2] (or [0,\\pi]) — it's not a general fact about \\sin^nx for arbitrary bounds.",
       "The reduction formula alone answers every 'evaluate this integral' problem; the squeeze/product derivation is the extra mile that explains *why* the Wallis product converges to \\pi, not a step you need for a numeric answer.",
+      "\\Gamma at a quarter-integer (like \\Gamma(3/4)) has no simpler closed form — an answer is allowed to contain it as-is, the same way an answer is allowed to contain \\pi or \\sqrt2.",
     ],
   },
   {

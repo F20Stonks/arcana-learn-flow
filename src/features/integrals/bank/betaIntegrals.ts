@@ -2,6 +2,12 @@
  * Beta function integrals, restricted to integer exponents: \int_0^1 x^m(1-x)^n dx = m!n!/(m+n+1)!.
  * That closed form is provable by repeated parts (peel one factor of (1-x) off at a time), but every
  * problem here is about recognising the shape fast rather than re-deriving the identity each time.
+ *
+ * The last four problems extend this to integrands carrying a stray \ln x or a half-integer power,
+ * by differentiating the Beta-function identity \int_0^1x^{m+\varepsilon}(1-x)^n\,dx=\Gamma(m+1+
+ * \varepsilon)n!/\Gamma(m+n+2+\varepsilon) with respect to \varepsilon at \varepsilon=0 (bringing down
+ * one factor of \ln x), or by evaluating it directly at a half-integer m. Source: SPLASH 2011
+ * "Superhuman Integration Techniques" (Andre Kessler), §4.3.1 (logarithms and the Beta function).
  */
 import type { Problem } from "../types";
 
@@ -127,6 +133,96 @@ export const BetaIntegrals: Problem[] = [
     ],
     steps: [
       "\\frac{3!\\cdot 3!}{7!} = \\frac{6\\cdot 6}{5040} = \\frac{36}{5040} = \\frac{1}{140}.",
+    ],
+  },
+  {
+    id: "beta-x3-sqrt-1mx",
+    kind: "definite",
+    integrand: "x^3\\sqrt{1-x}",
+    integrandExpr: "x^3*sqrt(1-x)",
+    lower: "0",
+    upper: "1",
+    answer: "32/315",
+    answerLatex: "\\frac{32}{315}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3.1 exercise 1(d)" },
+    hints: [
+      "This is \\int_0^1x^3(1-x)^{1/2}\\,dx — the Beta identity still holds with a half-integer exponent, using \\Gamma instead of a factorial for the half-integer side.",
+      "\\Gamma(3/2)=\\frac{\\sqrt\\pi}{2} and \\Gamma(11/2)=\\frac{945}{32}\\sqrt\\pi — the \\sqrt\\pi cancels in the ratio, leaving a rational number.",
+    ],
+    steps: [
+      "\\int_0^1x^3(1-x)^{1/2}dx = \\frac{3!\\,\\Gamma(3/2)}{\\Gamma(11/2)} = 6\\cdot\\frac{\\sqrt\\pi/2}{945\\sqrt\\pi/32}.",
+      "= 6\\cdot\\frac{16}{945} = \\frac{96}{945} = \\frac{32}{315}.",
+    ],
+  },
+  {
+    id: "beta-log-x-times-1mx",
+    kind: "definite",
+    integrand: "\\ln x\\ln(1-x)",
+    integrandExpr: "log(x)*log(1-x)",
+    lower: "0",
+    upper: "1",
+    answer: "2-pi^2/6",
+    answerLatex: "2-\\frac{\\pi^2}{6}",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3.1 (worked in the text)" },
+    hints: [
+      "\\ln x\\ln(1-x) is exactly the \\varepsilon\\delta term in the double Taylor expansion of \\int_0^1x^\\varepsilon(1-x)^\\delta\\,dx=\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1+\\delta)}{\\Gamma(2+\\varepsilon+\\delta)} about \\varepsilon=\\delta=0.",
+      "Expanding that ratio of Gammas to second order, the \\gamma terms cancel between numerator and denominator and only a \\zeta(2)\\varepsilon\\delta term survives.",
+    ],
+    steps: [
+      "\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1+\\delta)}{\\Gamma(2+\\varepsilon+\\delta)} = \\left(1-(\\varepsilon+\\delta)+(\\varepsilon+\\delta)^2-\\cdots\\right)e^{-\\zeta(2)\\varepsilon\\delta+\\cdots}.",
+      "Collecting the \\varepsilon\\delta coefficient from both factors gives 2-\\zeta(2) = 2-\\frac{\\pi^2}{6}.",
+    ],
+  },
+  {
+    id: "beta-log-x-over-sqrt-1mx",
+    kind: "definite",
+    integrand: "\\frac{\\ln x}{\\sqrt{1-x}}",
+    integrandExpr: "log(x)/sqrt(1-x)",
+    lower: "0",
+    upper: "1",
+    answer: "4*log(2)-4",
+    answerLatex: "4\\ln 2-4",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3.1 exercise 1(a)" },
+    hints: [
+      "Differentiate \\int_0^1x^{1+\\varepsilon}(1-x)^{-1/2}\\,dx = \\frac{\\Gamma(2+\\varepsilon)\\Gamma(1/2)}{\\Gamma(5/2+\\varepsilon)}\\cdot\\frac{1}{1}... — really, work with \\int_0^1x^\\varepsilon(1-x)^{-1/2}dx=\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1/2)}{\\Gamma(3/2+\\varepsilon)} and differentiate at \\varepsilon=0.",
+      "\\psi(1)=-\\gamma and \\psi(3/2)=2-2\\ln 2-\\gamma — the \\gamma cancels in the difference, leaving an elementary answer.",
+    ],
+    steps: [
+      "B(1+\\varepsilon,\\tfrac12)=\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1/2)}{\\Gamma(3/2+\\varepsilon)}; at \\varepsilon=0 this is B(1,\\tfrac12)=2.",
+      "\\frac{d}{d\\varepsilon}\\ln B(1+\\varepsilon,\\tfrac12)\\Big|_0 = \\psi(1)-\\psi(3/2) = -\\gamma-(2-2\\ln2-\\gamma) = 2\\ln2-2.",
+      "So \\int_0^1\\frac{\\ln x}{\\sqrt{1-x}}\\,dx = 2\\cdot(2\\ln2-2) = 4\\ln2-4.",
+    ],
+  },
+  {
+    id: "beta-x2-1mx3-log-x",
+    kind: "definite",
+    integrand: "x^2(1-x)^3\\ln x",
+    integrandExpr: "x^2*(1-x)^3*log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "-19/1200",
+    answerLatex: "-\\frac{19}{1200}",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3.1 exercise 1(c)" },
+    hints: [
+      "Differentiate B(3+\\varepsilon,4) with respect to \\varepsilon at \\varepsilon=0 — since both arguments are positive integers, the digamma difference is a difference of harmonic numbers, not \\gamma.",
+      "\\psi(3)-\\psi(7) = H_2-H_6 = \\frac{3}{2}-\\frac{49}{20} = -\\frac{19}{20}.",
+    ],
+    steps: [
+      "B(3,4) = \\frac{2!\\,3!}{6!} = \\frac{1}{60}.",
+      "\\frac{d}{d\\varepsilon}\\ln B(3+\\varepsilon,4)\\Big|_0 = \\psi(3)-\\psi(7) = H_2-H_6 = -\\frac{19}{20}.",
+      "\\int_0^1x^2(1-x)^3\\ln x\\,dx = \\frac{1}{60}\\times\\left(-\\frac{19}{20}\\right) = -\\frac{19}{1200}.",
     ],
   },
 ];

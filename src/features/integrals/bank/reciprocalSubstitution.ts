@@ -184,4 +184,27 @@ export const ReciprocalSubstitution: Problem[] = [
       "I = 2\\sum_{k=0}^\\infty(-1)^k\\frac{2}{(2k+1)^3} = 4\\sum_{k=0}^\\infty\\frac{(-1)^k}{(2k+1)^3}, and that series is Catalan's-constant-adjacent — its known closed form here is \\frac{\\pi^3}{32}\\cdot 4 = \\frac{\\pi^3}{8}.",
     ],
   },
+  {
+    id: "recip-log-over-x-power-2011",
+    kind: "definite",
+    integrand: "\\frac{\\ln x}{x^{2011}}",
+    integrandExpr: "log(x)/x^2011",
+    lower: "1",
+    upper: "\\infty",
+    answer: "1/2010^2",
+    answerLatex: "\\frac{1}{2010^2}",
+    domain: [1, Infinity],
+    difficulty: 5,
+    techniques: ["reciprocal-substitution", "log-power-integrals"],
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§2 exercise 3 (citing HMMT 2011)" },
+    hints: [
+      "Substitute x=\\frac{1}{u}: the bounds (1,\\infty) map to (0,1), turning this into a log-power integral in u.",
+      "\\ln x=-\\ln u and \\frac{dx}{x^{2011}}=u^{2009}\\,du (track the sign from both the exponent flip and the (1,\\infty)\\to(0,1) bound flip).",
+    ],
+    steps: [
+      "With x=\\frac{1}{u}: \\int_1^\\infty\\frac{\\ln x}{x^{2011}}\\,dx = -\\int_0^1 u^{2009}\\ln u\\,du.",
+      "\\int_0^1 u^{2009}\\ln u\\,du = \\frac{(-1)^1\\cdot 1!}{2010^2} = -\\frac{1}{2010^2}, the n=2009,\\,k=1 log-power result.",
+      "So the original integral is -\\left(-\\frac{1}{2010^2}\\right) = \\frac{1}{2010^2}.",
+    ],
+  },
 ];
