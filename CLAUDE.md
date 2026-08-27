@@ -271,10 +271,36 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     actual Playwright walkthrough against the dev server (`/dev/integrals/train` unguarded routes),
     not just unit tests — screenshots of the hub, the custom-mix drill, and the source drill all
     confirmed correct. 824/824 tests passing, typecheck clean.
-  - Next up (continuing this same session/loop if runway remains, else the next one): the
-    `AnswerInput.tsx` integral-builder UI (standing directive #4) — a clickable symbol palette (e,
-    π, ^, √, common functions) as a structural supplement to the existing free-text parser, both
-    ending up as a string compared against the stored answer, no grading-engine change needed. No
-    new source PDFs were in this session's uploads, so no mining pass was needed this round — check
-    for new uploads at the start of the next session before resuming this list, per standing
-    directive #2.
+  - Built the `AnswerInput.tsx` integral-builder UI (commit `846aac5`, standing directive #4): a
+    Type/Build toggle; Build reveals a palette (x, e, π, C; operators, ^, √, parens, |·|;
+    sin/cos/tan/ln/arcsin/arctan) that inserts tokens at the cursor in the same text field Type
+    uses, with function/root keys leaving the cursor between the pair they insert. Both modes
+    write the same `value` string graded against the stored answer — `answer.ts` untouched, exactly
+    as the directive asked. Verified with a Playwright walkthrough (building `x^3/3` and `sin(x)`
+    via clicks, backspace, live preview all correct) as well as the full test suite.
+  - **This closes out every item explicitly planned in this runbook** — the infinite-domain
+    engine fix, all six new techniques, the `source` field + backfill, the technique/source filter
+    UI, and the answer-builder UI. End-of-session final check (not just `src/features/integrals`):
+    `npx vitest run` — 923/923 passing across the whole repo; `npx tsc --noEmit` — clean;
+    `npx eslint src` — the only findings are pre-existing errors in files this session never
+    touched (`paddle.ts`, `sceneOutcomeLog.ts`, `Dashboard.tsx`, `QuestionAttack.tsx`, etc., all
+    outside `src/features/integrals`/`src/pages/Integral*` and out of this task's scope per the
+    top of this file).
+  - **Nothing left to do without new input.** Standing directive #2 forbids inventing new
+    problems by plugging fresh numbers into a formula going forward (the "formula-instance"
+    exception was for `t-sub`/`recurrence`/`beta-integrals`/`introducing-constants`/this session's
+    six techniques specifically, already used up) — so there is no more sourced content to mine
+    until the owner supplies more PDFs, and no more planned engineering work is queued. If you are
+    a future session/loop iteration starting here with runway left and no new uploads: don't
+    invent problems or add speculative features — check for new source PDFs first (standing
+    directive #2), and if there are none, that genuinely is the hard stop this runbook's opening
+    section anticipates. Report that back rather than manufacturing busywork.
+  - **Two follow-ups for the owner specifically**, both flagged inline above where they came up
+    rather than fixed unilaterally: (1) the ~80 problems mined in commit `3eac99d` (and possibly
+    the earlier `t-sub`/`recurrence`/etc. techniques) could use real per-problem `source` tagging
+    instead of the `{name: "original"}` fallback, if the owner re-supplies the original Fresno
+    State/HMMT/MIT PDFs. (2) The reciprocal-substitution flagship
+    `∫₀^∞ arctan(x)/(x(1+ln²x))dx=π²/4` genuinely cannot be machine-verified by the quadrature
+    scheme this repo uses (confirmed with real effort, not a quick guess) — it lives as the
+    technique's worked lesson example instead of a graded bank problem, which is almost certainly
+    fine, but the owner may want to weigh in if he'd rather it be handled differently.
