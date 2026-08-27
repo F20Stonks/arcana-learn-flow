@@ -208,7 +208,7 @@ export const GammaFunction: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["gamma-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "u=x^4 turns this into a Gamma integral at a half-integer parameter: \\Gamma\\!\\left(\\frac32\\right).",
     ],

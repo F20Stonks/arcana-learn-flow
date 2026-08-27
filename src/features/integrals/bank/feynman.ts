@@ -157,7 +157,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #24" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "This is I(a)=\\int_0^1\\frac{x^a-1}{\\ln x}dx at a=7 — the same family already in this bank.",
       "I(a)=\\ln(a+1) still holds, so the answer is I(7)=\\ln8=3\\ln2.",

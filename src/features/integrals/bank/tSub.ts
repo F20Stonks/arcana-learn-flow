@@ -148,7 +148,7 @@ export const TSub: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["t-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "A squared cosine, not a bare one — the double-angle identity turns it into the a+b\\cos(2x) shape you already know how to t-sub.",
       "1+\\cos^2x = 1+\\frac{1+\\cos2x}{2} = \\frac{3+\\cos2x}{2}.",
@@ -218,7 +218,7 @@ export const TSub: Problem[] = [
     domain: [0, 5 * Math.PI / 2],
     difficulty: 5,
     techniques: ["t-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "The interval is more than one full period: \\frac{5\\pi}{2}=2\\pi+\\frac{\\pi}{2}. Split off the full period, then handle the leftover \\frac{\\pi}{2} by periodicity.",
       "t=\\tan(x/2) reduces \\frac{1}{2+\\cos x} to \\frac{2}{3+t^2}, a plain arctangent form.",
@@ -241,7 +241,7 @@ export const TSub: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["t-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "\\sin^4x+\\cos^4x = 1-2\\sin^2x\\cos^2x = 1-\\frac12\\sin^2(2x), which reduces to a plain function of \\cos4x.",
       "The result has period \\frac{\\pi}{2} in x — [0,2\\pi] covers exactly four full periods.",

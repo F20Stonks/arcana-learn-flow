@@ -153,7 +153,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "\\lfloor1-\\log_2(1-x)\\rfloor=n exactly when x lies in a specific interval — work out that interval's endpoints and width in terms of n.",
       "Once you have the width of each piece, what's left is a power series in \\frac12.",
@@ -176,7 +176,7 @@ export const FloorFunction: Problem[] = [
     domain: [50, 100],
     difficulty: 3,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "\\lfloor\\log_2x\\rfloor jumps at powers of 2 — find the one power of 2 inside [50,100].",
     ],
@@ -198,7 +198,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "For non-integer y, \\lfloor y\\rfloor+\\lfloor-y\\rfloor=-1. Since 2023\\sin x is an integer only at isolated points, this holds almost everywhere.",
       "Compare \\lfloor2023\\sin x\\rfloor to \\lfloor2023\\sin(2\\pi-x)\\rfloor = \\lfloor-2023\\sin x\\rfloor over the same interval.",
@@ -221,7 +221,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 20],
     difficulty: 3,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["Split at the integers: on [k,k+1), \\lfloor x\\rfloor^2=k^2, a constant."],
     steps: [
       "\\int_0^{20}\\lfloor x\\rfloor^2\\,dx = \\sum_{k=0}^{19}k^2\\cdot1 = \\sum_{k=0}^{19}k^2.",
@@ -240,7 +240,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 2026],
     difficulty: 4,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: ["Split at the integers: on [k,k+1), \\lfloor x\\rfloor^3=k^3, a constant."],
     steps: [
       "\\int_0^{2026}\\lfloor x\\rfloor^3\\,dx = \\sum_{k=0}^{2025}k^3.",
@@ -259,7 +259,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, 1000],
     difficulty: 5,
     techniques: ["floor-function"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "For non-integer x, \\lceil x\\rceil and \\lfloor x\\rfloor are already integers, so applying floor/ceil to THEM again does nothing.",
       "The fractional part \\{x\\} lies strictly in (0,1) for non-integer x — so \\lfloor\\{x\\}\\rfloor=0 and \\lceil\\{x\\}\\rceil=1.",

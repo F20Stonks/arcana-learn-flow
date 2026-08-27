@@ -179,7 +179,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [-Infinity, Infinity],
     difficulty: 5,
     techniques: ["complete-square", "gaussian-hypersphere"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "Complete the square in the exponent first: -2x^2-5x-3 = -2\\left(x+\\frac54\\right)^2+\\frac18.",
       "Once shifted, this is a plain Gaussian integral times a constant e^{1/8}.",
@@ -201,7 +201,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [-Infinity, Infinity],
     difficulty: 5,
     techniques: ["gaussian-hypersphere", "trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "\\sin^2\\!\\left(x+\\frac{\\pi}{4}\\right) = \\frac{1+\\sin2x}{2} — split into a Gaussian piece and an odd piece.",
     ],
@@ -223,7 +223,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [-Infinity, Infinity],
     difficulty: 5,
     techniques: ["u-sub", "gaussian-hypersphere"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "u=x^3 turns 3x^2\\,dx into du, and the exponent -x^6-2x^3 becomes -u^2-2u — complete the square in u.",
     ],
@@ -245,7 +245,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["u-sub", "gaussian-hypersphere"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "s=\\frac1x is a reciprocal substitution — it turns \\frac{dx}{x^2} into -ds and the exponent into a plain Gaussian in s.",
     ],
@@ -266,7 +266,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [-Infinity, Infinity],
     difficulty: 5,
     techniques: ["gaussian-hypersphere", "symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Compare f(x) to f(-x): multiplying f(-x) top and bottom by e^{2x} clears the negative exponent.",
       "f(x)+f(-x) collapses to a plain Gaussian, and the range is symmetric — so you never integrate f alone.",

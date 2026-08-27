@@ -237,7 +237,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: ["m=1, n=99: \\frac{1!\\cdot 99!}{101!}."],
     steps: [
       "\\frac{1!\\cdot 99!}{101!} = \\frac{99!}{101\\cdot100\\cdot99!} = \\frac{1}{10100}.",
@@ -255,7 +255,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: ["This is B\\!\\left(\\frac12,\\frac12\\right) exactly."],
     steps: [
       "B\\!\\left(\\frac12,\\frac12\\right) = \\frac{\\Gamma(1/2)^2}{\\Gamma(1)} = \\left(\\sqrt\\pi\\right)^2 = \\pi.",
@@ -271,7 +271,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "The same logarithmic-differentiation move as \\Gamma and Beta problems: if y=(\\cos x)^{\\cos x}, differentiate \\ln y first.",
     ],
@@ -293,7 +293,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 2],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "The same logarithmic-differentiation move: if z=x^{x^2}, differentiate \\ln z=x^2\\ln x first.",
     ],
@@ -313,7 +313,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [1, 2],
     difficulty: 4,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "The same logarithmic-differentiation move: if y=x^{2x}, differentiate \\ln y=2x\\ln x first.",
     ],
@@ -332,7 +332,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0.2, 0.8],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "The same logarithmic-differentiation move: if y=\\cos(x)^x, differentiate \\ln y=x\\ln(\\cos x) first.",
     ],
@@ -354,7 +354,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["u=x^{2025} turns this into a plain Beta-integral shape, \\int_0^1(1-u)^{2025}\\,du up to a constant."],
     steps: [
       "u=x^{2025},\\ du=2025x^{2024}\\,dx: \\int_0^1x^{2024}(1-x^{2025})^{2025}\\,dx = \\frac1{2025}\\int_0^1(1-u)^{2025}\\,du.",
@@ -374,7 +374,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["beta-integrals"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["This is B\\!\\left(\\frac32,\\frac32\\right), or equivalently the area under a semicircle of radius \\frac12."],
     steps: [
       "y=\\sqrt{x(1-x)} traces the upper half of a circle of radius \\frac12 centred at x=\\frac12.",

@@ -725,7 +725,7 @@ export const StandardForms: Problem[] = [
     domain: [2, 6],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Expand both logs before doing anything else: \\ln(x^2)=2\\ln x and \\ln(2x)=\\ln2+\\ln x.",
       "Once expanded, every \\ln x term cancels — the whole integrand is a constant.",
@@ -747,7 +747,7 @@ export const StandardForms: Problem[] = [
     domain: [0.25, 0.5],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "\\ln(1/x)=-\\ln x, and \\int\\ln x\\,dx=x\\ln x-x — a standard form once you strip the minus sign off.",
     ],
@@ -769,7 +769,7 @@ export const StandardForms: Problem[] = [
     domain: [1, Math.E],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: ["\\ln(x^2)=2\\ln x, and \\int\\ln x\\,dx=x\\ln x-x is a standard form."],
     steps: [
       "\\int\\ln(x^2)\\,dx = 2\\int\\ln x\\,dx = 2(x\\ln x-x).",
@@ -787,7 +787,7 @@ export const StandardForms: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["The general exponential standard form: \\int a^x\\,dx = \\frac{a^x}{\\ln a}."],
     steps: ["\\int2015^x\\,dx = \\frac{2015^x}{\\ln2015} + C."],
   },
@@ -803,7 +803,7 @@ export const StandardForms: Problem[] = [
     domain: [1, Math.E],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["\\ln\\sqrt x=\\frac12\\ln x, and \\int\\ln x\\,dx=x\\ln x-x."],
     steps: [
       "\\int\\ln\\sqrt x\\,dx = \\frac12(x\\ln x-x).",
@@ -821,7 +821,7 @@ export const StandardForms: Problem[] = [
     domain: [1, 4],
     difficulty: 4,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "Multiply the two trinomials out fully — nine terms, several of which are just 1 — before integrating anything.",
       "Every surviving term is a pure power of x, so this is just the power rule applied seven times.",
@@ -843,7 +843,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 2],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: ["\\int\\ln x\\,dx=x\\ln x-x is a standard form; x\\ln x\\to0 as x\\to0^+."],
     steps: [
       "\\int2\\ln x\\,dx = 2(x\\ln x-x).",
@@ -863,7 +863,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "Split into \\ln(1+x)-\\ln(1-x) and integrate each piece with the standard \\ln form.",
     ],
@@ -883,7 +883,7 @@ export const StandardForms: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "This is (A+B)(A-B) with A=1+x^2+x^4,\\ B=x+x^3 — a difference of squares in disguise.",
     ],
@@ -904,7 +904,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 4],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: ["Plain power rule."],
     steps: ["\\int_0^4x^5\\,dx = \\left[\\frac{x^6}6\\right]_0^4 = \\frac{4096}6 = \\frac{2048}3."],
   },
@@ -920,7 +920,7 @@ export const StandardForms: Problem[] = [
     domain: [-1.5, -0.5],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: ["Plain term-by-term power rule; no trick needed."],
     steps: [
       "\\int\\left(x^5+5x^4+10x^3+8x^2+x\\right)dx = \\frac{x^6}6+x^5+\\frac{5x^4}2+\\frac{8x^3}3+\\frac{x^2}2.",
@@ -939,7 +939,7 @@ export const StandardForms: Problem[] = [
     domain: [2023, 2025],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: ["A constant integrand — the integral is just the constant times the interval length."],
     steps: ["\\int_{2023}^{2025}2024\\,dx = 2024\\times(2025-2023) = 4048."],
   },
@@ -955,7 +955,7 @@ export const StandardForms: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: ["Expand and integrate term by term — every power here is even, so nothing vanishes by symmetry."],
     steps: [
       "(5x^3-3x)^2 = 25x^6-30x^4+9x^2.",
@@ -975,7 +975,7 @@ export const StandardForms: Problem[] = [
     domain: [1, Math.exp(Math.E)],
     difficulty: 5,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "Simplify the argument of the outer log first: \\ln(x^x)=x\\ln x, so x^{\\ln(x^x)} = x^{x\\ln x}.",
       "\\ln\\!\\left(\\frac{x^{x\\ln x}}{x^2}\\right) = (x\\ln x-2)\\ln x = x\\ln^2x-2\\ln x.",
@@ -998,7 +998,7 @@ export const StandardForms: Problem[] = [
     domain: [1, 2],
     difficulty: 4,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "\\int2^{x-1}\\,dx = \\frac{2^{x-1}}{\\ln2}, and \\log_2(2x)=1+\\log_2x — both are standard forms.",
     ],

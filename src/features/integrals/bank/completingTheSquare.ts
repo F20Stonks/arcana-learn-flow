@@ -181,7 +181,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [0, 10],
     difficulty: 4,
     techniques: ["complete-square"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "Complete the square: x^2-15x-2014 = \\left(x-\\frac{15}{2}\\right)^2-2070.25, and 2070.25=45.5^2 exactly.",
       "This lands on the standard \\int\\frac{du}{u^2-a^2}=\\frac{1}{2a}\\ln\\left|\\frac{u-a}{u+a}\\right| form.",
@@ -202,7 +202,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [1, 4],
     difficulty: 5,
     techniques: ["complete-square", "u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "u=\\sqrt x turns the denominator into u^2+4u+5 — complete the square in u.",
       "u^2+4u+5=(u+2)^2+1, and the numerator 2u\\,du splits cleanly against that shifted quadratic.",
@@ -223,7 +223,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [0.5, 2],
     difficulty: 4,
     techniques: ["u-sub", "complete-square"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "u=x^2 turns this into \\frac12\\int\\frac{du}{u^2+u+1}, then complete the square in u.",
     ],
@@ -243,7 +243,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [-1, 2],
     difficulty: 3,
     techniques: ["complete-square"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "Expand and complete the square: x^2+(x-1)^2 = 2x^2-2x+1 = 2\\left(x-\\frac12\\right)^2+\\frac12.",
     ],
@@ -262,7 +262,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [0.2, 0.8],
     difficulty: 3,
     techniques: ["complete-square"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Complete the square: x-x^2 = \\frac14-\\left(x-\\frac12\\right)^2 — a standard \\arcsin form once shifted.",
     ],

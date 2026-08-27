@@ -184,7 +184,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["wallis-product"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "\\sin(2x)=2\\sin x\\cos x, so \\sin^3(2x)\\cos x = 8\\sin^3x\\cos^4x — a plain two-power sin/cos integral.",
       "With an odd power of \\sin x present, u=\\cos x turns this into a polynomial integral directly, no reduction formula needed.",
@@ -207,7 +207,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 4,
     techniques: ["wallis-product", "symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "\\sin x+\\cos x = \\sqrt2\\sin\\!\\left(x+\\frac{\\pi}4\\right) — this is an odd power of a shifted sine.",
     ],
@@ -229,7 +229,7 @@ export const WallisProduct: Problem[] = [
     domain: [-Math.PI, Math.PI],
     difficulty: 3,
     techniques: ["symmetry", "wallis-product"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "An odd power of \\sin x times an even power of \\cos x is an odd function — no reduction formula needed.",
     ],

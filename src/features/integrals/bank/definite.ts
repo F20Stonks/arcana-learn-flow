@@ -589,7 +589,7 @@ export const Definite: Problem[] = [
     domain: [1, 2011],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "King's rule with x\\to2012-x swaps the roles of \\sqrt x and \\sqrt{2012-x} but leaves the denominator's overall shape unchanged.",
       "Adding the integral to its King's-rule twin makes the numerator match the denominator exactly.",
@@ -612,7 +612,7 @@ export const Definite: Problem[] = [
     domain: [-1, 3],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Split at x=0, where |x| switches from -x to x.",
       "On [-1,0], e^{|x|}=e^{-x}; on [0,3], e^{|x|}=e^x.",
@@ -635,7 +635,7 @@ export const Definite: Problem[] = [
     domain: [0, 6],
     difficulty: 3,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "The interval [0,6] is symmetric about x=3 — shift to u=x-3 and look at which terms are odd in u.",
       "(x-3)^7 and \\sin(x-3) are both odd about x=3, so they integrate to 0 over a symmetric interval.",
@@ -658,7 +658,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "\\sin x\\cos x = \\frac12\\sin2x, so \\sin^2x\\cos^2x = \\frac14\\sin^2(2x).",
       "\\sin^2(2x) averages to \\frac12 over any whole number of half-periods.",
@@ -680,7 +680,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 4, Math.PI / 4],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #24" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Multiply top and bottom by 1+\\sin x to clear the denominator: (1-\\sin x)(1+\\sin x)=\\cos^2x.",
       "That turns the integrand into \\sec^2x + \\sin x\\sec^2x, both standard forms.",
@@ -703,7 +703,7 @@ export const Definite: Problem[] = [
     domain: [-9, 9],
     difficulty: 2,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "\\sqrt[3]x is odd, and \\sin of an odd function is odd. No antiderivative needed.",
     ],
@@ -724,7 +724,7 @@ export const Definite: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "The integrand is already presented as a derivative — the Fundamental Theorem of Calculus does the whole problem.",
       "\\int_0^\\infty\\frac{d}{dx}[F(x)]\\,dx = \\lim_{x\\to\\infty}F(x) - F(0).",
@@ -747,7 +747,7 @@ export const Definite: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "1+2\\sin x is negative exactly where \\sin x<-\\frac12, i.e. on \\left(\\frac{7\\pi}{6},\\frac{11\\pi}{6}\\right).",
       "\\int|f| = \\int f - 2\\int_{\\{f<0\\}} f.",
@@ -770,7 +770,7 @@ export const Definite: Problem[] = [
     domain: [-4, 4],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "x^3-x is odd, so |x^3-x| is even — double the integral over [0,4] instead of working the whole interval.",
       "x^3-x=x(x-1)(x+1) changes sign at 0, 1: it's negative on (0,1) and positive on (1,4).",
@@ -793,7 +793,7 @@ export const Definite: Problem[] = [
     domain: [-27, 27],
     difficulty: 2,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "\\sqrt[3]x is odd, and \\arcsin of an odd function is odd — no antiderivative needed.",
     ],
@@ -814,7 +814,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "King's rule: substitute x\\to\\frac{\\pi}{2}-x. \\tan\\!\\left(\\frac{\\pi}{2}-x\\right)=\\cot x=\\frac1{\\tan x}.",
       "Add the original integral to its King's-rule twin — the two integrands sum to exactly 1, whatever the exponent.",
@@ -837,7 +837,7 @@ export const Definite: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "On [0,\\pi], substitute x\\to\\pi-x: \\cos(\\pi-x)=-\\cos x, so the integrand flips sign — the piece over [0,\\pi] must integrate to 0.",
       "The same argument, shifted by \\pi, handles [\\pi,2\\pi].",
@@ -860,7 +860,7 @@ export const Definite: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "Try the substitution x\\to2\\pi-x and use \\sin(2\\pi-x)=-\\sin x to see how the integrand transforms.",
     ],
@@ -882,7 +882,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "King's rule again: x\\to\\frac\\pi2-x swaps \\tan x for \\cot x, and \\frac{1}{1+\\tan^ax}+\\frac{1}{1+\\cot^ax}=1 for any exponent a.",
     ],
@@ -904,7 +904,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Try x\\to\\pi-x. \\cos(\\pi-x)=-\\cos x, so \\cos\\!\\left((\\pi-x)+\\cos(\\pi-x)\\right) = \\cos(\\pi-(x+\\cos x)).",
     ],
@@ -926,7 +926,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 2, Math.PI / 2],
     difficulty: 2,
     techniques: ["symmetry"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["\\cos(20x) is even and \\sin(25x) is odd — their product is odd."],
     steps: [
       "f(x)=\\cos(20x)\\sin(25x) satisfies f(-x)=\\cos(20x)\\cdot(-\\sin(25x))=-f(x): it's odd.",

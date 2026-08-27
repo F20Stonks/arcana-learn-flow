@@ -411,7 +411,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "x^4-13x^2+36 = (x^2-4)(x^2-9) — factor as a quadratic in x^2 first.",
       "Partial fractions in x^2: \\frac{1}{(x^2-4)(x^2-9)} = -\\frac{1}{5(x^2-4)}+\\frac{1}{5(x^2-9)}, then each piece is a standard \\ln\\left|\\frac{x-a}{x+a}\\right| form.",
@@ -434,7 +434,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Test #24" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
     hints: [
       "The numerator (x-1)^3 and denominator (x+1)^4 share the shift by 1 — substitute u=x+1 so the numerator becomes (u-2)^3, then expand.",
     ],
@@ -456,7 +456,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 0],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "The mirror of the (x-1)^3/(x+1)^4 problem — substitute v=x-1 so the numerator becomes (v+2)^4, then expand.",
     ],
@@ -476,7 +476,7 @@ export const PartialFractions: Problem[] = [
     domain: [2, 5],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Before hunting for partial fractions, try plain polynomial long division — the denominator's degree is only one less than the numerator's.",
       "The division comes out exact: no remainder, no partial fractions needed at all.",
@@ -498,7 +498,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 0],
     difficulty: 3,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "Long division first: \\frac{x^2}{x-1}=x+1+\\frac{1}{x-1}.",
     ],
@@ -518,7 +518,7 @@ export const PartialFractions: Problem[] = [
     domain: [3.3, 3.8],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "6-11x+6x^2-x^3 = -(x-1)(x-2)(x-3) — three distinct linear roots, textbook partial fractions.",
     ],
@@ -540,7 +540,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 2],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "A repeated linear factor (x+5)^2 needs both \\frac{B}{x+5} and \\frac{C}{(x+5)^2} in the decomposition.",
     ],
@@ -560,7 +560,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 0.5],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "Factor by grouping: 1-x+x^2-x^3 = (1-x)+x^2(1-x) = (1-x)(1+x^2).",
       "One linear factor and one irreducible quadratic — the standard \\frac{A}{1-x}+\\frac{Bx+C}{1+x^2} decomposition.",
@@ -583,7 +583,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["u-sub", "partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "Write \\cosh x in terms of e^x, then multiply through by e^x — this turns the whole thing into a rational function of t=e^x.",
       "The resulting denominator t^2+4t+1 completes the square cleanly.",
@@ -606,7 +606,7 @@ export const PartialFractions: Problem[] = [
     domain: [1, Infinity],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "\\int\\frac{dx}{x(x^2+1)}=\\ln|x|-\\frac12\\ln(x^2+1)+C=\\frac12\\ln\\frac{x^2}{x^2+1}+C — check what that ratio does as x\\to\\infty.",
     ],
@@ -628,7 +628,7 @@ export const PartialFractions: Problem[] = [
     domain: [-0.5, 0.5],
     difficulty: 3,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: ["\\frac{1}{1-x^2}=\\frac{1/2}{1-x}+\\frac{1/2}{1+x}."],
     steps: [
       "\\int\\frac{dx}{1-x^2} = \\frac12\\ln\\left|\\frac{1+x}{1-x}\\right|.",
@@ -646,7 +646,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.5, 2],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "\\frac{2x^3-1}{x(x^3+1)} = -\\frac1x+\\frac{3x^2}{x^3+1} — match coefficients directly rather than factoring the cubic.",
     ],
@@ -668,7 +668,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["u-sub", "partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Handle the two pieces separately: \\frac{x^2}{2-x^2}=-1+\\frac{2}{2-x^2} is a standard partial-fractions form; \\sqrt{\\frac{2x}{x+1}} needs u=\\sqrt{\\frac{x}{x+1}}.",
       "Both antiderivatives produce a \\ln\\!\\left(3+2\\sqrt2\\right) term with opposite signs and equal size — they cancel exactly.",
@@ -689,7 +689,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.9, 0.99],
     difficulty: 5,
     techniques: ["u-sub", "partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Factor the denominator as x(1+x^{2022}), then write the numerator as (1+x^{2022})+x^{2022} to split the fraction cleanly.",
     ],
@@ -709,7 +709,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.7, 0.9],
     difficulty: 5,
     techniques: ["partial-fractions"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "2024=4\\times506, so x^{2024}-1=(x^{506})^4-1 factors as a repeated difference of squares, and one factor is exactly x^{506}-1.",
     ],

@@ -287,7 +287,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 3],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: ["Each pass knocks one off the degree — so you need two."],
     steps: [
       "First pass: u = x^2, v = -\\cos x, giving -x^2\\cos x + 2\\int x\\cos x\\,dx.",
@@ -305,7 +305,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "A lone logarithm means dv = dx.",
       "The leftover \\int\\frac{2x^2}{x^2+1}dx needs a division first: \\frac{2x^2}{x^2+1} = 2 - \\frac{2}{x^2+1}.",
@@ -409,7 +409,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 5,
     techniques: ["parts", "u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "That logarithm is \\sinh^{-1}x in disguise, and its derivative is remarkably clean.",
       "\\frac{d}{dx}\\ln\\!\\left(x+\\sqrt{x^2+1}\\right) = \\frac{1}{\\sqrt{x^2+1}}.",
@@ -831,7 +831,7 @@ export const Parts: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "Substitute u=\\ln x first: this turns into \\int_{-\\infty}^0\\sin^2(u)e^u\\,du, and \\sin^2u=\\frac{1-\\cos2u}{2}.",
       "\\int e^u\\cos(2u)\\,du is a self-referential by-parts integral — parts twice returns the original integral, so solve for it algebraically.",
@@ -854,7 +854,7 @@ export const Parts: Problem[] = [
     domain: [0, 0.5],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "Take u=\\arcsin x,\\ dv=\\frac{x}{\\sqrt{1-x^2}}\\,dx, so v=-\\sqrt{1-x^2} — the leftover \\int v\\,du cancels the square root entirely.",
     ],
@@ -874,7 +874,7 @@ export const Parts: Problem[] = [
     domain: [2, 6],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "This is exactly the shape of a quotient-rule derivative, run in reverse — recognise \\frac{u'v-uv'}{v^2} with u=\\sin x,\\ v=\\ln x.",
     ],
@@ -893,7 +893,7 @@ export const Parts: Problem[] = [
     domain: [0.5, 5],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Try differentiating x\\ln^2x with the product rule and see what falls out.",
     ],
@@ -912,7 +912,7 @@ export const Parts: Problem[] = [
     domain: [-1, 2],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "This has the shape e^x[g(x)+g'(x)] — the derivative of e^xg(x) — for some g. Find g by matching the non-\\arctan-doubled term.",
       "Try g(x)=\\ln(1+x^2)-2x\\arctan x and differentiate to check.",
@@ -933,7 +933,7 @@ export const Parts: Problem[] = [
     domain: [-0.9, 0.9],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "u=(\\arcsin x)^2,\\ dv=dx first; the leftover integral needs a second parts step.",
     ],
@@ -953,7 +953,7 @@ export const Parts: Problem[] = [
     domain: [0.05, 0.3],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "u=x,\\ dv=\\sec^2(4x)\\,dx,\\ v=\\frac{\\tan4x}{4}; the leftover \\int v\\,du is a plain \\tan integral.",
     ],
@@ -975,7 +975,7 @@ export const Parts: Problem[] = [
     domain: [1, Math.E],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Two rounds of parts on x\\ln^2x, the same way you'd handle x\\ln x once (reducing the power of \\ln x each time).",
     ],
@@ -995,7 +995,7 @@ export const Parts: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "u=e^x turns this into \\int u^2\\arctan(u)\\,du (since e^{3x}dx=u^2\\,du), a plain parts problem.",
     ],
@@ -1015,7 +1015,7 @@ export const Parts: Problem[] = [
     domain: [0, 1.2],
     difficulty: 2,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["Recognise the product-rule shape: \\frac{d}{dx}(e^x\\cos x)=e^x\\cos x - e^x\\sin x."],
     steps: [
       "\\frac{d}{dx}\\left[e^x\\cos x\\right] = e^x\\cos x - e^x\\sin x — exactly the integrand.",
@@ -1032,7 +1032,7 @@ export const Parts: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "This has the shape of a product-rule derivative — try g(x)=e^{x^2}+x and differentiate g(x)\\cos x to check.",
     ],
@@ -1051,7 +1051,7 @@ export const Parts: Problem[] = [
     domain: [1, 4],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "This has the shape of a quotient-rule derivative in reverse — try differentiating -\\frac{\\sin x+\\cos x}{x} to check.",
     ],
@@ -1072,7 +1072,7 @@ export const Parts: Problem[] = [
     domain: [1, Infinity],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "By parts: \\int\\frac{\\ln x}{x^2}\\,dx = -\\frac{\\ln x+1}{x} + C — check that both boundary terms vanish or resolve cleanly at \\infty.",
     ],
@@ -1092,7 +1092,7 @@ export const Parts: Problem[] = [
     domain: [1.5, 3],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "u=\\cosh^{-1}x,\\ dv=dx: the leftover \\int v\\,du is \\int\\frac{x}{\\sqrt{x^2-1}}\\,dx, a plain u-sub.",
     ],
@@ -1112,7 +1112,7 @@ export const Parts: Problem[] = [
     domain: [0.5, 3],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "Try differentiating -\\frac{e^{-x}}{x^2} directly and compare to the integrand — this is a spot-the-derivative problem.",
     ],
@@ -1131,7 +1131,7 @@ export const Parts: Problem[] = [
     domain: [0, 1.2],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "Parts twice cycles back to the original integral — solve for it algebraically rather than integrating forever.",
     ],
@@ -1149,7 +1149,7 @@ export const Parts: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["Recognise the product-rule shape: \\frac{d}{dx}(\\sin x\\cosh x)=\\cos x\\cosh x+\\sin x\\sinh x."],
     steps: [
       "\\frac{d}{dx}\\left[\\sin x\\cosh x\\right] = \\cos x\\cosh x+\\sin x\\sinh x — exactly the integrand.",
@@ -1166,7 +1166,7 @@ export const Parts: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["Recognise the product-rule shape: \\frac{d}{dx}(e^x\\ln x)=e^x\\ln x+\\frac{e^x}x."],
     steps: [
       "\\frac{d}{dx}\\left[e^x\\ln x\\right] = e^x\\ln x+\\frac{e^x}{x} — exactly the integrand.",
@@ -1183,7 +1183,7 @@ export const Parts: Problem[] = [
     domain: [2, 4],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "This is a reverse quotient/log-difference pattern — try differentiating \\ln x-\\ln(1+x\\ln x) and compare.",
     ],
@@ -1203,7 +1203,7 @@ export const Parts: Problem[] = [
     domain: [0, 1.2],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Simplify first: \\cos^2x-\\sin^2x=\\cos2x and \\cos x\\sin x=\\frac12\\sin2x — the integrand is e^x\\left(\\cos2x+\\frac12\\sin2x\\right).",
       "Try differentiating \\frac{e^x\\sin2x}{2} directly and compare.",
@@ -1226,7 +1226,7 @@ export const Parts: Problem[] = [
     domain: [1 / Math.sqrt(2), 1],
     difficulty: 5,
     techniques: ["parts", "trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "u=\\arcsin x,\\ dv=x^{-3}\\,dx,\\ v=-\\frac{1}{2x^2}. The leftover \\int v\\,du needs a standard trig-sub form \\int\\frac{dx}{x^2\\sqrt{1-x^2}}.",
     ],
@@ -1246,7 +1246,7 @@ export const Parts: Problem[] = [
     domain: [3, 6],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "1+\\ln x is exactly \\frac{d}{dx}(x\\ln x) — take u=\\ln(\\ln x),\\ dv=(1+\\ln x)\\,dx,\\ v=x\\ln x.",
     ],
@@ -1266,7 +1266,7 @@ export const Parts: Problem[] = [
     domain: [1.5, 3],
     difficulty: 5,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Try differentiating x\\,e^{(\\ln x)^2} directly with the product rule and see what falls out.",
     ],
@@ -1285,7 +1285,7 @@ export const Parts: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: ["\\int x\\ln x\\,dx is a standard parts integral; \\int2x\\,dx is trivial."],
     steps: [
       "\\int x\\ln x\\,dx = \\frac{x^2}2\\ln x-\\frac{x^2}4. \\int2x\\,dx=x^2.",
@@ -1302,7 +1302,7 @@ export const Parts: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "Try differentiating the product \\arctan(x)\\operatorname{arctanh}(x) — the product rule gives exactly the sum of these two fractions.",
     ],
@@ -1321,7 +1321,7 @@ export const Parts: Problem[] = [
     domain: [2, 5],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "This is a quotient-rule derivative in reverse — recognise \\frac{u'v-uv'}{v^2} with u=\\sin x,\\ v=\\ln x.",
     ],
@@ -1341,7 +1341,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "Two rounds of parts bring back the original integral — solve for it algebraically instead of integrating forever.",
     ],
@@ -1360,7 +1360,7 @@ export const Parts: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Pull the 2 out front — it just rides along. What's left is the standard u=\\ln x,\\ dv=x^{-2}dx parts setup.",
     ],
@@ -1380,7 +1380,7 @@ export const Parts: Problem[] = [
     domain: [20, 30],
     difficulty: 5,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "u=\\ln(\\ln x) has du=\\frac{dx}{x\\ln x} — exactly the leftover factor.",
       "Then \\ln(\\ln(\\ln x))=\\ln u, and what remains is the standard \\int u\\ln u\\,du.",

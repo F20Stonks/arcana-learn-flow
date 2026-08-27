@@ -72,7 +72,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Multiply top and bottom by \\sec x + \\tan x.",
       "The numerator then becomes exactly the derivative of the denominator.",
@@ -127,7 +127,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "Rationalise: multiply top and bottom by 1 - \\sin x.",
       "The denominator becomes \\cos^2 x, and the rest is standard forms.",
@@ -293,7 +293,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Apply \\tan^2 = \\sec^2 - 1 once, then again on whatever \\tan^2 is left.",
       "You should end up with \\tan^2 x\\sec^2 x - \\sec^2 x + 1.",
@@ -634,7 +634,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "Product-to-sum the outer two factors first: \\sin x\\sin3x = \\frac12[\\cos2x-\\cos4x].",
       "Multiply that by \\sin2x and product-to-sum again — every term becomes a single \\sin(kx).",
@@ -657,7 +657,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
     hints: [
       "Product-to-sum turns this into a sum of single cosines \\cos(kx) with odd integer k.",
       "\\int_0^\\pi\\cos(kx)\\,dx = \\frac{\\sin(k\\pi)}{k}, and \\sin(k\\pi)=0 for every integer k.",
@@ -679,7 +679,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "\\sin4x=2\\sin2x\\cos2x=4\\sin x\\cos x\\cos2x, so \\frac{\\sin4x}{\\sin x}=4\\cos x\\cos2x — the \\sin x cancels entirely.",
     ],
@@ -701,7 +701,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "Draw the right triangle for \\arccos x: \\sin(\\arccos x)=\\sqrt{1-x^2}.",
     ],
@@ -720,7 +720,7 @@ export const TrigIdentities: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "1+\\tan^2x = \\sec^2x, so \\sqrt{1+\\tan^2x}=|\\sec x|, which is just \\sec x where \\cos x>0.",
     ],
@@ -739,7 +739,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.5, 2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "Product-to-sum: \\sin A\\cos B = \\frac12[\\sin(A+B)+\\sin(A-B)].",
     ],
@@ -758,7 +758,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["a^2-b^2=(a-b)(a+b): factor before doing anything else, using \\sin^2+\\cos^2=1."],
     steps: [
       "\\cos^4x-\\sin^4x = (\\cos^2x-\\sin^2x)(\\cos^2x+\\sin^2x) = \\cos2x\\cdot1 = \\cos2x.",
@@ -775,7 +775,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.3],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "\\csc x-\\sin x = \\frac{1-\\sin^2x}{\\sin x} = \\frac{\\cos^2x}{\\sin x} — a perfect square under the root.",
     ],
@@ -794,7 +794,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "\\tan^2x=\\sec^2x-1, splitting this into \\sin x\\sec^2x - \\sin x.",
       "\\int\\sin x\\sec^2x\\,dx is a plain u=\\cos x substitution.",
@@ -817,7 +817,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 3],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["1+\\tan^2x=\\sec^2x, so the integrand is simply \\cos^2x."],
     steps: [
       "\\frac{1}{1+\\tan^2x} = \\cos^2x = \\frac{1+\\cos2x}{2}.",
@@ -836,7 +836,7 @@ export const TrigIdentities: Problem[] = [
     domain: [Math.PI / 3, Math.PI / 2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "\\frac{1-\\cos x}{\\sin x} = \\tan\\!\\left(\\frac x2\\right) — the half-angle identity turns this into a standard \\tan integral.",
     ],
@@ -858,7 +858,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "\\sin x+1 = \\left(\\sin\\frac x2+\\cos\\frac x2\\right)^2 — a perfect square under the root.",
     ],
@@ -878,7 +878,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["\\tan x+\\cot x = \\frac{1}{\\sin x\\cos x}, so the reciprocal is just \\sin x\\cos x."],
     steps: [
       "\\tan x+\\cot x = \\frac{\\sin^2x+\\cos^2x}{\\sin x\\cos x} = \\frac{1}{\\sin x\\cos x}.",
@@ -896,7 +896,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "Write \\cos2x=2\\cos^2x-1, so the denominator becomes \\cos^2x-1=-\\sin^2x.",
       "The numerator factors as \\sin x(2\\cos x-\\sin x).",
@@ -917,7 +917,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["\\csc x\\sec x = \\frac{1}{\\sin x\\cos x}. Check that \\frac{d}{dx}\\ln|\\tan x|=\\sec^2x/\\tan x matches."],
     steps: [
       "\\frac{d}{dx}\\ln|\\tan x| = \\frac{\\sec^2x}{\\tan x} = \\frac{1}{\\cos^2x}\\cdot\\frac{\\cos x}{\\sin x} = \\frac{1}{\\sin x\\cos x} = \\csc x\\sec x.",
@@ -936,7 +936,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Product-to-sum twice: \\cos x\\cos2x first, then multiply the result by \\cos3x.",
       "Over a full period, only the constant/DC term of the resulting sum survives.",
@@ -959,7 +959,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 100],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Sum-to-product on both numerator and denominator turns this into \\tan(19.5x) — the \\cos(0.5x) factors cancel.",
     ],
@@ -981,7 +981,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "\\sin\\!\\left(x+\\frac\\pi4\\right)=\\frac{\\sqrt2}{2}(\\sin x+\\cos x), so this reduces to \\sqrt2\\,\\frac{\\sin x}{\\sin x+\\cos x}.",
       "Write \\sin x = \\frac12\\left[(\\sin x+\\cos x)-(\\cos x-\\sin x)\\right] — the second piece is a derivative of the denominator.",
@@ -1002,7 +1002,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Sum-to-product: \\sin A-\\sin B = 2\\cos\\!\\left(\\frac{A+B}2\\right)\\sin\\!\\left(\\frac{A-B}2\\right), with A=x+\\sin x,\\ B=x-\\sin x.",
     ],
@@ -1022,7 +1022,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 0.7],
     difficulty: 5,
     techniques: ["trig-identity", "introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Pair each function with its reciprocal: \\frac1{1+\\tan x}+\\frac1{1+\\cot x}, \\frac1{1+\\cos x}+\\frac1{1+\\sec x}, \\frac1{1+\\sin x}+\\frac1{1+\\csc x}.",
       "Each pair collapses to exactly 1 — check \\frac1{1+\\cot x}=\\frac{\\tan x}{1+\\tan x}, so the tan/cot pair sums to \\frac{1+\\tan x}{1+\\tan x}.",
@@ -1043,7 +1043,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.5, 1.0],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "\\sin^2+\\cos^2=1. \\tan^2x=\\sec^2x-1 and \\cot^2x=\\csc^2x-1 clear out the other two.",
     ],
@@ -1063,7 +1063,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "\\sin^6x+\\cos^6x = 1-3\\sin^2x\\cos^2x (from a^3+b^3=(a+b)^3-3ab(a+b) with a=\\sin^2x,\\ b=\\cos^2x,\\ a+b=1).",
     ],
@@ -1083,7 +1083,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.1, 0.3],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Product-to-sum on \\sin(20x)\\cos(23x) first — the \\sin43x pieces from both terms combine.",
     ],
@@ -1105,7 +1105,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "\\arccos(\\sin x) traces a triangle wave between 0 and \\pi as x runs over a period — its graph is piecewise linear.",
     ],
@@ -1124,7 +1124,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "Put the numerator over \\sin x and the denominator over \\cos x — the resulting bracketed expressions are identical.",
     ],
@@ -1144,7 +1144,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "\\sin3x=3\\sin x-4\\sin^3x — substitute this in and the cube root simplifies immediately.",
     ],
@@ -1166,7 +1166,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["\\tan x\\cot x=1 and \\sec x\\csc x=\\frac{1}{\\sin x\\cos x} — the whole product collapses to 1."],
     steps: [
       "\\tan x\\cot x=1. \\sec x\\csc x=\\frac1{\\sin x\\cos x}.",
@@ -1184,7 +1184,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.0],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "Factor as a difference of squares: \\sec^4x-\\tan^4x=(\\sec^2x-\\tan^2x)(\\sec^2x+\\tan^2x), and \\sec^2x-\\tan^2x=1.",
     ],
@@ -1204,7 +1204,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 0.7],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "\\sin4x=2\\sin2x\\cos2x — the \\cos2x cancels against the denominator immediately.",
     ],
@@ -1226,7 +1226,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 3],
     difficulty: 4,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "Product-to-sum: \\sin x\\cos\\!\\left(\\frac{\\pi}3-x\\right) = \\frac12\\left[\\sin\\frac{\\pi}3+\\sin\\!\\left(2x-\\frac{\\pi}3\\right)\\right].",
     ],
@@ -1246,7 +1246,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["trig-identity", "introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "This is the classic three-phase identity: \\cos x+\\cos\\!\\left(x+\\frac{2\\pi}3\\right)+\\cos\\!\\left(x-\\frac{2\\pi}3\\right)=0 for every x.",
     ],
@@ -1266,7 +1266,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 0.7],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "The coefficients 1,-10,5 sit on the even powers of \\sin x — that's the real part of (\\cos x+i\\sin x)^5 expanded binomially.",
       "De Moivre: (\\cos x+i\\sin x)^5=\\cos5x+i\\sin5x.",
@@ -1288,7 +1288,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 0.7],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Rewrite numerator and denominator in terms of \\sin and \\cos separately — each collapses to a single squared power.",
       "\\frac{\\cot^2x}{\\tan^2x} is a fourth power in disguise, and the square root of \\cot^4x is non-negative.",

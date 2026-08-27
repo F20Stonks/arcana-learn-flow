@@ -711,7 +711,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #22" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "u=x^2 turns x^3e^{x^2}\\,dx into \\frac12ue^u\\,du — a plain by-parts integral in u.",
     ],
@@ -733,7 +733,7 @@ export const Substitution: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Test #23" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
     hints: [
       "u=1+x^3 gives x^3=u-1, and x^5\\,dx=x^3\\cdot x^2\\,dx=(u-1)\\cdot\\frac{du}{3}.",
     ],
@@ -755,7 +755,7 @@ export const Substitution: Problem[] = [
     domain: [1, 11],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: ["u=x-1 turns this into a plain power rule integral."],
     steps: [
       "u=x-1: \\int_1^{11}(x-1)^3\\,dx = \\int_0^{10}u^3\\,du = \\left[\\frac{u^4}{4}\\right]_0^{10} = \\frac{10000}{4}=2500.",
@@ -773,7 +773,7 @@ export const Substitution: Problem[] = [
     domain: [0, 441],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "u=\\sqrt x turns \\frac{dx}{\\sqrt x} into 2\\,du, clearing the square root entirely.",
       "441=21^2, so the new upper bound in u is a clean integer.",
@@ -794,7 +794,7 @@ export const Substitution: Problem[] = [
     domain: [1, 4],
     difficulty: 4,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "u=\\sqrt x turns this into 2\\int u^2e^u\\,du, since x=u^2 and dx=2u\\,du.",
       "\\int u^2e^u\\,du needs parts twice — it's the standard e^u(u^2-2u+2) pattern.",
@@ -815,7 +815,7 @@ export const Substitution: Problem[] = [
     domain: [-0.01, 0.01],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "u=1-x turns x into 1-u, so the integrand becomes a plain difference of two powers of u.",
     ],
@@ -835,7 +835,7 @@ export const Substitution: Problem[] = [
     domain: [0, 2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["u=2+4x gives x=\\frac{u-2}{4}, turning this into a plain power-rule integral in u."],
     steps: [
       "u=2+4x,\\ dx=\\frac{du}4: \\int\\frac{x}{\\sqrt{2+4x}}\\,dx = \\frac1{16}\\int\\frac{u-2}{\\sqrt u}\\,du = \\frac1{16}\\int\\left(u^{1/2}-2u^{-1/2}\\right)du.",
@@ -855,7 +855,7 @@ export const Substitution: Problem[] = [
     domain: [0, 8],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["u=\\sqrt x turns \\frac{dx}{\\sqrt x} into 2\\,du."],
     steps: [
       "u=\\sqrt x,\\ du=\\frac{dx}{2\\sqrt x}: \\int\\frac{\\cos\\sqrt x}{\\sqrt x}\\,dx = 2\\int\\cos u\\,du = 2\\sin u = 2\\sin\\sqrt x.",
@@ -872,7 +872,7 @@ export const Substitution: Problem[] = [
     domain: [1.2, 2.8],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["u=\\ln x turns this into \\int\\ln(1+u)\\,du, a standard form."],
     steps: [
       "u=\\ln x,\\ du=\\frac{dx}x: \\int\\frac{\\ln(1+\\ln x)}{x}\\,dx = \\int\\ln(1+u)\\,du.",
@@ -892,7 +892,7 @@ export const Substitution: Problem[] = [
     domain: [2, Math.E],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Split the fraction: \\frac{\\ln^2x-1}{x\\ln^2x}=\\frac1x-\\frac{1}{x\\ln^2x}.",
       "u=\\ln x turns \\int\\frac{dx}{x\\ln^2x} into \\int u^{-2}\\,du.",
@@ -915,7 +915,7 @@ export const Substitution: Problem[] = [
     domain: [0, 4],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Split [0,4] at the breakpoints x=1,2,3 — each piece is a rational function once the absolute values resolve.",
       "On [2,3] both denominators combine to the constant 1, making that piece trivial.",
@@ -936,7 +936,7 @@ export const Substitution: Problem[] = [
     domain: [1, 3],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "Rewrite the fraction first: \\frac{1+e^x}{1-e^x} = -1+\\frac{2}{1-e^x}.",
       "\\int\\frac{dx}{1-e^x} = x-\\ln|e^x-1| is a standard form (verify by differentiating).",
@@ -957,7 +957,7 @@ export const Substitution: Problem[] = [
     domain: [-3, 3],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: ["The numerator is exactly half the derivative of the denominator."],
     steps: [
       "\\frac{d}{dx}(x^2+2x+3)=2x+2=2(x+1), matching the numerator up to a constant.",
@@ -974,7 +974,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["\\tanh x=\\frac{\\sinh x}{\\cosh x} — the numerator is exactly the derivative of the denominator."],
     steps: ["u=\\cosh x,\\ du=\\sinh x\\,dx: \\int\\tanh x\\,dx = \\int\\frac{du}{u} = \\ln|u| = \\ln(\\cosh x) + C."],
   },
@@ -988,7 +988,7 @@ export const Substitution: Problem[] = [
     domain: [-0.5, 0.5],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "Factor out e^{e^x+e^{-x}}: the integrand becomes e^{e^x+e^{-x}}\\left(e^x-e^{-x}\\right).",
       "e^x-e^{-x} is exactly the derivative of e^x+e^{-x} — this is a straight reverse-chain-rule pattern.",
@@ -1009,7 +1009,7 @@ export const Substitution: Problem[] = [
     domain: [3, 6],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: [
       "Two substitutions deep: first t=\\ln x, then w=\\ln t.",
     ],
@@ -1029,7 +1029,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["u=\\sin x turns this into \\int\\sin u\\cos u\\,du, a plain double-angle-flavored substitution."],
     steps: [
       "u=\\sin x,\\ du=\\cos x\\,dx: \\int\\sin(\\sin x)\\cos(\\sin x)\\cos x\\,dx = \\int\\sin u\\cos u\\,du = \\frac{\\sin^2u}{2}.",
@@ -1046,7 +1046,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2016, round: "Qualifying Round" },
     hints: ["u=x^2+1 turns x^2\\,dx into \\frac{u-1}{2}\\,du after peeling off one factor of x for the du."],
     steps: [
       "u=x^2+1,\\ x^2=u-1,\\ x\\,dx=\\frac{du}2: \\int x^3\\sqrt{x^2+1}\\,dx = \\frac12\\int(u-1)\\sqrt u\\,du = \\frac12\\int\\left(u^{3/2}-u^{1/2}\\right)du.",
@@ -1064,7 +1064,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 2],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: ["u=x^3+2 gives du=3x^2\\,dx, matching the x^2 factor exactly."],
     steps: [
       "u=x^3+2,\\ du=3x^2\\,dx: \\int x^2\\sqrt{x^3+2}\\,dx = \\frac13\\int\\sqrt u\\,du = \\frac13\\cdot\\frac23u^{3/2}.",
@@ -1081,7 +1081,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: ["u=\\sinh x turns \\operatorname{sech}x\\,dx into \\frac{du}{1+u^2}, since \\cosh^2x=1+\\sinh^2x."],
     steps: [
       "u=\\sinh x,\\ du=\\cosh x\\,dx: \\operatorname{sech}x\\,dx = \\frac{dx}{\\cosh x} = \\frac{\\cosh x\\,dx}{\\cosh^2x} = \\frac{du}{1+u^2}.",
@@ -1098,7 +1098,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: ["u=x^2 turns this into \\frac12\\int ue^u\\,du, a standard parts-flavored substitution."],
     steps: [
       "u=x^2,\\ du=2x\\,dx: \\int x^3e^{x^2}\\,dx = \\frac12\\int ue^u\\,du = \\frac12e^u(u-1).",
@@ -1117,7 +1117,7 @@ export const Substitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "t=e^{-x} turns \\tanh x into \\frac{1-t^2}{1+t^2} — a rational function of t, with dx=-\\frac{dt}{t} cancelling the leftover e^{-x}.",
     ],
@@ -1136,7 +1136,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["The numerator is exactly the derivative of the denominator."],
     steps: ["u=e^x+2,\\ du=e^x\\,dx: \\int\\frac{e^x}{e^x+2}\\,dx = \\int\\frac{du}{u} = \\ln|u| = \\ln(e^x+2) + C."],
   },
@@ -1150,7 +1150,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 1.5],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["u=x^6 turns x^{12}=u^2 and x^5\\,dx into \\frac{du}6 — a plain arctangent form."],
     steps: [
       "u=x^6,\\ du=6x^5\\,dx: \\int\\frac{x^5}{2+x^{12}}\\,dx = \\frac16\\int\\frac{du}{2+u^2}.",
@@ -1167,7 +1167,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1.2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["The numerator is exactly the derivative of the denominator."],
     steps: [
       "u=e^x+\\sin x,\\ du=(e^x+\\cos x)\\,dx: \\int\\frac{e^x+\\cos x}{e^x+\\sin x}\\,dx = \\int\\frac{du}{u} = \\ln|u| = \\ln(e^x+\\sin x) + C.",
@@ -1183,7 +1183,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "Two substitutions deep: first u=\\sin x, then w=\\cos u.",
     ],
@@ -1203,7 +1203,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["1-\\cos2x=2\\sin^2x, and the remaining \\cos x\\,dx is exactly du for u=\\sin x."],
     steps: [
       "\\frac{\\cos x}{1-\\cos2x} = \\frac{\\cos x}{2\\sin^2x}.",
@@ -1220,7 +1220,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["\\tanh^2x=1-\\operatorname{sech}^2x, and \\operatorname{sech}^2x is a standard derivative."],
     steps: ["\\int\\tanh^2x\\,dx = \\int\\left(1-\\operatorname{sech}^2x\\right)dx = x-\\tanh x + C."],
   },
@@ -1234,7 +1234,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 0.9],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "The numerator is exactly \\frac{d}{dx}\\left[x^{2017}+x^{2018}\\right] — try w=x^{2017}+x^{2018}.",
       "The denominator's four terms are 1+w^2 in disguise: with a=x^{2017},\\ b=x^{2018}, the terms x^{4034},2x^{4035},x^{4036} are a^2,2ab,b^2.",
@@ -1255,7 +1255,7 @@ export const Substitution: Problem[] = [
     domain: [2, 5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "w=x+\\ln x has dw=\\frac{x+1}{x}\\,dx — exactly the numerator over x.",
     ],
@@ -1274,7 +1274,7 @@ export const Substitution: Problem[] = [
     domain: [-0.5, 0.5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Factor out e^x: the integrand is e^x\\left(e^{e^x}+e^{-e^x}\\right), and e^x\\,dx is exactly du for u=e^x.",
     ],
@@ -1294,7 +1294,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Two substitutions deep: first u=\\sin x, then w=\\sin u.",
     ],
@@ -1316,7 +1316,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: ["u=\\sqrt x turns this into \\frac{2u^2}{1+u^2}\\,du — split off the constant."],
     steps: [
       "u=\\sqrt x,\\ x=u^2,\\ dx=2u\\,du: \\int\\frac{\\sqrt x}{1+x}\\,dx = \\int\\frac{2u^2}{1+u^2}\\,du = 2\\int\\left(1-\\frac{1}{1+u^2}\\right)du = 2u-2\\arctan u.",
@@ -1333,7 +1333,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 3],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: ["t=x^{1/3} clears the cube root: x+\\sqrt[3]x = t(t^2+1)."],
     steps: [
       "t=x^{1/3},\\ x=t^3,\\ dx=3t^2\\,dt: \\int\\frac{dx}{x+\\sqrt[3]x} = \\int\\frac{3t^2\\,dt}{t(t^2+1)} = 3\\int\\frac{t\\,dt}{t^2+1} = \\frac32\\ln(t^2+1).",
@@ -1350,7 +1350,7 @@ export const Substitution: Problem[] = [
     domain: [2, 5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "\\ln(2x)=\\ln2+\\ln x — split the fraction into two pieces before integrating.",
     ],
@@ -1372,7 +1372,7 @@ export const Substitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "Multiply top and bottom by e^{-x} so the denominator becomes 1+e^{-x} — then u=1+e^{-x} is a clean substitution.",
     ],
@@ -1394,7 +1394,7 @@ export const Substitution: Problem[] = [
     domain: [Math.E, Math.exp(Math.E)],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: ["u=\\ln x turns this into \\int u\\ln u\\,du, a standard parts-flavored integral."],
     steps: [
       "u=\\ln x,\\ du=\\frac{dx}x: \\int\\frac{\\ln x\\ln(\\ln x)}{x}\\,dx = \\int u\\ln u\\,du = \\frac{u^2}2\\ln u-\\frac{u^2}4.",
@@ -1412,7 +1412,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "(\\cos x+\\sin x)(\\cos x-\\sin x)=\\cos2x, and \\sin x\\cos x = \\frac12\\sin2x — everything collapses to a function of 2x.",
     ],
@@ -1432,7 +1432,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: ["The numerator is exactly half the derivative of the denominator."],
     steps: [
       "\\frac{d}{dx}(2x^2+2x+1)=4x+2=2(2x+1).",
@@ -1451,7 +1451,7 @@ export const Substitution: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "\\sin2x=2\\sin x\\cos x, and u=\\cos x turns the whole thing into -2\\int u\\cos u\\,du, a parts problem.",
     ],
@@ -1471,7 +1471,7 @@ export const Substitution: Problem[] = [
     domain: [0.9, 0.99],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "The second term is exactly the logarithmic derivative D'/D of D=\\sum_{k=0}^{2019}x^k, since differentiating that sum gives the numerator.",
       "(x-1)D = x^{2020}-1 (the geometric series identity), and combining both terms telescopes into a single clean derivative.",
@@ -1492,7 +1492,7 @@ export const Substitution: Problem[] = [
     domain: [-0.01, 0.01],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: ["u=1-x turns x into 1-u, the same move as any x(1-x)^n integral."],
     steps: [
       "u=1-x,\\ x=1-u,\\ dx=-du: \\int x(1-x)^{2020}\\,dx = \\int(u^{2021}-u^{2020})\\,du = \\frac{u^{2022}}{2022}-\\frac{u^{2021}}{2021}.",
@@ -1509,7 +1509,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "Write \\sec^4x\\tan x\\,dx = \\sec^2x\\cdot(\\sec^2x\\tan x\\,dx) and let w=\\sec^2x.",
     ],
@@ -1529,7 +1529,7 @@ export const Substitution: Problem[] = [
     domain: [1, 3],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["The numerator is exactly the derivative of the denominator."],
     steps: ["u=x+\\sin x,\\ du=(1+\\cos x)\\,dx: \\int\\frac{1+\\cos x}{x+\\sin x}\\,dx = \\int\\frac{du}{u} = \\ln|x+\\sin x| + C."],
   },
@@ -1543,7 +1543,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["\\cosh x-\\sinh x = e^{-x}, so the whole fraction simplifies to \\sinh(x)e^x before any substitution is needed."],
     steps: [
       "\\cosh x-\\sinh x=e^{-x}, so \\frac{\\sinh x}{\\cosh x-\\sinh x} = \\sinh(x)e^x = \\frac{e^{2x}-1}{2}.",
@@ -1560,7 +1560,7 @@ export const Substitution: Problem[] = [
     domain: [1.5, 3],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Rationalise the denominator first — multiply top and bottom by \\sqrt{x+1}-\\sqrt{x-1}, which clears the sum of roots to a constant 2.",
       "Split the resulting x\\sqrt{x+1} and x\\sqrt{x-1} pieces and substitute u=x\\pm1 on each separately.",
@@ -1581,7 +1581,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 1.5],
     difficulty: 4,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #7" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["u=x^2 turns this into \\frac12\\int u\\sin u\\,du, a standard parts-flavored substitution."],
     steps: [
       "u=x^2,\\ du=2x\\,dx: \\int x^3\\sin(x^2)\\,dx = \\frac12\\int u\\sin u\\,du = \\frac12\\left(-u\\cos u+\\sin u\\right).",
@@ -1598,7 +1598,7 @@ export const Substitution: Problem[] = [
     domain: [-0.5, 0.5],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["u=x^2 turns 1-x^4 into 1-u^2, a difference of squares."],
     steps: [
       "u=x^2,\\ du=2x\\,dx: \\int\\frac{x}{1-x^4}\\,dx = \\frac12\\int\\frac{du}{1-u^2} = \\frac14\\ln\\left|\\frac{1+u}{1-u}\\right|.",
@@ -1615,7 +1615,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #9" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["\\frac{1}{\\cosh^2x}=\\operatorname{sech}^2x, the derivative of \\tanh x."],
     steps: ["\\int\\operatorname{sech}^2x\\,dx = \\tanh x + C."],
   },
@@ -1631,7 +1631,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Try g(x)=e^x-x. Differentiating e^{g(x)} produces exactly this combination.",
     ],
@@ -1653,7 +1653,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: ["u=\\sqrt x turns this into 2\\int u\\sqrt{1-u}\\,du, then w=1-u clears the remaining root."],
     steps: [
       "u=\\sqrt x,\\ x=u^2,\\ dx=2u\\,du: \\int\\sqrt{1-\\sqrt x}\\,dx = 2\\int u\\sqrt{1-u}\\,du.",
@@ -1671,7 +1671,7 @@ export const Substitution: Problem[] = [
     domain: [0.5, 1.5],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Let D(x) be the denominator. D'(x) = 1+x+\\frac{x^2}2 = D(x)-\\frac{x^3}6, so x^3=6(D-D').",
     ],
@@ -1691,7 +1691,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1.5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #3" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Two substitutions deep: u=\\ln(1+e^x) has du=\\frac{e^x}{1+e^x}\\,dx — exactly what's left over.",
     ],
@@ -1710,7 +1710,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Group into (x+x\\cos x)+(\\sin x+\\sin x\\cos x) = (x+\\sin x)(1+\\cos x) — and 1+\\cos x is exactly the derivative of x+\\sin x.",
     ],
@@ -1729,7 +1729,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "Write \\sin x as a linear combination \\alpha D+\\beta D' of the denominator D and its derivative D' — the e^x terms force \\beta=-\\alpha.",
     ],
@@ -1749,7 +1749,7 @@ export const Substitution: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: ["Factor x out of the denominator first: x(\\ln x+2)."],
     steps: [
       "\\frac{1}{x\\ln x+2x} = \\frac{1}{x(\\ln x+2)}.",
@@ -1769,7 +1769,7 @@ export const Substitution: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: ["\\sinh x+\\cosh x = e^x exactly, so this is just \\int e^{11x}\\,dx in disguise."],
     steps: [
       "(\\sinh x+\\cosh x)^{11} = (e^x)^{11} = e^{11x}.",
@@ -1786,7 +1786,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 0.7],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "u=\\cot x turns \\tan x into \\frac1u and \\csc^2x\\,dx into -du.",
     ],
@@ -1807,7 +1807,7 @@ export const Substitution: Problem[] = [
     domain: [1 / Math.E, Math.E],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #14" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "1-\\frac{1}{x^2} is exactly the derivative of x+\\frac1x.",
       "x+\\frac1x takes the SAME value at x=\\frac1e and x=e — the two endpoints are reciprocals of each other.",
@@ -1828,7 +1828,7 @@ export const Substitution: Problem[] = [
     domain: [1, 4],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["u=\\sqrt x turns the fraction into u(u+1)/(1+u) — it cancels down to just u."],
     steps: [
       "u=\\sqrt x: \\frac{x+\\sqrt x}{1+\\sqrt x} = \\frac{u^2+u}{1+u} = \\frac{u(u+1)}{1+u} = u = \\sqrt x.",
@@ -1845,7 +1845,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: ["e^{x+1}=e\\cdot e^x — pull the constant e out first."],
     steps: [
       "\\frac{e^{x+1}}{e^x+1} = e\\cdot\\frac{e^x}{e^x+1}.",
@@ -1863,7 +1863,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 0.8],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "u=xe^x has du=e^x(x+1)\\,dx. Write the numerator as xe^x\\cdot\\left[e^x(x+1)\\,dx\\right] = u\\,du.",
     ],
@@ -1883,7 +1883,7 @@ export const Substitution: Problem[] = [
     domain: [-4, -3.5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: ["Split the exponent: e^{2026e^x+x}=e^{2026e^x}\\cdot e^x, and w=e^x turns e^x\\,dx into dw."],
     steps: [
       "e^{2026e^x+x} = e^{2026e^x}\\cdot e^x.",
@@ -1901,7 +1901,7 @@ export const Substitution: Problem[] = [
     domain: [1.5, 3],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: ["Rationalise: multiply top and bottom by \\sqrt{x+1}+\\sqrt{x-1}, which clears the denominator to a constant 2."],
     steps: [
       "\\frac{1}{\\sqrt{x+1}-\\sqrt{x-1}} = \\frac{\\sqrt{x+1}+\\sqrt{x-1}}{2}.",
@@ -1919,7 +1919,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: ["1+\\cosh x = 2\\cosh^2\\!\\left(\\frac x2\\right) — the hyperbolic half-angle identity."],
     steps: [
       "1+\\cosh x = 2\\cosh^2\\!\\left(\\frac x2\\right), so \\sqrt{1+\\cosh x} = \\sqrt2\\,\\cosh\\!\\left(\\frac x2\\right) (always non-negative).",
@@ -1936,7 +1936,7 @@ export const Substitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Let D=2e^x+x^2+1. Compute D-D' and compare it to the numerator.",
     ],
@@ -1956,7 +1956,7 @@ export const Substitution: Problem[] = [
     domain: [1, 4],
     difficulty: 4,
     techniques: ["u-sub", "parts"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Try differentiating -\\frac{\\sin^2x}{x} with the quotient rule and compare.",
     ],

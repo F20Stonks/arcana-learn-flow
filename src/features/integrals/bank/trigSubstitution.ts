@@ -399,7 +399,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: ["This is a quarter of the unit circle's area — no antiderivative needed."],
     steps: [
       "y=\\sqrt{1-x^2} on [0,1] is a quarter of the unit circle.",
@@ -438,7 +438,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1, Infinity],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "Substitute u=x^2 first: dx/(x\\sqrt{x^4-1}) becomes \\frac{du}{2u\\sqrt{u^2-1}}, the standard \\operatorname{arcsec} form.",
     ],
@@ -460,7 +460,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1, Infinity],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "x=\\tan\\theta gives the standard reduction \\int\\frac{dx}{(1+x^2)^2} = \\frac{x}{2(1+x^2)}+\\frac12\\arctan x.",
       "The [0,1] version of this integral is elsewhere in the bank — this is the tail from 1 to \\infty instead.",
@@ -482,7 +482,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1, 2],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Test #25" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
     hints: [
       "(x-1)(2-x) = \\frac14-\\left(x-\\frac32\\right)^2 — this is a semicircle of radius \\frac12 centred at x=\\frac32.",
     ],
@@ -503,7 +503,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 6],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Test #21" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
     hints: [
       "6x-x^2 = 9-(x-3)^2 — a semicircle of radius 3 centred at x=3.",
     ],
@@ -524,7 +524,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 2],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Factor out the 3 first: \\sqrt{12-3x^2}=\\sqrt3\\sqrt{4-x^2}, then this is the standard \\sqrt{a^2-x^2} substitution with a=2.",
     ],
@@ -544,7 +544,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #23" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "Odd power of \\tan x: peel off one \\sec x\\tan x to serve as du, and write the rest of \\tan^2x as \\sec^2x-1.",
     ],
@@ -564,7 +564,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [2, 5],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #25" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Round" },
     hints: [
       "The standard form \\int\\frac{dx}{x\\sqrt{x^2-a^2}} = \\frac1a\\operatorname{arcsec}\\frac xa + C applies directly with a=\\sqrt2.",
     ],
@@ -583,7 +583,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-5, 5],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2015, round: "Qualifying Round" },
     hints: [
       "x=5\\tan\\theta turns \\sqrt{x^2+25} into 5\\sec\\theta, and the integral reduces to \\int\\sec\\theta\\,d\\theta.",
     ],
@@ -605,7 +605,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1, 2],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #5" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: ["This is the standard \\operatorname{arcsec} form: \\int\\frac{dx}{x\\sqrt{x^2-1}}=\\operatorname{arcsec}x+C."],
     steps: [
       "\\int\\frac{dx}{x\\sqrt{x^2-1}} = \\operatorname{arcsec}x = \\arccos\\frac1x.",
@@ -625,7 +625,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "\\left(x+\\frac1x\\right)^2=\\frac{(x^2+1)^2}{x^2}, so the integrand is really \\frac{x^2}{(x^2+1)^2}.",
       "x=\\tan\\theta turns this into \\int\\sin^2\\theta\\,d\\theta.",
@@ -648,7 +648,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #16" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["u=\\sin x turns \\cos^2x into 1-u^2, and the leftover \\cos x\\,dx is exactly du."],
     steps: [
       "u=\\sin x,\\ du=\\cos x\\,dx: 2-\\cos^2x=2-(1-u^2)=1+u^2.",
@@ -666,7 +666,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-2, 2],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: ["x=\\tan\\theta turns (1+x^2)^{3/2} into \\sec^3\\theta, cancelling most of the \\sec^2\\theta\\,d\\theta."],
     steps: [
       "x=\\tan\\theta,\\ dx=\\sec^2\\theta\\,d\\theta: \\int\\frac{\\sec^2\\theta\\,d\\theta}{\\sec^3\\theta} = \\int\\cos\\theta\\,d\\theta = \\sin\\theta.",
@@ -684,7 +684,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0.1, 0.7],
     difficulty: 5,
     techniques: ["u-sub", "trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #18" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "Factor: x\\sqrt x-x^2 = x^{3/2}(1-\\sqrt x). Then u=\\sqrt x turns the whole thing into the standard \\frac{1}{\\sqrt{u(1-u)}} form.",
     ],
@@ -704,7 +704,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-2, 2],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Draw the right triangle for \\arctan x: \\cos(\\arctan x)=\\frac{1}{\\sqrt{1+x^2}}.",
     ],
@@ -723,7 +723,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0.3, 1],
     difficulty: 5,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Try differentiating \\sec^3x\\tan^3x with the product rule and see what falls out.",
     ],

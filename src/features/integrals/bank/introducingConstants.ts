@@ -161,7 +161,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Round" },
     hints: [
       "Name the whole infinite tower y. Since the tower repeats itself one level down, y=\\sqrt{x+y}.",
       "Solve the resulting quadratic in y for the closed form, then it's an ordinary integral.",
@@ -184,7 +184,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #15" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Round" },
     hints: [
       "Name the whole infinite tower c. Since the tower repeats itself one level in, it satisfies c=\\frac{1}{1+c}, whatever x is at the very bottom.",
       "That fixed point doesn't depend on x at all — the limiting integrand is a constant.",
@@ -205,7 +205,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1, 3],
     difficulty: 5,
     techniques: ["introducing-constants", "power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Round" },
     hints: [
       "The whole tower is a single power of x — name the exponent S and find it as an infinite sum.",
       "Each nested root contributes another factor of \\frac{1}{n!} to the exponent of x.",
@@ -228,7 +228,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Fix x and let n\\to\\infty first: what does x^{2n}\\to0\\text{ or }\\infty depend on?",
       "The pointwise limit is 1 on (-1,1) and 0 outside — an indicator function, not something that needs the integral sign at all to evaluate.",
@@ -251,7 +251,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, Math.E],
     difficulty: 4,
     techniques: ["introducing-constants", "power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #13" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Round" },
     hints: [
       "Rewrite x^{1/\\ln x} = e^{\\ln(x)\\cdot\\frac{1}{\\ln x}} — that exponent is exactly 1, for any x\\ne1.",
     ],
@@ -270,7 +270,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1, 4],
     difficulty: 4,
     techniques: ["introducing-constants", "power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #6" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Round" },
     hints: [
       "The tower is a single power of x — the exponent is an infinite geometric sum, not a telescoping factorial series this time.",
     ],
@@ -291,7 +291,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1, Math.sqrt(3)],
     difficulty: 3,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #2" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "\\arctan x+\\operatorname{arccot}x = \\frac{\\pi}{2} identically — the numerator is a disguised constant.",
     ],
@@ -312,7 +312,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 3],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "Name the repeated map \\varphi(y)=\\sin\\!\\left(\\frac\\pi3y\\right). The limit is the fixed point of \\varphi that the iteration actually converges to.",
       "Check y=\\frac12: is \\sin\\!\\left(\\frac\\pi6\\right) exactly \\frac12? What does that make \\varphi'\\!\\left(\\frac12\\right)?",
@@ -335,7 +335,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 0.5],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Test #19" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2022, round: "Qualifying Round" },
     hints: [
       "\\binom{n+3}{n}=\\binom{n+3}3 is exactly the coefficient in the negative-binomial series \\sum\\binom{n+k-1}{n}x^n=\\frac{1}{(1-x)^k}, here with k=4.",
     ],
@@ -354,7 +354,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1.5, 3],
     difficulty: 4,
     techniques: ["introducing-constants", "power"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #1" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "x^{1/\\ln x} = e^{(\\ln x)/(\\ln x)} = e — this is exactly 1, algebraically, for any x>0 with x\\ne1.",
     ],
@@ -373,7 +373,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-2, 2],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #10" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "a^3+b^3+c^3-3abc = (a+b+c)(a^2+b^2+c^2-ab-bc-ca) — check what a+b+c is for a=1-x,\\ b=x-x^2,\\ c=x^2-1.",
     ],
@@ -395,7 +395,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #17" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Round" },
     hints: [
       "(1-x)\\prod_{k=0}^n(1+x^{2^k}) = 1-x^{2^{n+1}} (a telescoping binary-expansion identity) — let n\\to\\infty.",
     ],
@@ -417,7 +417,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [1, 3],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
     hints: [
       "Name the whole infinite tower c. Since the tower repeats itself one level down, c=\\frac{x}{1+c}, whatever x is.",
       "Solve the resulting quadratic in c for a closed form, then it's an ordinary integral.",
@@ -440,7 +440,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #20" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Round" },
     hints: [
       "This is a geometric series in -x^2: \\sum_{k=1}^\\infty(-x^2)^k = \\frac{-x^2}{1+x^2}.",
     ],
@@ -461,7 +461,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #4" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "For x\\ge0 every layer just adds another copy of x, so the tower grows linearly in the number of layers.",
       "For x<0 the tower has period 2: work out f_1 and f_2 by hand and you'll see it repeat. 2026 is even.",
@@ -484,7 +484,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 0.5],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #8" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Factor out x^2: \\sum_{n=2}^\\infty x^n = x^2\\sum_{k=0}^\\infty x^k = \\frac{x^2}{1-x} for |x|<1.",
       "\\frac{x^2}{1-x} is an improper fraction — divide before integrating.",
@@ -508,7 +508,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 3,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #11" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "\\sqrt{1-x^2} never exceeds 1 on [-1,1] — check what that makes the expression inside the \\max.",
     ],
@@ -530,7 +530,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #12" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Round" },
     hints: [
       "Name the whole tower y — since it repeats itself one level down, y=\\sqrt{x^2+x+y}.",
       "Square both sides and solve the quadratic in y; the discriminant 1+4(x^2+x) is a perfect square.",
