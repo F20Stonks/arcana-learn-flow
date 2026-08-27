@@ -34,6 +34,7 @@ import { ReciprocalSubstitution } from "./bank/reciprocalSubstitution";
 import { GammaFunction } from "./bank/gammaFunction";
 import { ZetaSeries } from "./bank/zetaSeries";
 import { WallisProduct } from "./bank/wallisProduct";
+import { GaussianHypersphere } from "./bank/gaussianHypersphere";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -56,6 +57,7 @@ export const PROBLEMS: Problem[] = [
   ...GammaFunction,
   ...ZetaSeries,
   ...WallisProduct,
+  ...GaussianHypersphere,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

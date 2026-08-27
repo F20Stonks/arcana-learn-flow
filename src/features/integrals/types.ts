@@ -27,7 +27,8 @@ export type TechniqueId =
   | "reciprocal-substitution"
   | "gamma-function"
   | "zeta-series"
-  | "wallis-product";
+  | "wallis-product"
+  | "gaussian-hypersphere";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
