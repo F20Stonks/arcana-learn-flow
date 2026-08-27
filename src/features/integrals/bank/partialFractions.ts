@@ -805,4 +805,22 @@ export const PartialFractions: Problem[] = [
       "\\int = \\frac{x^2}2-\\frac12\\ln(x^2+1) + C.",
     ],
   },
+  {
+    id: "pf-x4-over-quartic-2024",
+    kind: "indefinite",
+    integrand: "\\frac{x^4}{3-6x+6x^2-4x^3+2x^4}",
+    integrandExpr: "x^4/(3-6*x+6*x^2-4*x^3+2*x^4)",
+    answer: "x/2+(1/4)*log(abs(3-6*x+6*x^2-4*x^3+2*x^4))",
+    answerLatex: "\\frac x2+\\frac14\\ln\\left|3-6x+6x^2-4x^3+2x^4\\right| + C",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
+    hints: ["Guess \\frac x2+\\frac14\\ln|D(x)| for the denominator D(x), and check the derivative — the quotient rule reproduces the integrand exactly once the algebra is carried through."],
+    steps: [
+      "\\frac{d}{dx}\\left[\\frac x2+\\frac14\\ln|D|\\right] = \\frac12+\\frac{D'}{4D}, where D'=8x^3-12x^2+12x-6.",
+      "Multiplying through by D and simplifying: \\frac D2+\\frac{D'}4 = x^4-2x^3+3x^2-3x+\\frac32+2x^3-3x^2+3x-\\frac32 = x^4.",
+      "So the derivative equals \\frac{x^4}D exactly, confirming the antiderivative.",
+    ],
+  },
 ];

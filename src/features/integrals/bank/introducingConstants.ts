@@ -564,4 +564,21 @@ export const IntroducingConstants: Problem[] = [
       "Evaluating at the limits and simplifying gives \\frac{1+\\sqrt5}4+\\ln\\!\\left(\\frac{1+\\sqrt5}2\\right).",
     ],
   },
+  {
+    id: "ic-x-minus-1-log-x-plus-1-over-x-plus-1-log-x-minus-1",
+    kind: "indefinite",
+    integrand: "\\frac{(x-1)^{\\ln(x+1)}}{(x+1)^{\\ln(x-1)}}",
+    integrandExpr: "(x-1)^log(x+1)/(x+1)^log(x-1)",
+    answer: "x",
+    answerLatex: "x + C",
+    domain: [2, 5],
+    difficulty: 4,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2024, round: "Qualifying Round" },
+    hints: ["Rewrite each power as e^{\\text{exponent}\\times\\ln(\\text{base})} — the two exponents in numerator and denominator turn out identical."],
+    steps: [
+      "(x-1)^{\\ln(x+1)} = e^{\\ln(x+1)\\ln(x-1)} and (x+1)^{\\ln(x-1)} = e^{\\ln(x-1)\\ln(x+1)} — the same exponent, in either order.",
+      "So the ratio is identically 1 (for x>1, where both logs are defined), and \\int1\\,dx = x + C.",
+    ],
+  },
 ];
