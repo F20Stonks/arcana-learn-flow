@@ -254,4 +254,28 @@ export const GaussianHypersphere: Problem[] = [
       "\\int_0^\\infty e^{-au^2}\\,du = \\frac12\\sqrt{\\frac\\pi a} with a=\\frac{2019}{4}: = \\frac12\\sqrt{\\frac{4\\pi}{2019}} = \\sqrt{\\frac{\\pi}{2019}}.",
     ],
   },
+  {
+    id: "gauss-over-one-plus-exp-2x",
+    kind: "definite",
+    integrand: "\\dfrac{e^{-x^2}}{1+e^{2x}}",
+    integrandExpr: "exp(-x^2)/(1+exp(2*x))",
+    lower: "-\\infty",
+    upper: "\\infty",
+    answer: "sqrt(pi)/2",
+    answerLatex: "\\frac{\\sqrt\\pi}2",
+    domain: [-Infinity, Infinity],
+    difficulty: 5,
+    techniques: ["gaussian-hypersphere", "symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #17" },
+    hints: [
+      "Compare f(x) to f(-x): multiplying f(-x) top and bottom by e^{2x} clears the negative exponent.",
+      "f(x)+f(-x) collapses to a plain Gaussian, and the range is symmetric — so you never integrate f alone.",
+    ],
+    steps: [
+      "f(-x)=\\frac{e^{-x^2}}{1+e^{-2x}} = \\frac{e^{-x^2}e^{2x}}{e^{2x}+1} (multiplying by \\frac{e^{2x}}{e^{2x}}).",
+      "f(x)+f(-x) = e^{-x^2}\\left[\\frac1{1+e^{2x}}+\\frac{e^{2x}}{1+e^{2x}}\\right] = e^{-x^2}.",
+      "The substitution u=-x shows \\int_{-\\infty}^\\infty f(-x)\\,dx = \\int_{-\\infty}^\\infty f(x)\\,dx, so 2I = \\int_{-\\infty}^\\infty e^{-x^2}\\,dx = \\sqrt\\pi.",
+      "I = \\frac{\\sqrt\\pi}2.",
+    ],
+  },
 ];
