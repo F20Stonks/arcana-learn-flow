@@ -35,8 +35,38 @@ function derivative(f: (x: number) => number | null, x: number, h: number): numb
  * Midpoint rule under a smoothstep change of variable. The Jacobian 6t(1-t) vanishes at both ends,
  * which tames the integrable endpoint singularities (ln sin x at 0) that would otherwise need
  * thousands more points.
+ *
+ * Infinite bounds get an extra change of variable first, mapping the unbounded tail onto (0,1) or
+ * (-1,1) before the same smoothstep-midpoint scheme runs on that finite interval:
+ *   (0, ∞):    x = a + t/(1-t),        t ∈ (0,1)
+ *   (-∞, ∞):   x = t/(1-t²),           t ∈ (-1,1)
+ * Both are ordinary algebraic substitutions (no exp/log involved), so they stay well-conditioned
+ * even where x itself grows huge. This only converges cleanly for tails that decay at least
+ * exponentially; a slower (e.g. logarithmic) tail needs a problem-specific closed form instead —
+ * see the reciprocal-substitution technique's lesson example.
  */
 function quadrature(f: (x: number) => number | null, a: number, b: number, n = 4000): number {
+  if (a === -Infinity && b === Infinity) {
+    return quadrature((t) => {
+      const x = t / (1 - t * t);
+      const v = f(x);
+      return v === null ? null : v * ((1 + t * t) / (1 - t * t) ** 2);
+    }, -1, 1, n);
+  }
+  if (b === Infinity) {
+    return quadrature((t) => {
+      const x = a + t / (1 - t);
+      const v = f(x);
+      return v === null ? null : v / (1 - t) ** 2;
+    }, 0, 1, n);
+  }
+  if (a === -Infinity) {
+    return quadrature((t) => {
+      const x = b - t / (1 - t);
+      const v = f(x);
+      return v === null ? null : v / (1 - t) ** 2;
+    }, 0, 1, n);
+  }
   let total = 0;
   for (let i = 0; i < n; i++) {
     const t = (i + 0.5) / n;
