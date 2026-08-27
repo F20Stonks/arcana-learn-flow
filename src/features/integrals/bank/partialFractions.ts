@@ -466,4 +466,24 @@ export const PartialFractions: Problem[] = [
       "Evaluating from v=-2 (x=-1) to v=-1 (x=0) gives \\frac{33}{2}-24\\ln2.",
     ],
   },
+  {
+    id: "pf-exact-division-degree-five",
+    kind: "indefinite",
+    integrand: "\\frac{x^5-x^3+x^2-1}{x^4-x^3+x-1}",
+    integrandExpr: "(x^5-x^3+x^2-1)/(x^4-x^3+x-1)",
+    answer: "x^2/2+x",
+    answerLatex: "\\frac{x^2}{2}+x + C",
+    domain: [2, 5],
+    difficulty: 4,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #8" },
+    hints: [
+      "Before hunting for partial fractions, try plain polynomial long division — the denominator's degree is only one less than the numerator's.",
+      "The division comes out exact: no remainder, no partial fractions needed at all.",
+    ],
+    steps: [
+      "Dividing x^5-x^3+x^2-1 by x^4-x^3+x-1: the quotient is x+1 with remainder 0.",
+      "So the integrand is simply x+1, and \\int(x+1)\\,dx = \\frac{x^2}{2}+x + C.",
+    ],
+  },
 ];

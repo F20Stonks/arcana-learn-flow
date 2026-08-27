@@ -710,4 +710,23 @@ export const TrigIdentities: Problem[] = [
       "Its area is \\frac{\\pi}{4}.",
     ],
   },
+  {
+    id: "trig-sin-times-sqrt-1-plus-tan2",
+    kind: "indefinite",
+    integrand: "\\sin(x)\\sqrt{1+\\tan^2x}",
+    integrandExpr: "sin(x)*sqrt(1+tan(x)^2)",
+    answer: "-log(cos(x))",
+    answerLatex: "-\\ln(\\cos x) + C",
+    domain: [-1, 1],
+    difficulty: 3,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #7" },
+    hints: [
+      "1+\\tan^2x = \\sec^2x, so \\sqrt{1+\\tan^2x}=|\\sec x|, which is just \\sec x where \\cos x>0.",
+    ],
+    steps: [
+      "\\sqrt{1+\\tan^2x} = \\sec x on an interval where \\cos x>0, so the integrand is \\sin x\\sec x = \\tan x.",
+      "\\int\\tan x\\,dx = -\\ln|\\cos x| + C.",
+    ],
+  },
 ];

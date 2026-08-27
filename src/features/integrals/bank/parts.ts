@@ -864,4 +864,42 @@ export const Parts: Problem[] = [
       "The definite value is \\frac12-\\frac{\\pi\\sqrt3}{12}.",
     ],
   },
+  {
+    id: "parts-quotient-rule-sin-over-log",
+    kind: "indefinite",
+    integrand: "\\frac{\\ln(x)\\cos x - \\frac{\\sin x}{x}}{\\ln^2 x}",
+    integrandExpr: "(log(x)*cos(x)-sin(x)/x)/log(x)^2",
+    answer: "sin(x)/log(x)",
+    answerLatex: "\\frac{\\sin x}{\\ln x} + C",
+    domain: [2, 6],
+    difficulty: 4,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #3" },
+    hints: [
+      "This is exactly the shape of a quotient-rule derivative, run in reverse — recognise \\frac{u'v-uv'}{v^2} with u=\\sin x,\\ v=\\ln x.",
+    ],
+    steps: [
+      "With u=\\sin x,\\ v=\\ln x: \\frac{d}{dx}\\frac{u}{v} = \\frac{u'v-uv'}{v^2} = \\frac{\\cos(x)\\ln x - \\sin(x)/x}{\\ln^2x}.",
+      "That's exactly the integrand, so \\int\\frac{\\ln(x)\\cos x-\\sin(x)/x}{\\ln^2x}\\,dx = \\frac{\\sin x}{\\ln x} + C.",
+    ],
+  },
+  {
+    id: "parts-x-log-squared-reverse",
+    kind: "indefinite",
+    integrand: "2\\ln x + \\ln^2 x",
+    integrandExpr: "2*log(x)+log(x)^2",
+    answer: "x*log(x)^2",
+    answerLatex: "x\\ln^2x + C",
+    domain: [0.5, 5],
+    difficulty: 3,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #17" },
+    hints: [
+      "Try differentiating x\\ln^2x with the product rule and see what falls out.",
+    ],
+    steps: [
+      "\\frac{d}{dx}\\left[x\\ln^2x\\right] = \\ln^2x + x\\cdot2\\ln x\\cdot\\frac1x = \\ln^2x + 2\\ln x.",
+      "That's exactly the integrand, so \\int(2\\ln x+\\ln^2x)\\,dx = x\\ln^2x + C.",
+    ],
+  },
 ];

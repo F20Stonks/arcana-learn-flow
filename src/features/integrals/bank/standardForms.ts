@@ -716,6 +716,26 @@ export const StandardForms: Problem[] = [
     ],
   },
   {
+    id: "power-log-square-minus-log-double",
+    kind: "indefinite",
+    integrand: "\\ln(x^2) - 2\\ln(2x)",
+    integrandExpr: "log(x^2)-2*log(2*x)",
+    answer: "-2*log(2)*x",
+    answerLatex: "-2\\ln(2)\\,x + C",
+    domain: [2, 6],
+    difficulty: 2,
+    techniques: ["power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2013, round: "Qualifying Test #1" },
+    hints: [
+      "Expand both logs before doing anything else: \\ln(x^2)=2\\ln x and \\ln(2x)=\\ln2+\\ln x.",
+      "Once expanded, every \\ln x term cancels — the whole integrand is a constant.",
+    ],
+    steps: [
+      "\\ln(x^2)-2\\ln(2x) = 2\\ln x - 2(\\ln2+\\ln x) = -2\\ln2.",
+      "\\int -2\\ln2\\,dx = -2\\ln(2)\\,x + C.",
+    ],
+  },
+  {
     id: "power-def-log-reciprocal",
     kind: "definite",
     integrand: "\\ln\\!\\left(\\frac1x\\right)",
