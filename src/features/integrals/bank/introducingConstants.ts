@@ -195,4 +195,25 @@ export const IntroducingConstants: Problem[] = [
       "So the limiting integrand is the constant \\frac{\\sqrt5-1}{2}, and \\int_0^1\\frac{\\sqrt5-1}{2}\\,dx = \\frac{\\sqrt5-1}{2}.",
     ],
   },
+  {
+    id: "ic-nested-radical-tower-e-minus-2",
+    kind: "indefinite",
+    integrand: "\\sqrt{x\\sqrt[3]{x\\sqrt[4]{x\\sqrt[5]x\\cdots}}}",
+    integrandExpr: "x^(exp(1)-2)",
+    answer: "x^(exp(1)-1)/(exp(1)-1)",
+    answerLatex: "\\frac{x^{e-1}}{e-1} + C",
+    domain: [1, 3],
+    difficulty: 5,
+    techniques: ["introducing-constants", "power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2018, round: "Qualifying Test #2" },
+    hints: [
+      "The whole tower is a single power of x — name the exponent S and find it as an infinite sum.",
+      "Each nested root contributes another factor of \\frac{1}{n!} to the exponent of x.",
+    ],
+    steps: [
+      "The tower is x^S where S=\\frac12+\\frac{1}{2\\cdot3}+\\frac{1}{2\\cdot3\\cdot4}+\\cdots=\\sum_{n=2}^\\infty\\frac{1}{n!}.",
+      "\\sum_{n=0}^\\infty\\frac1{n!}=e, so \\sum_{n=2}^\\infty\\frac1{n!}=e-1-1=e-2.",
+      "So the integrand is x^{e-2}, and \\int x^{e-2}\\,dx = \\frac{x^{e-1}}{e-1} + C.",
+    ],
+  },
 ];
