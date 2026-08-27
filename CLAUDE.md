@@ -304,3 +304,43 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     scheme this repo uses (confirmed with real effort, not a quick guess) — it lives as the
     technique's worked lesson example instead of a graded bank problem, which is almost certainly
     fine, but the owner may want to weigh in if he'd rather it be handled differently.
+
+- 2026-08-27 (same day, new mining round): The owner answered both follow-ups above by re-sending
+  the source PDFs directly into this session's uploads, plus a new batch: SPLASH notes, the UK
+  guide, Fresno State/HMMT Pt1/HMMT Pt2/MIT 2025 Mock (all previously missing), and 16 years of
+  `qualifying_round_20XX_test.pdf` (2010–2020, 2022–2026, missing 2021) — the ~320-problem MIT
+  qualifier archive mentioned as coming eventually. `pdftoppm`/`pdftotext` aren't installed in this
+  sandbox (Read's PDF path needs poppler); worked around it with `pip install pymupdf` and a
+  Python extraction script, text saved to `/tmp/.../scratchpad/pdftext/*.txt` — a future session
+  hitting the same PDF-read error should reuse that approach rather than re-discovering it.
+  - Re-attributed 77 of the ~80 `3eac99d` problems to their real Fresno State/HMMT sources by
+    diffing each problem's integrand/bounds against the actual PDF text (commit `24a20e9`) — this
+    really was recoverable with the PDFs in hand, contrary to the previous session's guess.
+    A handful of definite/completing-the-square/introducing-constants instances didn't turn up a
+    confident verbatim match and stayed `{name: "original"}` rather than being guessed.
+  - Mined SPLASH notes exhaustively (commit `7ea738f`, 12 new problems across reciprocal-
+    substitution/beta-integrals/zeta-series/wallis-product/gamma-function) and the UK guide
+    exhaustively in two passes (commits `5f93dcf`, `752506f`, 17 new problems total across
+    symmetry/reciprocal-substitution/trig-identity/complete-square/inverse-integral/introducing-
+    constants/t-sub/floor-function) — every technique's lesson `recipe`/`pitfalls` got a line or
+    two added where the new problems needed a trick the lesson didn't teach yet (Beta-function log-
+    differentiation, the complex-exponential trick, the two-power Beta-trig generalisation). Three
+    UK-guide candidates (log sine integral, Serret's integral, Putnam 1980 A3) turned out to already
+    be in the bank from a previous session under different IDs, tagged `{name: "original"}` — fixed
+    by re-attributing the existing entries and dropping the duplicates rather than keeping two
+    copies of the same problem.
+  - Along the way, found and fixed a real latent bug in two pre-existing tests
+    (`a11y.test.tsx`, `integration.test.tsx`): both hardcoded a "wrong answer" guess against
+    whatever `dailyProblem()` picks for the *actual current date*, which is a deterministic function
+    of each difficulty pool's size — so every content addition risks shifting which stored problem
+    lands on "today," and a fixed guess can coincidentally read as correct, or as "off by a nice
+    constant factor," or (the subtler failure) as spuriously "flat enough" against a small
+    indefinite reference once the guess's own huge magnitude swamps the tolerance check. Fixed for
+    good by deriving the wrong guess from the actual daily problem's real answer (`answer+999999`
+    for definite, `answer+x` for indefinite) instead of any fixed literal — this is the correct
+    permanent fix, not a workaround; a future content addition shifting today's problem again
+    should not break these tests.
+  - **Next up**: the 16-year MIT qualifying-round archive is still unmined — this is now the
+    largest concrete piece of remaining work and the main thing left in this uploads batch. Each
+    year's PDF is short (~1-2 pages, 16-25 problems), problems only (no printed solutions to lean
+    on), spanning 2010–2020 and 2022–2026. Working through it now.
