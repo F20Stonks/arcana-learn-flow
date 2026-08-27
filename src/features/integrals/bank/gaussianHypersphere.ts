@@ -233,4 +233,25 @@ export const GaussianHypersphere: Problem[] = [
       "With w=u+1: e\\int_{-\\infty}^\\infty w^2e^{-w^2}\\,dw = e\\cdot\\frac{\\sqrt\\pi}{2}.",
     ],
   },
+  {
+    id: "gauss-reciprocal-t-squared-exp-reciprocal",
+    kind: "definite",
+    integrand: "\\frac{e^{-2019/(4x^2)}}{x^2}",
+    integrandExpr: "exp(-2019/(4*x^2))/x^2",
+    lower: "0",
+    upper: "\\infty",
+    answer: "sqrt(pi/2019)",
+    answerLatex: "\\sqrt{\\frac{\\pi}{2019}}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["u-sub", "gaussian-hypersphere"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #8" },
+    hints: [
+      "s=\\frac1x is a reciprocal substitution — it turns \\frac{dx}{x^2} into -ds and the exponent into a plain Gaussian in s.",
+    ],
+    steps: [
+      "s=\\frac1x,\\ ds=-\\frac{dx}{x^2}: the integral becomes \\int_0^\\infty e^{-2019s^2/4}\\,ds.",
+      "\\int_0^\\infty e^{-au^2}\\,du = \\frac12\\sqrt{\\frac\\pi a} with a=\\frac{2019}{4}: = \\frac12\\sqrt{\\frac{4\\pi}{2019}} = \\sqrt{\\frac{\\pi}{2019}}.",
+    ],
+  },
 ];

@@ -825,4 +825,27 @@ export const Definite: Problem[] = [
       "So 2I=\\int_0^{\\pi/2}1\\,dx=\\frac{\\pi}{2}, giving I=\\frac{\\pi}{4}.",
     ],
   },
+  {
+    id: "def-tan-cos-full-period",
+    kind: "definite",
+    integrand: "\\tan(\\cos x)",
+    integrandExpr: "tan(cos(x))",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, 2 * Math.PI],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #1" },
+    hints: [
+      "On [0,\\pi], substitute x\\to\\pi-x: \\cos(\\pi-x)=-\\cos x, so the integrand flips sign — the piece over [0,\\pi] must integrate to 0.",
+      "The same argument, shifted by \\pi, handles [\\pi,2\\pi].",
+    ],
+    steps: [
+      "With f(x)=\\tan(\\cos x): under x\\to\\pi-x, f(\\pi-x)=\\tan(-\\cos x)=-f(x), so \\int_0^\\pi f\\,dx=-\\int_0^\\pi f\\,dx=0.",
+      "The same substitution shifted by \\pi shows \\int_\\pi^{2\\pi}f\\,dx=0 too.",
+      "Total: 0+0=0.",
+    ],
+  },
 ];

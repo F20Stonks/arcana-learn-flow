@@ -694,4 +694,23 @@ export const TrigSubstitution: Problem[] = [
       "Back-substituting u=\\sqrt x: 4\\arcsin\\!\\left(x^{1/4}\\right) + C.",
     ],
   },
+  {
+    id: "trigsub-cos-arctan-x",
+    kind: "indefinite",
+    integrand: "\\cos(\\arctan x)",
+    integrandExpr: "cos(atan(x))",
+    answer: "log(x+sqrt(1+x^2))",
+    answerLatex: "\\ln\\!\\left(x+\\sqrt{1+x^2}\\right) + C",
+    domain: [-2, 2],
+    difficulty: 3,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #20" },
+    hints: [
+      "Draw the right triangle for \\arctan x: \\cos(\\arctan x)=\\frac{1}{\\sqrt{1+x^2}}.",
+    ],
+    steps: [
+      "\\cos(\\arctan x) = \\frac{1}{\\sqrt{1+x^2}}, so this is \\int\\frac{dx}{\\sqrt{1+x^2}} — the standard \\operatorname{arcsinh} form.",
+      "\\int\\frac{dx}{\\sqrt{1+x^2}} = \\ln\\!\\left(x+\\sqrt{1+x^2}\\right) + C.",
+    ],
+  },
 ];

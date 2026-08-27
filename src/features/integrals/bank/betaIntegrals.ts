@@ -281,4 +281,26 @@ export const BetaIntegrals: Problem[] = [
       "So the antiderivative is -y = -(\\cos x)^{\\cos x} + C.",
     ],
   },
+  {
+    id: "beta-log-differentiation-x-power-x2-plus-1",
+    kind: "definite",
+    integrand: "x^{x^2+1}\\left(2\\ln x+1\\right)",
+    integrandExpr: "x^(x^2+1)*(2*log(x)+1)",
+    lower: "0",
+    upper: "2",
+    answer: "15",
+    answerLatex: "15",
+    domain: [0, 2],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #18" },
+    hints: [
+      "The same logarithmic-differentiation move: if z=x^{x^2}, differentiate \\ln z=x^2\\ln x first.",
+    ],
+    steps: [
+      "Let z=x^{x^2}. Then \\ln z=x^2\\ln x, so \\frac{z'}{z}=2x\\ln x+x=x(2\\ln x+1), giving z'=x^{x^2+1}(2\\ln x+1) — exactly the integrand.",
+      "So \\int x^{x^2+1}(2\\ln x+1)\\,dx = x^{x^2} + C.",
+      "At x=2: 2^4=16. As x\\to0^+, x^{x^2}\\to1 (since x^2\\ln x\\to0). Difference: 16-1=15.",
+    ],
+  },
 ];

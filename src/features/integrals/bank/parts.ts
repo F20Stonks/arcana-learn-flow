@@ -1193,4 +1193,25 @@ export const Parts: Problem[] = [
       "= \\ln\\!\\left(\\frac{1+x\\ln x}{x}\\right) + C.",
     ],
   },
+  {
+    id: "parts-ex-cos2-plus-ex-cossin-minus-ex-sin2",
+    kind: "indefinite",
+    integrand: "e^x\\cos^2x + e^x\\cos x\\sin x - e^x\\sin^2x",
+    integrandExpr: "exp(x)*cos(x)^2+exp(x)*cos(x)*sin(x)-exp(x)*sin(x)^2",
+    answer: "exp(x)*sin(2*x)/2",
+    answerLatex: "\\frac{e^x\\sin2x}{2} + C",
+    domain: [0, 1.2],
+    difficulty: 5,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2019, round: "Qualifying Test #15" },
+    hints: [
+      "Simplify first: \\cos^2x-\\sin^2x=\\cos2x and \\cos x\\sin x=\\frac12\\sin2x — the integrand is e^x\\left(\\cos2x+\\frac12\\sin2x\\right).",
+      "Try differentiating \\frac{e^x\\sin2x}{2} directly and compare.",
+    ],
+    steps: [
+      "The integrand simplifies to e^x\\cos2x + \\frac{e^x\\sin2x}{2}.",
+      "\\frac{d}{dx}\\left[\\frac{e^x\\sin2x}{2}\\right] = \\frac{e^x\\sin2x}{2}+e^x\\cos2x — exactly that.",
+      "So the antiderivative is \\frac{e^x\\sin2x}{2} + C.",
+    ],
+  },
 ];
