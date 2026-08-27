@@ -729,4 +729,23 @@ export const TrigIdentities: Problem[] = [
       "\\int\\tan x\\,dx = -\\ln|\\cos x| + C.",
     ],
   },
+  {
+    id: "trig-sin2x-cos3x-product",
+    kind: "indefinite",
+    integrand: "\\sin(2x)\\cos(3x)",
+    integrandExpr: "sin(2*x)*cos(3*x)",
+    answer: "-cos(5*x)/10+cos(x)/2",
+    answerLatex: "-\\frac{\\cos5x}{10}+\\frac{\\cos x}{2} + C",
+    domain: [0.5, 2],
+    difficulty: 3,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #6" },
+    hints: [
+      "Product-to-sum: \\sin A\\cos B = \\frac12[\\sin(A+B)+\\sin(A-B)].",
+    ],
+    steps: [
+      "\\sin(2x)\\cos(3x) = \\frac12[\\sin5x+\\sin(-x)] = \\frac12\\sin5x-\\frac12\\sin x.",
+      "\\int\\left(\\frac12\\sin5x-\\frac12\\sin x\\right)dx = -\\frac{\\cos5x}{10}+\\frac{\\cos x}{2} + C.",
+    ],
+  },
 ];

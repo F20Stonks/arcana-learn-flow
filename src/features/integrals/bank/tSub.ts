@@ -206,4 +206,27 @@ export const TSub: Problem[] = [
       "The t-sub turns it into \\int_0^1\\frac{1-t^2}{2}\\,dt = \\frac12-\\frac16 = \\frac13.",
     ],
   },
+  {
+    id: "tsub-one-over-2-plus-cos-past-a-period",
+    kind: "definite",
+    integrand: "\\frac{1}{2+\\cos x}",
+    integrandExpr: "1/(2+cos(x))",
+    lower: "0",
+    upper: "\\frac{5\\pi}{2}",
+    answer: "7*pi*sqrt(3)/9",
+    answerLatex: "\\frac{7\\pi\\sqrt3}{9}",
+    domain: [0, 5 * Math.PI / 2],
+    difficulty: 5,
+    techniques: ["t-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #20" },
+    hints: [
+      "The interval is more than one full period: \\frac{5\\pi}{2}=2\\pi+\\frac{\\pi}{2}. Split off the full period, then handle the leftover \\frac{\\pi}{2} by periodicity.",
+      "t=\\tan(x/2) reduces \\frac{1}{2+\\cos x} to \\frac{2}{3+t^2}, a plain arctangent form.",
+    ],
+    steps: [
+      "t=\\tan(x/2): \\frac{1}{2+\\cos x}\\,dx = \\frac{2\\,dt}{3+t^2}, so \\int\\frac{dx}{2+\\cos x}=\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{t}{\\sqrt3}\\right).",
+      "One full period [0,2\\pi] gives \\frac{2\\pi}{\\sqrt3}. The leftover [2\\pi,\\frac{5\\pi}{2}] matches [0,\\frac{\\pi}{2}] by periodicity, where t goes 0\\to1: \\frac{2}{\\sqrt3}\\arctan\\frac{1}{\\sqrt3}=\\frac{2}{\\sqrt3}\\cdot\\frac{\\pi}{6}=\\frac{\\pi}{3\\sqrt3}.",
+      "Total: \\frac{2\\pi}{\\sqrt3}+\\frac{\\pi}{3\\sqrt3} = \\frac{7\\pi}{3\\sqrt3} = \\frac{7\\pi\\sqrt3}{9}.",
+    ],
+  },
 ];

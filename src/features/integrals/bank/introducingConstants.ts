@@ -149,4 +149,27 @@ export const IntroducingConstants: Problem[] = [
       "So the answer is 2\\pi - 2\\cdot\\frac{2\\pi}{\\sqrt3} = 2\\pi\\left(1-\\frac{2}{\\sqrt3}\\right).",
     ],
   },
+  {
+    id: "ic-infinite-nested-radical",
+    kind: "definite",
+    integrand: "\\sqrt{x+\\sqrt{x+\\sqrt{x+\\cdots}}}",
+    integrandExpr: "(1+sqrt(1+4*x))/2",
+    lower: "0",
+    upper: "2",
+    answer: "19/6",
+    answerLatex: "\\frac{19}{6}",
+    domain: [0, 2],
+    difficulty: 4,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #4" },
+    hints: [
+      "Name the whole infinite tower y. Since the tower repeats itself one level down, y=\\sqrt{x+y}.",
+      "Solve the resulting quadratic in y for the closed form, then it's an ordinary integral.",
+    ],
+    steps: [
+      "y=\\sqrt{x+y} \\Rightarrow y^2=x+y \\Rightarrow y^2-y-x=0 \\Rightarrow y=\\frac{1+\\sqrt{1+4x}}{2} (taking the positive root).",
+      "\\int_0^2\\frac{1+\\sqrt{1+4x}}{2}\\,dx = \\frac12\\left[x+\\frac{(1+4x)^{3/2}}{6}\\right]_0^2.",
+      "At x=2: 2+\\frac{27}{6}=2+4.5=6.5. At x=0: 0+\\frac16. Difference: 6.5-\\frac16=\\frac{19}{3}. Halving: \\frac{19}{6}.",
+    ],
+  },
 ];

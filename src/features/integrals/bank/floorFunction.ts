@@ -141,4 +141,27 @@ export const FloorFunction: Problem[] = [
       "= \\frac{1}{e-1}.",
     ],
   },
+  {
+    id: "floor-reciprocal-log2-shifted",
+    kind: "definite",
+    integrand: "\\frac{1}{\\lfloor 1-\\log_2(1-x)\\rfloor}",
+    integrandExpr: "1/floor(1-log2(1-x))",
+    lower: "0",
+    upper: "1",
+    answer: "log(2)",
+    answerLatex: "\\ln 2",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #18" },
+    hints: [
+      "\\lfloor1-\\log_2(1-x)\\rfloor=n exactly when x lies in a specific interval — work out that interval's endpoints and width in terms of n.",
+      "Once you have the width of each piece, what's left is a power series in \\frac12.",
+    ],
+    steps: [
+      "\\lfloor1-\\log_2(1-x)\\rfloor=n \\iff 1-2^{1-n}\\le x<1-2^{-n}, an interval of width 2^{-n}.",
+      "On that piece the integrand is \\frac1n, so \\int_0^1 = \\sum_{n=1}^\\infty\\frac{1}{n}\\cdot2^{-n}.",
+      "\\sum_{n=1}^\\infty\\frac{x^n}{n}=-\\ln(1-x); at x=\\frac12 this is \\ln2.",
+    ],
+  },
 ];

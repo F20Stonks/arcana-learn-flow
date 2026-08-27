@@ -171,4 +171,25 @@ export const CompletingTheSquare: Problem[] = [
       "Both pieces reduce to log-sine integrals over an interval of length \\frac{\\pi}{4}, giving the same value as Serret's integral: \\frac{\\pi\\ln2}{8} (the author notes this coincidence in the source without a direct proof they're equal).",
     ],
   },
+  {
+    id: "cs-reciprocal-quadratic-nice-radical",
+    kind: "indefinite",
+    integrand: "\\frac{1}{x^2-15x-2014}",
+    integrandExpr: "1/(x^2-15*x-2014)",
+    answer: "log(abs((x-53)/(x+38)))/91",
+    answerLatex: "\\frac{1}{91}\\ln\\left|\\frac{x-53}{x+38}\\right| + C",
+    domain: [0, 10],
+    difficulty: 4,
+    techniques: ["complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2014, round: "Qualifying Test #12" },
+    hints: [
+      "Complete the square: x^2-15x-2014 = \\left(x-\\frac{15}{2}\\right)^2-2070.25, and 2070.25=45.5^2 exactly.",
+      "This lands on the standard \\int\\frac{du}{u^2-a^2}=\\frac{1}{2a}\\ln\\left|\\frac{u-a}{u+a}\\right| form.",
+    ],
+    steps: [
+      "x^2-15x-2014 = \\left(x-\\frac{15}{2}\\right)^2-45.5^2, and 45.5=\\frac{91}{2}.",
+      "With u=x-\\frac{15}{2},\\ a=45.5: \\int\\frac{du}{u^2-a^2}=\\frac{1}{91}\\ln\\left|\\frac{u-45.5}{u+45.5}\\right|.",
+      "u-45.5=x-53 and u+45.5=x+38, so the answer is \\frac{1}{91}\\ln\\left|\\frac{x-53}{x+38}\\right| + C.",
+    ],
+  },
 ];
