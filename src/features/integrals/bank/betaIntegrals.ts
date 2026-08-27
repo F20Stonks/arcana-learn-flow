@@ -303,4 +303,23 @@ export const BetaIntegrals: Problem[] = [
       "At x=2: 2^4=16. As x\\to0^+, x^{x^2}\\to1 (since x^2\\ln x\\to0). Difference: 16-1=15.",
     ],
   },
+  {
+    id: "beta-log-differentiation-x-power-2x",
+    kind: "indefinite",
+    integrand: "x^{2x}\\left(2\\ln x+2\\right)",
+    integrandExpr: "x^(2*x)*(2*log(x)+2)",
+    answer: "x^(2*x)",
+    answerLatex: "x^{2x} + C",
+    domain: [1, 2],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #18" },
+    hints: [
+      "The same logarithmic-differentiation move: if y=x^{2x}, differentiate \\ln y=2x\\ln x first.",
+    ],
+    steps: [
+      "Let y=x^{2x}. Then \\ln y=2x\\ln x, so \\frac{y'}{y}=2\\ln x+2, giving y'=x^{2x}(2\\ln x+2) — exactly the integrand.",
+      "So the antiderivative is x^{2x} + C.",
+    ],
+  },
 ];

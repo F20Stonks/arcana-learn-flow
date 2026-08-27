@@ -305,7 +305,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #8" },
     hints: [
       "A lone logarithm means dv = dx.",
       "The leftover \\int\\frac{2x^2}{x^2+1}dx needs a division first: \\frac{2x^2}{x^2+1} = 2 - \\frac{2}{x^2+1}.",
@@ -1212,6 +1212,28 @@ export const Parts: Problem[] = [
       "The integrand simplifies to e^x\\cos2x + \\frac{e^x\\sin2x}{2}.",
       "\\frac{d}{dx}\\left[\\frac{e^x\\sin2x}{2}\\right] = \\frac{e^x\\sin2x}{2}+e^x\\cos2x — exactly that.",
       "So the antiderivative is \\frac{e^x\\sin2x}{2} + C.",
+    ],
+  },
+  {
+    id: "parts-arcsin-over-x-cubed",
+    kind: "definite",
+    integrand: "\\frac{\\arcsin x}{x^3}",
+    integrandExpr: "asin(x)/x^3",
+    lower: "\\frac1{\\sqrt2}",
+    upper: "1",
+    answer: "1/2",
+    answerLatex: "\\frac12",
+    domain: [1 / Math.sqrt(2), 1],
+    difficulty: 5,
+    techniques: ["parts", "trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #11" },
+    hints: [
+      "u=\\arcsin x,\\ dv=x^{-3}\\,dx,\\ v=-\\frac{1}{2x^2}. The leftover \\int v\\,du needs a standard trig-sub form \\int\\frac{dx}{x^2\\sqrt{1-x^2}}.",
+    ],
+    steps: [
+      "By parts: \\int\\frac{\\arcsin x}{x^3}\\,dx = -\\frac{\\arcsin x}{2x^2} + \\int\\frac{dx}{2x^2\\sqrt{1-x^2}}.",
+      "\\int\\frac{dx}{x^2\\sqrt{1-x^2}} = -\\frac{\\sqrt{1-x^2}}{x} (standard x=\\sin\\theta form), so the total antiderivative is -\\frac{\\arcsin x}{2x^2} - \\frac{\\sqrt{1-x^2}}{2x}.",
+      "At x=1: -\\frac{\\pi}{4}. At x=\\frac1{\\sqrt2}: -\\frac{\\pi}{4}-\\frac12. Difference: \\left(-\\frac{\\pi}{4}\\right)-\\left(-\\frac{\\pi}{4}-\\frac12\\right) = \\frac12.",
     ],
   },
 ];

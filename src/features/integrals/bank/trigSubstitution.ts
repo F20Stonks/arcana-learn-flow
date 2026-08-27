@@ -399,7 +399,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #19" },
     hints: ["This is a quarter of the unit circle's area — no antiderivative needed."],
     steps: [
       "y=\\sqrt{1-x^2} on [0,1] is a quarter of the unit circle.",

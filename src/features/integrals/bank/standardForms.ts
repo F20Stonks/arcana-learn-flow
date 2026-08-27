@@ -851,4 +851,26 @@ export const StandardForms: Problem[] = [
       "Difference: 4\\ln2-4.",
     ],
   },
+  {
+    id: "power-log-1px-over-1mx",
+    kind: "definite",
+    integrand: "\\ln\\!\\left(\\frac{1+x}{1-x}\\right)",
+    integrandExpr: "log((1+x)/(1-x))",
+    lower: "0",
+    upper: "1",
+    answer: "2*log(2)",
+    answerLatex: "2\\ln2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #4" },
+    hints: [
+      "Split into \\ln(1+x)-\\ln(1-x) and integrate each piece with the standard \\ln form.",
+    ],
+    steps: [
+      "\\int\\ln(1+x)\\,dx = (1+x)\\ln(1+x)-(1+x). \\int\\ln(1-x)\\,dx = -(1-x)\\ln(1-x)+(1-x).",
+      "The antiderivative is (1+x)\\ln(1+x)+(1-x)\\ln(1-x)-2.",
+      "At x=1: 2\\ln2+0-2 (using x\\ln x\\to0). At x=0: 0+0-2=-2. Difference: 2\\ln2.",
+    ],
+  },
 ];

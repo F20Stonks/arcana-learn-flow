@@ -196,4 +196,25 @@ export const GammaFunction: Problem[] = [
       "So the integral is 2\\times0=0.",
     ],
   },
+  {
+    id: "gamma-x5-exp-minus-x4",
+    kind: "definite",
+    integrand: "x^5e^{-x^4}",
+    integrandExpr: "x^5*exp(-x^4)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "sqrt(pi)/8",
+    answerLatex: "\\frac{\\sqrt\\pi}{8}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["gamma-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #20" },
+    hints: [
+      "u=x^4 turns this into a Gamma integral at a half-integer parameter: \\Gamma\\!\\left(\\frac32\\right).",
+    ],
+    steps: [
+      "u=x^4,\\ du=4x^3\\,dx,\\ x^2=\\sqrt u: \\int_0^\\infty x^5e^{-x^4}\\,dx = \\frac14\\int_0^\\infty u^{1/2}e^{-u}\\,du = \\frac14\\Gamma\\!\\left(\\frac32\\right).",
+      "\\Gamma\\!\\left(\\frac32\\right) = \\frac{\\sqrt\\pi}{2}, so the answer is \\frac14\\cdot\\frac{\\sqrt\\pi}2 = \\frac{\\sqrt\\pi}{8}.",
+    ],
+  },
 ];

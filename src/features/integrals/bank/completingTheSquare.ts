@@ -233,4 +233,23 @@ export const CompletingTheSquare: Problem[] = [
       "Combining the \\frac12: \\frac{1}{\\sqrt3}\\arctan\\!\\left(\\frac{2x^2+1}{\\sqrt3}\\right) + C.",
     ],
   },
+  {
+    id: "cs-reciprocal-x2-plus-xm1-squared",
+    kind: "indefinite",
+    integrand: "\\frac{1}{x^2+(x-1)^2}",
+    integrandExpr: "1/(x^2+(x-1)^2)",
+    answer: "atan(2*x-1)",
+    answerLatex: "\\arctan(2x-1) + C",
+    domain: [-1, 2],
+    difficulty: 3,
+    techniques: ["complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #5" },
+    hints: [
+      "Expand and complete the square: x^2+(x-1)^2 = 2x^2-2x+1 = 2\\left(x-\\frac12\\right)^2+\\frac12.",
+    ],
+    steps: [
+      "x^2+(x-1)^2 = 2x^2-2x+1 = 2\\left(x-\\frac12\\right)^2+\\frac12.",
+      "\\int\\frac{dx}{2\\left(x-\\frac12\\right)^2+\\frac12} = \\arctan\\!\\left(2x-1\\right) (matching \\int\\frac{du}{au^2+b} against the standard arctangent form).",
+    ],
+  },
 ];

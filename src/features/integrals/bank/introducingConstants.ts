@@ -260,4 +260,23 @@ export const IntroducingConstants: Problem[] = [
       "So the integrand is just the constant e, and \\int_0^e e\\,dx = e\\cdot e = e^2.",
     ],
   },
+  {
+    id: "ic-nested-sqrt-tower-equals-x",
+    kind: "indefinite",
+    integrand: "\\sqrt{x\\sqrt{x\\sqrt{x\\sqrt x\\cdots}}}",
+    integrandExpr: "x",
+    answer: "x^2/2",
+    answerLatex: "\\frac{x^2}{2} + C",
+    domain: [1, 4],
+    difficulty: 4,
+    techniques: ["introducing-constants", "power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2020, round: "Qualifying Test #6" },
+    hints: [
+      "The tower is a single power of x — the exponent is an infinite geometric sum, not a telescoping factorial series this time.",
+    ],
+    steps: [
+      "The tower is x^S where S=\\frac12+\\frac14+\\frac18+\\cdots=\\sum_{n=1}^\\infty\\frac1{2^n}=1 (a geometric series).",
+      "So the integrand is simply x, and \\int x\\,dx = \\frac{x^2}{2} + C.",
+    ],
+  },
 ];
