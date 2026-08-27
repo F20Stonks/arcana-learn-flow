@@ -435,6 +435,33 @@ export const TECHNIQUES: Technique[] = [
       "This is the same differentiate-under-the-integral-sign move as the Feynman technique, just packaged as a formula worth recognising on sight instead of re-deriving from scratch every time.",
     ],
   },
+  {
+    id: "reciprocal-substitution",
+    name: "Reciprocal substitution",
+    tagline: "u=\\frac{1}{x} pairs an integral over (0,\\infty) with a twin of itself — average the two and the hard part cancels.",
+    whenToUse:
+      "The integral runs over (0,\\infty), and the integrand involves \\ln x or an odd power of x in a way that looks antisymmetric under x \\to \\frac{1}{x}. If substituting u=\\frac{1}{x} turns the integral into something you can add to (or subtract from) the original to kill the ugly part, this is the move.",
+    recipe: [
+      "Substitute u = \\frac{1}{x}, so x = \\frac{1}{u} and dx = -\\frac{du}{u^2}. The bounds (0,\\infty) map to (\\infty,0), and flipping them back cancels the minus sign.",
+      "Rewrite every x in the integrand in terms of u, including \\ln x = -\\ln u if a logarithm is present.",
+      "Compare the transformed integral to the original. If it's the negative of the original, the integral is 0 outright. If it's a different but related integral, add the two expressions together — the awkward piece is often designed to cancel or double.",
+      "Solve the resulting (usually much simpler) equation for the original integral I.",
+    ],
+    example: {
+      integrand: "\\frac{1}{x(1+x^2)(1+x^3)} \\text{ style pairing, worked for } \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx",
+      work: [
+        "Let I = \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx. Substitute x=\\frac{1}{t}: \\arctan\\frac{1}{t} = \\frac{\\pi}{2}-\\arctan t, and \\ln^2 x = \\ln^2 t since \\ln\\frac{1}{t}=-\\ln t.",
+        "The measure works out to \\frac{dx}{x} = -\\frac{dt}{t}, so I = \\int_0^\\infty \\frac{\\frac{\\pi}{2}-\\arctan t}{t(1+\\ln^2 t)}\\,dt = \\frac{\\pi}{2}J - I, where J=\\int_0^\\infty \\frac{dt}{t(1+\\ln^2 t)}.",
+        "J collapses under w=\\ln t to \\int_{-\\infty}^\\infty\\frac{dw}{1+w^2}=\\pi. So 2I=\\frac{\\pi}{2}\\cdot\\pi, giving I=\\frac{\\pi^2}{4}.",
+      ],
+      result: "\\frac{\\pi^2}{4}",
+    },
+    pitfalls: [
+      "Get the bounds and the sign right: (0,\\infty)\\to(\\infty,0) under x=\\frac{1}{t}, and flipping the limits back is exactly what cancels the minus sign in dx=-\\frac{dt}{t^2} — track this once, carefully, rather than by feel.",
+      "\\ln\\frac{1}{t}=-\\ln t, so an even power of \\ln x survives the substitution unchanged while an odd power flips sign — that's usually the whole point of trying this move.",
+      "The technique only pays off when the twin integral is genuinely related to the original (equal, opposite, or a known simpler one). If substituting just produces an unrelated mess, this isn't the right tool.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

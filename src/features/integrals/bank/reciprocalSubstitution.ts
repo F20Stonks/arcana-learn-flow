@@ -1,0 +1,179 @@
+/**
+ * u=1/x pairs an integral over (0,\infty) with a twin of itself. Source: UK University
+ * Integration Bee Basic Techniques Guide (Vishal Gupta & Alfie Jones), §1.2.
+ *
+ * The technique's flagship example — \int_0^\infty \frac{\arctan x}{x(1+\ln^2 x)}dx = \pi^2/4 —
+ * lives in techniques.ts as the worked lesson example rather than here: its integrand decays only
+ * logarithmically (~1/(x\ln^2 x)) at infinity, which converges too slowly under any polynomial
+ * change of variable to self-verify reliably by numerical quadrature at a sane sample count (see
+ * problems.test.ts's quadrature() and the CLAUDE.md runbook's note on this). Every problem actually
+ * graded here decays at least algebraically fast and was checked with real margin first.
+ */
+import type { Problem } from "../types";
+
+export const ReciprocalSubstitution: Problem[] = [
+  {
+    id: "recip-log-over-1px2",
+    kind: "definite",
+    integrand: "\\frac{\\ln x}{1+x^2}",
+    integrandExpr: "log(x)/(1+x^2)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, Infinity],
+    difficulty: 2,
+    techniques: ["reciprocal-substitution"],
+    hints: [
+      "Substitute x=\\frac{1}{t}: \\ln x becomes -\\ln t, and \\frac{dx}{1+x^2} is left unchanged in shape by this substitution.",
+      "The transformed integral is exactly the negative of the original.",
+    ],
+    steps: [
+      "Under x=\\frac{1}{t}: \\frac{dx}{1+x^2}=\\frac{dt}{1+t^2} (the (0,\\infty)\\to(\\infty,0) flip cancels the minus sign from dx), and \\ln x=-\\ln t.",
+      "So I = \\int_0^\\infty\\frac{-\\ln t}{1+t^2}\\,dt = -I.",
+      "2I=0, so I=0.",
+    ],
+  },
+  {
+    id: "recip-pi4-a1",
+    kind: "definite",
+    integrand: "\\frac{1}{(1+x^2)(1+x)}",
+    integrandExpr: "1/((1+x^2)*(1+x))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Infinity],
+    difficulty: 2,
+    techniques: ["reciprocal-substitution"],
+    hints: [
+      "Substitute x=\\frac{1}{t}: the integral becomes \\int_0^\\infty\\frac{t}{(1+t^2)(1+t)}\\,dt.",
+      "Add that to the original: the two numerators (1 and t) sum to (1+t), which cancels the (1+t) in the denominator.",
+    ],
+    steps: [
+      "Let I=\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x)}. Under x=\\frac{1}{t}: I=\\int_0^\\infty\\frac{t\\,dt}{(1+t^2)(1+t)}.",
+      "Adding the two expressions for I: 2I=\\int_0^\\infty\\frac{1+t}{(1+t^2)(1+t)}\\,dt=\\int_0^\\infty\\frac{dt}{1+t^2}=\\frac{\\pi}{2}.",
+      "So I=\\frac{\\pi}{4} — and notice x=1 played no special role, this works for any positive power in place of x.",
+    ],
+  },
+  {
+    id: "recip-pi4-sqrt",
+    kind: "definite",
+    integrand: "\\frac{1}{(1+x^2)(1+\\sqrt{x})}",
+    integrandExpr: "1/((1+x^2)*(1+sqrt(x)))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Infinity],
+    difficulty: 3,
+    techniques: ["reciprocal-substitution"],
+    hints: [
+      "Same identity as \\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^a)}=\\frac{\\pi}{4} for any a>0 — here a=\\frac{1}{2}.",
+      "The (1+x^a) factor is completely irrelevant to the answer; that's the content of the identity.",
+    ],
+    steps: [
+      "General claim: I(a)=\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^a)} is the same for every a>0.",
+      "Under x=\\frac{1}{t}: I(a)=\\int_0^\\infty\\frac{t^a\\,dt}{(1+t^2)(1+t^a)}. Adding to the original expression gives 2I(a)=\\int_0^\\infty\\frac{dt}{1+t^2}=\\frac{\\pi}{2}.",
+      "So I(a)=\\frac{\\pi}{4} regardless of a — in particular for a=\\frac{1}{2}.",
+    ],
+  },
+  {
+    id: "recip-pi4-a3",
+    kind: "definite",
+    integrand: "\\frac{1}{(1+x^2)(1+x^3)}",
+    integrandExpr: "1/((1+x^2)*(1+x^3))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Infinity],
+    difficulty: 3,
+    techniques: ["reciprocal-substitution"],
+    hints: ["Same family as \\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^a)}=\\frac{\\pi}{4} — here a=3."],
+    steps: [
+      "2I=\\int_0^\\infty\\frac{1+x^3}{(1+x^2)(1+x^3)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2} after adding the x\\to1/x twin.",
+      "I=\\frac{\\pi}{4}.",
+    ],
+  },
+  {
+    id: "recip-pi4-a4",
+    kind: "definite",
+    integrand: "\\frac{1}{(1+x^2)(1+x^4)}",
+    integrandExpr: "1/((1+x^2)*(1+x^4))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["reciprocal-substitution"],
+    hints: ["Same family with a=4 — the answer never depends on which power sits in the second factor."],
+    steps: [
+      "The x\\to1/x twin of I is \\int_0^\\infty\\frac{x^4\\,dx}{(1+x^2)(1+x^4)}. Add: 2I=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2}.",
+      "I=\\frac{\\pi}{4}.",
+    ],
+  },
+  {
+    id: "recip-pi4-a5",
+    kind: "definite",
+    integrand: "\\frac{1}{(1+x^2)(1+x^5)}",
+    integrandExpr: "1/((1+x^2)*(1+x^5))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["reciprocal-substitution"],
+    hints: ["Same family, a=5 — verify the pattern rather than redo the algebra from scratch."],
+    steps: [
+      "2I=\\int_0^\\infty\\frac{1+x^5}{(1+x^2)(1+x^5)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2}.",
+      "I=\\frac{\\pi}{4}.",
+    ],
+  },
+  {
+    id: "recip-reflection-half",
+    kind: "definite",
+    integrand: "\\frac{1}{\\sqrt{x}(1+x)}",
+    integrandExpr: "1/(sqrt(x)*(1+x))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi",
+    answerLatex: "\\pi",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["reciprocal-substitution"],
+    hints: [
+      "Split at x=1, then substitute x=\\frac{1}{t} on the (1,\\infty) piece — it lands exactly on top of the (0,1) piece.",
+      "This is the reflection-formula pattern: \\int_0^\\infty\\frac{x^{a-1}}{1+x}\\,dx=\\frac{\\pi}{\\sin(\\pi a)} for 0<a<1, here with a=\\frac{1}{2}.",
+    ],
+    steps: [
+      "\\int_1^\\infty\\frac{dx}{\\sqrt{x}(1+x)}, under x=\\frac{1}{t}, becomes \\int_0^1\\frac{dt}{\\sqrt{t}(1+t)} — the same shape as the (0,1) piece.",
+      "So the whole integral is twice \\int_0^1\\frac{dx}{\\sqrt{x}(1+x)}, which is a standard arctan form: 2\\left[2\\arctan\\sqrt{x}\\right]_0^1 = 2\\cdot\\frac{\\pi}{2}.",
+      "I=\\pi, matching \\frac{\\pi}{\\sin(\\pi/2)}=\\pi from the general reflection formula.",
+    ],
+  },
+  {
+    id: "recip-log-squared",
+    kind: "definite",
+    integrand: "\\frac{\\ln^2 x}{1+x^2}",
+    integrandExpr: "log(x)^2/(1+x^2)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^3/8",
+    answerLatex: "\\frac{\\pi^3}{8}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["reciprocal-substitution"],
+    hints: [
+      "x=\\frac{1}{t} leaves this integral looking exactly like itself — \\ln^2 x is even in \\ln x, so it doesn't cancel this time.",
+      "Split at x=1 instead: on (1,\\infty), x=\\frac{1}{t} maps it onto (0,1), matching the piece already there.",
+    ],
+    steps: [
+      "On (1,\\infty), substitute x=\\frac{1}{t}: \\frac{\\ln^2 x}{1+x^2}\\,dx becomes \\frac{\\ln^2 t}{1+t^2}\\,dt on (0,1) — identical to the (0,1) piece.",
+      "So I = 2\\int_0^1\\frac{\\ln^2 x}{1+x^2}\\,dx. Expand \\frac{1}{1+x^2}=\\sum_{k=0}^\\infty(-1)^kx^{2k} and integrate termwise using the log-power result \\int_0^1x^{2k}\\ln^2x\\,dx=\\frac{2}{(2k+1)^3}.",
+      "I = 2\\sum_{k=0}^\\infty(-1)^k\\frac{2}{(2k+1)^3} = 4\\sum_{k=0}^\\infty\\frac{(-1)^k}{(2k+1)^3}, and that series is Catalan's-constant-adjacent — its known closed form here is \\frac{\\pi^3}{32}\\cdot 4 = \\frac{\\pi^3}{8}.",
+    ],
+  },
+];

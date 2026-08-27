@@ -23,7 +23,8 @@ export type TechniqueId =
   | "floor-function"
   | "beta-integrals"
   | "introducing-constants"
-  | "log-power-integrals";
+  | "log-power-integrals"
+  | "reciprocal-substitution";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
