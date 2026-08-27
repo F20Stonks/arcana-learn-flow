@@ -22,7 +22,8 @@ export type TechniqueId =
   | "inverse-integral"
   | "floor-function"
   | "beta-integrals"
-  | "introducing-constants";
+  | "introducing-constants"
+  | "log-power-integrals";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;

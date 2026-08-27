@@ -29,6 +29,7 @@ import { InverseIntegral } from "./bank/inverseIntegral";
 import { FloorFunction } from "./bank/floorFunction";
 import { BetaIntegrals } from "./bank/betaIntegrals";
 import { IntroducingConstants } from "./bank/introducingConstants";
+import { LogPowerIntegrals } from "./bank/logPowerIntegrals";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -46,6 +47,7 @@ export const PROBLEMS: Problem[] = [
   ...FloorFunction,
   ...BetaIntegrals,
   ...IntroducingConstants,
+  ...LogPowerIntegrals,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
