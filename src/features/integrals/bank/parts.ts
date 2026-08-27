@@ -451,7 +451,7 @@ export const Parts: Problem[] = [
     domain: [-0.5, 1.2],
     difficulty: 2,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: ["u=x, dv=e^{2x}dx, v=\\frac{e^{2x}}{2} — the algebraic factor drops out on differentiation, so one pass finishes it."],
     steps: [
       "uv-\\int v\\,du = \\frac{xe^{2x}}{2} - \\frac12\\int e^{2x}\\,dx = \\frac{xe^{2x}}{2}-\\frac{e^{2x}}{4}.",
@@ -468,7 +468,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 2,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: ["u=x, dv=\\cos2x\\,dx, v=\\frac{\\sin2x}{2}."],
     steps: [
       "uv-\\int v\\,du = \\frac{x\\sin2x}{2}-\\frac12\\int\\sin2x\\,dx = \\frac{x\\sin2x}{2}+\\frac{\\cos2x}{4}.",
@@ -484,7 +484,7 @@ export const Parts: Problem[] = [
     domain: [-0.5, 1.5],
     difficulty: 2,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "Before setting up u and dv, check whether this is already a product rule you recognise.",
       "\\frac{d}{dx}\\left(x^2e^x\\right) = 2xe^x+x^2e^x.",
@@ -504,7 +504,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: ["\\ln\\sqrt{x}=\\frac12\\ln x — pull the constant out before setting up parts."],
     steps: [
       "\\frac12\\int\\ln x\\,dx = \\frac12(x\\ln x-x).",
@@ -521,7 +521,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 2.5],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: ["u=x, dv=\\csc^2x\\,dx, v=-\\cot x. The leftover \\int\\cot x\\,dx is a known u-sub."],
     steps: [
       "uv-\\int v\\,du = -x\\cot x+\\int\\cot x\\,dx.",
@@ -539,7 +539,7 @@ export const Parts: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: ["Apply parts three times, each time peeling off one power of x — or recognise the pattern from x^2e^x and x e^x."],
     steps: [
       "Each pass: u=(\\text{current power of }x), dv=e^x\\,dx.",
@@ -557,7 +557,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 3,
     techniques: ["parts", "trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "\\sin x\\cos x=\\frac12\\sin2x first — then it's a plain x\\sin2x parts problem, scaled.",
     ],
@@ -579,7 +579,7 @@ export const Parts: Problem[] = [
     domain: [1, Math.sqrt(3)],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "\\arctan\\frac1x=\\frac{\\pi}{2}-\\arctan x for x>0 — rewrite before doing anything else.",
       "The remaining \\int\\arctan x\\,dx is a standard parts result.",
@@ -602,7 +602,7 @@ export const Parts: Problem[] = [
     domain: [0, Math.PI / 3],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "u=\\cos x turns this into \\int\\ln u\\,(-du) — a plain \\ln u parts problem in disguise.",
     ],
@@ -623,7 +623,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 3],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "Apply parts twice; you'll meet \\int\\cos(\\ln x)\\,dx again on the right-hand side.",
       "Solve for the integral algebraically once it reappears, the same way you handle \\int e^x\\sin x\\,dx.",
@@ -644,7 +644,7 @@ export const Parts: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "u=\\ln(1+x), dv=x\\,dx, v=\\frac{x^2}{2}.",
       "The leftover \\int\\frac{x^2}{2(1+x)}dx needs a division first: \\frac{x^2}{1+x}=x-1+\\frac{1}{1+x}.",
@@ -665,7 +665,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 4],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§3 Integration By Parts" },
     hints: [
       "u=\\sqrt{x} first (so x=u^2, dx=2u\\,du), then parts on \\int 2u\\sin u\\,du.",
     ],
@@ -686,7 +686,7 @@ export const Parts: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "HMMT Integration Bee Practice Problems (Yuepeng Alex Yang), Part 1", round: "Qualifying Problems #2" },
     hints: [
       "dv=\\tan x\\sec^2x\\,dx integrates in one line: v=\\frac{\\tan^2x}{2}.",
       "The leftover \\int\\tan^2x\\,dx converts via \\tan^2=\\sec^2-1.",
@@ -710,7 +710,7 @@ export const Parts: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "HMMT Integration Bee Practice Problems (Yuepeng Alex Yang), Part 1", round: "Qualifying Problems #5" },
     hints: [
       "Integrate x^3\\cos x and 6x\\cos x separately by repeated parts, then add — the +6x is there for a reason.",
       "Watch what happens to the terms that came from differentiating x^3 down to a constant.",
@@ -734,7 +734,7 @@ export const Parts: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "HMMT Integration Bee Practice Problems (Yuepeng Alex Yang), Part 2", round: "Qualifying Problems #5" },
     hints: ["The same setup as x\\ln(1+x) above, just evaluated at clean bounds — the log terms cancel neatly."],
     steps: [
       "Using \\int x\\ln(1+x)\\,dx = \\frac{x^2}{2}\\ln(1+x)-\\frac{x^2}{4}+\\frac{x}{2}-\\frac{\\ln(1+x)}{2}.",
@@ -751,7 +751,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: ["u=x, dv=\\sec x\\tan x\\,dx, v=\\sec x — the leftover is a memorised standard integral."],
     steps: [
       "uv-\\int v\\,du = x\\sec x-\\int\\sec x\\,dx.",
@@ -769,7 +769,7 @@ export const Parts: Problem[] = [
     domain: [0.3, 4],
     difficulty: 4,
     techniques: ["parts", "u-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: [
       "t=\\sqrt{x} first (x=t^2, dx=2t\\,dt), then parts on \\int 2t\\arctan t\\,dt.",
     ],
@@ -788,7 +788,7 @@ export const Parts: Problem[] = [
     domain: [0.5, 3],
     difficulty: 3,
     techniques: ["parts", "u-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: [
       "Before setting up parts, check whether this is a quotient rule in disguise.",
       "\\frac{d}{dx}\\frac{e^x}{x} = \\frac{xe^x-e^x}{x^2}.",
@@ -808,7 +808,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 2.5],
     difficulty: 4,
     techniques: ["parts", "trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: [
       "Expand the square into three separate integrals: x^2, 2x\\sin x, and \\sin^2x.",
       "The middle term needs parts; the last needs a double-angle identity.",

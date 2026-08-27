@@ -455,7 +455,7 @@ export const StandardForms: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["Split the fraction into three separate power-rule terms before integrating anything."],
     steps: [
       "\\frac{1+\\sqrt{x}+x}{x} = \\frac{1}{x} + \\frac{1}{\\sqrt{x}} + 1.",
@@ -472,7 +472,7 @@ export const StandardForms: Problem[] = [
     domain: [0.3, 3],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: [
       "Expand the square before integrating — there's no product or quotient rule for antiderivatives to lean on.",
       "\\left(\\frac{1+x}{x}\\right)^2 = \\left(\\frac{1}{x}+1\\right)^2.",
@@ -492,7 +492,7 @@ export const StandardForms: Problem[] = [
     domain: [-1, 1.5],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: [
       "Multiply out first: 2^{x}\\cdot 5^{x} = 10^{x}.",
       "Each piece is the general exponential form \\int a^{x}dx = \\frac{a^{x}}{\\ln a}.",
@@ -514,7 +514,7 @@ export const StandardForms: Problem[] = [
     domain: [1, 2],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["Both terms are negative powers of x — the power rule handles them directly."],
     steps: [
       "\\int\\left(x^{-2}-4x^{-3}\\right)dx = -\\frac{1}{x}+\\frac{2}{x^2}.",
@@ -534,7 +534,7 @@ export const StandardForms: Problem[] = [
     domain: [1, 2],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["Two standard forms, one linear in x and one logarithmic."],
     steps: [
       "\\int\\left(\\frac{x}{2}-\\frac{2}{x}\\right)dx = \\frac{x^2}{4} - 2\\ln x.",
@@ -554,7 +554,7 @@ export const StandardForms: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["The antiderivative of \\sec x\\tan x is \\sec x itself — this is just evaluating it."],
     steps: ["\\int\\sec x\\tan x\\,dx = \\sec x.", "\\sec\\frac{\\pi}{4} - \\sec 0 = \\sqrt2 - 1."],
   },
@@ -570,7 +570,7 @@ export const StandardForms: Problem[] = [
     domain: [0, Math.sqrt(3) / 2],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["A bare arcsin standard form — the bounds are just there to make the answer a memorable angle."],
     steps: ["\\int\\frac{dx}{\\sqrt{1-x^2}} = \\arcsin x.", "\\arcsin\\frac{\\sqrt3}{2} - \\arcsin 0 = \\frac{\\pi}{3}."],
   },
@@ -586,7 +586,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 2],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: [
       "Find where the inside changes sign — at x=\\frac{1}{2} — and split the integral there.",
       "2x-1 is negative on \\left[0,\\frac{1}{2}\\right] and positive on \\left[\\frac{1}{2},2\\right].",
@@ -609,7 +609,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 3],
     difficulty: 4,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: [
       "x^2-4 is negative on (0,2) and positive on (2,3) — split there.",
       "Flip the sign of the integrand on the negative piece before integrating.",
@@ -630,7 +630,7 @@ export const StandardForms: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["Expand it — the two pieces are \\sec^2 x and \\sec x\\tan x, both reflex antiderivatives."],
     steps: [
       "\\sec x(\\sec x+\\tan x) = \\sec^2 x + \\sec x\\tan x.",
@@ -647,7 +647,7 @@ export const StandardForms: Problem[] = [
     domain: [0.3, 2.5],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§1 Basic Integration" },
     hints: ["The \\csc/\\cot partner of the \\sec/\\tan identity above — same idea, both signs flip."],
     steps: [
       "(\\csc x+\\cot x)\\csc x = \\csc^2 x + \\csc x\\cot x.",
@@ -664,7 +664,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 2],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: ["Nothing here depends on x — e^2 is just a number, no different from integrating 7."],
     steps: ["A constant integrates to (that constant) times x.", "So the answer is e^{2}x + C."],
   },
@@ -704,7 +704,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 1],
     difficulty: 2,
     techniques: ["power"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: [
       "Split the fraction first: \\frac{4^x}{2^x}=2^x and \\frac{10^x}{2^x}=5^x.",
       "Each piece is now a plain general-exponential standard form.",

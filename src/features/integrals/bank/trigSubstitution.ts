@@ -225,7 +225,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "x=\\sin\\theta turns this into \\int\\sin^2\\theta\\,d\\theta, a half-angle problem.",
     ],
@@ -247,7 +247,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 6],
     difficulty: 2,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: ["The numerator is (up to a constant) the derivative of what's under the root — a plain u-sub beats a triangle here."],
     steps: [
       "u = 36-x^2, du=-2x\\,dx: -\\int u^{-1/2}\\,du = -\\sqrt{u} = -\\sqrt{36-x^2}.",
@@ -267,7 +267,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 2 / 3],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "3x = 2\\sin\\theta. The bounds are chosen so \\theta runs from 0 to \\frac{\\pi}{2}.",
       "Compare the standard form \\int\\sqrt{a^2-b^2x^2}\\,dx = \\frac{x}{2}\\sqrt{a^2-b^2x^2}+\\frac{a^2}{2b}\\arcsin\\frac{bx}{a}.",
@@ -288,7 +288,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-1, 2],
     difficulty: 2,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: ["x=2\\tan\\theta is the standard move for a^2+x^2 under a root; this one also has the closed form \\ln(x+\\sqrt{x^2+a^2})=\\operatorname{arcsinh}(x/a)."],
     steps: [
       "x=2\\tan\\theta gives \\sqrt{4+x^2}=2\\sec\\theta, and the integral becomes \\int\\sec\\theta\\,d\\theta.",
@@ -307,7 +307,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "x=\\tan\\theta turns 1+x^2 into \\sec^2\\theta, and the whole integrand into \\cos^2\\theta.",
     ],
@@ -328,7 +328,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "Complete the square: x-x^2 = \\frac{1}{4}-\\left(x-\\frac{1}{2}\\right)^2 — this is a semicircle of radius \\frac{1}{2}.",
       "The area under a semicircle over its full diameter is \\frac{\\pi r^2}{2}.",
@@ -351,7 +351,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [1.5, 3 * Math.sqrt(2) / 2],
     difficulty: 5,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "Substitute u=2x first to get a plain \\sqrt{u^2-a^2}/u shape with a=3.",
       "\\int\\frac{\\sqrt{u^2-a^2}}{u}\\,du = \\sqrt{u^2-a^2} - a\\arctan\\frac{\\sqrt{u^2-a^2}}{a}.",
@@ -375,7 +375,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [0, 1 / Math.sqrt(2)],
     difficulty: 4,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§5 Trig-Substitution" },
     hints: [
       "u=x^2 turns this into \\frac{1}{2}\\int\\frac{u}{(1-u)^2}\\,du — now partial-fraction the u^{-2} shape.",
       "\\frac{u}{(1-u)^2} = \\frac{-1}{1-u}+\\frac{1}{(1-u)^2}.",
@@ -416,7 +416,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-0.8, 0.8],
     difficulty: 3,
     techniques: ["trig-sub"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§7 Strategic Wildcard" },
     hints: [
       "Rationalise the denominator first: multiply top and bottom by \\sqrt{1+x}.",
       "\\sqrt{\\frac{1+x}{1-x}} = \\frac{1+x}{\\sqrt{1-x^2}}.",

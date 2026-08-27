@@ -316,7 +316,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: [
       "Odd power — peel off one \\sin x and convert the rest with \\sin^2=1-\\cos^2.",
       "u=\\cos x turns it into \\int(1-u^2)^2\\,du.",
@@ -338,7 +338,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.3],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: [
       "The odd power is on sine — peel one off and convert with \\sin^2=1-\\cos^2.",
       "\\sin^3x\\cos^5x = \\sin x(1-\\cos^2x)\\cos^5x = \\sin x(\\cos^5x-\\cos^7x).",
@@ -360,7 +360,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["Expand the square first — you'll get a plain power term, a \\sin x, and a \\sin^2 x."],
     steps: [
       "(2-\\sin x)^2 = 4 - 4\\sin x + \\sin^2 x.",
@@ -379,7 +379,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: [
       "Split off \\sec x\\tan x for du, and convert the remaining \\tan^2 x with \\tan^2=\\sec^2-1.",
       "\\tan^3x\\sec x = \\tan x\\sec x(\\sec^2x-1).",
@@ -399,7 +399,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["Factor first: \\tan^2x+\\tan^4x=\\tan^2x(1+\\tan^2x), and 1+\\tan^2x=\\sec^2x."],
     steps: [
       "\\tan^2x+\\tan^4x = \\tan^2x\\sec^2x.",
@@ -419,7 +419,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 4],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["\\tan^4x=\\tan^2x\\sec^2x-\\tan^2x — split it into a substitution piece and a known form."],
     steps: [
       "\\int\\tan^4x\\,dx = \\frac{\\tan^3x}{3}-\\tan x+x.",
@@ -437,7 +437,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["\\sin A\\cos B=\\frac{1}{2}[\\sin(A+B)+\\sin(A-B)] — here A=4x, B=5x, so A-B is negative."],
     steps: [
       "\\sin4x\\cos5x = \\frac{1}{2}[\\sin9x+\\sin(-x)] = \\frac{1}{2}\\sin9x-\\frac{1}{2}\\sin x.",
@@ -454,7 +454,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 2],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["\\cos A\\cos B=\\frac{1}{2}[\\cos(A-B)+\\cos(A+B)]."],
     steps: [
       "\\cos2x\\cos3x = \\frac{1}{2}[\\cos(-x)+\\cos5x] = \\frac{1}{2}\\cos x+\\frac{1}{2}\\cos5x.",
@@ -471,7 +471,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.5],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["\\sin A\\sin B=\\frac{1}{2}[\\cos(A-B)-\\cos(A+B)]."],
     steps: [
       "\\sin6x\\sin8x = \\frac{1}{2}[\\cos(-2x)-\\cos14x] = \\frac{1}{2}\\cos2x-\\frac{1}{2}\\cos14x.",
@@ -490,7 +490,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, Math.PI / 6],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["1+\\cos2x=2\\cos^2x, so the square root is just \\sqrt2\\,|\\cos x|."],
     steps: [
       "\\sqrt{1+\\cos2x} = \\sqrt2\\cos x on this interval, since \\cos x>0.",
@@ -507,7 +507,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.2, 1.2],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: [
       "Multiply through by \\cos^2x=\\frac{1}{\\sec^2x} rather than expanding \\tan and \\sec separately.",
       "\\frac{1-\\tan^2x}{\\sec^2x} = \\cos^2x-\\sin^2x.",
@@ -527,7 +527,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.5, 2.5],
     difficulty: 2,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: ["1-\\cos x = 2\\sin^2\\frac{x}{2} — the half-angle partner of \\frac{1}{1+\\cos x}."],
     steps: [
       "\\frac{1}{1-\\cos x} = \\frac{1}{2}\\csc^2\\frac{x}{2}.",

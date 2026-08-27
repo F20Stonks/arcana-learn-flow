@@ -254,7 +254,7 @@ export const PartialFractions: Problem[] = [
     domain: [2, 4],
     difficulty: 2,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: ["Top degree beats bottom degree — divide first, the remainder is a constant."],
     steps: [
       "x^3 = (x-1)(x^2+x+1)+1.",
@@ -272,7 +272,7 @@ export const PartialFractions: Problem[] = [
     domain: [0, 3],
     difficulty: 2,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: ["Same-degree top and bottom: write 3x-2 as 3(x+1) plus a constant."],
     steps: [
       "3x-2 = 3(x+1)-5.",
@@ -289,7 +289,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 1],
     difficulty: 2,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: ["Doesn't factor over the reals — complete the square: x^2+x+1=\\left(x+\\frac12\\right)^2+\\frac34."],
     steps: [
       "u=x+\\frac12: \\int\\frac{du}{u^2+3/4} = \\frac{2}{\\sqrt3}\\arctan\\frac{u}{\\sqrt3/2}.",
@@ -306,7 +306,7 @@ export const PartialFractions: Problem[] = [
     domain: [-1, 2],
     difficulty: 3,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: [
       "The denominator's derivative is 2x+2. Split the numerator into a multiple of that plus a remainder.",
       "x+4 = \\frac12(2x+2) + 3.",
@@ -327,7 +327,7 @@ export const PartialFractions: Problem[] = [
     domain: [2, 4],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: [
       "x^3-x = x(x-1)(x+1) — three distinct linear factors.",
       "\\frac{4x-2}{x(x-1)(x+1)} = \\frac{A}{x}+\\frac{B}{x-1}+\\frac{C}{x+1}. Plug in the roots to find A, B, C fast.",
@@ -348,7 +348,7 @@ export const PartialFractions: Problem[] = [
     domain: [3, 5],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: [
       "A repeated factor needs two terms: \\frac{A}{x}+\\frac{B}{x-2}+\\frac{C}{(x-2)^2}.",
       "Clear denominators, then plug in x=0 and x=2 to get A and C quickly; match a coefficient for B.",
@@ -369,7 +369,7 @@ export const PartialFractions: Problem[] = [
     domain: [1, 3],
     difficulty: 3,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§6 Rational Polynomials & Partial Fractions" },
     hints: ["\\frac{1}{x(x^2+1)} = \\frac{A}{x}+\\frac{Bx+C}{x^2+1} — matching constant and x^2 coefficients pins A, B, C without much work."],
     steps: [
       "1=A(x^2+1)+(Bx+C)x. Constant term: A=1. x^2 term: 0=A+B, so B=-1. x term: 0=C.",
@@ -387,7 +387,7 @@ export const PartialFractions: Problem[] = [
     domain: [0.5, 3],
     difficulty: 4,
     techniques: ["partial-fractions"],
-    source: { name: "original" },
+    source: { name: "HMMT Integration Bee Practice Problems (Yuepeng Alex Yang), Part 1", round: "Qualifying Problems #12" },
     hints: [
       "x^3+x^2+x = x(x^2+x+1), an irreducible quadratic times x.",
       "\\frac{x^2-1}{x(x^2+x+1)} = \\frac{A}{x}+\\frac{Bx+C}{x^2+x+1} — comparing coefficients gives all three at once.",

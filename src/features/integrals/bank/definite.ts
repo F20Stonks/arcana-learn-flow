@@ -428,7 +428,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 2, Math.PI / 2],
     difficulty: 3,
     techniques: ["symmetry"],
-    source: { name: "original" },
+    source: { name: "Fresno State Integration Bee Training", round: "§4 Trigonometric Integrals" },
     hints: [
       "Don't reach for product-to-sum — check parity of the whole product first.",
       "\\sin 2x is odd; \\cos 7x and \\cos 9x are both even, so their product is even.",
