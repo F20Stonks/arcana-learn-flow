@@ -462,6 +462,33 @@ export const TECHNIQUES: Technique[] = [
       "The technique only pays off when the twin integral is genuinely related to the original (equal, opposite, or a known simpler one). If substituting just produces an unrelated mess, this isn't the right tool.",
     ],
   },
+  {
+    id: "gamma-function",
+    name: "The Gamma function",
+    tagline: "\\int_0^\\infty x^n e^{-x}\\,dx = n! — a reduction formula in disguise, over an infinite domain.",
+    whenToUse:
+      "A polynomial (or a single power of x) times a decaying exponential, integrated over (0,\\infty). If you see x^n e^{-x} — or e^{-ax}, or a^{-x} for some other base — recognise it as an instance of this family rather than reaching for integration by parts from scratch.",
+    recipe: [
+      "The base case: \\int_0^\\infty e^{-x}\\,dx = 1.",
+      "Integration by parts (u=x^n,\\ dv=e^{-x}dx) gives the reduction \\int_0^\\infty x^n e^{-x}\\,dx = n\\int_0^\\infty x^{n-1}e^{-x}\\,dx — the boundary term vanishes at both ends since x^n e^{-x}\\to 0 as x\\to\\infty and equals 0 at x=0. Unrolling it gives \\int_0^\\infty x^n e^{-x}\\,dx = n!.",
+      "For a decay rate other than 1, substitute u=ax first: \\int_0^\\infty x^n e^{-ax}\\,dx = \\frac{n!}{a^{n+1}}.",
+      "For a base other than e, rewrite it: b^{-x} = e^{-x\\ln b}, then apply the same formula with a=\\ln b.",
+    ],
+    example: {
+      integrand: "x^3\\,3^{-x} \\text{ on } (0,\\infty)",
+      work: [
+        "Rewrite the base: 3^{-x} = e^{-x\\ln 3}, so this is \\int_0^\\infty x^3 e^{-x\\ln 3}\\,dx.",
+        "That's the a=\\ln 3 case of \\int_0^\\infty x^n e^{-ax}\\,dx=\\frac{n!}{a^{n+1}}, with n=3.",
+        "\\frac{3!}{(\\ln 3)^4} = \\frac{6}{(\\ln 3)^4}.",
+      ],
+      result: "\\frac{6}{(\\ln 3)^4}",
+    },
+    pitfalls: [
+      "n! here means the ordinary integer factorial (0!=1, and it grows fast) — don't confuse it with the Gamma function's shift, \\Gamma(n+1)=n!, unless a problem genuinely has a non-integer exponent.",
+      "The boundary term in the by-parts reduction only vanishes because e^{-x} beats any polynomial as x\\to\\infty — this whole family depends on genuinely exponential (or faster) decay, not merely \\to 0.",
+      "A Gaussian integrand (e^{-x^2}, not e^{-x}) is a different animal — it doesn't reduce to a factorial by integration by parts the same way; it needs the dedicated Gaussian/hypersphere approach instead.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(
