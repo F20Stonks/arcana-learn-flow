@@ -371,3 +371,34 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   - **Remaining**: 2015 through 2020, 2022 through 2026 — 11 more years, roughly 200-240 more
     candidate problems. Continuing year-by-year in the same loop until this batch is exhausted or
     a hard stop is hit.
+- 2026-08-27 (continued further): Mined 2015-2017. Commits `0c3a523` (2015, 17 problems),
+  `105ee80` (2016, 18 problems), `78dabf0` (2017, 19 problems). 1088/1088 tests passing,
+  typecheck and lint clean after each. Same workflow as before each commit (fresh read of that
+  year's extracted text, hand-derive closed forms, throwaway-script verify with real margin,
+  grep for duplicates, write, full suite + tsc + eslint, commit, push).
+  - Duplicates caught and handled the same way each time — re-attribute the pre-existing entry's
+    source rather than add a second copy: 2015's `sec x` and `tan^4x` were already present as
+    `{name:"original"}`; 2016's `x^3e^{-x^2}` on `[0,∞)` was already present (correctly sourced to
+    SPLASH, left untouched); 2017's `sin(√x)` was an exact indefinite duplicate (Fresno State,
+    left untouched). Definite/infinite-domain versions of integrands that already exist as
+    indefinite antiderivatives were kept as legitimately distinct content (different `kind`, not
+    caught by the exact-duplicate test, and genuinely testing different material — e.g. the
+    infinite-domain convergence itself).
+  - Skipped (logged per-commit, not silent): 2015 #5 (`e^{\sin x}\tan x\csc x` simplifies to a
+    non-elementary `e^{\sin x}\sec x` — likely OCR misread); 2016 #17 (garbled nested-exponential
+    OCR line, no confident reading).
+  - One genuinely interesting case: 2017 #15 is a *limit* of a sequence of integrals built from an
+    infinite continued fraction with `√x` at the base. Per the runbook's continued-fraction
+    playbook, derived that the fixed point is independent of x (golden ratio conjugate
+    `(√5-1)/2`), so the limiting integrand is literally a constant — verified and shipped as an
+    ordinary `Problem` with the continued-fraction structure preserved in the LaTeX `integrand`
+    field (rendered via `\cfrac`) for pedagogical honesty, `integrandExpr` being the resolved
+    constant.
+  - Two infinite-domain substitutions now exercised repeatedly and working well: `(a,∞)` via
+    `x=a+t/(1-t)` and `(-∞,∞)` via `x=t/(1-t²)`, both composed with the existing finite smoothstep
+    scheme — six infinite-domain problems shipped this round (2016 #20, 2017 #2, #6, #8, #10,
+    #16, #17) all converged cleanly at the default `n=4000`, including a couple of merely
+    power-law-decaying integrands (`ln x/x²`, `1/(x(x²+1))`) not just exponentially-decaying ones —
+    worth knowing for future years, the earlier caveat about slow convergence seems to bite mainly
+    on oscillatory/logarithmically-decaying tails specifically, not all non-exponential decay.
+  - **Remaining**: 2018 through 2020, 2022 through 2026 — 8 more years. Continuing.
