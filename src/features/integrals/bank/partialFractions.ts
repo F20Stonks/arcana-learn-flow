@@ -594,4 +594,26 @@ export const PartialFractions: Problem[] = [
       "As t=e^x runs from 1 to \\infty, the log ratio runs from \\ln(2-\\sqrt3) to 0, giving \\frac{1}{\\sqrt3}\\left(0-\\ln(2-\\sqrt3)\\right)=\\frac{\\ln(2+\\sqrt3)}{\\sqrt3}.",
     ],
   },
+  {
+    id: "pf-linear-times-irreducible-infinite",
+    kind: "definite",
+    integrand: "\\frac{1}{x(x^2+1)}",
+    integrandExpr: "1/(x*(x^2+1))",
+    lower: "1",
+    upper: "\\infty",
+    answer: "log(2)/2",
+    answerLatex: "\\frac{\\ln2}{2}",
+    domain: [1, Infinity],
+    difficulty: 4,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #6" },
+    hints: [
+      "\\int\\frac{dx}{x(x^2+1)}=\\ln|x|-\\frac12\\ln(x^2+1)+C=\\frac12\\ln\\frac{x^2}{x^2+1}+C — check what that ratio does as x\\to\\infty.",
+    ],
+    steps: [
+      "\\int\\frac{dx}{x(x^2+1)} = \\ln x-\\frac12\\ln(x^2+1) = \\frac12\\ln\\frac{x^2}{x^2+1}.",
+      "As x\\to\\infty, \\frac{x^2}{x^2+1}\\to1, so the antiderivative \\to0. At x=1: \\frac12\\ln\\frac12=-\\frac12\\ln2.",
+      "Difference: 0-\\left(-\\frac12\\ln2\\right) = \\frac{\\ln2}{2}.",
+    ],
+  },
 ];

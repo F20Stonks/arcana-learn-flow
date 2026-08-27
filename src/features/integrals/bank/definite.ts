@@ -802,4 +802,27 @@ export const Definite: Problem[] = [
       "[-27,27] is symmetric about 0, so the integral of an odd function over it is 0.",
     ],
   },
+  {
+    id: "def-kings-rule-tan-2017",
+    kind: "definite",
+    integrand: "\\frac{1}{1+\\tan^{2017}x}",
+    integrandExpr: "1/(1+tan(x)^2017)",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "pi/4",
+    answerLatex: "\\frac{\\pi}{4}",
+    domain: [0, Math.PI / 2],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #18" },
+    hints: [
+      "King's rule: substitute x\\to\\frac{\\pi}{2}-x. \\tan\\!\\left(\\frac{\\pi}{2}-x\\right)=\\cot x=\\frac1{\\tan x}.",
+      "Add the original integral to its King's-rule twin — the two integrands sum to exactly 1, whatever the exponent.",
+    ],
+    steps: [
+      "Under x\\to\\frac{\\pi}{2}-x, the integrand becomes \\frac{1}{1+\\cot^{2017}x} = \\frac{\\tan^{2017}x}{\\tan^{2017}x+1}.",
+      "Adding: \\frac{1}{1+\\tan^{2017}x}+\\frac{\\tan^{2017}x}{1+\\tan^{2017}x} = 1 identically, regardless of the exponent 2017.",
+      "So 2I=\\int_0^{\\pi/2}1\\,dx=\\frac{\\pi}{2}, giving I=\\frac{\\pi}{4}.",
+    ],
+  },
 ];

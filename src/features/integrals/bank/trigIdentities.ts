@@ -846,4 +846,26 @@ export const TrigIdentities: Problem[] = [
       "Difference: \\ln2-\\left(-2\\ln\\frac{\\sqrt3}2\\right) = \\ln2+\\ln\\frac34 = \\ln\\frac32.",
     ],
   },
+  {
+    id: "trig-sqrt-sin-plus-one-def",
+    kind: "definite",
+    integrand: "\\sqrt{\\sin x+1}",
+    integrandExpr: "sqrt(sin(x)+1)",
+    lower: "0",
+    upper: "\\frac{\\pi}{2}",
+    answer: "2",
+    answerLatex: "2",
+    domain: [0, Math.PI / 2],
+    difficulty: 4,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #14" },
+    hints: [
+      "\\sin x+1 = \\left(\\sin\\frac x2+\\cos\\frac x2\\right)^2 — a perfect square under the root.",
+    ],
+    steps: [
+      "\\sin x+1 = \\left(\\sin\\tfrac x2+\\cos\\tfrac x2\\right)^2, and both terms are non-negative on [0,\\frac{\\pi}{2}], so \\sqrt{\\sin x+1} = \\sin\\tfrac x2+\\cos\\tfrac x2.",
+      "\\int\\left(\\sin\\tfrac x2+\\cos\\tfrac x2\\right)dx = -2\\cos\\tfrac x2+2\\sin\\tfrac x2.",
+      "At x=\\frac{\\pi}{2}: -2\\cos\\frac{\\pi}{4}+2\\sin\\frac{\\pi}{4}=0. At x=0: -2. Difference: 0-(-2)=2.",
+    ],
+  },
 ];

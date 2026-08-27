@@ -172,4 +172,27 @@ export const IntroducingConstants: Problem[] = [
       "At x=2: 2+\\frac{27}{6}=2+4.5=6.5. At x=0: 0+\\frac16. Difference: 6.5-\\frac16=\\frac{19}{3}. Halving: \\frac{19}{6}.",
     ],
   },
+  {
+    id: "ic-continued-fraction-limit-golden-ratio",
+    kind: "definite",
+    integrand: "\\lim_{n\\to\\infty}\\cfrac{1}{1+\\cfrac{1}{1+\\cfrac{1}{1+\\cdots\\ 1+\\sqrt x}}}",
+    integrandExpr: "(sqrt(5)-1)/2",
+    lower: "0",
+    upper: "1",
+    answer: "(sqrt(5)-1)/2",
+    answerLatex: "\\frac{\\sqrt5-1}{2}",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2017, round: "Qualifying Test #15" },
+    hints: [
+      "Name the whole infinite tower c. Since the tower repeats itself one level in, it satisfies c=\\frac{1}{1+c}, whatever x is at the very bottom.",
+      "That fixed point doesn't depend on x at all — the limiting integrand is a constant.",
+    ],
+    steps: [
+      "As n\\to\\infty, the continued fraction converges to a fixed point c independent of the base value \\sqrt x, satisfying c=\\frac{1}{1+c}.",
+      "c^2+c-1=0 \\Rightarrow c=\\frac{\\sqrt5-1}{2} (the positive root).",
+      "So the limiting integrand is the constant \\frac{\\sqrt5-1}{2}, and \\int_0^1\\frac{\\sqrt5-1}{2}\\,dx = \\frac{\\sqrt5-1}{2}.",
+    ],
+  },
 ];
