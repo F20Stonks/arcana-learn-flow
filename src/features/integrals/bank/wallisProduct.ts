@@ -217,4 +217,25 @@ export const WallisProduct: Problem[] = [
       "So the whole integral is 0.",
     ],
   },
+  {
+    id: "wallis-sin2025-cos2026-symmetric",
+    kind: "definite",
+    integrand: "\\sin^{2025}x\\cos^{2026}x",
+    integrandExpr: "sin(x)^2025*cos(x)^2026",
+    lower: "-\\pi",
+    upper: "\\pi",
+    answer: "0",
+    answerLatex: "0",
+    domain: [-Math.PI, Math.PI],
+    difficulty: 3,
+    techniques: ["symmetry", "wallis-product"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #1" },
+    hints: [
+      "An odd power of \\sin x times an even power of \\cos x is an odd function — no reduction formula needed.",
+    ],
+    steps: [
+      "f(x)=\\sin^{2025}x\\cos^{2026}x satisfies f(-x)=(-\\sin x)^{2025}\\cos^{2026}x=-f(x): it's odd (2025 is odd).",
+      "The interval [-\\pi,\\pi] is symmetric about 0, so the integral of an odd function over it is 0.",
+    ],
+  },
 ];

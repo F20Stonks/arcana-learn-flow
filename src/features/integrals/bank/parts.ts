@@ -287,7 +287,7 @@ export const Parts: Problem[] = [
     domain: [0.2, 3],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "original" },
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2026, round: "Qualifying Test #9" },
     hints: ["Each pass knocks one off the degree — so you need two."],
     steps: [
       "First pass: u = x^2, v = -\\cos x, giving -x^2\\cos x + 2\\int x\\cos x\\,dx.",
