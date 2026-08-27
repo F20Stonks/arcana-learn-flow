@@ -209,4 +209,23 @@ export const FloorFunction: Problem[] = [
       "So I=-\\pi.",
     ],
   },
+  {
+    id: "floor-squared-0to20",
+    kind: "definite",
+    integrand: "\\lfloor x\\rfloor^2",
+    integrandExpr: "floor(x)^2",
+    lower: "0",
+    upper: "20",
+    answer: "2470",
+    answerLatex: "2470",
+    domain: [0, 20],
+    difficulty: 3,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #11" },
+    hints: ["Split at the integers: on [k,k+1), \\lfloor x\\rfloor^2=k^2, a constant."],
+    steps: [
+      "\\int_0^{20}\\lfloor x\\rfloor^2\\,dx = \\sum_{k=0}^{19}k^2\\cdot1 = \\sum_{k=0}^{19}k^2.",
+      "\\sum_{k=0}^{19}k^2 = \\frac{19\\cdot20\\cdot39}{6} = 2470.",
+    ],
+  },
 ];

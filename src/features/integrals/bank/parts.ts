@@ -1311,4 +1311,43 @@ export const Parts: Problem[] = [
       "So the antiderivative is \\arctan(x)\\operatorname{arctanh}(x) + C.",
     ],
   },
+  {
+    id: "parts-x-logx-cosx-minus-sinx-over-x-log2x",
+    kind: "indefinite",
+    integrand: "\\frac{x\\ln x\\cos x-\\sin x}{x\\ln^2x}",
+    integrandExpr: "(x*log(x)*cos(x)-sin(x))/(x*log(x)^2)",
+    answer: "sin(x)/log(x)",
+    answerLatex: "\\frac{\\sin x}{\\ln x} + C",
+    domain: [2, 5],
+    difficulty: 4,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #7" },
+    hints: [
+      "This is a quotient-rule derivative in reverse — recognise \\frac{u'v-uv'}{v^2} with u=\\sin x,\\ v=\\ln x.",
+    ],
+    steps: [
+      "With u=\\sin x,\\ v=\\ln x: \\frac{d}{dx}\\frac uv = \\frac{u'v-uv'}{v^2} = \\frac{\\cos(x)\\ln x-\\sin(x)/x}{\\ln^2x}.",
+      "Multiplying numerator and denominator by x gives exactly the given integrand.",
+      "So \\int\\frac{x\\ln x\\cos x-\\sin x}{x\\ln^2x}\\,dx = \\frac{\\sin x}{\\ln x} + C.",
+    ],
+  },
+  {
+    id: "parts-sinx-sinhx",
+    kind: "indefinite",
+    integrand: "\\sin x\\sinh x",
+    integrandExpr: "sin(x)*sinh(x)",
+    answer: "(sin(x)*cosh(x)-cos(x)*sinh(x))/2",
+    answerLatex: "\\frac{\\sin x\\cosh x-\\cos x\\sinh x}2 + C",
+    domain: [0.3, 1.2],
+    difficulty: 4,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #17" },
+    hints: [
+      "Two rounds of parts bring back the original integral — solve for it algebraically instead of integrating forever.",
+    ],
+    steps: [
+      "Parts twice (peeling off \\sin x each time, or \\sinh x) leads back to \\int\\sin x\\sinh x\\,dx on both sides of an equation.",
+      "Solving that equation gives \\int\\sin x\\sinh x\\,dx = \\frac{\\sin x\\cosh x-\\cos x\\sinh x}2 + C.",
+    ],
+  },
 ];

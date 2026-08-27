@@ -428,4 +428,25 @@ export const IntroducingConstants: Problem[] = [
       "\\int_1^3\\left[x+\\frac{\\sqrt{1+4x}-1}2\\right]dx = \\left[\\frac{x^2}2-\\frac x2+\\frac{(1+4x)^{3/2}}{12}\\right]_1^3 = 3+\\frac{13\\sqrt{13}-5\\sqrt5}{12}.",
     ],
   },
+  {
+    id: "ic-alternating-power-series-def",
+    kind: "definite",
+    integrand: "\\sum_{k=1}^\\infty(-1)^kx^{2k}",
+    integrandExpr: "-x^2/(1+x^2)",
+    lower: "0",
+    upper: "1",
+    answer: "pi/4-1",
+    answerLatex: "\\frac{\\pi}4-1",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #20" },
+    hints: [
+      "This is a geometric series in -x^2: \\sum_{k=1}^\\infty(-x^2)^k = \\frac{-x^2}{1+x^2}.",
+    ],
+    steps: [
+      "\\sum_{k=1}^\\infty(-1)^kx^{2k} = \\sum_{k=1}^\\infty(-x^2)^k = \\frac{-x^2}{1-(-x^2)} = \\frac{-x^2}{1+x^2}.",
+      "\\int_0^1\\frac{-x^2}{1+x^2}\\,dx = \\int_0^1\\left(-1+\\frac1{1+x^2}\\right)dx = \\left[-x+\\arctan x\\right]_0^1 = \\frac{\\pi}4-1.",
+    ],
+  },
 ];

@@ -914,4 +914,23 @@ export const Definite: Problem[] = [
       "An odd-about-the-midpoint function integrates to 0 over that symmetric interval.",
     ],
   },
+  {
+    id: "def-cos20x-sin25x-odd-symmetric",
+    kind: "definite",
+    integrand: "\\cos(20x)\\sin(25x)",
+    integrandExpr: "cos(20*x)*sin(25*x)",
+    lower: "-\\frac{\\pi}2",
+    upper: "\\frac{\\pi}2",
+    answer: "0",
+    answerLatex: "0",
+    domain: [-Math.PI / 2, Math.PI / 2],
+    difficulty: 2,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2025, round: "Qualifying Test #5" },
+    hints: ["\\cos(20x) is even and \\sin(25x) is odd — their product is odd."],
+    steps: [
+      "f(x)=\\cos(20x)\\sin(25x) satisfies f(-x)=\\cos(20x)\\cdot(-\\sin(25x))=-f(x): it's odd.",
+      "The interval \\left[-\\frac{\\pi}2,\\frac{\\pi}2\\right] is symmetric about 0, so the integral is 0.",
+    ],
+  },
 ];
