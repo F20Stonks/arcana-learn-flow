@@ -33,3 +33,5 @@ vite.config.ts.timestamp-*.mjs
 
 # Local Supabase CLI cache marker — regenerated per-machine, never meant to be shared.
 supabase/.temp/
+integration_bee_scraper/venv/
+integration_bee_scraper/downloads/
