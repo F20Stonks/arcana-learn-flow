@@ -402,3 +402,36 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     worth knowing for future years, the earlier caveat about slow convergence seems to bite mainly
     on oscillatory/logarithmically-decaying tails specifically, not all non-exponential decay.
   - **Remaining**: 2018 through 2020, 2022 through 2026 — 8 more years. Continuing.
+- 2026-08-27 (continued further still): Mined 2018-2020, completing the entire 2010-2020 span
+  (2021 genuinely doesn't exist — no PDF for it, confirmed by the owner earlier). Commits
+  `c5d88c9` (2018, 17 problems), `763f612` (2019, 18 problems), `19cc1cf` (2020, 17 problems).
+  1192/1192 tests passing, typecheck and lint clean after each. Same workflow throughout.
+  - Duplicates caught and handled the same way each time (re-attribute the pre-existing
+    `{name:"original"}` entry's source rather than add a copy): 2018's `1/(1+sin x)`; 2019's
+    `sin(√x)` (left untouched, already Fresno-sourced — third time this exact integral has come up
+    across different years' exams); 2020's `log(x²+1)` and `sqrt(1-x²)` on `[0,1]`.
+  - Two more "resolves to a constant/simple form" problems in the 2018/2020 style: 2020's nested
+    square-root tower (telescopes to exactly `x` via a geometric `Σ1/2ⁿ=1` exponent sum, versus
+    2018's factorial-sum nested-radical which gave `x^(e-2)`) and a telescoping finite-sum quotient
+    that collapses via the geometric series identity `(x-1)(1+x+...+xⁿ)=x^(n+1)-1` into a one-line
+    derivative.
+  - **Real bug caught and fixed during this phase, worth remembering for future years**: a
+    2019 infinite-domain problem was drafted with the source problem's own variable name (`t`)
+    instead of `x`. The shared test harness's `fn()` helper always binds the argument as `x`
+    regardless of what the `integrandExpr` string uses — so a `t`-named expression evaluates
+    `t` as an undefined symbol, and the whole quadrature check silently degenerates to 0. A
+    hand-rolled throwaway verification script that (coincidentally, since I wrote both the
+    problem and the script) *also* used `t` passed cleanly, masking the bug until the real
+    `npx vitest run` caught it. Lesson for future sessions: always write `integrandExpr` in terms
+    of `x`, even when the source problem itself uses a different letter — and don't fully trust a
+    throwaway script's PASS if its variable naming happens to mirror the bug.
+  - Two more genuinely hard cases hit and skipped-with-reason (not forced, not silently dropped):
+    2019's `(cos3x+sin2x)(-sin(2019x)+cos3x)` on `[-2π,2π]` and 2020's `cos²⁰²⁰(x)` on `[0,2π]` —
+    the first oscillates too fast (~4000 periods) for the shared `n=4000` quadrature to resolve
+    without aliasing (confirmed failing at 25x the tolerance), the second has an exact closed form
+    but every mathjs-expressible route to it (raw factorials, Gamma-function ratios) overflows
+    double precision before the huge intermediate values cancel down to the modest final answer.
+    Both are the same underlying limitation as 2018's `|sin(2018x)|` case — noting the pattern in
+    case a future session wants to invest in a smarter/adaptive quadrature or an exact-arithmetic
+    path for these specifically, rather than re-discovering the same wall each time.
+  - **Remaining**: 2022 through 2026 — 5 more years. Continuing.
