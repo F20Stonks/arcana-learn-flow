@@ -354,6 +354,60 @@ export const TECHNIQUES: Technique[] = [
       "\\lfloor x\\rfloor is discontinuous at every integer, so don't try to differentiate through one — this technique is fundamentally about summing, not about finding an antiderivative.",
     ],
   },
+  {
+    id: "beta-integrals",
+    name: "Beta function integrals",
+    tagline: "\\int_0^1 x^m(1-x)^n\\,dx is always a clean rational number — recognise the shape and skip the algebra.",
+    whenToUse:
+      "The integrand is a power of x times a power of (1-x) (or of u and a-u, after rescaling to [0,1]). Expanding (1-x)^n by hand and integrating term by term always works, but for anything beyond n=2 it's slower than just knowing the closed form.",
+    recipe: [
+      "Get the integral into the form \\int_0^1 x^m(1-x)^n\\,dx. An interval [a,b] rescales to [0,1] with u=\\frac{x-a}{b-a}.",
+      "Use \\int_0^1 x^m(1-x)^n\\,dx = \\frac{m!\\,n!}{(m+n+1)!} — provable by repeated integration by parts, peeling one factor of (1-x) off at a time.",
+      "Use the symmetry \\int_0^1 x^m(1-x)^n\\,dx = \\int_0^1 x^n(1-x)^m\\,dx (swap via u=1-x) as a free sanity check on the formula.",
+      "For non-integer exponents the same pattern holds with factorials replaced by the Gamma function — the integer case is the one this bank drills.",
+    ],
+    example: {
+      integrand: "x^2(1-x)^3 \\text{ on } [0,1]",
+      work: [
+        "Match to the pattern with m=2, n=3.",
+        "\\frac{m!\\,n!}{(m+n+1)!} = \\frac{2!\\cdot 3!}{6!} = \\frac{2\\cdot 6}{720}.",
+        "Simplify the fraction.",
+      ],
+      result: "\\frac{1}{60}",
+    },
+    pitfalls: [
+      "The formula needs the interval to be [0,1] with the two factors exactly x and 1-x — rescale first if it isn't, don't try to patch the formula.",
+      "m and n must be nonnegative integers for the factorial form; a fractional power needs the Gamma function instead.",
+      "Don't forget the +1 in the denominator's (m+n+1)! — it's the single most common slip with this identity.",
+    ],
+  },
+  {
+    id: "introducing-constants",
+    name: "Introducing constants",
+    tagline: "Split the numerator by adding and subtracting a constant, so one half is trivial and the other is a form you already know.",
+    whenToUse:
+      "A rational (or rational-in-trig) integrand whose numerator is 'almost' a multiple of the denominator, or almost the denominator's derivative, plus some leftover constant. Especially useful for isolating a piece you've already solved elsewhere — this is a great second pass once a first technique gets you most of the way.",
+    recipe: [
+      "Write the numerator as \\lambda\\cdot(\\text{denominator, or its derivative}) + \\mu, solving for \\lambda and \\mu by matching coefficients.",
+      "Split into \\lambda\\int 1\\,dx (or \\lambda\\int\\frac{D'}{D}\\,dx) plus \\mu\\int\\frac{dx}{D(x)}.",
+      "The first piece is now trivial. For the second, reuse whatever standard form or previously-solved result applies to D(x) — don't re-derive it from scratch.",
+      "The multiplicative version of the same idea — multiply and divide by a well-chosen constant — can reveal a hidden derivative; it's rarer, but worth trying when nothing else moves.",
+    ],
+    example: {
+      integrand: "\\frac{x^2+7x+8}{x^2+5x+3}",
+      work: [
+        "The numerator is the denominator plus a remainder: x^2+7x+8 = (x^2+5x+3) + (2x+5).",
+        "Split: \\int 1\\,dx + \\int\\frac{2x+5}{x^2+5x+3}\\,dx.",
+        "The second piece is exactly \\ln|x^2+5x+3|, since 2x+5 is the denominator's own derivative.",
+      ],
+      result: "x + \\ln(x^2+5x+3) + C",
+    },
+    pitfalls: [
+      "Match coefficients carefully — get \\lambda or \\mu wrong and every downstream integral is off by a constant that's easy to miss.",
+      "The 'remainder' after subtracting off \\lambda\\cdot D(x) must genuinely be a constant, or (for the derivative version) the rest must genuinely be D'(x); if it isn't, the split hasn't actually simplified anything.",
+      "This is a setup move, not a finishing one — you still have to know how to integrate \\frac{1}{D(x)} once you've isolated it.",
+    ],
+  },
 ];
 
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(

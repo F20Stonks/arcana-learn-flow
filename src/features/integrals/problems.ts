@@ -27,6 +27,8 @@ import { TSub } from "./bank/tSub";
 import { Recurrence } from "./bank/recurrence";
 import { InverseIntegral } from "./bank/inverseIntegral";
 import { FloorFunction } from "./bank/floorFunction";
+import { BetaIntegrals } from "./bank/betaIntegrals";
+import { IntroducingConstants } from "./bank/introducingConstants";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -42,6 +44,8 @@ export const PROBLEMS: Problem[] = [
   ...Recurrence,
   ...InverseIntegral,
   ...FloorFunction,
+  ...BetaIntegrals,
+  ...IntroducingConstants,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
