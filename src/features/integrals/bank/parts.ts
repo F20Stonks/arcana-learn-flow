@@ -1256,4 +1256,23 @@ export const Parts: Problem[] = [
       "So the answer is x\\ln x\\ln(\\ln x)-x + C.",
     ],
   },
+  {
+    id: "parts-2logx-plus-1-times-exp-log2",
+    kind: "indefinite",
+    integrand: "(2\\ln x+1)e^{(\\ln x)^2}",
+    integrandExpr: "(2*log(x)+1)*exp(log(x)^2)",
+    answer: "x*exp(log(x)^2)",
+    answerLatex: "x\\,e^{(\\ln x)^2} + C",
+    domain: [1.5, 3],
+    difficulty: 5,
+    techniques: ["u-sub", "parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #9" },
+    hints: [
+      "Try differentiating x\\,e^{(\\ln x)^2} directly with the product rule and see what falls out.",
+    ],
+    steps: [
+      "\\frac{d}{dx}\\left[x\\,e^{(\\ln x)^2}\\right] = e^{(\\ln x)^2} + x\\,e^{(\\ln x)^2}\\cdot2\\ln x\\cdot\\frac1x = e^{(\\ln x)^2}\\left(1+2\\ln x\\right) — exactly the integrand.",
+      "So the antiderivative is x\\,e^{(\\ln x)^2} + C.",
+    ],
+  },
 ];

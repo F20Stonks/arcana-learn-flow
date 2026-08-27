@@ -186,4 +186,27 @@ export const FloorFunction: Problem[] = [
       "Total: 70+216=286.",
     ],
   },
+  {
+    id: "floor-2023-sinx-symmetry-trick",
+    kind: "definite",
+    integrand: "\\lfloor2023\\sin x\\rfloor",
+    integrandExpr: "floor(2023*sin(x))",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "-pi",
+    answerLatex: "-\\pi",
+    domain: [0, 2 * Math.PI],
+    difficulty: 5,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2023, round: "Qualifying Test #8" },
+    hints: [
+      "For non-integer y, \\lfloor y\\rfloor+\\lfloor-y\\rfloor=-1. Since 2023\\sin x is an integer only at isolated points, this holds almost everywhere.",
+      "Compare \\lfloor2023\\sin x\\rfloor to \\lfloor2023\\sin(2\\pi-x)\\rfloor = \\lfloor-2023\\sin x\\rfloor over the same interval.",
+    ],
+    steps: [
+      "Let I=\\int_0^{2\\pi}\\lfloor2023\\sin x\\rfloor\\,dx. Substituting x\\to2\\pi-x (same interval, by periodicity) shows \\int_0^{2\\pi}\\lfloor2023\\sin(2\\pi-x)\\rfloor\\,dx = \\int_0^{2\\pi}\\lfloor-2023\\sin x\\rfloor\\,dx = I too.",
+      "So 2I = \\int_0^{2\\pi}\\left(\\lfloor2023\\sin x\\rfloor+\\lfloor-2023\\sin x\\rfloor\\right)dx = \\int_0^{2\\pi}(-1)\\,dx = -2\\pi (a.e., ignoring the measure-zero set where 2023\\sin x is an integer).",
+      "So I=-\\pi.",
+    ],
+  },
 ];
