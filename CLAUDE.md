@@ -258,9 +258,23 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     real per-problem sources, re-attach the original PDFs and a future session can re-mine the
     attribution — don't guess it without them, a fabricated citation is worse than an honest
     "original". 823/823 tests passing, typecheck clean.
+  - Built the technique-multiselect + source filter UI (commit `dd07fad`): a "Custom mix" checkbox
+    panel on `IntegralTraining.tsx` unions problems across any subset of techniques
+    (`problemsForTechniques()`, new alongside `problemsForTechnique()`), routed through
+    `/integrals/train/custom?techniques=a,b,c`; a "By source" section lists every non-"original"
+    source as its own uncurated set, routed through a new `/integrals/train/source/:sourceKey`
+    route. `TrainingTechnique` now resolves its pool from technique/mixed/custom/source instead of
+    just technique/mixed, sharing the same queue/run machinery (custom and source skip the lesson
+    panel, same as mixed already did). Didn't touch `sprint.ts`/`IntegralSprint.tsx`/`queue.ts`'s
+    `orderQueue` — sprinting is banded by difficulty, not technique or source, so directive #5
+    didn't call for changes there; `orderQueue` is reused as-is by the new modes. Verified with an
+    actual Playwright walkthrough against the dev server (`/dev/integrals/train` unguarded routes),
+    not just unit tests — screenshots of the hub, the custom-mix drill, and the source drill all
+    confirmed correct. 824/824 tests passing, typecheck clean.
   - Next up (continuing this same session/loop if runway remains, else the next one): the
-    technique-multiselect + source filter UI (check `IntegralTraining.tsx`, `sprint.ts`/
-    `IntegralSprint.tsx`, `queue.ts`'s `orderQueue`, `problemsForTechnique` first, per standing
-    directive #5), then the `AnswerInput.tsx` integral-builder UI. No new source PDFs were in this
-    session's uploads, so no mining pass was needed this round — check for new uploads at the start
-    of the next session before resuming this list, per standing directive #2.
+    `AnswerInput.tsx` integral-builder UI (standing directive #4) — a clickable symbol palette (e,
+    π, ^, √, common functions) as a structural supplement to the existing free-text parser, both
+    ending up as a string compared against the stored answer, no grading-engine change needed. No
+    new source PDFs were in this session's uploads, so no mining pass was needed this round — check
+    for new uploads at the start of the next session before resuming this list, per standing
+    directive #2.
