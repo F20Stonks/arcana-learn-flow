@@ -244,8 +244,23 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     Commits: `8993001`, `170524b`, `b864d95`, `c5faac6`, `cf48295`, `93d2f29`. Every single value
     verified against a throwaway smoothstep-quadrature script with real margin before being
     written into a bank file, per Workflow. 821/821 tests passing.
+  - Added the `source` field (`ProblemSource {name, year?, round?}`, required on every `Problem`)
+    and backfilled all 307 existing problems (commit `4e3ed29`), plus `SOURCES`/`problemsForSource`/
+    `sourceKey` helpers in `problems.ts` for the source-filter half of standing directive #5.
+    **Known gap, flagged for the owner rather than silently guessed:** the four techniques added
+    this session with an explicit citation got it (SPLASH/UK-guide/HMMT, per each bank file's
+    header comment); everything else — every problem that predates this session, including the
+    ~80 mined in commit `3eac99d` from three real named competition PDFs (Fresno State/HMMT/MIT)
+    — got `{name: "original"}`. That commit never tracked which of the ~80 came from which of the
+    three documents, and the PDFs aren't attached to this session to re-derive it. If you want that
+    batch (or the earlier `t-sub`/`recurrence`/`beta-integrals`/etc. techniques, whose "formula-
+    instance" note in "Already done" #3 implies real SPLASH/UK-guide provenance too) tagged with
+    real per-problem sources, re-attach the original PDFs and a future session can re-mine the
+    attribution — don't guess it without them, a fabricated citation is worse than an honest
+    "original". 823/823 tests passing, typecheck clean.
   - Next up (continuing this same session/loop if runway remains, else the next one): the
-    `source` field on `Problem` + backfill across all existing problems, then the technique-
-    multiselect + source filter UI, then the `AnswerInput.tsx` integral-builder UI. No new source
-    PDFs were in this session's uploads, so no mining pass was needed this round — check for new
-    uploads at the start of the next session before resuming this list, per standing directive #2.
+    technique-multiselect + source filter UI (check `IntegralTraining.tsx`, `sprint.ts`/
+    `IntegralSprint.tsx`, `queue.ts`'s `orderQueue`, `problemsForTechnique` first, per standing
+    directive #5), then the `AnswerInput.tsx` integral-builder UI. No new source PDFs were in this
+    session's uploads, so no mining pass was needed this round — check for new uploads at the start
+    of the next session before resuming this list, per standing directive #2.
