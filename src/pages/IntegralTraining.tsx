@@ -32,8 +32,12 @@ const MIXED = "mixed";
 const CUSTOM = "custom";
 
 /** Competitions worth their own uncurated set — "original" is the app's own pedagogical examples,
- * not a competition a student would want to drill "as it was set", so it's left off this list. */
-const COMPETITION_SOURCES = SOURCES.filter((s) => s.name !== "original");
+ * not a competition a student would want to drill "as it was set", so it's left off this list.
+ * Sorted by name then year (not first-seen order, which just reflects mining order) so a
+ * competition with several years — MIT's qualifying archive — lists chronologically. */
+const COMPETITION_SOURCES = SOURCES.filter((s) => s.name !== "original").sort(
+  (a, b) => a.name.localeCompare(b.name) || (a.year ?? 0) - (b.year ?? 0),
+);
 
 export default function IntegralTraining() {
   const progress = useProgress();
@@ -188,7 +192,10 @@ export default function IntegralTraining() {
                     className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
                   >
                     <div className="flex items-baseline justify-between gap-3">
-                      <h3 className="font-display text-[16px] font-semibold text-foreground">{s.name}</h3>
+                      <h3 className="font-display text-[16px] font-semibold text-foreground">
+                        {s.name}
+                        {s.year && <span className="text-muted-foreground"> · {s.year}</span>}
+                      </h3>
                       <span className="readout text-[12px] tabular-nums text-muted-foreground">
                         {count} problem{count === 1 ? "" : "s"}
                       </span>
@@ -267,7 +274,13 @@ export function TrainingTechnique() {
 
         <header className="reveal mb-6">
           <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-            {technique ? technique.name : custom ? "Custom mix" : source ? source.name : "Mixed practice"}
+            {technique
+              ? technique.name
+              : custom
+                ? "Custom mix"
+                : source
+                  ? `${source.name}${source.year ? ` · ${source.year}` : ""}`
+                  : "Mixed practice"}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
             {technique
