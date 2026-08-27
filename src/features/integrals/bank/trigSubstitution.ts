@@ -750,4 +750,21 @@ export const TrigSubstitution: Problem[] = [
       "Together: \\arcsin x+\\sqrt{1-x^2} + C.",
     ],
   },
+  {
+    id: "trigsub-reciprocal-1-plus-sqrtx-sqrt-x-minus-x2",
+    kind: "indefinite",
+    integrand: "\\frac1{(1+\\sqrt x)\\sqrt{x-x^2}}",
+    integrandExpr: "1/((1+sqrt(x))*sqrt(x-x^2))",
+    answer: "2*(sqrt(x)-1)/sqrt(1-x)",
+    answerLatex: "\\frac{2(\\sqrt x-1)}{\\sqrt{1-x}} + C",
+    domain: [0.2, 0.7],
+    difficulty: 4,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
+    hints: ["x=\\sin^2\\theta makes \\sqrt{x-x^2}=\\sin\\theta\\cos\\theta and \\sqrt x=\\sin\\theta, turning the whole thing into a rational function of \\theta that reduces to the same 1+\\sin\\theta form as the t-sub standard."],
+    steps: [
+      "x=\\sin^2\\theta,\\ dx=2\\sin\\theta\\cos\\theta\\,d\\theta,\\ \\sqrt{x-x^2}=\\sin\\theta\\cos\\theta: the integral becomes \\int\\frac{2\\,d\\theta}{1+\\sin\\theta}.",
+      "Converting back to x (\\sin\\theta=\\sqrt x,\\ \\cos\\theta=\\sqrt{1-x}) gives \\frac{2(\\sqrt x-1)}{\\sqrt{1-x}} + C — verified directly by differentiating.",
+    ],
+  },
 ];

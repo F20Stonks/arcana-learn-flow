@@ -271,4 +271,20 @@ export const CompletingTheSquare: Problem[] = [
       "\\int\\frac{dx}{\\sqrt{\\frac14-\\left(x-\\frac12\\right)^2}} = \\arcsin\\!\\left(\\frac{x-\\frac12}{\\frac12}\\right) = \\arcsin(2x-1) + C.",
     ],
   },
+  {
+    id: "cts-reciprocal-sqrt-1-minus-4x-minus-x2",
+    kind: "indefinite",
+    integrand: "\\frac1{\\sqrt{1-4x-x^2}}",
+    integrandExpr: "1/sqrt(1-4*x-x^2)",
+    answer: "asin((x+2)/sqrt(5))",
+    answerLatex: "\\arcsin\\!\\left(\\frac{x+2}{\\sqrt5}\\right) + C",
+    domain: [-3.5, -0.5],
+    difficulty: 3,
+    techniques: ["complete-square"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
+    hints: ["1-4x-x^2 = 5-(x+2)^2."],
+    steps: [
+      "\\int\\frac{dx}{\\sqrt{5-(x+2)^2}} = \\arcsin\\!\\left(\\frac{x+2}{\\sqrt5}\\right) + C.",
+    ],
+  },
 ];

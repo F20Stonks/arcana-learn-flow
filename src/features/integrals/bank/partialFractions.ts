@@ -771,4 +771,21 @@ export const PartialFractions: Problem[] = [
       "Back-substituting: \\ln(1+x^2)-\\ln|1-x^2| + C.",
     ],
   },
+  {
+    id: "pf-reciprocal-x3-minus-x",
+    kind: "indefinite",
+    integrand: "\\frac1{x^3-x}",
+    integrandExpr: "1/(x^3-x)",
+    answer: "log(sqrt(1-1/x^2))",
+    answerLatex: "\\ln\\sqrt{1-\\frac1{x^2}} + C",
+    domain: [2, 4],
+    difficulty: 3,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
+    hints: ["x^3-x=x(x-1)(x+1) — three linear factors."],
+    steps: [
+      "\\frac1{x(x-1)(x+1)} = -\\frac1x+\\frac1{2(x-1)}+\\frac1{2(x+1)}.",
+      "\\int = -\\ln x+\\frac12\\ln(x-1)+\\frac12\\ln(x+1) = \\frac12\\ln\\frac{(x-1)(x+1)}{x^2} = \\ln\\sqrt{1-\\frac1{x^2}} + C.",
+    ],
+  },
 ];

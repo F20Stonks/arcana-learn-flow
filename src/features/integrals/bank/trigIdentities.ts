@@ -1357,4 +1357,21 @@ export const TrigIdentities: Problem[] = [
       "That's exactly the integrand, so the antiderivative is \\frac{\\sin(100x)\\sin^{100}x}{100} + C.",
     ],
   },
+  {
+    id: "trig-2-over-cosx-minus-sinx-squared",
+    kind: "indefinite",
+    integrand: "\\frac2{(\\cos x-\\sin x)^2}",
+    integrandExpr: "2/(cos(x)-sin(x))^2",
+    answer: "tan(x+pi/4)",
+    answerLatex: "\\tan\\!\\left(x+\\frac\\pi4\\right) + C",
+    domain: [0, 0.6],
+    difficulty: 3,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
+    hints: ["\\cos x-\\sin x = \\sqrt2\\cos\\!\\left(x+\\frac\\pi4\\right) — write the whole denominator in terms of that one angle."],
+    steps: [
+      "(\\cos x-\\sin x)^2 = 2\\cos^2\\!\\left(x+\\frac\\pi4\\right), so the integrand is \\sec^2\\!\\left(x+\\frac\\pi4\\right).",
+      "\\int\\sec^2\\!\\left(x+\\frac\\pi4\\right)dx = \\tan\\!\\left(x+\\frac\\pi4\\right) + C.",
+    ],
+  },
 ];
