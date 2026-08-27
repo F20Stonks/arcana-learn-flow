@@ -435,3 +435,33 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     case a future session wants to invest in a smarter/adaptive quadrature or an exact-arithmetic
     path for these specifically, rather than re-discovering the same wall each time.
   - **Remaining**: 2022 through 2026 — 5 more years. Continuing.
+- 2026-08-27 (continued yet further): Mined 2022 and 2023. Commits `2487a0e` (2022, 17 problems),
+  `db57eae` (2023, 16 problems). 1260/1260 tests passing, typecheck and lint clean after each.
+  Same workflow throughout (fresh read of the year's extracted text, hand-derive, throwaway-script
+  verify, grep for duplicates, write, full suite + tsc + eslint, commit, push).
+  - Duplicates caught and re-attributed rather than duplicated: 2022's `1/(1+cos²x)`; 2023's
+    `sech(x)` was an exact match of 2017's already-added entry (left untouched, no re-attribution
+    needed since already correctly sourced there).
+  - Two more "resolves via a clean identity" finds worth remembering as a pattern: 2022's fixed-
+    point limit of nested `sin(π/3·…)` converges to exactly `1/2` (since `sin(π/6)=1/2` exactly,
+    and the derivative there confirms it's attracting), and 2023's six-reciprocal-trig-function sum
+    telescopes to the constant `3` via three pairings (`1/(1+tan x)+1/(1+cot x)=1`, etc.) — same
+    "introducing constants" family as the golden-ratio and nested-radical finds from earlier years.
+  - **New numerical-resolution hard case confirmed, same root cause as the recurring
+    oscillation/aliasing issue but a different symptom**: 2022's `x²-⌊x⌋⌈x⌉` on `[0,2022]` has an
+    exact closed form (674, each unit interval contributing exactly 1/3) but the *pointwise*
+    integrand magnitude grows linearly with x while the true integral stays tiny — the shared
+    quadrature's `n=4000` can't resolve that much cancellation across ~2022 sawtooth periods
+    (failed by 14x the integrand's own magnitude). 2023's iterated tent-map problem
+    (`|...|x|-1|...-1|`, 2023 nested absolter values, on `[-2023,2023]`) hit the identical wall:
+    an exact closed form (2023) verified two independent ways by hand, but a ~2023-period sawtooth
+    the quadrature can't resolve at `n=4000` (failed by 29x tolerance). Also 2023's
+    `⌊2023 sin x⌋` on `[0,2π]` — which LOOKED like it would hit the same wall — actually converged
+    cleanly; the failure mode isn't simply "big N appears in the problem," it's specifically
+    "the true integral requires resolving O(N) fine-grained periodic/sawtooth structure to get
+    right," which floor-of-a-single-sine apparently doesn't trigger the same way iterated maps and
+    quadratic-vs-floor products do. Four such cases now on record (2018 `|sin(2018x)|`, 2019's
+    `sin(2019x)`-oscillation, 2022's floor-ceil product, 2023's tent-map) — a real pattern, noted
+    again here in case a future session wants to invest in adaptive quadrature for these
+    specifically rather than re-discovering the wall a fifth time.
+  - **Remaining**: 2024 through 2026 — 3 more years. Continuing.
