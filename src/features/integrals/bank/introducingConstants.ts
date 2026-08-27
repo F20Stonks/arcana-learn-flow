@@ -541,4 +541,27 @@ export const IntroducingConstants: Problem[] = [
       "\\int_0^1(x+1)\\,dx = \\left[\\frac{x^2}2+x\\right]_0^1 = \\frac32.",
     ],
   },
+  {
+    id: "ic-nested-radical-1-plus-x-times-self-def-0to1",
+    kind: "definite",
+    integrand: "\\sqrt{1+x\\sqrt{1+x\\sqrt{1+x\\sqrt{\\cdots}}}}",
+    integrandExpr: "(x+sqrt(x^2+4))/2",
+    lower: "0",
+    upper: "1",
+    answer: "(1+sqrt(5))/4+log((1+sqrt(5))/2)",
+    answerLatex: "\\frac{1+\\sqrt5}4+\\ln\\!\\left(\\frac{1+\\sqrt5}2\\right)",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
+    hints: [
+      "Name the whole tower y. It satisfies y=\\sqrt{1+xy}, so y^2-xy-1=0 — an ordinary quadratic in y for each fixed x.",
+      "The positive root gives the resolved, elementary integrand.",
+    ],
+    steps: [
+      "y^2-xy-1=0 \\Rightarrow y=\\frac{x+\\sqrt{x^2+4}}2 (the positive root, since y>0).",
+      "\\int_0^1\\frac{x+\\sqrt{x^2+4}}2\\,dx = \\frac14\\left[x^2+x\\sqrt{x^2+4}+4\\ln\\!\\left(x+\\sqrt{x^2+4}\\right)\\right]_0^1 (using the standard \\int\\sqrt{x^2+a^2}\\,dx form).",
+      "Evaluating at the limits and simplifying gives \\frac{1+\\sqrt5}4+\\ln\\!\\left(\\frac{1+\\sqrt5}2\\right).",
+    ],
+  },
 ];

@@ -272,4 +272,23 @@ export const TSub: Problem[] = [
       "-\\frac2{1+1}-\\left(-\\frac2{1+0}\\right) = -1+2 = 1.",
     ],
   },
+  {
+    id: "tsub-def-reciprocal-sinx-plus-secx-0-to-halfpi",
+    kind: "definite",
+    integrand: "\\frac1{\\sin x+\\sec x}",
+    integrandExpr: "1/(sin(x)+1/cos(x))",
+    lower: "0",
+    upper: "\\pi/2",
+    answer: "log(2+sqrt(3))/sqrt(3)",
+    answerLatex: "\\frac{\\ln\\!\\left(2+\\sqrt3\\right)}{\\sqrt3}",
+    domain: [0, 1.5707963267948966],
+    difficulty: 5,
+    techniques: ["t-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
+    hints: ["Multiply through by \\cos x first: \\frac{\\cos x}{\\sin x\\cos x+1}, then the Weierstrass t=\\tan(x/2) turns this into a rational function of t."],
+    steps: [
+      "\\frac1{\\sin x+\\sec x} = \\frac{\\cos x}{\\sin x\\cos x+1}. With t=\\tan(x/2), this becomes an ordinary rational integral in t.",
+      "Working it through and evaluating from t=0 (x=0) to t=1 (x=\\pi/2) gives \\frac{\\ln\\!\\left(2+\\sqrt3\\right)}{\\sqrt3} — verified directly against the integral's numeric value.",
+    ],
+  },
 ];

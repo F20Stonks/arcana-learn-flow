@@ -1374,4 +1374,21 @@ export const TrigIdentities: Problem[] = [
       "\\int\\sec^2\\!\\left(x+\\frac\\pi4\\right)dx = \\tan\\!\\left(x+\\frac\\pi4\\right) + C.",
     ],
   },
+  {
+    id: "trig-1-plus-cotx-over-1-minus-cotx",
+    kind: "indefinite",
+    integrand: "\\frac{1+\\cot x}{1-\\cot x}",
+    integrandExpr: "(sin(x)+cos(x))/(sin(x)-cos(x))",
+    answer: "log(abs(sin(x)-cos(x)))",
+    answerLatex: "\\ln|\\sin x-\\cos x| + C",
+    domain: [1, 2.5],
+    difficulty: 3,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2010, round: "Qualifying Round" },
+    hints: ["Multiply top and bottom by \\sin x to clear the cotangents: \\frac{1+\\cot x}{1-\\cot x} = \\frac{\\sin x+\\cos x}{\\sin x-\\cos x}."],
+    steps: [
+      "\\frac{\\sin x+\\cos x}{\\sin x-\\cos x}: the numerator is exactly the derivative of the denominator.",
+      "So the integral is \\ln|\\sin x-\\cos x| + C.",
+    ],
+  },
 ];
