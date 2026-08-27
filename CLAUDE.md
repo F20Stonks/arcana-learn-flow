@@ -465,3 +465,64 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     again here in case a future session wants to invest in adaptive quadrature for these
     specifically rather than re-discovering the wall a fifth time.
   - **Remaining**: 2024 through 2026 — 3 more years. Continuing.
+- 2026-08-27 (continued further still — final year): Mined 2024, 2025 and 2026, **completing the
+  entire 16-year MIT qualifying archive**. Commits `b6f356a` (2024, 14 problems), `7f7d4c6` (2025,
+  18 problems), and 2026 in two parts: `e48be28` (part 1, 8 problems) and `d896cc6` (part 2, 9
+  problems). 1457/1457 tests passing across the whole repo, typecheck and lint clean. Same
+  workflow throughout.
+  - **2026 (17 problems total)** — the notable tricks, since this year leaned unusually hard on
+    "the integrand isn't what it looks like":
+    - #4: a 2026-deep nested absolute-value tower `|x+|x+…+|x+|x||…||`. It splits by sign: for
+      x≥0 each layer adds another copy of x (`f_n=nx` by induction), but for x<0 it has period 2
+      (`f_1=-x, f_2=0, f_3=-x, …`), so an *even* depth collapses to 0. Closed form
+      `2026·max(x,0)`, value 1013. Confirmed by directly iterating the real 2026-layer recurrence,
+      not just by the algebra.
+    - #12: nested radical `√(x²+x+√(x²+x+…))` — the fixed-point quadratic `y²-y-(x²+x)=0` has
+      discriminant `(2x+1)²`, an exact perfect square, so the whole tower is just `x+1`. Same
+      family as 2024 #20's continued fraction and 2017 #15's golden-ratio limit.
+    - #13: `cos⁵x-10cos³x sin²x+5cos x sin⁴x` is `Re[(cos x+i sin x)^5]` expanded binomially (only
+      the even powers of `i sin x` survive), which by De Moivre is exactly `cos5x`. The
+      complex-exponential trick the UK-guide pass added to the `trig-identity` lesson paying off.
+    - #17: `e^{-x²}/(1+e^{2x})` over the whole line. Multiplying `f(-x)` top and bottom by `e^{2x}`
+      gives `f(x)+f(-x)=e^{-x²}`, a plain Gaussian — so `2I=√π` and `I=√π/2` without ever
+      integrating f alone. A genuinely elegant pairing-symmetry case, tagged both
+      `gaussian-hypersphere` and `symmetry`.
+    - #16: a six-trig-function quotient under a radical that collapses to `cot⁴x`, whose root is
+      `cot²x=csc²x-1`. #8: `Σ_{n=2}^∞ xⁿ` as a shifted geometric series `x²/(1-x)`. #11:
+      `max(0,(√(1-x²)-1)/2)` is identically 0 on `[-1,1]`. #19: `ln(ln x)ln(ln(ln x))/(x ln x)`
+      reduces to `∫u ln u du` under `u=ln(ln x)` (domain `[20,30]`, safely above `e^e`).
+  - Duplicates caught and handled the established way: `x²sin(x)` (#9) was already in `parts.ts` as
+    `{name:"original"}` and was **re-attributed** to MIT 2026 rather than copied; `atan(√x)` (#14)
+    was already present and correctly sourced to Fresno State, so it was left untouched and the
+    2026 entry skipped.
+  - Skipped-with-reason (not silently dropped): 2026 #20, a triple-nested `cos²` composition with
+    no closed form found in the time available.
+  - **One near-duplicate worth the owner's eye rather than a unilateral decision**: 2026 #7 is
+    `∫2ln(x)/x²dx`, which is the pre-existing `parts-log-over-square` (`ln x/x²`, still
+    `{name:"original"}`) times a constant. It was added as its own entry because it *is* a faithful
+    transcription of a real sourced problem and the exact-duplicate test doesn't consider it one —
+    but if the owner would rather the bank never carry two integrals that differ only by a constant
+    factor, the fix is to drop `parts-two-log-over-square` and re-attribute the older entry. Flagged
+    rather than guessed, matching how the earlier attribution gaps were handled.
+  - **Real bug caught during verification** (logged because it's a recurring class): the
+    `e^{2026e^x+x}` problem's first draft used domain `[-0.3,0.3]`, which lets `2026e^x` reach
+    ~2735 — `e^2735` overflows to `Infinity` in double precision, failing both the derivative check
+    and the self-answer-acceptance test. Fixed by moving the domain to `[-4,-3.5]`, where every
+    intermediate value stays representable. Companion to the 2019 `t`-vs-`x` variable-naming bug:
+    when a problem carries a huge constant, *pick the domain to keep intermediates in range* rather
+    than defaulting to a domain near 0.
+  - **End-of-session final check** (whole repo, not just `src/features/integrals`):
+    `npx vitest run` — 1457/1457 passing; `npx tsc --noEmit` — clean; `npx eslint src` — 95
+    findings (76 errors, 19 warnings) across 42 files, **all pre-existing and all outside this
+    task's scope** (`ResourceBank.tsx`, `SessionPage.tsx`, `TrackPapers.tsx`, `paddle.ts`, etc.).
+    Zero findings in `src/features/integrals/` or `src/pages/Integral*` — verified by filtering
+    eslint's JSON output on those paths, not by eyeballing.
+  - **This is the task's natural completion point.** The full MIT qualifying archive (2010–2020,
+    2022–2026; 2021 does not exist) is now mined to the pragmatic standard documented throughout
+    this log, alongside the SPLASH notes, the UK guide, Fresno State, both HMMT practice sets and
+    the MIT 2025 mock. Standing directive #2 forbids inventing new problems by plugging fresh
+    numbers into a formula, so **there is no more sourced content to mine without new PDFs from the
+    owner**, and no planned engineering work remains queued. A future session/loop iteration
+    starting here should check the session uploads for new source material first; if there is none,
+    report that back rather than manufacturing busywork — don't invent problems, and don't add
+    speculative features.
