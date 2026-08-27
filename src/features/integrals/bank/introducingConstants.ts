@@ -104,4 +104,20 @@ export const IntroducingConstants: Problem[] = [
       "So the integral is 5x - 3\\cdot\\frac{2}{\\sqrt3}\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right) = 5x - 2\\sqrt3\\arctan\\!\\left(\\frac{\\tan(x/2)}{\\sqrt3}\\right) + C.",
     ],
   },
+  {
+    id: "ic-one-plus-12x-over-one-plus-3x",
+    kind: "indefinite",
+    integrand: "\\frac{1+12x}{1+3x}",
+    integrandExpr: "(1+12*x)/(1+3*x)",
+    answer: "4*x-log(abs(1+3*x))",
+    answerLatex: "4x-\\ln|1+3x| + C",
+    domain: [0, 2],
+    difficulty: 2,
+    techniques: ["introducing-constants"],
+    hints: ["1+12x is exactly 4(1+3x) minus a constant remainder — find it before doing any division."],
+    steps: [
+      "1+12x = 4(1+3x)-3.",
+      "\\int\\left(4-\\frac{3}{1+3x}\\right)dx = 4x-\\ln|1+3x| + C.",
+    ],
+  },
 ];

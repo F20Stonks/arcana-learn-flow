@@ -121,4 +121,24 @@ export const CompletingTheSquare: Problem[] = [
       "So \\arcsin\\frac{x-1}{3} + C.",
     ],
   },
+  {
+    id: "cs-x-over-shifted-quadratic",
+    kind: "indefinite",
+    integrand: "\\frac{x}{x^2+2x+2}",
+    integrandExpr: "x/(x^2+2*x+2)",
+    answer: "log(x^2+2*x+2)/2-atan(x+1)",
+    answerLatex: "\\frac{1}{2}\\ln(x^2+2x+2)-\\arctan(x+1) + C",
+    domain: [-3, 1],
+    difficulty: 3,
+    techniques: ["complete-square"],
+    hints: [
+      "x^2+2x+2 = (x+1)^2+1.",
+      "Split the numerator: x = (x+1) - 1, matching the shifted variable.",
+    ],
+    steps: [
+      "\\frac{x}{(x+1)^2+1} = \\frac{x+1}{(x+1)^2+1} - \\frac{1}{(x+1)^2+1}.",
+      "The first piece is a log by u=x+1; the second is a bare arctan.",
+      "Result: \\frac{1}{2}\\ln(x^2+2x+2)-\\arctan(x+1) + C.",
+    ],
+  },
 ];

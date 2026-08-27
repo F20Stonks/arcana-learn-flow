@@ -132,4 +132,25 @@ export const TSub: Problem[] = [
       "The value is \\frac{1}{2}\\arctan\\frac{1}{2} — a genuine closed form, just not a rational multiple of \\pi.",
     ],
   },
+  {
+    id: "tsub-one-plus-cos-squared",
+    kind: "indefinite",
+    integrand: "\\frac{1}{1+\\cos^2 x}",
+    integrandExpr: "1/(1+cos(x)^2)",
+    answer: "(1/sqrt(2))*atan(tan(x)/sqrt(2))",
+    answerLatex: "\\frac{1}{\\sqrt2}\\arctan\\!\\left(\\frac{\\tan x}{\\sqrt2}\\right) + C",
+    domain: [-1, 1],
+    difficulty: 4,
+    techniques: ["t-sub"],
+    hints: [
+      "A squared cosine, not a bare one — the double-angle identity turns it into the a+b\\cos(2x) shape you already know how to t-sub.",
+      "1+\\cos^2x = 1+\\frac{1+\\cos2x}{2} = \\frac{3+\\cos2x}{2}.",
+    ],
+    steps: [
+      "\\frac{1}{1+\\cos^2x} = \\frac{2}{3+\\cos2x}.",
+      "Substitute w=2x: \\int\\frac{2}{3+\\cos w}\\cdot\\frac{dw}{2} = \\int\\frac{dw}{3+\\cos w}.",
+      "By the a+\\cos x formula with a=3: \\frac{1}{\\sqrt2}\\arctan\\!\\left(\\frac{\\tan(w/2)}{\\sqrt2}\\right).",
+      "Since w=2x, \\frac{w}{2}=x, giving \\frac{1}{\\sqrt2}\\arctan\\!\\left(\\frac{\\tan x}{\\sqrt2}\\right) + C.",
+    ],
+  },
 ];
