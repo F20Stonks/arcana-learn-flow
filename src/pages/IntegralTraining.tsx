@@ -7,8 +7,8 @@
  * every lesson leads with the recognition cue rather than the recipe.
  */
 import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Shuffle } from "lucide-react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import RunPanel from "@/features/integrals/components/RunPanel";
@@ -17,13 +17,37 @@ import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
 import { orderQueue } from "@/features/integrals/queue";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
-import { DIFFICULTY_LABEL, PROBLEMS, problemsForTechnique } from "@/features/integrals/problems";
-import type { TechniqueId } from "@/features/integrals/types";
+import {
+  DIFFICULTY_LABEL,
+  PROBLEMS,
+  problemsForSource,
+  problemsForTechnique,
+  problemsForTechniques,
+  SOURCES,
+  sourceKey,
+} from "@/features/integrals/problems";
+import type { Problem, ProblemSource, TechniqueId } from "@/features/integrals/types";
 
 const MIXED = "mixed";
+const CUSTOM = "custom";
+
+/** Competitions worth their own uncurated set — "original" is the app's own pedagogical examples,
+ * not a competition a student would want to drill "as it was set", so it's left off this list. */
+const COMPETITION_SOURCES = SOURCES.filter((s) => s.name !== "original");
 
 export default function IntegralTraining() {
   const progress = useProgress();
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customSelection, setCustomSelection] = useState<Set<TechniqueId>>(new Set());
+
+  const toggleCustom = (id: TechniqueId) => {
+    setCustomSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <AppShell>
@@ -95,6 +119,89 @@ export default function IntegralTraining() {
             </p>
           </Link>
         </div>
+
+        <section className="reveal mt-8 overflow-hidden rounded-2xl border border-dashed border-border bg-card/40">
+          <button
+            onClick={() => setCustomOpen((v) => !v)}
+            aria-expanded={customOpen}
+            aria-controls="custom-mix-panel"
+            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+          >
+            <span className="flex items-center gap-2.5">
+              <Layers className="h-4 w-4 text-primary" />
+              <span className="font-display text-[16px] font-semibold text-foreground">Custom mix</span>
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${customOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {customOpen && (
+            <div id="custom-mix-panel" className="border-t border-border px-5 pb-5 pt-4">
+              <p className="text-[13px] text-muted-foreground">
+                Pick any subset of techniques to drill together — not just one at a time, not the whole
+                bank.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {TECHNIQUES.map((t) => (
+                  <label
+                    key={t.id}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-foreground transition-colors hover:border-primary/40"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={customSelection.has(t.id)}
+                      onChange={() => toggleCustom(t.id)}
+                      className="h-3.5 w-3.5 shrink-0 accent-primary"
+                    />
+                    {t.name}
+                  </label>
+                ))}
+              </div>
+              {customSelection.size > 0 ? (
+                <Link
+                  to={`/integrals/train/${CUSTOM}?techniques=${[...customSelection].join(",")}`}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  Start ({customSelection.size} selected) <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <p className="mt-4 text-[13px] text-muted-foreground">Select at least one technique.</p>
+              )}
+            </div>
+          )}
+        </section>
+
+        {COMPETITION_SOURCES.length > 0 && (
+          <section className="reveal mt-8">
+            <h2 className="font-display text-[17px] font-semibold text-foreground">By source</h2>
+            <p className="mt-1.5 text-[14px] text-muted-foreground">
+              Work one competition's set exactly as it was set — uncurated, not sorted into techniques.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {COMPETITION_SOURCES.map((s) => {
+                const count = problemsForSource(s).length;
+                return (
+                  <Link
+                    key={sourceKey(s)}
+                    to={`/integrals/train/source/${encodeURIComponent(sourceKey(s))}`}
+                    className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h3 className="font-display text-[16px] font-semibold text-foreground">{s.name}</h3>
+                      <span className="readout text-[12px] tabular-nums text-muted-foreground">
+                        {count} problem{count === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {s.round && (
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{s.round}</p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
     </AppShell>
   );
@@ -103,15 +210,31 @@ export default function IntegralTraining() {
 // ── the practice screen ─────────────────────────────────────────────────────────────────────────
 
 export function TrainingTechnique() {
-  const { techniqueId = "" } = useParams();
+  const { techniqueId = "", sourceKey: sourceKeyParam } = useParams();
+  const [searchParams] = useSearchParams();
   const progress = useProgress();
-  const mixed = techniqueId === MIXED;
-  const technique = mixed ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
 
-  const pool = useMemo(
-    () => (mixed ? PROBLEMS : problemsForTechnique(techniqueId as TechniqueId)),
-    [mixed, techniqueId],
-  );
+  const isSource = sourceKeyParam !== undefined;
+  const source: ProblemSource | undefined = isSource
+    ? SOURCES.find((s) => sourceKey(s) === decodeURIComponent(sourceKeyParam))
+    : undefined;
+  const mixed = techniqueId === MIXED;
+  const custom = techniqueId === CUSTOM;
+  const technique = mixed || custom || isSource ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
+
+  const customIds = useMemo(() => {
+    if (!custom) return [];
+    const raw = searchParams.get("techniques") ?? "";
+    return raw.split(",").filter((id): id is TechniqueId => id in TECHNIQUE_BY_ID);
+  }, [custom, searchParams]);
+
+  const pool = useMemo(() => {
+    if (isSource) return source ? problemsForSource(source) : [];
+    if (mixed) return PROBLEMS;
+    if (custom) return problemsForTechniques(customIds);
+    return problemsForTechnique(techniqueId as TechniqueId);
+  }, [isSource, source, mixed, custom, customIds, techniqueId]);
+
   // Deliberately seeded from progress once, on mount: re-sorting as you solve would move the queue
   // out from under you.
   const [queue] = useState(() => orderQueue(pool, progress));
@@ -121,7 +244,8 @@ export function TrainingTechnique() {
   const problem = queue[index];
   const run = useIntegralRun(problem ?? PROBLEMS[0], "training");
 
-  if (!mixed && !technique) return <Navigate to="/integrals/train" replace />;
+  if (!mixed && !custom && !isSource && !technique) return <Navigate to="/integrals/train" replace />;
+  if (isSource && !source) return <Navigate to="/integrals/train" replace />;
   if (!problem) return <Navigate to="/integrals/train" replace />;
 
   const openLesson = () => {
@@ -143,10 +267,17 @@ export function TrainingTechnique() {
 
         <header className="reveal mb-6">
           <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-            {technique ? technique.name : "Mixed practice"}
+            {technique ? technique.name : custom ? "Custom mix" : source ? source.name : "Mixed practice"}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            {technique ? technique.tagline : "Every problem in the bank, technique unannounced."} ·{" "}
+            {technique
+              ? technique.tagline
+              : custom
+                ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
+                : source
+                  ? "This competition's set, worked exactly as it was set."
+                  : "Every problem in the bank, technique unannounced."}{" "}
+            ·{" "}
             <span className="readout tabular-nums">
               {index + 1}/{queue.length}
             </span>{" "}

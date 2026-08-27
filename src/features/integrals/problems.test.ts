@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "mathjs";
 import { gradeAnswer, normalize } from "./answer";
-import { PROBLEMS, problemsForSource, SOURCES, sourceKey } from "./problems";
+import { PROBLEMS, problemsForSource, problemsForTechniques, SOURCES, sourceKey } from "./problems";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "./techniques";
 
 function fn(expr: string): (x: number) => number | null {
@@ -134,6 +134,17 @@ describe("problem bank", () => {
     for (const p of PROBLEMS) {
       expect(p.source?.name, p.id).toBeTruthy();
     }
+  });
+
+  it("unions problems across a multi-technique selection with no duplicates", () => {
+    const [a, b] = [TECHNIQUES[0].id, TECHNIQUES[1].id];
+    const union = problemsForTechniques([a, b]);
+    const expectedIds = new Set([
+      ...PROBLEMS.filter((p) => p.techniques.includes(a)).map((p) => p.id),
+      ...PROBLEMS.filter((p) => p.techniques.includes(b)).map((p) => p.id),
+    ]);
+    expect(union.length).toBe(expectedIds.size);
+    for (const p of union) expect(expectedIds.has(p.id)).toBe(true);
   });
 
   it("finds every problem again through problemsForSource", () => {

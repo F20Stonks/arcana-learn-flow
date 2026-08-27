@@ -73,6 +73,14 @@ export function problemsForTechnique(id: TechniqueId): Problem[] {
   return PROBLEMS.filter((p) => p.techniques.includes(id)).sort((a, b) => a.difficulty - b.difficulty);
 }
 
+/** Union across an arbitrary subset of techniques — the multi-select "custom mix" pool. */
+export function problemsForTechniques(ids: TechniqueId[]): Problem[] {
+  const set = new Set(ids);
+  return PROBLEMS.filter((p) => p.techniques.some((t) => set.has(t))).sort(
+    (a, b) => a.difficulty - b.difficulty,
+  );
+}
+
 export function problemsByDifficulty(d: Difficulty): Problem[] {
   return PROBLEMS.filter((p) => p.difficulty === d);
 }
