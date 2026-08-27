@@ -1391,4 +1391,21 @@ export const Parts: Problem[] = [
       "Back-substituting u=\\ln(\\ln x): \\frac{\\ln^2(\\ln x)}2\\ln(\\ln(\\ln x))-\\frac{\\ln^2(\\ln x)}4 + C (defined for x>e^e).",
     ],
   },
+  {
+    id: "parts-reciprocal-logx-plus-loglogx",
+    kind: "indefinite",
+    integrand: "\\frac1{\\ln x}+\\ln(\\ln x)",
+    integrandExpr: "1/log(x)+log(log(x))",
+    answer: "x*log(log(x))",
+    answerLatex: "x\\ln(\\ln x) + C",
+    domain: [2, 5],
+    difficulty: 3,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
+    hints: ["Guess x\\ln(\\ln x) and differentiate it with the product and chain rules."],
+    steps: [
+      "\\frac{d}{dx}\\left[x\\ln(\\ln x)\\right] = \\ln(\\ln x)+x\\cdot\\frac1{\\ln x}\\cdot\\frac1x = \\ln(\\ln x)+\\frac1{\\ln x}.",
+      "That matches the integrand exactly, so the antiderivative is x\\ln(\\ln x) + C.",
+    ],
+  },
 ];

@@ -1008,4 +1008,18 @@ export const StandardForms: Problem[] = [
       "The clean values are 4 at x=2 and 1 at x=1: difference is 3.",
     ],
   },
+  {
+    id: "power-csch-squared",
+    kind: "indefinite",
+    integrand: "\\operatorname{csch}^2x",
+    integrandExpr: "1/sinh(x)^2",
+    answer: "-cosh(x)/sinh(x)",
+    answerLatex: "-\\coth x + C",
+    domain: [0.5, 3],
+    difficulty: 2,
+    techniques: ["power"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
+    hints: ["This is the hyperbolic twin of \\int\\csc^2x\\,dx=-\\cot x — same pattern, hyperbolic functions."],
+    steps: ["\\frac{d}{dx}[-\\coth x] = \\operatorname{csch}^2x, so \\int\\operatorname{csch}^2x\\,dx = -\\coth x + C."],
+  },
 ];

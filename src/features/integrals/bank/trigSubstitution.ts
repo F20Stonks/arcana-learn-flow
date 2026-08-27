@@ -732,4 +732,22 @@ export const TrigSubstitution: Problem[] = [
       "That's exactly 3 times the integrand, so \\int\\left(\\tan^4x\\sec^3x+\\tan^2x\\sec^5x\\right)dx = \\frac{\\sec^3x\\tan^3x}{3} + C.",
     ],
   },
+  {
+    id: "trigsub-sqrt-1-minus-x-over-1-plus-x",
+    kind: "indefinite",
+    integrand: "\\sqrt{\\frac{1-x}{1+x}}",
+    integrandExpr: "sqrt((1-x)/(1+x))",
+    answer: "asin(x)+sqrt(1-x^2)",
+    answerLatex: "\\arcsin x+\\sqrt{1-x^2} + C",
+    domain: [-0.7, 0.7],
+    difficulty: 3,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
+    hints: ["Multiply inside the root by \\frac{1-x}{1-x} to get \\frac{1-x}{\\sqrt{1-x^2}}, then substitute x=\\sin\\theta."],
+    steps: [
+      "\\sqrt{\\frac{1-x}{1+x}} = \\frac{1-x}{\\sqrt{1-x^2}} = \\frac1{\\sqrt{1-x^2}}-\\frac x{\\sqrt{1-x^2}}.",
+      "The first piece integrates to \\arcsin x; the second, by u=1-x^2, to \\sqrt{1-x^2}.",
+      "Together: \\arcsin x+\\sqrt{1-x^2} + C.",
+    ],
+  },
 ];

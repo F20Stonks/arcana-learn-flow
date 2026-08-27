@@ -381,4 +381,21 @@ export const BetaIntegrals: Problem[] = [
       "Its area is \\frac12\\pi\\left(\\frac12\\right)^2 = \\frac{\\pi}8.",
     ],
   },
+  {
+    id: "beta-xx-times-1-plus-logx",
+    kind: "indefinite",
+    integrand: "x^x(1+\\ln x)",
+    integrandExpr: "x^x*(1+log(x))",
+    answer: "x^x",
+    answerLatex: "x^x + C",
+    domain: [0.5, 3],
+    difficulty: 3,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2011, round: "Qualifying Round" },
+    hints: ["This is exactly the derivative you get from logarithmic differentiation of y=x^x — recognise it and read the antiderivative straight off."],
+    steps: [
+      "Logarithmic differentiation of y=x^x gives \\frac{y'}y = \\ln x+1, so y'=x^x(1+\\ln x).",
+      "That's exactly the integrand, so the antiderivative is x^x + C.",
+    ],
+  },
 ];
