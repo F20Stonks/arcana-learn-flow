@@ -268,6 +268,21 @@ export function TrainingTechnique() {
 
   const next = () => setIndex((i) => (i + 1) % queue.length);
 
+  // After a correct answer the input is gone and the Next button is the only action. Let a quick
+  // Enter press advance the queue without reaching for the mouse.
+  useEffect(() => {
+    if (run.status !== "solved") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [run.status, queue.length]);
+
   return (
     <AppShell>
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
