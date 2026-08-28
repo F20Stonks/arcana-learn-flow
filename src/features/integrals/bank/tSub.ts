@@ -329,4 +329,22 @@ export const TSub: Problem[] = [
       "\\int_0^1\\frac{dt}{1+t} = \\ln2 (t runs from 0 at x=0 to 1 at x=\\pi/2).",
     ],
   },
+  {
+    id: "tsub-cosh2-3x-tanh2x",
+    kind: "indefinite",
+    integrand: "\\cosh^2(3x)\\tanh(2x)",
+    integrandExpr: "cosh(3*x)^2*tanh(2*x)",
+    answer: "-(1/2)*cosh(2*x)+(1/12)*cosh(6*x)+(1/4)*log(cosh(2*x))",
+    answerLatex: "-\\frac12\\cosh(2x)+\\frac1{12}\\cosh(6x)+\\frac14\\ln(\\cosh2x) + C",
+    domain: [0.2, 1],
+    difficulty: 5,
+    techniques: ["t-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: ["\\cosh^2(3x)=\\frac{1+\\cosh6x}2, and \\tanh2x=\\frac{\\sinh2x}{\\cosh2x} — split into a \\sinh2x\\cosh6x piece (a product-to-sum-style hyperbolic identity) and a plain \\tanh2x piece."],
+    steps: [
+      "\\cosh^2(3x)\\tanh(2x) = \\frac{(1+\\cosh6x)\\sinh2x}{2\\cosh2x} = \\frac{\\sinh2x}{2\\cosh2x}+\\frac{\\cosh6x\\sinh2x}{2\\cosh2x}.",
+      "The first piece integrates to \\frac14\\ln(\\cosh2x). The second, after rewriting \\cosh6x\\sinh2x via the hyperbolic product-to-sum identity and dividing by \\cosh2x, resolves to -\\frac12\\cosh2x+\\frac1{12}\\cosh6x.",
+      "Together: -\\frac12\\cosh(2x)+\\frac1{12}\\cosh(6x)+\\frac14\\ln(\\cosh2x) + C — verified directly by differentiating.",
+    ],
+  },
 ];

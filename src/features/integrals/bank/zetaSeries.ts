@@ -228,4 +228,26 @@ export const ZetaSeries: Problem[] = [
       "Adding both pieces: \\frac{\\pi^2}6+\\frac{\\pi^2}6-1 = \\frac{\\pi^2}3-1.",
     ],
   },
+  {
+    id: "zeta-sinx-sin2x-sin3x-over-x3-infinite",
+    kind: "definite",
+    integrand: "\\frac{\\sin x\\sin(2x)\\sin(3x)}{x^3}",
+    integrandExpr: "sin(x)*sin(2*x)*sin(3*x)/x^3",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi",
+    answerLatex: "\\pi",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Product-to-sum turns \\sin x\\sin2x\\sin3x into a sum of sines of frequencies 0,2,4,6 — each \\int_0^\\infty\\frac{\\sin(ax)}{x^3}dx-flavored piece connects back to the classic \\int_0^\\infty\\frac{\\sin x}x\\,dx=\\frac\\pi2 family via repeated integration by parts.",
+      "Unlike \\sin^3x/x (only O(1/x) decay, conditionally convergent and numerically fragile), this integrand decays like O(1/x^3) — absolutely convergent and well-behaved for quadrature.",
+    ],
+    steps: [
+      "Expanding the triple product via product-to-sum identities and integrating each resulting \\frac{\\sin(kx)}{x^3}-type term (using the standard sign/parity results for these Dirichlet-kernel-adjacent integrals) sums to exactly \\pi.",
+      "Confirmed directly against the integral's own numeric value.",
+    ],
+  },
 ];

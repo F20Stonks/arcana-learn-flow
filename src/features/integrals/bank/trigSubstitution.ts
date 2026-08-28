@@ -889,4 +889,22 @@ export const TrigSubstitution: Problem[] = [
       "Evaluating from x=0 (u=1) to x=1 (u=e^{-1}): -\\arcsin(e^{-1})-\\left(-\\arcsin1\\right) = \\frac\\pi2-\\arcsin\\!\\left(e^{-1}\\right).",
     ],
   },
+  {
+    id: "trigsub-sec5x",
+    kind: "indefinite",
+    integrand: "\\sec^5x",
+    integrandExpr: "1/cos(x)^5",
+    answer: "(1/4)*(1/cos(x))^3*tan(x)+(3/8)*(1/cos(x))*tan(x)+(3/8)*log(1/cos(x)+tan(x))",
+    answerLatex: "\\frac14\\sec^3x\\tan x+\\frac38\\sec x\\tan x+\\frac38\\ln|\\sec x+\\tan x| + C",
+    domain: [0, 1.2],
+    difficulty: 4,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal Tiebreakers" },
+    hints: ["The standard reduction formula \\int\\sec^nx\\,dx = \\frac{\\sec^{n-2}x\\tan x}{n-1}+\\frac{n-2}{n-1}\\int\\sec^{n-2}x\\,dx, applied at n=5 down to the known \\int\\sec x\\,dx."],
+    steps: [
+      "n=5: \\int\\sec^5x\\,dx = \\frac{\\sec^3x\\tan x}4+\\frac34\\int\\sec^3x\\,dx.",
+      "n=3: \\int\\sec^3x\\,dx = \\frac{\\sec x\\tan x}2+\\frac12\\int\\sec x\\,dx = \\frac{\\sec x\\tan x}2+\\frac12\\ln|\\sec x+\\tan x|.",
+      "Substituting back: \\frac{\\sec^3x\\tan x}4+\\frac38\\sec x\\tan x+\\frac38\\ln|\\sec x+\\tan x| + C.",
+    ],
+  },
 ];
