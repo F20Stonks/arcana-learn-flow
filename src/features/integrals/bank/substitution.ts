@@ -2951,4 +2951,22 @@ export const Substitution: Problem[] = [
       "\\int_0^1\\left(2t^4+2t^2+2-\\frac2{1+t}\\right)dt = \\left[\\frac{2t^5}5+\\frac{2t^3}3+2t-2\\ln(1+t)\\right]_0^1 = \\frac25+\\frac23+2-2\\ln2 = \\frac{46}{15}-2\\ln2.",
     ],
   },
+  {
+    id: "sf26-x2-minus-2-over-quartic-root",
+    kind: "indefinite",
+    integrand: "\\frac{x^2-2}{(x^2+2)\\sqrt{x^4+4}}",
+    integrandExpr: "(x^2-2)/((x^2+2)*sqrt(x^4+4))",
+    answer: "0.5*atan(sqrt(x^4+4)/(2*x))",
+    answerLatex: "\\frac12\\arctan\\!\\left(\\frac{\\sqrt{x^4+4}}{2x}\\right) + C",
+    domain: [0.5, 2],
+    difficulty: 5,
+    techniques: ["u-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: [
+      "Divide numerator and denominator by x^2 to expose \\frac{x^2-2}{x^2}=1-\\frac2{x^2} against \\sqrt{x^2+4/x^2} — this is the signature of a u=x+\\frac2x-flavored (or here, \\frac{\\sqrt{x^4+4}}{2x}-flavored) substitution.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form rather than reproduced substitution-by-substitution — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
 ];

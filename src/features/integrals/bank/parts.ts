@@ -1832,4 +1832,22 @@ export const Parts: Problem[] = [
       "Confirmed by direct differentiation of the closed form — the derivative check verifies it exactly against the integrand.",
     ],
   },
+  {
+    id: "sf26-product-rule-reverse-power-exp",
+    kind: "indefinite",
+    integrand: "\\left(1+\\frac1x\\right)\\left(1-\\frac2x\\right)x^{\\sqrt3}e^x",
+    integrandExpr: "(1+1/x)*(1-2/x)*x^sqrt(3)*exp(x)",
+    answer: "(x^sqrt(3)-(sqrt(3)+1)*x^(sqrt(3)-1))*exp(x)",
+    answerLatex: "\\left(x^{\\sqrt3}-(\\sqrt3+1)x^{\\sqrt3-1}\\right)e^x + C",
+    domain: [0.5, 3],
+    difficulty: 5,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee", round: "Semifinal Tiebreakers" },
+    hints: [
+      "\\left(1+\\frac1x\\right)\\left(1-\\frac2x\\right)x^{\\sqrt3} = x^{\\sqrt3-2}(x+1)(x-2) — guess an antiderivative of the form \\left[x^s-(s+1)x^{s-1}\\right]e^x with s=\\sqrt3 and differentiate to confirm, rather than integrating directly.",
+    ],
+    steps: [
+      "Differentiating \\left[x^s-(s+1)x^{s-1}\\right]e^x via the product rule and simplifying (using s^2=3) reduces to x^{s-2}(x-2)(x+1)e^x, which is exactly \\left(1+\\tfrac1x\\right)\\left(1-\\tfrac2x\\right)x^se^x after factoring x^2 back in.",
+    ],
+  },
 ];

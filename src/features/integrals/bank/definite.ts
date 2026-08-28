@@ -1036,4 +1036,47 @@ export const Definite: Problem[] = [
       "Confirmed by direct numeric integration: the product integrates to exactly 0 on [0,1].",
     ],
   },
+  {
+    id: "sf26-min-max-min-cos",
+    kind: "definite",
+    integrand:
+      "\\min_{a\\in\\{0,1\\}}\\max_{b\\in\\{0,1\\}}\\min_{c\\in\\{0,1\\}}\\cos\\!\\left((a+b+c)x\\right)",
+    integrandExpr:
+      "min(max(min(1,cos(x)),min(cos(x),cos(2*x))), max(min(cos(x),cos(2*x)),min(cos(2*x),cos(3*x))))",
+    lower: "0",
+    upper: "\\pi",
+    answer: "-3*sqrt(3)/4",
+    answerLatex: "-\\frac{3\\sqrt3}4",
+    domain: [0, 3.141592653589793],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: [
+      "Since a,b,c only ever take the values 0 or 1, the whole min-max-min expression is just a fixed combinatorial choice among \\cos(0x),\\cos(x),\\cos(2x),\\cos(3x) — write out all 8 combinations explicitly rather than trying to reason about it abstractly.",
+      "\\min_a\\max_b\\min_c\\cos((a+b+c)x) = \\min\\!\\Big(\\max\\big(\\min(1,\\cos x),\\min(\\cos x,\\cos2x)\\big),\\ \\max\\big(\\min(\\cos x,\\cos2x),\\min(\\cos2x,\\cos3x)\\big)\\Big).",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration of the fully expanded nested min/max expression — the definite value comes out to exactly -\\frac{3\\sqrt3}4.",
+    ],
+  },
+  {
+    id: "sf26-ellipse-arc-difference",
+    kind: "definite",
+    integrand: "100\\left(\\sqrt{-4x^2+8x+16}-\\sqrt{-x^2-2x+9}\\right)",
+    integrandExpr: "100*(sqrt(-4*x^2+8*x+16)-sqrt(-x^2-2*x+9))",
+    lower: "0",
+    upper: "2",
+    answer: "400",
+    answerLatex: "400",
+    domain: [0, 2],
+    difficulty: 4,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: [
+      "Each radical is an ellipse-arc integral after completing the square: -4x^2+8x+16=20-4(x-1)^2 and -x^2-2x+9=10-(x+1)^2 — both reduce to the standard \\int\\sqrt{r^2-u^2}\\,du area/arcsin form.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration of the two completed-square radicals — the difference of the two ellipse-arc areas, scaled by 100, comes out to exactly 400.",
+    ],
+  },
 ];

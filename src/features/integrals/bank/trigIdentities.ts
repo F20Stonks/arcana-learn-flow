@@ -1764,6 +1764,27 @@ export const TrigIdentities: Problem[] = [
     ],
   },
   {
+    id: "sf26-nine-prime-cosines",
+    kind: "definite",
+    integrand: "\\cos(2x)\\cos(3x)\\cos(5x)\\cos(7x)\\cos(11x)\\cos(13x)\\cos(17x)\\cos(19x)\\cos(23x)",
+    integrandExpr: "cos(2*x)*cos(3*x)*cos(5*x)*cos(7*x)*cos(11*x)*cos(13*x)*cos(17*x)*cos(19*x)*cos(23*x)",
+    lower: "0",
+    upper: "\\pi",
+    answer: "5*pi/256",
+    answerLatex: "\\frac{5\\pi}{256}",
+    domain: [0, 3.141592653589793],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Expanding a product of 9 cosines via repeated product-to-sum gives \\frac1{2^8}\\sum\\cos\\!\\left(\\left(\\pm2\\pm3\\pm5\\pm7\\pm11\\pm13\\pm17\\pm19\\pm23\\right)x\\right) over all 256 sign choices — only the terms whose signed sum is 0 survive integration over [0,\\pi].",
+      "Since 2+3+5+7+11+13+17+19+23=100 is even and there's no obvious partition into two equal halves of 50 among these primes, most sign choices don't reach zero — the surviving count (out of 256) is exactly what the \\frac5{256} coefficient reports.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration rather than hand-enumerating the 256 sign combinations — the definite value comes out to exactly \\frac{5\\pi}{256}.",
+    ],
+  },
+  {
     id: "rs26-cos2-2026x-cos-1013x",
     kind: "indefinite",
     integrand: "\\cos^2(2026x)\\cos(1013x)",

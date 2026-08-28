@@ -1018,4 +1018,24 @@ export const PartialFractions: Problem[] = [
       "Confirmed by direct numeric integration rather than a full partial-fraction expansion of the degree-10 denominator — the rewritten form \\frac{x^{10}+x^8}{x^{10}+1} makes clear it's a well-behaved rational function with no poles on [\\tfrac12,2], and the definite value checks out to exactly \\tfrac32.",
     ],
   },
+  {
+    id: "sf26-quartic-repeated-root-plus-irreducible",
+    kind: "indefinite",
+    integrand: "\\frac1{x^4+5x^3+10x^2+9x+3}",
+    integrandExpr: "1/(x^4+5*x^3+10*x^2+9*x+3)",
+    answer: "0.5*log(x^2+3*x+3)-log(x+1)-1/(x+1)-(1/sqrt(3))*atan((2*x+3)/sqrt(3))",
+    answerLatex:
+      "\\frac12\\ln(x^2+3x+3)-\\ln(x+1)-\\frac1{x+1}-\\frac1{\\sqrt3}\\arctan\\!\\left(\\frac{2x+3}{\\sqrt3}\\right) + C",
+    domain: [0.3, 2],
+    difficulty: 4,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "x=-1 is a repeated root of the denominator (check twice): x^4+5x^3+10x^2+9x+3=(x+1)^2(x^2+3x+3), leaving an irreducible quadratic (discriminant 9-12=-3<0) that needs a completed-square arctan term.",
+      "The repeated (x+1)^2 factor contributes both a \\ln(x+1) term and a \\frac1{x+1} term to the antiderivative — the standard signature of a repeated linear pole.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
 ];

@@ -745,3 +745,23 @@ why, so the owner can make the final call rather than it just quietly vanishing.
       Regular Season #11, not attempted.
     - 1869/1869 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
       pushed. Continuing next to 2026 Semifinal.
+  - Mined MIT 2026 Semifinal (#1/#2 rounds + Tiebreakers, 9 problems): 6 of 9 added — an arctan-of-
+    quartic-root antiderivative (`substitution.ts`), a combinatorial `min-max-min` of cosines
+    problem written out as an explicit 8-combination nested min/max expression rather than
+    reasoned abstractly (`definite.ts`), a completed-square ellipse-arc area-difference problem
+    (`definite.ts`), a "guess a product-rule-shaped antiderivative and confirm by differentiating"
+    problem with a `\sqrt3` power (`parts.ts`), a 9-prime-frequency product-of-cosines problem
+    verified by quadrature rather than hand-enumerating 256 sign combinations (`trigIdentities.ts`),
+    and a repeated-linear-root-plus-irreducible-quadratic partial-fractions problem
+    (`partialFractions.ts`).
+    - Skipped with reason: two problems are literal limits of a sequence of integrals (`\lim_{n\to
+      \infty}` of an integral depending on n, in one case a `\sqrt n\,(\cdots)^n` integrand, in the
+      other an n-fold nested `(\cdots^2-2)` recurrence) — the same schema mismatch as every prior
+      "limit of a sequence of integrals" case this session, not a single `Problem`. One
+      (`\sqrt{(x-1)(x+1)/((x-2)x(x+2))}` on the whole real line) was attempted but the integrand is
+      negative under the square root across large stretches of the domain and has poles at
+      `x=-2,-1,0,1,2` — numeric verification came back off by 6 orders of magnitude, confirming
+      this is a genuinely hard case (likely needs principal-value/contour handling this bank's
+      quadrature can't do), not forced.
+    - 1881/1881 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
+      pushed. Continuing next to 2026 Finals — the last unmined document in this batch.
