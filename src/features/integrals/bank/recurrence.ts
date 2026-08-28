@@ -174,4 +174,21 @@ export const Recurrence: Problem[] = [
       "Written out: \\frac{\\arctan x}2+\\frac x{2+2x^2} + C.",
     ],
   },
+  {
+    id: "recur-reciprocal-1-plus-x2-cubed",
+    kind: "indefinite",
+    integrand: "\\frac1{(x^2+1)^3}",
+    integrandExpr: "1/(x^2+1)^3",
+    answer: "(3/8)*atan(x)+(3*x^3+5*x)/(8*(x^2+1)^2)",
+    answerLatex: "\\frac38\\arctan x+\\frac{3x^3+5x}{8(x^2+1)^2} + C",
+    domain: [0, 2],
+    difficulty: 4,
+    techniques: ["recurrence"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: ["This is the n=3 case of the standard reduction formula for \\int\\frac{dx}{(1+x^2)^n} — apply the n=2 result (already in this bank) one more time."],
+    steps: [
+      "The reduction formula I_n=\\frac{x}{2(n-1)(1+x^2)^{n-1}}+\\frac{2n-3}{2(n-1)}I_{n-1} at n=3 gives I_3=\\frac{x}{4(1+x^2)^2}+\\frac34I_2.",
+      "With I_2=\\frac12\\left[\\frac x{1+x^2}+\\arctan x\\right] (already established), substituting and combining over a common denominator gives \\frac38\\arctan x+\\frac{3x^3+5x}{8(x^2+1)^2} + C.",
+    ],
+  },
 ];
