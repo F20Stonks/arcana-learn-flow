@@ -1586,4 +1586,21 @@ export const TrigIdentities: Problem[] = [
       "Integrating that resulting bounded function over [0,\\pi] gives 2022\\pi — confirmed by direct numeric integration.",
     ],
   },
+  {
+    id: "trig-cotx-cot2x",
+    kind: "indefinite",
+    integrand: "\\cot x\\cot(2x)",
+    integrandExpr: "(1/tan(x))*(1/tan(2*x))",
+    answer: "-x-(1/2)/tan(x)",
+    answerLatex: "-x-\\frac12\\cot x + C",
+    domain: [0.3, 1.2],
+    difficulty: 4,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["\\cot2x=\\frac{\\cot^2x-1}{2\\cot x}, so \\cot x\\cot2x = \\frac{\\cot^2x-1}2 — a plain \\csc^2x identity away from something integrable."],
+    steps: [
+      "\\cot x\\cot2x = \\frac{\\cot^2x-1}2 = \\frac{\\csc^2x-2}2 = \\frac12\\csc^2x-1.",
+      "\\int\\left(\\frac12\\csc^2x-1\\right)dx = -\\frac12\\cot x-x + C.",
+    ],
+  },
 ];

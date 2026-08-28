@@ -308,4 +308,23 @@ export const FloorFunction: Problem[] = [
       "Summing n(n+1)(n+\\frac12) for n=0 to 99 telescopes (via the standard \\sum n^3,\\sum n^2,\\sum n formulas) to \\frac{100^4-100^2}4.",
     ],
   },
+  {
+    id: "floor-x-floor-x-0to10",
+    kind: "definite",
+    integrand: "\\left\\lfloor x\\lfloor x\\rfloor\\right\\rfloor",
+    integrandExpr: "floor(x*floor(x))",
+    lower: "0",
+    upper: "10",
+    answer: "303",
+    answerLatex: "303",
+    domain: [0, 10],
+    difficulty: 4,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["On (n,n+1), \\lfloor x\\rfloor=n, so the inner product is nx and the whole thing is \\lfloor nx\\rfloor — a piecewise-constant step function, one full unit interval at a time."],
+    steps: [
+      "On each unit interval (n,n+1), integrate \\lfloor nx\\rfloor piece by piece against its own jumps (which happen at x=k/n for integers k).",
+      "Summing the resulting piecewise-constant contributions across n=0,\\dots,9 gives 303 — confirmed by direct numeric integration.",
+    ],
+  },
 ];

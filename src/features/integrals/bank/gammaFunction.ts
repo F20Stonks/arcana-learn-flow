@@ -275,4 +275,23 @@ export const GammaFunction: Problem[] = [
       "Taking the imaginary part: \\operatorname{Im}(-15i) = -15.",
     ],
   },
+  {
+    id: "gamma-cubic-quartic-quintic-sextic-combo-def",
+    kind: "definite",
+    integrand: "(80x^3-60x^4+14x^5-x^6)e^{-x}",
+    integrandExpr: "(80*x^3-60*x^4+14*x^5-x^6)*exp(-x)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["gamma-function"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["Each term is a Gamma-function tail: \\int_0^\\infty x^ne^{-x}dx=n!."],
+    steps: [
+      "\\int_0^\\infty x^3e^{-x}dx=3!=6,\\ \\int x^4e^{-x}dx=4!=24,\\ \\int x^5e^{-x}dx=5!=120,\\ \\int x^6e^{-x}dx=6!=720.",
+      "80\\cdot6-60\\cdot24+14\\cdot120-720 = 480-1440+1680-720 = 0.",
+    ],
+  },
 ];

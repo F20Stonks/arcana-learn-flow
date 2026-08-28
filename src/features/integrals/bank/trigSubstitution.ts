@@ -867,4 +867,26 @@ export const TrigSubstitution: Problem[] = [
       "Integrating \\frac{4x(1-x^2)}{(1+x^2)^2}\\,dx by u=1+x^2 gives -\\frac4{1+x^2}-2\\ln(1+x^2) + C — verified directly by differentiating.",
     ],
   },
+  {
+    id: "trigsub-def-eneg-x-over-sqrt-1minus-e-neg2x",
+    kind: "definite",
+    integrand: "e^{-x}\\sqrt{1+\\cot^2\\!\\left(\\arccos\\!\\left(e^{-x}\\right)\\right)}",
+    integrandExpr: "exp(-x)/sqrt(1-exp(-2*x))",
+    lower: "0",
+    upper: "1",
+    answer: "pi/2-asin(exp(-1))",
+    answerLatex: "\\frac\\pi2-\\arcsin\\!\\left(e^{-1}\\right)",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: [
+      "1+\\cot^2\\theta=\\csc^2\\theta, and with \\theta=\\arccos(e^{-x}), \\csc\\theta=\\frac1{\\sqrt{1-e^{-2x}}} — the whole radical resolves to an ordinary algebraic function of e^{-x}.",
+    ],
+    steps: [
+      "\\sqrt{1+\\cot^2\\theta} = \\csc\\theta, and \\cos\\theta=e^{-x}\\Rightarrow\\sin\\theta=\\sqrt{1-e^{-2x}}, so the integrand is \\frac{e^{-x}}{\\sqrt{1-e^{-2x}}}.",
+      "u=e^{-x},\\ du=-e^{-x}dx: \\int\\frac{-du}{\\sqrt{1-u^2}} = -\\arcsin u.",
+      "Evaluating from x=0 (u=1) to x=1 (u=e^{-1}): -\\arcsin(e^{-1})-\\left(-\\arcsin1\\right) = \\frac\\pi2-\\arcsin\\!\\left(e^{-1}\\right).",
+    ],
+  },
 ];

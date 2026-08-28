@@ -453,4 +453,22 @@ export const BetaIntegrals: Problem[] = [
       "Using \\Gamma\\!\\left(\\tfrac43\\right)=\\tfrac13\\Gamma\\!\\left(\\tfrac13\\right) and \\Gamma\\!\\left(\\tfrac53\\right)=\\tfrac23\\Gamma\\!\\left(\\tfrac23\\right), and the reflection formula \\Gamma\\!\\left(\\tfrac13\\right)\\Gamma\\!\\left(\\tfrac23\\right)=\\frac\\pi{\\sin(\\pi/3)}=\\frac{2\\pi}{\\sqrt3}, the ratio simplifies to \\frac{2\\pi}{9\\sqrt3}.",
     ],
   },
+  {
+    id: "beta-x2-1mx-2024",
+    kind: "definite",
+    integrand: "x^2(1-x)^{2024}",
+    integrandExpr: "x^2*(1-x)^2024",
+    lower: "0",
+    upper: "1",
+    answer: "2/(2027*2026*2025)",
+    answerLatex: "\\frac2{2027\\cdot2026\\cdot2025}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["This is B(3,2025) — the Beta function with integer arguments, which reduces to a ratio of factorials."],
+    steps: [
+      "B(3,2025) = \\frac{2!\\cdot2024!}{2027!} = \\frac2{2025\\cdot2026\\cdot2027} (the factorial ratio for integer Beta values).",
+    ],
+  },
 ];
