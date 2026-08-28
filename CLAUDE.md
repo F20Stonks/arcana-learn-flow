@@ -639,3 +639,24 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     2026 Semifinal, 2026 Finals — same answer-assisted workflow (these documents embed answers
     inline, same as the qualifying-round answer keys, contrary to this task's earlier assumption
     that they had none).
+  - Mined MIT 2025 Semifinal (Semifinal #1/#2 rounds + Tiebreakers): 4 of 10 problems added —
+    `sqrt(x)^{1/3}/(1+x^2)` on `[0,∞)=\pi/\sqrt3` (beta reflection formula, `betaIntegrals.ts`),
+    `x/(e^{2x}+1)` on `[0,∞)=\pi^2/48` (scaled zeta-series result, `zetaSeries.ts`), a three-linear-
+    factor partial-fractions problem (`partialFractions.ts`), and a quartic-under-a-root
+    arctanh antiderivative confirmed by direct differentiation (`trigSubstitution.ts`). Skipped with
+    reason, not forced: two problems with OCR too garbled to confidently reconstruct (a
+    `log(...)`-with-nested-fraction integral evaluating to `2\pi\log(80)`, and an integrand/answer
+    pair with `e^{x+1/x}` whose stated antiderivative's derivative provably doesn't match any
+    plausible reading of the printed integrand); an infinite-alternating-series-inside-the-integrand
+    problem whose closed form is piecewise-in-`\lfloor x\rfloor` and needs a ternary/mod expression
+    that mathjs's `normalize()` (built for simple typed answers, not this bank's own quadrature
+    checks) can't parse — a genuine schema mismatch, not a math failure, and not worth extending the
+    shared grading path for one problem; a self-similar nested-floor-log integral over `(0,1)` too
+    ambiguous to reconstruct from the OCR's exponent-vs-multiplication ambiguity; and
+    `log(x)/\sqrt{x-x^2}` on `[0,1]=-2\pi\log2` — confirmed correct by hand (matches the closed form
+    to 5 decimal places) but the shared `n=4000` quadrature can't resolve the double endpoint
+    log/inverse-sqrt singularity to the tight tolerance (verified converging correctly at `n=500000`
+    in a throwaway script) — a quadrature-resolution-limit case, same class as those already on
+    record, not a new kind of problem.
+  - 1815/1815 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
+    pushed. Continuing next to 2025 Finals.

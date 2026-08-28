@@ -939,4 +939,23 @@ export const PartialFractions: Problem[] = [
       "Integrating term by term: \\frac12\\ln|x-1|-\\frac12\\ln|x+1|+\\frac1x+\\frac1{3x^3}+\\frac1{5x^5} + C, i.e. \\frac12\\ln\\left|\\frac{x-1}{x+1}\\right|+\\frac1x+\\frac1{3x^3}+\\frac1{5x^5} + C.",
     ],
   },
+  {
+    id: "sf25-x-plus-24-over-cubic",
+    kind: "indefinite",
+    integrand: "\\frac{x+24}{x^3+25x^2+144x}",
+    integrandExpr: "(x+24)/(x^3+25*x^2+144*x)",
+    answer: "(1/6)*log(x)-(5/21)*log(x+9)+(1/14)*log(x+16)",
+    answerLatex: "\\frac16\\ln x-\\frac5{21}\\ln(x+9)+\\frac1{14}\\ln(x+16) + C",
+    domain: [1, 4],
+    difficulty: 3,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee", round: "Semifinal Tiebreakers" },
+    hints: [
+      "The denominator factors as x(x+9)(x+16) (144=9\\cdot16 and 25=9+16), giving three distinct linear factors.",
+    ],
+    steps: [
+      "\\frac{x+24}{x(x+9)(x+16)} = \\frac A x+\\frac B{x+9}+\\frac C{x+16}. Cover-up: A=\\frac{24}{9\\cdot16}=\\frac16,\\ B=\\frac{-9+24}{(-9)(7)}=-\\frac5{21},\\ C=\\frac{-16+24}{(-16)(-7)}=\\frac1{14}.",
+      "Integrating each term gives \\frac16\\ln x-\\frac5{21}\\ln(x+9)+\\frac1{14}\\ln(x+16) + C.",
+    ],
+  },
 ];

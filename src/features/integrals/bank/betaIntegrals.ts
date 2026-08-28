@@ -532,4 +532,25 @@ export const BetaIntegrals: Problem[] = [
       "B\\!\\left(\\tfrac52,\\tfrac12\\right) = \\frac{\\left(\\tfrac34\\sqrt\\pi\\right)\\sqrt\\pi}{2} = \\frac{3\\pi/4}2 = \\frac{3\\pi}8.",
     ],
   },
+  {
+    id: "sf25-cbrtx-over-1plusx2",
+    kind: "definite",
+    integrand: "\\frac{\\sqrt[3]x}{1+x^2}",
+    integrandExpr: "cbrt(x)/(1+x^2)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/sqrt(3)",
+    answerLatex: "\\frac\\pi{\\sqrt3}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: [
+      "Substitute u=x^2 to turn this into the standard reflection-formula form \\int_0^\\infty\\frac{u^{s/2-1}}{1+u}\\,du = \\frac\\pi{\\sin(s\\pi/2)} — here s=\\tfrac43 since x^{1/3}=x^{s-1}.",
+    ],
+    steps: [
+      "u=x^2,\\ du=2x\\,dx: \\int_0^\\infty\\frac{x^{1/3}}{1+x^2}dx = \\frac12\\int_0^\\infty\\frac{u^{-1/3}}{1+u}\\,du = \\frac12\\int_0^\\infty\\frac{u^{2/3-1}}{1+u}\\,du.",
+      "By \\int_0^\\infty\\frac{u^{a-1}}{1+u}du=\\frac\\pi{\\sin(a\\pi)} with a=\\tfrac23: \\frac12\\cdot\\frac\\pi{\\sin(2\\pi/3)} = \\frac12\\cdot\\frac\\pi{\\sqrt3/2} = \\frac\\pi{\\sqrt3}.",
+    ],
+  },
 ];

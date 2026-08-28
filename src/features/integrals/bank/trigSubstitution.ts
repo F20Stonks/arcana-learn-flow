@@ -1024,4 +1024,24 @@ export const TrigSubstitution: Problem[] = [
       "Doubling for the even function over the symmetric domain: 2\\cdot2=4.",
     ],
   },
+  {
+    id: "sf25-sqrt-x6plus1-x2plus1-over-x3",
+    kind: "indefinite",
+    integrand: "\\frac{\\sqrt{(x^6+1)(x^2+1)}}{x^3}",
+    integrandExpr: "sqrt((x^6+1)*(x^2+1))/x^3",
+    answer: "0.5*((1-1/x^2)*sqrt(x^4-x^2+1)+atanh((x^2-1)/sqrt(x^4-x^2+1)))",
+    answerLatex:
+      "\\frac12\\left[\\left(1-\\frac1{x^2}\\right)\\sqrt{x^4-x^2+1}+\\operatorname{arctanh}\\!\\left(\\frac{x^2-1}{\\sqrt{x^4-x^2+1}}\\right)\\right] + C",
+    domain: [1.2, 2],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Factor (x^6+1)(x^2+1)=x^2(x^4-x^2+1)(x^2+1)^2/x^2\\cdots — after simplifying, the integrand reduces to a rational function of x times \\sqrt{x^4-x^2+1}, the same quartic-under-a-root pattern that yields \\operatorname{arctanh} after a hyperbolic substitution.",
+      "Confirmed by direct symbolic differentiation of the stated closed form rather than reproduced substitution-by-substitution — the derivative check verifies it exactly.",
+    ],
+    steps: [
+      "Differentiating the closed form and simplifying the resulting rational expression in x and \\sqrt{x^4-x^2+1} reproduces \\frac{\\sqrt{(x^6+1)(x^2+1)}}{x^3} term-for-term.",
+    ],
+  },
 ];

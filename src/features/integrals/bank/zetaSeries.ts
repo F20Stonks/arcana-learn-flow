@@ -269,4 +269,25 @@ export const ZetaSeries: Problem[] = [
       "\\int_0^{1/2025}\\left(1-e^{-2025x}\\right)dx = \\left[x+\\frac{e^{-2025x}}{2025}\\right]_0^{1/2025} = \\frac1{2025}+\\frac{e^{-1}}{2025}-\\frac1{2025} = \\frac1{2025e}.",
     ],
   },
+  {
+    id: "sf25-x-over-e2x-plus-1",
+    kind: "definite",
+    integrand: "\\frac{x}{e^{2x}+1}",
+    integrandExpr: "x/(exp(2*x)+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/48",
+    answerLatex: "\\frac{\\pi^2}{48}",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["zeta-series"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #1" },
+    hints: [
+      "This is a scaled version of \\int_0^\\infty\\frac{x}{e^x+1}dx=\\frac{\\pi^2}{12} (expand \\frac1{e^x+1} as an alternating geometric series in e^{-x} and integrate termwise).",
+      "Substitute u=2x, x=u/2, dx=du/2 to relate the two.",
+    ],
+    steps: [
+      "\\int_0^\\infty\\frac{x}{e^{2x}+1}\\,dx = \\int_0^\\infty\\frac{u/2}{e^u+1}\\cdot\\frac{du}2 = \\frac14\\int_0^\\infty\\frac{u}{e^u+1}\\,du = \\frac14\\cdot\\frac{\\pi^2}{12} = \\frac{\\pi^2}{48}.",
+    ],
+  },
 ];
