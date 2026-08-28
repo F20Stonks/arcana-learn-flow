@@ -511,4 +511,25 @@ export const BetaIntegrals: Problem[] = [
       "v=u+1: 2\\int_1^\\infty\\frac{v-1}{v^4}\\,dv = 2\\int_1^\\infty\\left(v^{-3}-v^{-4}\\right)dv = 2\\left[-\\frac1{2v^2}+\\frac1{3v^3}\\right]_1^\\infty = 2\\left(\\frac12-\\frac13\\right) = \\frac13.",
     ],
   },
+  {
+    id: "qf25-x2-over-sqrt-x1minusx",
+    kind: "definite",
+    integrand: "\\frac{x^2}{\\sqrt{x(1-x)}}",
+    integrandExpr: "x^2/sqrt(x*(1-x))",
+    lower: "0",
+    upper: "1",
+    answer: "3*pi/8",
+    answerLatex: "\\frac{3\\pi}8",
+    domain: [0, 1],
+    difficulty: 3,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "The integrand is x^{3/2}(1-x)^{-1/2}, a Beta-function integral B(a,b)=\\int_0^1x^{a-1}(1-x)^{b-1}dx with a=\\tfrac52,\\ b=\\tfrac12.",
+      "B(a,b)=\\frac{\\Gamma(a)\\Gamma(b)}{\\Gamma(a+b)}, and \\Gamma(\\tfrac12)=\\sqrt\\pi,\\ \\Gamma(\\tfrac52)=\\tfrac34\\sqrt\\pi,\\ \\Gamma(3)=2.",
+    ],
+    steps: [
+      "B\\!\\left(\\tfrac52,\\tfrac12\\right) = \\frac{\\left(\\tfrac34\\sqrt\\pi\\right)\\sqrt\\pi}{2} = \\frac{3\\pi/4}2 = \\frac{3\\pi}8.",
+    ],
+  },
 ];

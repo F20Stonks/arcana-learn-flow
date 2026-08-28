@@ -1736,4 +1736,23 @@ export const Parts: Problem[] = [
       "That matches the integrand exactly, so the antiderivative is x\\ln(\\ln x) + C.",
     ],
   },
+  {
+    id: "qf25-x-plus-1-exp-log",
+    kind: "indefinite",
+    integrand: "(x+1)e^x\\ln x",
+    integrandExpr: "(x+1)*exp(x)*log(x)",
+    answer: "exp(x)*(x*log(x)-1)",
+    answerLatex: "e^x(x\\ln x-1) + C",
+    domain: [0.5, 2],
+    difficulty: 4,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal Tiebreakers" },
+    hints: [
+      "Guess an antiderivative of the form e^x(x\\ln x + a) for some constant a and differentiate to find a — a much faster route than committing to a full by-parts reduction.",
+    ],
+    steps: [
+      "\\frac{d}{dx}\\left[e^x(x\\ln x-1)\\right] = e^x(x\\ln x-1) + e^x\\left(\\ln x+1\\right) = e^x\\left[x\\ln x+\\ln x\\right] = (x+1)e^x\\ln x.",
+      "That matches the integrand exactly, so the antiderivative is e^x(x\\ln x-1) + C.",
+    ],
+  },
 ];

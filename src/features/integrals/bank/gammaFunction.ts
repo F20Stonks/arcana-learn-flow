@@ -294,4 +294,25 @@ export const GammaFunction: Problem[] = [
       "80\\cdot6-60\\cdot24+14\\cdot120-720 = 480-1440+1680-720 = 0.",
     ],
   },
+  {
+    id: "gamma-incomplete-1-5",
+    kind: "definite",
+    integrand: "x^5e^{-x}",
+    integrandExpr: "x^5*exp(-x)",
+    lower: "1",
+    upper: "\\infty",
+    answer: "326/e",
+    answerLatex: "\\frac{326}{e}",
+    domain: [1, Infinity],
+    difficulty: 4,
+    techniques: ["gamma-function"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #1" },
+    hints: [
+      "Repeated by-parts on \\int_1^\\infty x^5e^{-x}\\,dx doesn't cancel the boundary term at x=1 the way it does at x=0 — you get an incomplete gamma function, not a bare factorial.",
+      "The general identity is \\int_a^\\infty x^ne^{-x}\\,dx = n!\\,e^{-a}\\sum_{k=0}^n\\frac{a^k}{k!}.",
+    ],
+    steps: [
+      "With n=5, a=1: 5!\\,e^{-1}\\left(1+1+\\tfrac12+\\tfrac16+\\tfrac1{24}+\\tfrac1{120}\\right) = 120e^{-1}\\cdot\\frac{326}{120} = \\frac{326}{e}.",
+    ],
+  },
 ];

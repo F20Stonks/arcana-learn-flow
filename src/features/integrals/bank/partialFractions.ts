@@ -900,4 +900,43 @@ export const PartialFractions: Problem[] = [
       "\\frac12\\cdot\\frac2{\\sqrt3}\\arctan\\!\\left(\\frac{u+1/2}{\\sqrt3/2}\\right) = \\frac1{\\sqrt3}\\arctan\\!\\left(\\frac{2u+1}{\\sqrt3}\\right). Back-substituting u=x^2: \\frac1{\\sqrt3}\\arctan\\!\\left(\\frac{2x^2+1}{\\sqrt3}\\right) + C.",
     ],
   },
+  {
+    id: "qf25-arctan-over-cubic",
+    kind: "indefinite",
+    integrand: "\\frac{\\arctan x-x\\arctan x}{1-x+x^2-x^3}",
+    integrandExpr: "(atan(x)-x*atan(x))/(1-x+x^2-x^3)",
+    answer: "0.5*atan(x)^2",
+    answerLatex: "\\frac12\\arctan^2x + C",
+    domain: [-2, 2],
+    difficulty: 3,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee", round: "Lightning Round" },
+    hints: [
+      "Factor both the numerator and denominator: the numerator is \\arctan(x)(1-x), and 1-x+x^2-x^3 = (1-x)(1+x^2) — group by pairs.",
+      "The (1-x) factor cancels completely, leaving something very familiar.",
+    ],
+    steps: [
+      "\\frac{\\arctan(x)(1-x)}{(1-x)(1+x^2)} = \\frac{\\arctan x}{1+x^2}, which is exactly \\frac{d}{dx}\\left[\\tfrac12\\arctan^2x\\right] by the chain rule.",
+      "So the antiderivative is \\tfrac12\\arctan^2x + C.",
+    ],
+  },
+  {
+    id: "qf25-x8-minus-x6",
+    kind: "indefinite",
+    integrand: "\\frac1{x^8-x^6}",
+    integrandExpr: "1/(x^8-x^6)",
+    answer: "0.5*log(abs((x-1)/(x+1)))+1/x+1/(3*x^3)+1/(5*x^5)",
+    answerLatex: "\\frac12\\ln\\left|\\frac{x-1}{x+1}\\right|+\\frac1x+\\frac1{3x^3}+\\frac1{5x^5} + C",
+    domain: [1.5, 3],
+    difficulty: 4,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "x^8-x^6 = x^6(x-1)(x+1); the repeated factor x^6 forces a chain of partial-fraction terms \\frac{A}{x^2}+\\frac{B}{x^4}+\\frac{C}{x^6} alongside the \\frac1{x\\mp1} pieces.",
+    ],
+    steps: [
+      "\\frac1{x^6(x-1)(x+1)} = \\frac1{2(x-1)}-\\frac1{2(x+1)}-\\frac1{x^2}-\\frac1{x^4}-\\frac1{x^6} after the partial-fraction decomposition.",
+      "Integrating term by term: \\frac12\\ln|x-1|-\\frac12\\ln|x+1|+\\frac1x+\\frac1{3x^3}+\\frac1{5x^5} + C, i.e. \\frac12\\ln\\left|\\frac{x-1}{x+1}\\right|+\\frac1x+\\frac1{3x^3}+\\frac1{5x^5} + C.",
+    ],
+  },
 ];

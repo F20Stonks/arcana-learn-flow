@@ -2834,4 +2834,24 @@ export const Substitution: Problem[] = [
       "v=e^u, dv=e^u\\,du: \\int e^v\\,dv = e^v = e^{e^u} = e^{e^{x^2}}.",
     ],
   },
+  {
+    id: "qf25-x-over-cbrt-cubic",
+    kind: "indefinite",
+    integrand: "\\frac{x}{\\sqrt[3]{x^3-3x-2}}",
+    integrandExpr: "x/cbrt(x^3-3*x-2)",
+    answer: "cbrt((x+1)*(x-2)^2)",
+    answerLatex: "\\sqrt[3]{(x+1)(x-2)^2} + C",
+    domain: [3, 6],
+    difficulty: 5,
+    techniques: ["u-sub"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #3" },
+    hints: [
+      "x^3-3x-2 factors as (x+1)^2(x-2) — check x=-1 is a repeated root and x=2 is the other.",
+      "Guess an antiderivative of the form (x+1)^a(x-2)^b and match exponents/coefficients by differentiating.",
+    ],
+    steps: [
+      "\\frac{d}{dx}\\left[(x+1)^{1/3}(x-2)^{2/3}\\right] = \\frac13(x+1)^{-2/3}(x-2)^{2/3}+\\frac23(x+1)^{1/3}(x-2)^{-1/3}.",
+      "Factoring out \\frac13(x+1)^{-2/3}(x-2)^{-1/3}: \\left[(x-2)+2(x+1)\\right]=3x, giving x(x+1)^{-2/3}(x-2)^{-1/3} = \\frac{x}{\\sqrt[3]{(x+1)^2(x-2)}}, exactly the integrand.",
+    ],
+  },
 ];

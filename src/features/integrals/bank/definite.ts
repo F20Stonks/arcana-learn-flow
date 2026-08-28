@@ -993,4 +993,27 @@ export const Definite: Problem[] = [
       "The two halves cancel exactly: I=0.",
     ],
   },
+  {
+    id: "qf25-shifted-cosine-symmetry",
+    kind: "definite",
+    integrand: "x\\left(1+\\cos\\!\\left(\\frac{(x-1)\\pi}{2025}\\right)\\right)",
+    integrandExpr: "x*(1+cos((x-1)*pi/2025))",
+    lower: "-2024",
+    upper: "2026",
+    answer: "4050",
+    answerLatex: "4050",
+    domain: [-2024, 2026],
+    difficulty: 3,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal Tiebreakers" },
+    hints: [
+      "Shift t=x-1: the domain [-2024,2026] becomes the symmetric interval [-2025,2025], and the integrand becomes (t+1)\\left(1+\\cos\\frac{t\\pi}{2025}\\right).",
+      "Expand and split into four pieces; on a symmetric domain, an odd integrand contributes exactly 0.",
+    ],
+    steps: [
+      "t and t\\cos(t\\pi/2025) are both odd, so \\int_{-2025}^{2025}t\\,dt=\\int_{-2025}^{2025}t\\cos(t\\pi/2025)\\,dt=0.",
+      "\\int_{-2025}^{2025}1\\,dt=4050, and \\int_{-2025}^{2025}\\cos(t\\pi/2025)\\,dt = 2\\left[\\frac{2025}\\pi\\sin(t\\pi/2025)\\right]_0^{2025} = \\frac{4050}\\pi\\sin(\\pi)=0.",
+      "So the whole integral collapses to just the constant piece: 4050.",
+    ],
+  },
 ];

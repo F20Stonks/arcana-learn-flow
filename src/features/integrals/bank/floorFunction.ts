@@ -327,4 +327,26 @@ export const FloorFunction: Problem[] = [
       "Summing the resulting piecewise-constant contributions across n=0,\\dots,9 gives 303 — confirmed by direct numeric integration.",
     ],
   },
+  {
+    id: "qf25-floor-exp-0to2",
+    kind: "definite",
+    integrand: "\\lfloor e^x\\rfloor",
+    integrandExpr: "floor(exp(x))",
+    lower: "0",
+    upper: "2",
+    answer: "14-log(5040)",
+    answerLatex: "14-\\ln(5040)",
+    domain: [0, 2],
+    difficulty: 4,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal Tiebreakers" },
+    hints: [
+      "\\lfloor e^x\\rfloor = k exactly on x\\in[\\ln k,\\ln(k+1)); on [0,2] that's k=1,\\dots,6 fully and k=7 on the leftover piece [\\ln7,2] (since e^2\\approx7.39).",
+      "\\int_0^2\\lfloor e^x\\rfloor\\,dx = \\sum_{k=1}^6 k\\ln\\frac{k+1}k + 7(2-\\ln7).",
+    ],
+    steps: [
+      "By summation by parts, \\sum_{k=1}^{6}k\\ln\\frac{k+1}k = 6\\ln7-\\ln(6!) = 6\\ln7-\\ln720.",
+      "Adding the leftover piece: 6\\ln7-\\ln720+14-7\\ln7 = 14-\\ln7-\\ln720 = 14-\\ln(7\\cdot720) = 14-\\ln(5040) = 14-\\ln(7!).",
+    ],
+  },
 ];

@@ -619,3 +619,23 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   and the text is sitting in this session's scratchpad if still alive; if not, re-extract from the
   zip the same way. This is a natural stopping point to check in with the owner given the effort
   step-up, not a hard technical blocker.
+
+- 2026-08-28 (continuation, same branch): Wrote the 11 verified 2025 Quarterfinal problems (of 13
+  candidates; 2 — `floor(x)/sqrt(x)` on `[0,2025]` and a floor-division-difference problem — failed
+  numeric verification by large margins and were set aside, not forced) into their technique-tagged
+  bank files: `gammaFunction.ts` (incomplete-gamma `x^5e^{-x}` on `[1,∞)`), `trigSubstitution.ts`
+  (a hyperbolic-arcsinh antiderivative; `sec x - cos x` symmetry/reduction), `definite.ts` (a
+  shifted-cosine symmetric-domain problem collapsing to 4050), `floorFunction.ts` (`floor(e^x)` on
+  `[0,2] = 14-ln(5040)`, i.e. `14-ln(7!)`), `partialFractions.ts` (an arctan/cubic problem that
+  simplifies via a common factor to `atan(x)/(1+x^2)`, plus `1/(x^8-x^6)`), `trigIdentities.ts`
+  (triple-cosine-product identity reducing to `16sec^2(3x)`), `parts.ts` (`(x+1)e^x\ln x`),
+  `betaIntegrals.ts` (`x^2/\sqrt{x(1-x)}` on `[0,1]=3\pi/8`), and `substitution.ts` (`x/\sqrt[3]{x^3-3x-2}`,
+  using the `(x+1)^2(x-2)` factorization). All sourced to `{name: "MIT Integration Bee", round:
+  "Quarterfinal #N"}` / `"Quarterfinal Tiebreakers"` / `"Lightning Round"` as appropriate. Full
+  suite: 1807/1807 passing (1708/1708 within `src/features/integrals`), `tsc --noEmit` clean,
+  `eslint` clean on every touched file. Committed and pushed.
+  - Per the standing "continue autonomously" authorization, moving on next to the remaining unmined
+    non-qualifying documents: 2025 Semifinal, 2025 Finals, 2026 Regular Season, 2026 Quarterfinal,
+    2026 Semifinal, 2026 Finals — same answer-assisted workflow (these documents embed answers
+    inline, same as the qualifying-round answer keys, contrary to this task's earlier assumption
+    that they had none).

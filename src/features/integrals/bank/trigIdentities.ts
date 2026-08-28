@@ -1701,4 +1701,23 @@ export const TrigIdentities: Problem[] = [
       "Summing \\frac14\\left[\\frac{\\sin(\\pi/2)}1+\\frac{\\sin(5\\pi/2)}5+\\frac{\\sin(9\\pi/2)}9+\\frac{\\sin(15\\pi/2)}{15}\\right] gives \\frac{14}{45} — confirmed directly by numeric integration.",
     ],
   },
+  {
+    id: "qf25-triple-cosine-product-squared",
+    kind: "indefinite",
+    integrand: "\\frac1{\\left(\\cos x\\cos\\left(x+\\frac{2\\pi}3\\right)\\cos\\left(x-\\frac{2\\pi}3\\right)\\right)^2}",
+    integrandExpr: "1/(cos(x)*cos(x+2*pi/3)*cos(x-2*pi/3))^2",
+    answer: "(16/3)*tan(3*x)",
+    answerLatex: "\\frac{16}3\\tan(3x) + C",
+    domain: [-0.4, 0.4],
+    difficulty: 4,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #2" },
+    hints: [
+      "The triple product \\cos x\\cos(x+2\\pi/3)\\cos(x-2\\pi/3) collapses to \\frac14\\cos(3x) — a standard triple-angle identity (same family as the corresponding sine product for \\sin(3x)).",
+      "So the integrand is just \\frac{16}{\\cos^2(3x)} = 16\\sec^2(3x).",
+    ],
+    steps: [
+      "\\int16\\sec^2(3x)\\,dx = \\frac{16}3\\tan(3x) + C, using \\int\\sec^2u\\,du=\\tan u and the chain rule for u=3x.",
+    ],
+  },
 ];
