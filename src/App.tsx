@@ -65,10 +65,10 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
 }
 
 function DashboardGuard({ children }: { children: React.ReactNode }) {
-  const { session, profile, loading } = useAuth();
+  const { session, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" replace />;
-  if (!profile?.onboarding_complete) return <Navigate to="/onboarding" replace />;
+  // Onboarding is skipped for now — new signups land straight on the dashboard.
   return <>{children}</>;
 }
 
@@ -93,11 +93,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={
-        session
-          ? (profile?.onboarding_complete
-              ? <Navigate to="/dashboard" replace />
-              : <Navigate to="/onboarding" replace />)
-          : <LandingPage />
+        session ? <Navigate to="/dashboard" replace /> : <LandingPage />
       } />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/waitlist" element={<WaitlistPage />} />
