@@ -5,7 +5,7 @@
  * and in the standalone Lessons library where you can read without drilling.
  */
 import Tex from "@/features/integrals/components/Tex";
-import type { Technique } from "@/features/integrals/techniques";
+import type { Technique } from "@/features/integrals/types";
 
 export default function LessonBody({ technique }: { technique: Technique }) {
   return (
