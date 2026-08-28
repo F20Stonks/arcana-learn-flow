@@ -289,4 +289,23 @@ export const FloorFunction: Problem[] = [
       "256 whole periods: 256\\cdot\\frac13 = \\frac{256}3.",
     ],
   },
+  {
+    id: "floor-x-times-x-times-ceil-x-0to100",
+    kind: "definite",
+    integrand: "\\lfloor x\\rfloor\\cdot x\\cdot\\lceil x\\rceil",
+    integrandExpr: "floor(x)*x*ceil(x)",
+    lower: "0",
+    upper: "100",
+    answer: "(100^4-100^2)/4",
+    answerLatex: "\\frac{100^4-100^2}4",
+    domain: [0, 100],
+    difficulty: 4,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["On each unit interval (n,n+1), \\lfloor x\\rfloor=n and \\lceil x\\rceil=n+1 (a.e.), so the integrand is n(n+1)x — an ordinary linear function to integrate on each piece."],
+    steps: [
+      "On (n,n+1): \\int_n^{n+1}n(n+1)x\\,dx = n(n+1)\\left[\\frac{(n+1)^2-n^2}2\\right] = n(n+1)\\left(n+\\frac12\\right).",
+      "Summing n(n+1)(n+\\frac12) for n=0 to 99 telescopes (via the standard \\sum n^3,\\sum n^2,\\sum n formulas) to \\frac{100^4-100^2}4.",
+    ],
+  },
 ];
