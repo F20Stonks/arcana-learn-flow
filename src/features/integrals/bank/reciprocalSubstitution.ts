@@ -24,7 +24,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 2,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Substitute x=\\frac{1}{t}: \\ln x becomes -\\ln t, and \\frac{dx}{1+x^2} is left unchanged in shape by this substitution.",
       "The transformed integral is exactly the negative of the original.",
@@ -47,7 +47,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 2,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Substitute x=\\frac{1}{t}: the integral becomes \\int_0^\\infty\\frac{t}{(1+t^2)(1+t)}\\,dt.",
       "Add that to the original: the two numerators (1 and t) sum to (1+t), which cancels the (1+t) in the denominator.",
@@ -70,7 +70,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Same identity as \\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^a)}=\\frac{\\pi}{4} for any a>0 — here a=\\frac{1}{2}.",
       "The (1+x^a) factor is completely irrelevant to the answer; that's the content of the identity.",
@@ -93,7 +93,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: ["Same family as \\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^a)}=\\frac{\\pi}{4} — here a=3."],
     steps: [
       "2I=\\int_0^\\infty\\frac{1+x^3}{(1+x^2)(1+x^3)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2} after adding the x\\to1/x twin.",
@@ -112,7 +112,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: ["Same family with a=4 — the answer never depends on which power sits in the second factor."],
     steps: [
       "The x\\to1/x twin of I is \\int_0^\\infty\\frac{x^4\\,dx}{(1+x^2)(1+x^4)}. Add: 2I=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2}.",
@@ -131,7 +131,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: ["Same family, a=5 — verify the pattern rather than redo the algebra from scratch."],
     steps: [
       "2I=\\int_0^\\infty\\frac{1+x^5}{(1+x^2)(1+x^5)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\frac{\\pi}{2}.",
@@ -150,7 +150,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Split at x=1, then substitute x=\\frac{1}{t} on the (1,\\infty) piece — it lands exactly on top of the (0,1) piece.",
       "This is the reflection-formula pattern: \\int_0^\\infty\\frac{x^{a-1}}{1+x}\\,dx=\\frac{\\pi}{\\sin(\\pi a)} for 0<a<1, here with a=\\frac{1}{2}.",
@@ -173,7 +173,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (reciprocal substitution)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "x=\\frac{1}{t} leaves this integral looking exactly like itself — \\ln^2 x is even in \\ln x, so it doesn't cancel this time.",
       "Split at x=1 instead: on (1,\\infty), x=\\frac{1}{t} maps it onto (0,1), matching the piece already there.",
@@ -196,7 +196,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [1, Infinity],
     difficulty: 5,
     techniques: ["reciprocal-substitution", "log-power-integrals"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§2 exercise 3 (citing HMMT 2011)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Substitute x=\\frac{1}{u}: the bounds (1,\\infty) map to (0,1), turning this into a log-power integral in u.",
       "\\ln x=-\\ln u and \\frac{dx}{x^{2011}}=u^{2009}\\,du (track the sign from both the exponent flip and the (1,\\infty)\\to(0,1) bound flip).",
@@ -219,7 +219,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 5" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Both \\arctan x and \\frac{1}{1+x^2} pair up nicely under x=\\frac1u: \\arctan\\frac1u=\\frac{\\pi}{2}-\\arctan u, and the (0,\\infty)\\to(\\infty,0) flip cancels the minus sign from dx.",
     ],
@@ -241,7 +241,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 8 (a=2)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Rescale first with x=2u: this pulls out a \\ln2 term plus the flagship \\int_0^\\infty\\ln(u)/(1+u^2)\\,du=0 result.",
     ],
@@ -263,7 +263,7 @@ export const ReciprocalSubstitution: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["reciprocal-substitution"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 10" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Under x=\\frac1u this integral turns into \\int_0^\\infty\\frac{u^2}{u^4+1}\\,du — a different-looking twin. Add the two.",
       "The sum divides cleanly by x^2, and the numerator 1+\\frac{1}{x^2} is exactly the derivative of x-\\frac1x, once you complete the square in the denominator.",

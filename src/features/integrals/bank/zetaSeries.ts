@@ -159,7 +159,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["zeta-series"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§5 (the zeta function)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "\\ln(1-x) = -\\sum_{k=1}^\\infty\\frac{x^k}{k}, so dividing by x and integrating termwise gives a sum in \\frac{1}{k^2}.",
     ],
@@ -179,7 +179,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["zeta-series"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§5 (the zeta function)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "\\frac{d}{dx}\\frac{1}{e^x-1} = -\\frac{e^x}{(e^x-1)^2} — differentiate the same geometric series \\sum e^{-kx} once instead of integrating it.",
       "That turns \\sum e^{-kx} into \\sum ke^{-kx}, and \\int_0^\\infty x^2\\cdot ke^{-kx}\\,dx=\\frac{2k!}{k^3}... really \\frac{2}{k^2} after the gamma-function integral, leaving a sum in \\frac{1}{k^2} once more but with an extra factor from n!.",
@@ -201,7 +201,7 @@ export const ZetaSeries: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["zeta-series"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§5 (the zeta function)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: ["Same identity as the n=2 case, one order higher: this is 4!\\,\\zeta(4)."],
     steps: [
       "\\int_0^\\infty x^4\\cdot\\frac{e^x}{(e^x-1)^2}\\,dx = \\sum_{k=1}^\\infty k\\cdot\\frac{4!}{k^5} = 4!\\sum_{k=1}^\\infty\\frac{1}{k^4} = 24\\zeta(4).",

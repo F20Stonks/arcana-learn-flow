@@ -163,7 +163,7 @@ export const GammaFunction: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["gamma-function"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.1 exercise 2(c)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "\\cos x=\\mathrm{Re}(e^{ix}), so this is \\mathrm{Re}\\int_0^\\infty x^3e^{-(1-i)x}\\,dx — the n=3 gamma-function integral with complex a=1-i.",
       "(1-i)^2=-2i, so (1-i)^4=(-2i)^2=-4 — a real number, which is why the final answer has no leftover i.",
@@ -185,7 +185,7 @@ export const GammaFunction: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["gamma-function"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.1 exercise 3 (at \\varepsilon=1)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Substitute u=\\sqrt x first: x=u^2,\\ dx=2u\\,du, turning this into 2\\int_0^\\infty ue^{-u}\\cos u\\,du.",
       "Apply the complex-exponential trick to that: \\cos u=\\mathrm{Re}(e^{iu}), giving the n=1 gamma-function integral with a=1-i.",

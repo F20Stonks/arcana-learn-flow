@@ -130,7 +130,7 @@ export const FloorFunction: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["floor-function"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.7 (floor function integrals)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Split at the integers as always: \\int_0^\\infty=\\sum_{k=0}^\\infty\\int_k^{k+1}, where \\lfloor x\\rfloor=k on each piece.",
       "Each piece is an elementary exponential integral in k; what's left afterward is a geometric series.",

@@ -133,7 +133,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["inverse-integral"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 9" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Solving y=\\sqrt{1/x-1} for x gives x=\\frac{1}{1+y^2} — so the inverse of this function is g(t)=\\frac{1}{1+t^2}, which you already know how to integrate.",
       "Substitute x=g(t)=\\frac{1}{1+t^2} directly (i.e. t is exactly the value of the original integrand) rather than working with f itself.",

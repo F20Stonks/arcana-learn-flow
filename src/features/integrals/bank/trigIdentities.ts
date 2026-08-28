@@ -611,7 +611,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.8 (citing JEE Main 2016)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "The arctan addition formula \\arctan a+\\arctan b=\\arctan\\frac{a+b}{1-ab} runs backwards here: match \\frac{1}{x^2-x+1} to \\frac{a+b}{1-ab} with a=x,\\ b=1-x.",
       "a+b=1 and 1-ab=1-x(1-x)=x^2-x+1 — exactly the denominator, so the integrand is \\arctan x+\\arctan(1-x).",

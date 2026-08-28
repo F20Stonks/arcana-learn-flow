@@ -140,7 +140,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["wallis-product"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3 (stated result)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "This is the two-power Beta-trig identity with 2\\alpha-1=2\\beta-1=6, i.e. \\alpha=\\beta=\\frac{7}{2}.",
       "\\Gamma(7/2)=\\frac{15\\sqrt\\pi}{8} and \\Gamma(7)=6!=720.",
@@ -162,7 +162,7 @@ export const WallisProduct: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["wallis-product"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.3 (stated result)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Match to the two-power identity with 2\\alpha-1=\\frac12 and 2\\beta-1=0, i.e. \\alpha=\\frac34,\\ \\beta=\\frac12.",
       "\\Gamma at a quarter-integer has no simpler elementary form — the answer is allowed to contain \\Gamma(3/4) as-is, the same way it's allowed to contain \\pi.",

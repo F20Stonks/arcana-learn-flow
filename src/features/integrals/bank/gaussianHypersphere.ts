@@ -19,7 +19,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 2,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "There's no elementary antiderivative here — square the full-line version and switch to polar coordinates instead.",
       "\\int_{-\\infty}^\\infty e^{-x^2}dx=\\sqrt\\pi, and this half is exactly half of that by symmetry.",
@@ -41,7 +41,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [-Infinity, Infinity],
     difficulty: 2,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: ["This is the technique's own derivation, directly: square it, switch to polar coordinates."],
     steps: [
       "I^2=\\int_0^{2\\pi}\\int_0^\\infty e^{-r^2}r\\,dr\\,d\\theta = 2\\pi\\int_0^\\infty re^{-r^2}\\,dr = 2\\pi\\cdot\\frac{1}{2}=\\pi.",
@@ -60,7 +60,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "An even power, so this genuinely carries a \\sqrt\\pi — it won't reduce to a plain gamma-function integral the way an odd power does.",
       "Integrate by parts against x\\cdot(xe^{-x^2}), using that xe^{-x^2} is itself elementary to integrate.",
@@ -82,7 +82,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Odd power — substitute u=x^2 and this becomes a plain gamma-function integral, no \\sqrt\\pi anywhere.",
     ],
@@ -103,7 +103,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: ["Another even power. Parts against x^3\\cdot(xe^{-x^2}) reduces this to the x^2e^{-x^2} case."],
     steps: [
       "By parts with u=x^3,\\ dv=xe^{-x^2}dx: \\int_0^\\infty x^4e^{-x^2}dx = \\tfrac{3}{2}\\int_0^\\infty x^2e^{-x^2}dx.",
@@ -122,7 +122,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: ["Odd power again — u=x^2 turns this into \\int_0^\\infty u^2e^{-u}\\,du, a gamma-function integral."],
     steps: [
       "u=x^2: \\int_0^\\infty x^5e^{-x^2}dx = \\frac{1}{2}\\int_0^\\infty u^2e^{-u}\\,du = \\frac{1}{2}\\cdot 2! = 1.",
@@ -140,7 +140,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 3,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Substitute u=2x: \\int_0^\\infty e^{-4x^2}dx = \\frac{1}{2}\\int_0^\\infty e^{-u^2}\\,du.",
     ],
@@ -158,7 +158,7 @@ export const GaussianHypersphere: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["gaussian-hypersphere"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "§4.4 (n-dimensional hypersphere)" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
     hints: [
       "Substitute u=\\sqrt2\\,x first (so x^2e^{-2x^2}dx=\\frac{u^2}{2}e^{-u^2}\\cdot\\frac{du}{\\sqrt2}), landing back on the plain x^2e^{-x^2} result.",
     ],

@@ -124,7 +124,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (the log sine integral)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Call it I, and use the reflection x \\mapsto \\tfrac{\\pi}{2}-x to get the same integral with \\cos.",
       "Adding them gives \\int_0^{\\pi/2}\\ln\\!\\left(\\tfrac{\\sin 2x}{2}\\right)dx — now substitute t = 2x.",
@@ -253,7 +253,7 @@ export const Definite: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 6 (Serret's integral)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "There is no elementary antiderivative here. Substitute x = \\tan\\theta and the interval becomes [0, \\tfrac{\\pi}{4}].",
       "That turns it into \\int_0^{\\pi/4}\\ln(1+\\tan\\theta)\\,d\\theta — now use the reflection \\theta \\mapsto \\tfrac{\\pi}{4}-\\theta.",
@@ -300,7 +300,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (citing Putnam 1980 A3)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "The absurd exponent is the hint: if the answer depended on it, the problem would be impossible.",
       "King's rule swaps \\tan x for \\cot x, and \\cot^{p} = 1/\\tan^{p}.",
@@ -450,7 +450,7 @@ export const Definite: Problem[] = [
     domain: [-2, 2],
     difficulty: 3,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.1 (odd and even functions)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Split the sum: the x^3\\cos(x/2) piece is odd times even, so it's odd overall and vanishes on [-2,2].",
       "What's left is \\frac12\\int_{-2}^2\\sqrt{4-x^2}\\,dx — recognise y=\\sqrt{4-x^2} as the top half of a circle of radius 2.",
@@ -473,7 +473,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.1 (citing the 2021 Shuttle)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "\\sin(\\mathrm{arccot}\\,x) is odd in x, so it contributes 0 over [-1,1] — only the \\cos(\\arctan x) term survives.",
       "Draw the right triangle for \\arctan x: \\cos(\\arctan x)=\\frac{1}{\\sqrt{x^2+1}}.",
@@ -496,7 +496,7 @@ export const Definite: Problem[] = [
     domain: [-1, 1],
     difficulty: 4,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.1 (odd and even functions)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "Any f(x) splits as an even part \\frac12(f(x)+f(-x)) plus an odd part — write out \\frac{x^2}{e^{\\sin x}+1} plus its mirror image and add them.",
       "e^{\\sin x}+1 and e^{-\\sin x}+1 combine to give a constant denominator once you put the two fractions over a common denominator.",
@@ -519,7 +519,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry", "t-sub"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.2 (citing JEE Advanced 2019)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "King's rule (\\theta\\to\\frac{\\pi}{2}-\\theta) swaps sin and cos in the numerator, giving a twin integral. Add the two.",
       "After adding, factor \\cos^2\\theta out of the denominator and substitute u=\\tan\\theta, then t=\\sqrt u.",
@@ -543,7 +543,7 @@ export const Definite: Problem[] = [
     domain: [-Math.PI / 2, Math.PI / 2],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.10 exercise 1" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "\\cos2x+1=2\\cos^2x by the double-angle identity — turn the log of a sum into a log of a product.",
       "\\cos x on \\left[-\\frac{\\pi}{2},\\frac{\\pi}{2}\\right] takes the same values as \\sin x does on [0,\\pi] — reduce to the log sine integral.",
@@ -566,7 +566,7 @@ export const Definite: Problem[] = [
     domain: [0, Math.PI],
     difficulty: 5,
     techniques: ["symmetry"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "§1.8 (trigonometric identities)" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
     hints: [
       "King's rule (x\\to\\pi-x) turns x\\sin x into (\\pi-x)\\sin x — add the two to strip the lone x out entirely.",
       "What's left is a \\sin x/(3+\\cos^2x) integral; dividing through by \\cos^2x turns it into a \\sec x\\tan x integrand, ready for u=\\sec x.",
