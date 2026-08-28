@@ -69,7 +69,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   useEffect(() => reset(), [reset, config.band]);
 
   const start = useCallback(() => {
-    setQueue(buildQueue(config, Date.now()));
+    const solvedIds = new Set(Object.keys(getProgress().solves));
+    setQueue(buildQueue(config, Date.now(), solvedIds));
     setIndex(0);
     setSolved([]);
     setSkipped(0);
