@@ -1787,6 +1787,13 @@ export type Database = {
       }
       integral_current_puzzle_number: { Args: never; Returns: number }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
+      leaderboard_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+        }[]
+      }
       match_resource_chunks: {
         Args: {
           p_book?: string
