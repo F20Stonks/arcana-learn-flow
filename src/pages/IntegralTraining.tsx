@@ -70,7 +70,12 @@ export default function IntegralTraining() {
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
             No clock pressure that matters, no streak at stake. Read the technique, then work through
-            its problems — the queue puts what you haven't solved first.
+            its problems — the queue puts what you haven't solved first. Counters below count solved
+            problems only.{" "}
+            <Link to="/integrals/lessons" className="text-foreground underline underline-offset-2">
+              Read the lessons on their own
+            </Link>
+            .
           </p>
         </header>
 
