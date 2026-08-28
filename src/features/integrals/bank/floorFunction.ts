@@ -349,4 +349,25 @@ export const FloorFunction: Problem[] = [
       "Adding the leftover piece: 6\\ln7-\\ln720+14-7\\ln7 = 14-\\ln7-\\ln720 = 14-\\ln(7\\cdot720) = 14-\\ln(5040) = 14-\\ln(7!).",
     ],
   },
+  {
+    id: "fin25-floor-2sqrtx-infinite",
+    kind: "definite",
+    integrand: "\\frac1{\\left(x+1+\\lfloor2\\sqrt x\\rfloor\\right)^2}",
+    integrandExpr: "1/(x+1+floor(2*sqrt(x)))^2",
+    lower: "0",
+    upper: "\\infty",
+    answer: "2*pi^2/3-73/12",
+    answerLatex: "\\frac{2\\pi^2}3-\\frac{73}{12}",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "\\lfloor2\\sqrt x\\rfloor is constant on each interval where \\sqrt x\\in[k/2,(k+1)/2), i.e. x\\in[k^2/4,(k+1)^2/4) — the integrand is piecewise a simple rational function of x on each such band.",
+      "The integrand decays like 1/x^2 for large x (the floor term grows like \\sqrt x, negligible next to x), so the tail converges quickly — this is why the infinite-domain substitution resolves it cleanly despite the floor.",
+    ],
+    steps: [
+      "Summing \\int_{k^2/4}^{(k+1)^2/4}\\frac{dx}{(x+1+k)^2} over all k\\ge0 (each a simple \\left[-\\frac1{x+1+k}\\right] evaluation) and telescoping the resulting series in k gives \\frac{2\\pi^2}3-\\frac{73}{12} — confirmed numerically by direct quadrature over the infinite domain.",
+    ],
+  },
 ];

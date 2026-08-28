@@ -660,3 +660,17 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     record, not a new kind of problem.
   - 1815/1815 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
     pushed. Continuing next to 2025 Finals.
+  - Mined MIT 2025 Finals: 3 of 5 problems added — a nested-double-radical `\tan x` antiderivative
+    confirmed by direct differentiation (`trigSubstitution.ts`), `1/(x+1+\lfloor2\sqrt x\rfloor)^2`
+    on `[0,∞)` (`floorFunction.ts` — a genuinely new pattern: floor argument decays slower than x
+    itself, so the infinite-domain substitution resolves it cleanly at the shared `n=4000` without
+    needing a hand-summed closed form), and a `max(...)^2\cdot\min(...)^2` trig problem verified by
+    direct quadrature only, no attempted symbolic piecewise derivation (`trigIdentities.ts`).
+    Skipped: a golden-ratio-power floor-function problem whose stated answer (193) doesn't match
+    any plausible reading of the OCR'd base (confirmed \left(\frac{1+\sqrt5}2\right)^{\lfloor
+    x\rfloor} on `[0,10]` numerically gives ≈197.4, not 193 — tried the reciprocal/conjugate base
+    too, off by an order of magnitude); a fifth problem with OCR too garbled (multiple nested
+    fraction/radical layers with unclear grouping) to attempt.
+  - 1821/1821 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
+    pushed. This closes out both 2025 Semifinal and Finals — next per the standing authorization:
+    2026 Regular Season, 2026 Quarterfinal, 2026 Semifinal, 2026 Finals.

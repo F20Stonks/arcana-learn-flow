@@ -1720,4 +1720,26 @@ export const TrigIdentities: Problem[] = [
       "\\int16\\sec^2(3x)\\,dx = \\frac{16}3\\tan(3x) + C, using \\int\\sec^2u\\,du=\\tan u and the chain rule for u=3x.",
     ],
   },
+  {
+    id: "fin25-max-min-trig-squares",
+    kind: "definite",
+    integrand:
+      "\\max\\!\\left(|2\\sin x|,|2\\cos2x-1|\\right)^2\\cdot\\min\\!\\left(|\\sin2x|,|\\cos3x|\\right)^2",
+    integrandExpr: "max(abs(2*sin(x)),abs(2*cos(2*x)-1))^2*min(abs(sin(2*x)),abs(cos(3*x)))^2",
+    lower: "0",
+    upper: "\\pi",
+    answer: "pi",
+    answerLatex: "\\pi",
+    domain: [0, 3.141592653589793],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Both the max and the min switch which function is larger/smaller at finitely many crossing points on [0,\\pi] — on each resulting sub-interval the integrand is one of a handful of ordinary trig-squared products.",
+      "Confirmed by direct numeric integration rather than hand-tracked piecewise casework — the max/min structure makes a clean symbolic derivation impractical, but the definite value is unambiguous.",
+    ],
+    steps: [
+      "Splitting [0,\\pi] at the crossing points of |2\\sin x| vs |2\\cos2x-1| and of |\\sin2x| vs |\\cos3x|, then integrating each ordinary trig-squared piece and summing, gives exactly \\pi — verified by quadrature.",
+    ],
+  },
 ];

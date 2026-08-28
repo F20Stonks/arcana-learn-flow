@@ -1044,4 +1044,25 @@ export const TrigSubstitution: Problem[] = [
       "Differentiating the closed form and simplifying the resulting rational expression in x and \\sqrt{x^4-x^2+1} reproduces \\frac{\\sqrt{(x^6+1)(x^2+1)}}{x^3} term-for-term.",
     ],
   },
+  {
+    id: "fin25-tanx-nested-radical",
+    kind: "indefinite",
+    integrand: "\\tan x\\sqrt{2+\\sqrt{4+\\cos x}}",
+    integrandExpr: "tan(x)*sqrt(2+sqrt(4+cos(x)))",
+    answer:
+      "-4*sqrt(2+sqrt(4+cos(x)))-2*log(abs((sqrt(2+sqrt(4+cos(x)))-2)/(sqrt(2+sqrt(4+cos(x)))+2)))",
+    answerLatex:
+      "-4\\sqrt{2+\\sqrt{4+\\cos x}}-2\\ln\\left|\\frac{\\sqrt{2+\\sqrt{4+\\cos x}}-2}{\\sqrt{2+\\sqrt{4+\\cos x}}+2}\\right| + C",
+    domain: [0.2, 1.2],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Chain-substitute from the outside in: u=\\sqrt{4+\\cos x} first, then v=\\sqrt{2+u} — the \\tan x=\\sin x/\\cos x factor supplies exactly the derivative the outer layers need.",
+      "The resulting rational function of v has a repeated factor at v=2, which is what produces the \\ln\\left|\\frac{v-2}{v+2}\\right| term (the standard \\int\\frac{dv}{v^2-4} form) alongside the polynomial \\sqrt{2+u}-type term.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form rather than reproduced substitution-by-substitution — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
 ];
