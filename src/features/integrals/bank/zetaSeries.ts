@@ -250,4 +250,23 @@ export const ZetaSeries: Problem[] = [
       "Confirmed directly against the integral's own numeric value.",
     ],
   },
+  {
+    id: "zeta-def-series-sum-exp-minus-2025x",
+    kind: "definite",
+    integrand: "\\sum_{k=1}^\\infty\\frac{(2025x)^ke^{-2025x}}{k!}",
+    integrandExpr: "1-exp(-2025*x)",
+    lower: "0",
+    upper: "1/2025",
+    answer: "1/(2025*exp(1))",
+    answerLatex: "\\frac1{2025e}",
+    domain: [0, 0.0004938271604938272],
+    difficulty: 4,
+    techniques: ["zeta-series"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["\\sum_{k=1}^\\infty\\frac{u^k}{k!} = e^u-1 (the exponential series minus its k=0 term) — with u=2025x, the whole sum times e^{-2025x} collapses to 1-e^{-2025x}."],
+    steps: [
+      "\\sum_{k=1}^\\infty\\frac{(2025x)^k}{k!}e^{-2025x} = \\left(e^{2025x}-1\\right)e^{-2025x} = 1-e^{-2025x}.",
+      "\\int_0^{1/2025}\\left(1-e^{-2025x}\\right)dx = \\left[x+\\frac{e^{-2025x}}{2025}\\right]_0^{1/2025} = \\frac1{2025}+\\frac{e^{-1}}{2025}-\\frac1{2025} = \\frac1{2025e}.",
+    ],
+  },
 ];

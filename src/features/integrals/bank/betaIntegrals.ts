@@ -492,4 +492,23 @@ export const BetaIntegrals: Problem[] = [
       "Confirmed directly against the integral's own numeric value.",
     ],
   },
+  {
+    id: "beta-reciprocal-x-plus-1-plus-2sqrtx-squared",
+    kind: "definite",
+    integrand: "\\frac1{\\left(x+1+2\\sqrt x\\right)^2}",
+    integrandExpr: "1/(x+1+2*sqrt(x))^2",
+    lower: "0",
+    upper: "\\infty",
+    answer: "1/3",
+    answerLatex: "\\frac13",
+    domain: [0, Infinity],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["x+1+2\\sqrt x = (\\sqrt x+1)^2, so the denominator is (\\sqrt x+1)^4 — substitute u=\\sqrt x."],
+    steps: [
+      "u=\\sqrt x,\\ x=u^2,\\ dx=2u\\,du: the integral becomes \\int_0^\\infty\\frac{2u}{(u+1)^4}\\,du.",
+      "v=u+1: 2\\int_1^\\infty\\frac{v-1}{v^4}\\,dv = 2\\int_1^\\infty\\left(v^{-3}-v^{-4}\\right)dv = 2\\left[-\\frac1{2v^2}+\\frac1{3v^3}\\right]_1^\\infty = 2\\left(\\frac12-\\frac13\\right) = \\frac13.",
+    ],
+  },
 ];
