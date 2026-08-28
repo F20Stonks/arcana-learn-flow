@@ -6,7 +6,7 @@
  * execute a substitution — they fail because they don't know which of eight things to reach for, so
  * every lesson leads with the recognition cue rather than the recipe.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
 import AppShell from "@/components/AppShell";
@@ -267,6 +267,21 @@ export function TrainingTechnique() {
   };
 
   const next = () => setIndex((i) => (i + 1) % queue.length);
+
+  // After a correct answer the input is gone and the Next button is the only action. Let a quick
+  // Enter press advance the queue without reaching for the mouse.
+  useEffect(() => {
+    if (run.status !== "solved") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [run.status, queue.length]);
 
   return (
     <AppShell>
