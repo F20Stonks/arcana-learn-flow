@@ -622,6 +622,27 @@ export const IntroducingConstants: Problem[] = [
     ],
   },
   {
+    id: "ic-involution-1mxp-power-1overp-def",
+    kind: "definite",
+    integrand: "\\left(1-x^{3/2}\\right)^{3/2}-\\left(1-x^{2/3}\\right)^{2/3}",
+    integrandExpr: "(1-x^(3/2))^(3/2)-(1-x^(2/3))^(2/3)",
+    lower: "0",
+    upper: "1",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee", round: "Lightning Round" },
+    hints: [
+      "y=(1-x^p)^{1/p} is an involution on [0,1] (applying it twice gives back x), so \\int_0^1(1-x^p)^{1/p}\\,dx is the same value for every p>0 — in particular for p=\\frac32 and p=\\frac23 alike.",
+    ],
+    steps: [
+      "Both \\int_0^1(1-x^{3/2})^{3/2}dx and \\int_0^1(1-x^{2/3})^{2/3}dx equal the same constant (the area under the involution curve, independent of p).",
+      "So their difference is identically 0.",
+    ],
+  },
+  {
     id: "ic-2023x-plus-1-over-x2-plus-2024",
     kind: "indefinite",
     integrand: "\\frac{2023x+1}{x^2+2024}",

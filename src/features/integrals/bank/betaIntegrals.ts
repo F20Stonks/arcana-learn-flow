@@ -471,4 +471,25 @@ export const BetaIntegrals: Problem[] = [
       "B(3,2025) = \\frac{2!\\cdot2024!}{2027!} = \\frac2{2025\\cdot2026\\cdot2027} (the factorial ratio for integer Beta values).",
     ],
   },
+  {
+    id: "beta-cbrt-1-plus-sqrt-1mx3-plus-cbrt-1-minus-sqrt",
+    kind: "definite",
+    integrand: "\\sqrt[3]{1+\\sqrt{1-x^3}}+\\sqrt[3]{1-\\sqrt{1-x^3}}",
+    integrandExpr: "cbrt(1+sqrt(1-x^3))+cbrt(1-sqrt(1-x^3))",
+    lower: "-1/3",
+    upper: "1",
+    answer: "14/9+(2/3)*log(2)",
+    answerLatex: "\\frac{14}9+\\frac23\\ln2",
+    domain: [-0.3333333333333333, 1],
+    difficulty: 5,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Let y=\\sqrt[3]{1+\\sqrt{1-x^3}}+\\sqrt[3]{1-\\sqrt{1-x^3}}. Cubing y and using (a+b)^3=a^3+b^3+3ab(a+b) with a^3+b^3=2 and ab=\\sqrt[3]{x^3}=x turns this into an algebraic equation y^3=2+3xy, resolvable for y in terms of x.",
+    ],
+    steps: [
+      "y^3-3xy-2=0 is a depressed cubic in y; solving it (or integrating the original radical sum directly) over \\left[-\\frac13,1\\right] gives \\frac{14}9+\\frac23\\ln2.",
+      "Confirmed directly against the integral's own numeric value.",
+    ],
+  },
 ];

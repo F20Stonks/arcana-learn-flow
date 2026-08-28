@@ -211,4 +211,26 @@ export const Feynman: Problem[] = [
       "Integrating I'(a) over a from 0 to 1 and simplifying the resulting double integral (swap the order, integrate in x first) gives I(1)=\\ln2 — confirmed directly against the integral's own numeric value rather than reproduced symbol by symbol here.",
     ],
   },
+  {
+    id: "feynman-def-log-2ex-minus-1-over-ex-minus-1",
+    kind: "definite",
+    integrand: "\\frac{\\ln(2e^x-1)}{e^x-1}",
+    integrandExpr: "log(2*exp(x)-1)/(exp(x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/4",
+    answerLatex: "\\frac{\\pi^2}4",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Substitute u=e^{-x} first to turn the infinite domain into an ordinary (0,1) integral, then look for a dilogarithm-flavored split.",
+    ],
+    steps: [
+      "u=e^{-x}: the integral becomes \\int_0^1\\frac{\\ln(2-u)-\\ln u}{\\frac1u-1}\\cdot\\frac{du}u = \\int_0^1\\frac{\\ln(2-u)-\\ln u}{1-u}\\,du.",
+      "Splitting and recognising each piece as a standard dilogarithm value at specific points (the same family as the classic \\int_0^1\\frac{\\ln x}{1-x}dx=-\\frac{\\pi^2}6 result) sums to \\frac{\\pi^2}4.",
+      "Confirmed directly against the integral's own numeric value.",
+    ],
+  },
 ];

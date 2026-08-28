@@ -1621,4 +1621,26 @@ export const TrigIdentities: Problem[] = [
       "Combining 1-\\frac{\\sin x}{1+\\cos x}=\\frac{1+\\cos x-\\sin x}{1+\\cos x} and simplifying the whole expression algebraically reproduces \\frac{\\sin x\\cos x}{(1+\\sin x)(1+\\cos x)} — exactly the integrand (verified directly).",
     ],
   },
+  {
+    id: "trig-sin2x-minus-5sinx-times-sinx-over-cos2x-minus-10cosx-plus-13-def",
+    kind: "definite",
+    integrand: "\\frac{(\\sin2x-5\\sin x)\\sin x}{\\cos2x-10\\cos x+13}",
+    integrandExpr: "(sin(2*x)-5*sin(x))*sin(x)/(cos(2*x)-10*cos(x)+13)",
+    lower: "0",
+    upper: "2\\pi",
+    answer: "(2*sqrt(2)+sqrt(3)-5)*pi",
+    answerLatex: "\\left(2\\sqrt2+\\sqrt3-5\\right)\\pi",
+    domain: [0, 6.283185307179586],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Finals Tiebreakers" },
+    hints: [
+      "\\cos2x-10\\cos x+13 = 2\\cos^2x-10\\cos x+12 = 2(\\cos x-2)(\\cos x-3) factors nicely in \\cos x — partial-fraction in \\cos x after writing the numerator in terms of \\sin x\\cos x and \\sin x.",
+    ],
+    steps: [
+      "\\sin2x-5\\sin x = \\sin x(2\\cos x-5), so the integrand is \\frac{\\sin^2x(2\\cos x-5)}{2(\\cos x-2)(\\cos x-3)}.",
+      "Partial-fractioning in \\cos x and integrating each resulting piece over a full period (using the standard \\int_0^{2\\pi}\\frac{dx}{a-\\cos x}=\\frac{2\\pi}{\\sqrt{a^2-1}} form for a>1) gives \\left(2\\sqrt2+\\sqrt3-5\\right)\\pi.",
+      "Confirmed directly against the integral's own numeric value.",
+    ],
+  },
 ];

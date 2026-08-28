@@ -907,4 +907,25 @@ export const TrigSubstitution: Problem[] = [
       "Substituting back: \\frac{\\sec^3x\\tan x}4+\\frac38\\sec x\\tan x+\\frac38\\ln|\\sec x+\\tan x| + C.",
     ],
   },
+  {
+    id: "trigsub-def-reciprocal-quartic-plus-1-full-line",
+    kind: "definite",
+    integrand: "\\frac1{x^4+x^3+x^2+x+1}",
+    integrandExpr: "1/(x^4+x^3+x^2+x+1)",
+    lower: "-\\infty",
+    upper: "\\infty",
+    answer: "sqrt(10+2*sqrt(5))*pi/5",
+    answerLatex: "\\frac{\\sqrt{10+2\\sqrt5}}5\\pi",
+    domain: [-Infinity, Infinity],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "x^4+x^3+x^2+x+1 is the 5th cyclotomic polynomial (its roots are the primitive 5th roots of unity) — it factors over the reals into two quadratics via the golden-ratio-related angles \\cos(2\\pi/5),\\ \\cos(4\\pi/5), then each quadratic contributes an ordinary \\arctan-form residue.",
+    ],
+    steps: [
+      "Factor into two real quadratics x^2-2\\cos(2\\pi/5)x+1 and x^2-2\\cos(4\\pi/5)x+1, then partial-fraction and integrate each via the standard completing-the-square \\arctan form.",
+      "Summing both residues gives \\frac{\\sqrt{10+2\\sqrt5}}5\\pi — confirmed directly against the integral's own numeric value.",
+    ],
+  },
 ];
