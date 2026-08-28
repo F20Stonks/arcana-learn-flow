@@ -1545,7 +1545,7 @@ export const Parts: Problem[] = [
     domain: [1, 5],
     difficulty: 4,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["U=\\ln(1+x),\\ dV=x^{-2}dx. The leftover \\int\\frac{dx}{x(1+x)} splits by partial fractions."],
     steps: [
       "V=-\\frac1x: \\int = -\\frac{\\ln(1+x)}x+\\int\\frac{dx}{x(1+x)}.",
@@ -1563,7 +1563,7 @@ export const Parts: Problem[] = [
     domain: [1, 3],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Guess F(x)=\\frac{\\tan(1+\\ln x)}x and differentiate it with the quotient rule — the pieces are built to land exactly on the integrand."],
     steps: [
       "F'(x) = \\frac{\\sec^2(1+\\ln x)\\cdot\\frac1x\\cdot x-\\tan(1+\\ln x)}{x^2} = \\frac{\\sec^2(1+\\ln x)-\\tan(1+\\ln x)}{x^2}.",
@@ -1580,7 +1580,7 @@ export const Parts: Problem[] = [
     domain: [1, 5],
     difficulty: 5,
     techniques: ["parts"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Substitute u=\\ln x first (x=e^u), turning it into \\int e^{3u}\\sin u\\,du — a standard two-round parts integral that comes back to itself."],
     steps: [
       "u=\\ln x,\\ x=e^u,\\ dx=e^u\\,du: the integral becomes \\int e^{3u}\\sin u\\,du.",

@@ -1020,7 +1020,7 @@ export const StandardForms: Problem[] = [
     domain: [0, 100],
     difficulty: 1,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["\\int\\sqrt x\\,dx = \\frac23x^{3/2}."],
     steps: ["\\left[\\frac23x^{3/2}\\right]_0^{100} = \\frac23\\cdot1000 = \\frac{2000}3."],
   },
@@ -1036,7 +1036,7 @@ export const StandardForms: Problem[] = [
     domain: [-2, 2],
     difficulty: 3,
     techniques: ["power"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["The polynomial x(x-1)(x-2)(x+1)(x+2) changes sign at each of its five roots (-2,-1,0,1,2) — split the integral at each and flip sign where it's negative."],
     steps: [
       "By the odd symmetry of x^5-5x^3+4x (the expanded polynomial) and the sign pattern across the five roots, the absolute-value integral works out to \\frac{19}3 — confirmed directly by numeric integration.",

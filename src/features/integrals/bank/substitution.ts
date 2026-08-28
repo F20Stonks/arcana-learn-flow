@@ -2296,7 +2296,7 @@ export const Substitution: Problem[] = [
     domain: [0, 2],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Guess F(x)=(x+1)(x^3+1)^{2/3} and differentiate it with the product and chain rules — the messy numerator is exactly what falls out."],
     steps: [
       "F'(x) = (x^3+1)^{2/3} + (x+1)\\cdot\\frac23(x^3+1)^{-1/3}\\cdot3x^2 = (x^3+1)^{2/3}+\\frac{2x^2(x+1)}{(x^3+1)^{1/3}}.",
@@ -2313,7 +2313,7 @@ export const Substitution: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["\\sin x\\cos x = \\frac12\\sin(2x), so \\sin^4x\\cos^4x = \\frac1{16}\\sin^4(2x). Substitute u=2x, then u=\\cot(2x) once you're in \\csc/\\cot form."],
     steps: [
       "\\frac1{\\sin^4x\\cos^4x} = \\frac{16}{\\sin^4(2x)} = 16\\csc^4(2x).",
@@ -2331,7 +2331,7 @@ export const Substitution: Problem[] = [
     domain: [0.2, 1.5],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Peel off one \\sinh x for du and write the rest as \\sinh^2x\\cosh^2x = (\\cosh^2x-1)\\cosh^2x, then substitute u=\\cosh x."],
     steps: [
       "\\sinh^3x\\cosh^2x\\,dx = (\\cosh^2x-1)\\cosh^2x\\cdot\\sinh x\\,dx. Let u=\\cosh x, du=\\sinh x\\,dx.",
@@ -2349,7 +2349,7 @@ export const Substitution: Problem[] = [
     domain: [0, 1.2],
     difficulty: 4,
     techniques: ["u-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Let u=\\sin x+\\cos x. Then du=(\\cos x-\\sin x)dx, and u^2=1+\\sin(2x), so 2+\\sin(2x)=1+u^2."],
     steps: [
       "u=\\sin x+\\cos x: du=(\\cos x-\\sin x)dx, and u^2=1+\\sin2x so the denominator becomes 1+u^2.",

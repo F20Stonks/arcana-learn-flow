@@ -1421,7 +1421,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.5707963267948966, 2.5707963267948966],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["\\arccos(\\sin x) = \\left|\\frac\\pi2-x\\right| on this range, and \\cos(\\arcsin u)=\\sqrt{1-u^2} — the whole composition resolves to a plain semicircle."],
     steps: [
       "\\cos\\!\\left(\\arcsin\\!\\left(\\left|\\tfrac\\pi2-x\\right|\\right)\\right) = \\sqrt{1-\\left(x-\\tfrac\\pi2\\right)^2}.",
@@ -1438,7 +1438,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.3, 1.2],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Guess the given closed form and differentiate it with the product rule — the huge coefficients (2020, 8084=4\\times2021) are exactly what falls out of the two power rules."],
     steps: [
       "Differentiating \\sin^{2020}x\\cos^{2022}x-\\sin^{2022}x\\cos^{2020}x term by term (product + chain rule) and collecting \\sin^{2019}x\\cos^{2019}x and \\sin^{2021}x\\cos^{2021}x factors reproduces the integrand exactly — verified directly rather than reproduced symbol by symbol here.",
@@ -1456,7 +1456,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0, 6.283185307179586],
     difficulty: 5,
     techniques: ["trig-identity"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Expand (1-\\cos x)^5 by the binomial theorem into a sum of \\cos^kx terms, then use orthogonality: \\int_0^{2\\pi}\\cos^kx\\cos(5x)\\,dx is 0 unless \\cos^kx contains a \\cos(5x) harmonic."],
     steps: [
       "Only the \\cos^5x term in the binomial expansion contains a \\cos(5x) component (via the multiple-angle expansion of \\cos^5x), and every other term integrates to 0 against \\cos(5x) over a full period.",

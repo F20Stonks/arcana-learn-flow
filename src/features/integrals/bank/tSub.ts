@@ -301,7 +301,7 @@ export const TSub: Problem[] = [
     domain: [0, 1.2],
     difficulty: 3,
     techniques: ["t-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["The Weierstrass half-angle identities give \\frac{\\sin x}{1+\\cos x}=\\tan\\frac x2, and \\frac1{1+\\cos x}=\\frac12\\sec^2\\frac x2 — split the fraction into two pieces first."],
     steps: [
       "\\frac{x+\\sin x}{1+\\cos x} = \\frac{x}{1+\\cos x}+\\tan\\frac x2 = \\frac x2\\sec^2\\frac x2+\\tan\\frac x2.",

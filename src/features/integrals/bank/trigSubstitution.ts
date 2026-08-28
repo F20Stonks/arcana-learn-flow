@@ -820,7 +820,7 @@ export const TrigSubstitution: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["trig-sub"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Both radicals describe circular arcs (radius 2, shifted centers) — this is a difference of two circular-segment areas, computable geometrically without ever finding a symbolic antiderivative."],
     steps: [
       "\\sqrt{4-(1+|x|)^2} traces part of a radius-2 circle centered where 1+|x| runs from 1 to 2 as x runs 0\\to\\pm1; \\sqrt{4-x^2} traces a radius-2 circle centered at 0.",

@@ -608,7 +608,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["introducing-constants"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Write the numerator as A(3\\sin x+4\\cos x)+B(3\\cos x-4\\sin x) — a multiple of the denominator plus a multiple of its derivative — and solve for A,B."],
     steps: [
       "4\\sin x+3\\cos x = A(3\\sin x+4\\cos x)+B(4\\sin x\\cdot(-1)+3\\cos x)\\ \\text{(matching coefficients)}: solving 3A-4B=4,\\ 4A+3B=3 gives A=\\frac{24}{25},\\ B=-\\frac7{25}.",

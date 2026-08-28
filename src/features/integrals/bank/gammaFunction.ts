@@ -229,7 +229,7 @@ export const GammaFunction: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["gamma-function"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Substitute x=e^{-t} (t:\\infty\\to0 as x:0\\to1), turning the whole thing into a Gamma-function tail \\int_0^\\infty\\sqrt t\\,e^{-t/2}\\,dt."],
     steps: [
       "x=e^{-t},\\ dx=-e^{-t}dt: \\sqrt{\\ln(1/x)/x} = \\sqrt{t\\,e^t}, so the integral becomes \\int_0^\\infty\\sqrt t\\,e^{t/2}e^{-t}\\,dt = \\int_0^\\infty\\sqrt t\\,e^{-t/2}\\,dt.",
@@ -248,7 +248,7 @@ export const GammaFunction: Problem[] = [
     domain: [0, Infinity],
     difficulty: 4,
     techniques: ["gamma-function"],
-    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    source: { name: "MIT Integration Bee", year: 2022, round: "Regular Season" },
     hints: ["Each term is a Gamma-function tail: \\int_0^\\infty x^ne^{-x}dx=n! (\\Gamma(n+1)=n!)."],
     steps: [
       "\\int_0^\\infty x^5e^{-x}dx=5!=120,\\ \\int_0^\\infty x^6e^{-x}dx=6!=720,\\ \\int_0^\\infty x^7e^{-x}dx=7!=5040.",
