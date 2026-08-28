@@ -1837,6 +1837,16 @@ export type Database = {
           section: string
         }[]
       }
+      record_drill_run: {
+        Args: {
+          p_attempts: Json
+          p_config: Json
+          p_drill_key: string
+          p_duration_s: number
+          p_mode: string
+        }
+        Returns: Json
+      }
       reference_question_classified: {
         Args: never
         Returns: {
