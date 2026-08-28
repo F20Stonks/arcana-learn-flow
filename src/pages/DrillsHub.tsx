@@ -4,8 +4,8 @@
  * Bridge Run, Knot or Not) built on real, correctly-labeled math rather than improvised drawings.
  */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, Zap, Hash, Sigma, CircleDot, Shapes, Info, Play } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2, Zap, Hash, Sigma, CircleDot, Shapes, Info, Play, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { DRILL_LIST } from "@/features/drills/registry";
@@ -52,6 +52,13 @@ export default function DrillsHub() {
             Short, timed, against the clock. Built to keep fast recall — arithmetic, number theory,
             algebra, and topology — from ever going stale.
           </p>
+          <Link
+            to="/leaderboards"
+            className="group mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Trophy className="h-3.5 w-3.5" /> Leaderboards
+            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          </Link>
         </header>
 
         {loading ? (
