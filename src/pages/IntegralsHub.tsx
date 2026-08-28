@@ -64,6 +64,13 @@ export default function IntegralsHub() {
               <BarChart3 className="h-3.5 w-3.5" /> Progress
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
+            <Link
+              to="/leaderboards"
+              className="group flex items-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Trophy className="h-3.5 w-3.5" /> Leaderboards
+              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
           </div>
         </section>
 

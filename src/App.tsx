@@ -29,6 +29,7 @@ import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
 import DrillPlay from "./pages/DrillPlay";
+import LeaderboardsPage from "./pages/LeaderboardsPage";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 import ComingSoon from "./components/ComingSoon";
@@ -41,6 +42,7 @@ import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import RefundPage from "./pages/legal/RefundPage";
 import { Loader2 } from "lucide-react";
+import { setProgressScope } from "@/features/integrals/progress";
 
 const queryClient = new QueryClient();
 
@@ -86,7 +88,11 @@ function BetaGate({ feature, children }: { feature: string; children: React.Reac
 }
 
 function AppRoutes() {
-  const { session, loading } = useAuth();
+  const { session, loading, user } = useAuth();
+
+  // Local Integral Arena progress is namespaced per account, set here (during render, before any
+  // page reads it) so signing in with a second email on the same browser starts from zero.
+  setProgressScope(user?.id ?? null);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -112,6 +118,7 @@ function AppRoutes() {
       <Route path="/question-bank/:questionId" element={<ProtectedRoute><BetaGate feature="Question bank"><QuestionBankDetail /></BetaGate></ProtectedRoute>} />
       {/* Timed practice games sharing one drill engine (src/features/drills) — Zetamac++ first.
           Live for every signup: no BetaGate. */}
+      <Route path="/leaderboards" element={<DashboardGuard><LeaderboardsPage /></DashboardGuard>} />
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique

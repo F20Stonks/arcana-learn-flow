@@ -14,6 +14,18 @@ import { levelState } from "./scoring";
 import type { TechniqueId } from "./types";
 
 const STORAGE_KEY = "arcana.integrals.progress.v1";
+const LEGACY_CLAIMED_KEY = "arcana.integrals.progress.claimed";
+
+/**
+ * Whose progress is in memory. Local storage is per-browser, not per-account, so without this a
+ * second person signing in on the same machine inherits the first person's solved count.
+ */
+let scopeUserId: string | null = null;
+
+/** Namespaced storage key for any per-player local record (progress, submitted puzzles, …). */
+export function scopedKey(base: string): string {
+  return scopeUserId ? `${base}:${scopeUserId}` : base;
+}
 
 export interface SolveRecord {
   solvedAt: string;
@@ -72,7 +84,7 @@ const listeners = new Set<() => void>();
 function read(): Progress {
   if (memory) return memory;
   try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    const raw = globalThis.localStorage?.getItem(scopedKey(STORAGE_KEY));
     memory = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
   } catch {
     memory = emptyProgress();
@@ -80,10 +92,41 @@ function read(): Progress {
   return memory;
 }
 
+/**
+ * Point the store at a signed-in player (or at the signed-out scope with null).
+ *
+ * Called from the app root before anything renders, so a page never paints another account's
+ * numbers. The pre-scoping record is handed to the first account that signs in after this shipped
+ * — that's whoever was already playing on this browser — and then never handed to anyone again.
+ */
+export function setProgressScope(userId: string | null) {
+  const next = userId ?? null;
+  if (next === scopeUserId) return;
+  scopeUserId = next;
+  memory = null;
+  if (next) claimLegacyProgress(next);
+  for (const l of listeners) l();
+}
+
+function claimLegacyProgress(userId: string) {
+  try {
+    const store = globalThis.localStorage;
+    if (!store) return;
+    if (store.getItem(LEGACY_CLAIMED_KEY)) return;
+    const legacy = store.getItem(STORAGE_KEY);
+    store.setItem(LEGACY_CLAIMED_KEY, userId);
+    if (!legacy || store.getItem(`${STORAGE_KEY}:${userId}`)) return;
+    store.setItem(`${STORAGE_KEY}:${userId}`, legacy);
+    store.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage unavailable — nothing to migrate.
+  }
+}
+
 function write(next: Progress) {
   memory = next;
   try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+    globalThis.localStorage?.setItem(scopedKey(STORAGE_KEY), JSON.stringify(next));
   } catch {
     // Storage is unavailable — keep going in memory rather than losing the session.
   }
