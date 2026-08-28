@@ -1,32 +1,32 @@
 /**
- * Every technique's lesson, in one place, with nothing else competing for attention — no timer, no
- * queue, no "next problem." For a student who wants to read through the curriculum (or review a
- * technique before a sprint) without committing to a practice run.
+ * Lessons — the technique library, readable on its own.
+ *
+ * Training buries the lesson inside a drill; this page is the same material as a place you can just
+ * read. Reading is explicitly not progress: the bank counters here only ever move on solves.
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Dumbbell } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown } from "lucide-react";
 import AppShell from "@/components/AppShell";
-import TechniqueLesson from "@/features/integrals/components/TechniqueLesson";
+import Tex from "@/features/integrals/components/Tex";
+import LessonBody from "@/features/integrals/components/LessonBody";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
-import { markLessonRead } from "@/features/integrals/progress";
+import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
 import { TECHNIQUES } from "@/features/integrals/techniques";
 import type { TechniqueId } from "@/features/integrals/types";
 
 export default function IntegralLessons() {
   const progress = useProgress();
-  const [openId, setOpenId] = useState<TechniqueId | null>(null);
-  const readCount = TECHNIQUES.filter((t) => progress.lessonsRead.includes(t.id)).length;
+  const [open, setOpen] = useState<TechniqueId | null>(null);
 
   const toggle = (id: TechniqueId) => {
-    const opening = openId !== id;
-    setOpenId(opening ? id : null);
-    if (opening) markLessonRead(id);
+    setOpen((cur) => (cur === id ? null : id));
+    if (open !== id) markLessonRead(id);
   };
 
   return (
     <AppShell>
-      <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+      <main className="relative mx-auto max-w-3xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <Link
           to="/integrals"
           className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
@@ -34,39 +34,64 @@ export default function IntegralLessons() {
           <ArrowLeft className="h-3.5 w-3.5" /> Integral Arena
         </Link>
 
-        <header className="reveal mb-6">
-          <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
+        <header className="reveal mb-8">
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground sm:text-[32px]">
             Lessons
           </h1>
-          <p className="mt-1 text-[14px] text-muted-foreground">
-            Every technique in the curriculum — the recognition cue, the recipe, a worked example,
-            and where it goes wrong. Read at your own pace; nothing here is timed or scored.
-          </p>
-          <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-            <Check className="h-3.5 w-3.5 text-primary" />
-            {readCount}/{TECHNIQUES.length} read
+          <p className="mt-1.5 text-[15px] text-muted-foreground">
+            Every technique, written out — when to reach for it, the recipe, a worked example and the
+            traps. Reading doesn't count towards anything; only solved problems do.
           </p>
         </header>
 
-        <div className="flex flex-col gap-3">
-          {TECHNIQUES.map((t) => (
-            <TechniqueLesson
-              key={t.id}
-              technique={t}
-              open={openId === t.id}
-              onToggle={() => toggle(t.id)}
-              title={t.name}
-              showTaglineWhenCollapsed
-            />
-          ))}
-        </div>
+        <div className="reveal flex flex-col gap-3">
+          {TECHNIQUES.map((t) => {
+            const m = techniqueMastery(progress, t.id);
+            const isOpen = open === t.id;
+            return (
+              <section key={t.id} className="overflow-hidden rounded-2xl border border-border bg-card">
+                <button
+                  onClick={() => toggle(t.id)}
+                  aria-expanded={isOpen}
+                  aria-controls={`${t.id}-lesson-page`}
+                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-accent/40"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2.5">
+                      <BookOpen className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="font-display text-[16px] font-semibold text-foreground">
+                        {t.name}
+                      </span>
+                      {m.lessonRead && (
+                        <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
+                          <Check className="h-3 w-3" /> read
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-muted-foreground">
+                      <Tex>{t.tagline}</Tex>
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-        <Link
-          to="/integrals/train"
-          className="reveal mt-8 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Dumbbell className="h-3.5 w-3.5" /> Put it into practice in training
-        </Link>
+                {isOpen && (
+                  <div id={`${t.id}-lesson-page`} className="border-t border-border px-5 pb-5 pt-4">
+                    <LessonBody technique={t} />
+                    <Link
+                      to={`/integrals/train/${t.id}`}
+                      className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                      Practise this — {m.solved}/{m.total} solved →
+                    </Link>
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
       </main>
     </AppShell>
   );

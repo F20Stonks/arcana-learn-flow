@@ -142,7 +142,7 @@ describe("derived stats", () => {
     expect(s.badges.map((b) => b.id)).toContain("first-blood");
   });
 
-  it("splits technique mastery between lesson and practice", () => {
+  it("counts technique mastery from solves only", () => {
     const m = techniqueMastery(getProgress(), "parts");
     expect(m.mastery).toBe(0);
     expect(m.total).toBeGreaterThan(0);

@@ -30,6 +30,7 @@ import IntegralLessons from "./pages/IntegralLessons";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
 import DrillPlay from "./pages/DrillPlay";
+import LeaderboardsPage from "./pages/LeaderboardsPage";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 import ComingSoon from "./components/ComingSoon";
@@ -42,6 +43,7 @@ import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import RefundPage from "./pages/legal/RefundPage";
 import { Loader2 } from "lucide-react";
+import { setProgressScope } from "@/features/integrals/progress";
 
 const queryClient = new QueryClient();
 
@@ -66,10 +68,10 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
 }
 
 function DashboardGuard({ children }: { children: React.ReactNode }) {
-  const { session, profile, loading } = useAuth();
+  const { session, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" replace />;
-  if (!profile?.onboarding_complete) return <Navigate to="/onboarding" replace />;
+  // Onboarding is skipped for now — new signups land straight on the dashboard.
   return <>{children}</>;
 }
 
@@ -87,18 +89,18 @@ function BetaGate({ feature, children }: { feature: string; children: React.Reac
 }
 
 function AppRoutes() {
-  const { session, profile, loading } = useAuth();
+  const { session, loading, user } = useAuth();
+
+  // Local Integral Arena progress is namespaced per account, set here (during render, before any
+  // page reads it) so signing in with a second email on the same browser starts from zero.
+  setProgressScope(user?.id ?? null);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
     <Routes>
       <Route path="/" element={
-        session
-          ? (profile?.onboarding_complete
-              ? <Navigate to="/dashboard" replace />
-              : <Navigate to="/onboarding" replace />)
-          : <LandingPage />
+        session ? <Navigate to="/dashboard" replace /> : <LandingPage />
       } />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/waitlist" element={<WaitlistPage />} />
@@ -117,6 +119,7 @@ function AppRoutes() {
       <Route path="/question-bank/:questionId" element={<ProtectedRoute><BetaGate feature="Question bank"><QuestionBankDetail /></BetaGate></ProtectedRoute>} />
       {/* Timed practice games sharing one drill engine (src/features/drills) — Zetamac++ first.
           Live for every signup: no BetaGate. */}
+      <Route path="/leaderboards" element={<DashboardGuard><LeaderboardsPage /></DashboardGuard>} />
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
@@ -126,6 +129,7 @@ function AppRoutes() {
       <Route path="/integrals/daily" element={<DashboardGuard><DailyIntegral /></DashboardGuard>} />
       <Route path="/integrals/sprint" element={<DashboardGuard><IntegralSprint /></DashboardGuard>} />
       <Route path="/integrals/progress" element={<DashboardGuard><IntegralProgress /></DashboardGuard>} />
+      <Route path="/integrals/lessons" element={<DashboardGuard><IntegralLessons /></DashboardGuard>} />
       <Route path="/integrals/train" element={<DashboardGuard><IntegralTraining /></DashboardGuard>} />
       <Route path="/integrals/lessons" element={<DashboardGuard><IntegralLessons /></DashboardGuard>} />
       <Route path="/integrals/train/source/:sourceKey" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
@@ -166,6 +170,7 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/daily" element={<DailyIntegral />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/sprint" element={<IntegralSprint />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/progress" element={<IntegralProgress />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/lessons" element={<IntegralLessons />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/train" element={<IntegralTraining />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/lessons" element={<IntegralLessons />} />}
       {import.meta.env.DEV && (

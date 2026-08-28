@@ -6,13 +6,13 @@
  * execute a substitution — they fail because they don't know which of eight things to reach for, so
  * every lesson leads with the recognition cue rather than the recipe.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import RunPanel from "@/features/integrals/components/RunPanel";
-import TechniqueLesson from "@/features/integrals/components/TechniqueLesson";
+import LessonBody from "@/features/integrals/components/LessonBody";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
@@ -70,7 +70,12 @@ export default function IntegralTraining() {
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
             No clock pressure that matters, no streak at stake. Read the technique, then work through
-            its problems — the queue puts what you haven't solved first.
+            its problems — the queue puts what you haven't solved first. Counters below count solved
+            problems only.{" "}
+            <Link to="/integrals/lessons" className="text-foreground underline underline-offset-2">
+              Read the lessons on their own
+            </Link>
+            .
           </p>
         </header>
 
@@ -254,6 +259,25 @@ export function TrainingTechnique() {
   const problem = queue[index];
   const run = useIntegralRun(problem ?? PROBLEMS[0]);
 
+  const next = () => setIndex((i) => (i + 1) % queue.length);
+
+  // After a correct answer the input is gone and the Next button is the only action. Let a quick
+  // Enter press advance the queue without reaching for the mouse.
+  // Every hook above the early returns below must run on every render regardless of which guard
+  // fires, so this stays here rather than moving down next to where it reads naturally.
+  useEffect(() => {
+    if (run.status !== "solved") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      setIndex((i) => (i + 1) % queue.length);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [run.status, queue.length]);
+
   if (!mixed && !custom && !isSource && !technique) return <Navigate to="/integrals/train" replace />;
   if (isSource && !source) return <Navigate to="/integrals/train" replace />;
   if (!problem) return <Navigate to="/integrals/train" replace />;
@@ -262,8 +286,6 @@ export function TrainingTechnique() {
     setLessonOpen((v) => !v);
     if (!lessonOpen && technique) markLessonRead(technique.id);
   };
-
-  const next = () => setIndex((i) => (i + 1) % queue.length);
 
   return (
     <AppShell>
@@ -304,9 +326,28 @@ export function TrainingTechnique() {
         </header>
 
         {technique && (
-          <div className="mb-6">
-            <TechniqueLesson technique={technique} open={lessonOpen} onToggle={openLesson} />
-          </div>
+          <section className="reveal mb-6 overflow-hidden rounded-2xl border border-border bg-card">
+            <button
+              onClick={openLesson}
+              aria-expanded={lessonOpen}
+              aria-controls={`${technique.id}-lesson`}
+              className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-accent/40"
+            >
+              <span className="flex items-center gap-2.5">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <span className="font-display text-[16px] font-semibold text-foreground">The lesson</span>
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 text-muted-foreground transition-transform ${lessonOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {lessonOpen && (
+              <div id={`${technique.id}-lesson`} className="border-t border-border px-5 pb-5 pt-4">
+                <LessonBody technique={technique} />
+              </div>
+            )}
+          </section>
         )}
 
         <RunPanel

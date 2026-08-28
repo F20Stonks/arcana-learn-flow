@@ -64,6 +64,15 @@ export default function IntegralsHub() {
               <BarChart3 className="h-3.5 w-3.5" /> Progress
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
+            {/* Deliberately the loudest control on the page — competing is the point of the
+                Arena, and as a muted text link nobody found it. */}
+            <Link
+              to="/leaderboards"
+              className="group inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-semibold text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_8px_24px_-8px_hsl(var(--primary)/0.6)] transition-opacity hover:opacity-90"
+            >
+              <Trophy className="h-4 w-4" /> Leaderboards
+              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
           </div>
         </section>
 
@@ -151,6 +160,21 @@ export default function IntegralsHub() {
           </Link>
 
           <Link
+            to="/integrals/lessons"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Lessons</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              Every technique written out in one place — read them straight through without starting a
+              drill. Reading isn't scored.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Read →
+            </span>
+          </Link>
+
+          <Link
             to="/integrals/sprint"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
           >
@@ -183,7 +207,10 @@ export default function IntegralsHub() {
         </section>
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <h2 className="font-display text-[17px] font-semibold text-foreground">Technique mastery</h2>
+          <h2 className="font-display text-[17px] font-semibold text-foreground">Problems solved by technique</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Bars move only when you solve a problem — reading a lesson doesn't count.
+          </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {mastery.map((m) => (
               <Link

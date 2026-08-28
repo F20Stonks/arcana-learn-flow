@@ -15,6 +15,17 @@ import type { TechniqueId } from "./types";
 
 const STORAGE_KEY = "arcana.integrals.progress.v1";
 
+/**
+ * Whose progress is in memory. Local storage is per-browser, not per-account, so without this a
+ * second person signing in on the same machine inherits the first person's solved count.
+ */
+let scopeUserId: string | null = null;
+
+/** Namespaced storage key for any per-player local record (progress, submitted puzzles, …). */
+export function scopedKey(base: string): string {
+  return scopeUserId ? `${base}:${scopeUserId}` : base;
+}
+
 export interface SolveRecord {
   solvedAt: string;
   solves: number;
@@ -75,7 +86,7 @@ const listeners = new Set<() => void>();
 function read(): Progress {
   if (memory) return memory;
   try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    const raw = globalThis.localStorage?.getItem(scopedKey(STORAGE_KEY));
     memory = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
   } catch {
     memory = emptyProgress();
@@ -83,10 +94,25 @@ function read(): Progress {
   return memory;
 }
 
+/**
+ * Point the store at a signed-in player (or at the signed-out scope with null).
+ *
+ * Called from the app root before anything renders, so a page never paints another account's
+ * numbers. Nothing is ever inherited: a brand-new account starts from an empty record, even on a
+ * browser where somebody else has been playing.
+ */
+export function setProgressScope(userId: string | null) {
+  const next = userId ?? null;
+  if (next === scopeUserId) return;
+  scopeUserId = next;
+  memory = null;
+  for (const l of listeners) l();
+}
+
 function write(next: Progress) {
   memory = next;
   try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+    globalThis.localStorage?.setItem(scopedKey(STORAGE_KEY), JSON.stringify(next));
   } catch {
     // Storage is unavailable — keep going in memory rather than losing the session.
   }
@@ -278,7 +304,10 @@ export interface TechniqueMastery {
   solved: number;
   total: number;
   lessonRead: boolean;
-  /** 0–1 across both halves: reading the lesson is worth a fifth, solving the rest. */
+  /**
+   * 0–1, solved problems only. Reading a lesson deliberately counts for nothing here — a bar that
+   * moves before you have answered anything reads as progress you have not made.
+   */
   mastery: number;
 }
 
@@ -286,8 +315,8 @@ export function techniqueMastery(p: Progress, id: TechniqueId): TechniqueMastery
   const pool = PROBLEMS.filter((q) => q.techniques.includes(id));
   const solved = pool.filter((q) => hasSolved(p, q.id)).length;
   const lessonRead = p.lessonsRead.includes(id);
-  const solveShare = pool.length ? solved / pool.length : 0;
-  return { id, solved, total: pool.length, lessonRead, mastery: 0.2 * (lessonRead ? 1 : 0) + 0.8 * solveShare };
+  const mastery = pool.length ? solved / pool.length : 0;
+  return { id, solved, total: pool.length, lessonRead, mastery };
 }
 
 export function allMastery(p: Progress): TechniqueMastery[] {
