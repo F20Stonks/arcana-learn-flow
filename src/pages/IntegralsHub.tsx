@@ -10,6 +10,8 @@ import { BarChart3, BookOpen, Check, Dumbbell, Flame, Sigma, Timer, Trophy, User
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
+import DailyHeatmap from "@/features/integrals/components/DailyHeatmap";
+import ActivityHeatmap from "@/features/integrals/components/ActivityHeatmap";
 import { DifficultyStars } from "@/features/integrals/components/IntegralPrompt";
 import { integralLatex } from "@/features/integrals/latex";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
@@ -128,22 +130,16 @@ export default function IntegralsHub() {
           </Link>
         </section>
 
-        <section className="reveal mb-6 grid gap-4 sm:grid-cols-2">
-          <Link
-            to="/integrals/lessons"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
-          >
-            <BookOpen className="h-4 w-4 text-primary" />
-            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Lessons</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Every technique's lesson on its own — the recognition cue, the recipe, a worked example.
-              Read at your own pace, nothing timed or scored.
-            </p>
-            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
-              Read →
-            </span>
-          </Link>
+        <div className="reveal mb-6 grid gap-4 sm:grid-cols-2">
+          <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <DailyHeatmap progress={progress} />
+          </section>
+          <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <ActivityHeatmap progress={progress} />
+          </section>
+        </div>
 
+        <section className="reveal mb-6 grid gap-4 sm:grid-cols-2">
           <Link
             to="/integrals/train"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"

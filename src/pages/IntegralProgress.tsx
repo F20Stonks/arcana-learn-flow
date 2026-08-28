@@ -10,6 +10,7 @@ import { ArrowLeft, Flame, Timer, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import XpBar from "@/features/integrals/components/XpBar";
 import DailyHeatmap from "@/features/integrals/components/DailyHeatmap";
+import ActivityHeatmap from "@/features/integrals/components/ActivityHeatmap";
 import DifficultyBars from "@/features/integrals/components/DifficultyBars";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { allMastery, BADGES, stats } from "@/features/integrals/progress";
@@ -78,6 +79,10 @@ export default function IntegralProgress() {
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
           <DailyHeatmap progress={progress} />
+        </section>
+
+        <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <ActivityHeatmap progress={progress} />
         </section>
 
         <div className="reveal mb-6 grid gap-4 sm:grid-cols-2">

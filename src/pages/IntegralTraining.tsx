@@ -353,6 +353,7 @@ export function TrainingTechnique() {
         <RunPanel
           problem={problem}
           run={run}
+          onSkip={next}
           footer={
             <div className="reveal flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
               <span className="text-[14px] text-foreground">

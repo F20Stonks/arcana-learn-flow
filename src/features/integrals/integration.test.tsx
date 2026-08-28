@@ -58,6 +58,8 @@ describe("the daily", () => {
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/Daily #\d+/);
+    // One attempt per puzzle is the whole point of the daily — no skip escape hatch here.
+    expect(screen.queryByRole("button", { name: /^Skip$/i })).not.toBeInTheDocument();
 
     await solveDaily(problems);
     expect(screen.getAllByText(/How it goes/).length).toBeGreaterThan(0);
@@ -180,6 +182,20 @@ describe("training", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^Next$/i }));
     await waitFor(() => expect(screen.getByText(/2\/\d+/).textContent).not.toBe(before));
+  });
+
+  it("skips a problem without answering it, recording nothing", async () => {
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    const first = orderQueue(problemsForTechnique("parts"), getProgress())[0];
+    const before = screen.getByText(/1\/\d+/).textContent;
+
+    fireEvent.click(screen.getByRole("button", { name: /^Skip$/i }));
+
+    await waitFor(() => expect(screen.getByText(/2\/\d+/).textContent).not.toBe(before));
+    // Still mid-run on the next problem — skipping doesn't reveal a solution or end the run.
+    expect(screen.getByPlaceholderText(/your answer|a number/i)).toBeInTheDocument();
+    expect(getProgress().xp).toBe(0);
+    expect(getProgress().solves[first.id]).toBeUndefined();
   });
 
   it("redirects an unknown technique back to the list", () => {

@@ -81,6 +81,52 @@ export function heatmapWeeks(p: Progress, weeks = 18, today = new Date()): DayCe
   return columns;
 }
 
+export interface ActivityCell {
+  key: string;
+  date: Date;
+  future: boolean;
+  /** Every correct submission that day — daily, training and sprint solves alike. */
+  count: number;
+  level: HeatLevel;
+}
+
+/**
+ * How bright a day of activity should be — raw volume, not "how it went". A 5+ problem day is
+ * "did a real session"; four bands above zero is enough to separate a quick check-in from that
+ * without needing a number on every cell.
+ */
+export function activityLevel(count: number): HeatLevel {
+  if (count <= 0) return 0;
+  if (count <= 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 6) return 3;
+  return 4;
+}
+
+/**
+ * The same 18-week grid as `heatmapWeeks`, but counting every problem solved that day (daily,
+ * training, sprint) instead of just the daily puzzle's own result — this is the "how much did I
+ * actually do" view sitting next to "how did the daily go".
+ */
+export function activityHeatmapWeeks(p: Progress, weeks = 18, today = new Date()): ActivityCell[][] {
+  const endOfWeek = addDays(today, 6 - today.getDay());
+  const start = addDays(endOfWeek, -(weeks * 7 - 1));
+  const todayKey = dayKey(today);
+
+  const columns: ActivityCell[][] = [];
+  for (let w = 0; w < weeks; w++) {
+    const column: ActivityCell[] = [];
+    for (let d = 0; d < 7; d++) {
+      const date = addDays(start, w * 7 + d);
+      const key = dayKey(date);
+      const count = p.solveDays[key] ?? 0;
+      column.push({ key, date, future: key > todayKey, count, level: activityLevel(count) });
+    }
+    columns.push(column);
+  }
+  return columns;
+}
+
 /**
  * The months to label along the top: the first column in which each month appears.
  *
@@ -88,7 +134,10 @@ export function heatmapWeeks(p: Progress, weeks = 18, today = new Date()): DayCe
  * label closer than `minGap` columns to the last one is dropped — the grid reads better missing a
  * month than printing "AprMay".
  */
-export function monthLabels(weeks: DayCell[][], minGap = 3): Array<{ index: number; label: string }> {
+export function monthLabels(
+  weeks: Array<Array<{ date: Date }>>,
+  minGap = 3,
+): Array<{ index: number; label: string }> {
   const out: Array<{ index: number; label: string }> = [];
   let previousMonth = -1;
   let lastLabelled = -Infinity;

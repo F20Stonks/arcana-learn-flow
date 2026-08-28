@@ -58,6 +58,10 @@ export interface Progress {
   xp: number;
   solves: Record<string, SolveRecord>;
   daily: Record<string, DailyRecord>;
+  /** Every correct submission, by calendar day, across daily/training/sprint alike — the raw
+   *  volume behind the activity heatmap. `solves` only keeps each problem's latest/best attempt,
+   *  so a day where you resolve the same problem twice would otherwise vanish from any count. */
+  solveDays: Record<string, number>;
   streak: { current: number; longest: number; lastDayKey: string | null };
   badges: Record<string, string>;
   lessonsRead: TechniqueId[];
@@ -70,6 +74,7 @@ export function emptyProgress(): Progress {
     xp: 0,
     solves: {},
     daily: {},
+    solveDays: {},
     streak: { current: 0, longest: 0, lastDayKey: null },
     badges: {},
     lessonsRead: [],
@@ -212,7 +217,7 @@ export function recordDaily(
   update((p) => {
     for (const slot of slots) {
       if (!slot.solved) continue;
-      applySolve(p, { ...slot, xp: slot.score });
+      applySolve(p, { ...slot, xp: slot.score }, date);
       p.xp += slot.score;
     }
     const allSolved = slots.length > 0 && slots.every((s) => s.solved);
@@ -236,7 +241,9 @@ export function recordDaily(
   return out;
 }
 
-function applySolve(p: Progress, facts: SolveFacts) {
+function applySolve(p: Progress, facts: SolveFacts, date = new Date()) {
+  const key = dayKey(date);
+  p.solveDays[key] = (p.solveDays[key] ?? 0) + 1;
   const prior = p.solves[facts.problemId];
   p.solves[facts.problemId] = {
     solvedAt: new Date().toISOString(),

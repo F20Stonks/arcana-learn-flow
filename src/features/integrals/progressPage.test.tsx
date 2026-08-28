@@ -73,14 +73,16 @@ describe("a played history", () => {
     playDaily(new Date(2026, 7, 24, 12), { score: 55 });
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /Table/ }));
+    // The daily heatmap's own Table toggle — the activity heatmap right below it has an
+    // identically-labelled one, so this picks the first (the daily calendar renders first).
+    fireEvent.click(screen.getAllByRole("button", { name: /Table/ })[0]);
     const table = screen.getByRole("table", { name: /Every day you have attempted/i });
     expect(within(table).getByText("2026-08-24")).toBeInTheDocument();
     expect(within(table).getByText("Solved")).toBeInTheDocument();
     expect(within(table).getByText("55")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Calendar/ }));
-    expect(screen.queryByRole("table", { name: /Every day/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: /Calendar/ })[0]);
+    expect(screen.queryByRole("table", { name: /Every day you have attempted/i })).not.toBeInTheDocument();
   });
 
   it("reports turnout across the span rather than as a raw count", () => {

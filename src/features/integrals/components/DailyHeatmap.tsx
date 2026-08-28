@@ -84,7 +84,7 @@ export default function DailyHeatmap({ progress, weeks = 18 }: { progress: Progr
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="font-display text-[17px] font-semibold text-foreground">The last {weeks} weeks</h2>
+        <h2 className="font-display text-[17px] font-semibold text-foreground">Daily results, last {weeks} weeks</h2>
         <button
           onClick={() => setAsTable((v) => !v)}
           aria-pressed={asTable}

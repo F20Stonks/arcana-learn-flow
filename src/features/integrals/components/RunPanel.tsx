@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Flag, Timer } from "lucide-react";
+import { ArrowRight, Flag, Timer } from "lucide-react";
 import AnswerInput from "./AnswerInput";
 import HintLadder from "./HintLadder";
 import IntegralPrompt from "./IntegralPrompt";
@@ -15,10 +15,14 @@ interface Props {
   /** Rendered under the solution once the run ends — the result card, or the next-problem control. */
   footer?: React.ReactNode;
   showTimer?: boolean;
+  /** Training only: move straight to the next problem without answering or seeing the solution —
+   *  no XP, no penalty, nothing recorded. Omitted entirely on the daily, where one attempt per
+   *  puzzle is the whole point. */
+  onSkip?: () => void;
 }
 
 /** The play surface, shared by the daily and by training so they can never drift apart. */
-export default function RunPanel({ problem, run, footer, showTimer = true }: Props) {
+export default function RunPanel({ problem, run, footer, showTimer = true, onSkip }: Props) {
   const over = run.status !== "running";
   const par = PAR_SECONDS[problem.difficulty];
   const result = useRef<HTMLDivElement>(null);
@@ -61,12 +65,22 @@ export default function RunPanel({ problem, run, footer, showTimer = true }: Pro
           />
           <VerdictLine verdict={run.verdict} />
           <HintLadder hints={problem.hints} used={run.hintsUsed} onReveal={run.revealHint} />
-          <button
-            onClick={run.giveUp}
-            className="flex items-center gap-1.5 self-start py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
-          >
-            <Flag className="h-3.5 w-3.5" /> Show me the solution
-          </button>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <button
+              onClick={run.giveUp}
+              className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+            >
+              <Flag className="h-3.5 w-3.5" /> Show me the solution
+            </button>
+            {onSkip && (
+              <button
+                onClick={onSkip}
+                className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+              >
+                Skip <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </>
       )}
 

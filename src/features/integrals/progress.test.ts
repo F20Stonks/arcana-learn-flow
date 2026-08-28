@@ -12,6 +12,7 @@ import {
 } from "./progress";
 import { PROBLEMS } from "./problems";
 import { levelForXp, levelState, scoreAttempt, xpForLevel } from "./scoring";
+import { dayKey } from "./daily";
 
 const solveFacts = (problemId: string, over: Partial<Parameters<typeof recordTrainingSolve>[0]> = {}) => ({
   problemId,
@@ -64,6 +65,28 @@ describe("recording", () => {
     expect(p.xp).toBe(200);
     expect(p.solves["power-monomial"].solves).toBe(2);
     expect(p.solves["power-monomial"].bestSeconds).toBe(12);
+  });
+
+  it("counts every training solve toward today's activity total", () => {
+    recordTrainingSolve(solveFacts("power-monomial"));
+    recordTrainingSolve(solveFacts("power-monomial")); // same problem again still counts twice
+    recordTrainingSolve(solveFacts("power-polynomial"));
+    const p = getProgress();
+    expect(p.solveDays[dayKey()]).toBe(3);
+  });
+
+  it("counts every solved daily slot toward that day's activity total, not the day it was recorded", () => {
+    recordDaily(
+      [
+        { ...solveFacts("power-monomial"), solved: true },
+        { ...solveFacts("power-polynomial"), solved: true },
+        { ...solveFacts("power-monomial"), solved: false },
+      ],
+      new Date(2026, 7, 24, 12),
+    );
+    const p = getProgress();
+    expect(p.solveDays["2026-08-24"]).toBe(2);
+    expect(p.solveDays[dayKey()]).toBeUndefined();
   });
 
   it("advances the streak on a solved daily", () => {
