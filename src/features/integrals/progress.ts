@@ -14,7 +14,6 @@ import { levelState } from "./scoring";
 import type { TechniqueId } from "./types";
 
 const STORAGE_KEY = "arcana.integrals.progress.v1";
-const LEGACY_CLAIMED_KEY = "arcana.integrals.progress.claimed";
 
 /**
  * Whose progress is in memory. Local storage is per-browser, not per-account, so without this a
@@ -96,31 +95,15 @@ function read(): Progress {
  * Point the store at a signed-in player (or at the signed-out scope with null).
  *
  * Called from the app root before anything renders, so a page never paints another account's
- * numbers. The pre-scoping record is handed to the first account that signs in after this shipped
- * — that's whoever was already playing on this browser — and then never handed to anyone again.
+ * numbers. Nothing is ever inherited: a brand-new account starts from an empty record, even on a
+ * browser where somebody else has been playing.
  */
 export function setProgressScope(userId: string | null) {
   const next = userId ?? null;
   if (next === scopeUserId) return;
   scopeUserId = next;
   memory = null;
-  if (next) claimLegacyProgress(next);
   for (const l of listeners) l();
-}
-
-function claimLegacyProgress(userId: string) {
-  try {
-    const store = globalThis.localStorage;
-    if (!store) return;
-    if (store.getItem(LEGACY_CLAIMED_KEY)) return;
-    const legacy = store.getItem(STORAGE_KEY);
-    store.setItem(LEGACY_CLAIMED_KEY, userId);
-    if (!legacy || store.getItem(`${STORAGE_KEY}:${userId}`)) return;
-    store.setItem(`${STORAGE_KEY}:${userId}`, legacy);
-    store.removeItem(STORAGE_KEY);
-  } catch {
-    // Storage unavailable — nothing to migrate.
-  }
 }
 
 function write(next: Progress) {
@@ -298,7 +281,10 @@ export interface TechniqueMastery {
   solved: number;
   total: number;
   lessonRead: boolean;
-  /** 0–1 across both halves: reading the lesson is worth a fifth, solving the rest. */
+  /**
+   * 0–1, solved problems only. Reading a lesson deliberately counts for nothing here — a bar that
+   * moves before you have answered anything reads as progress you have not made.
+   */
   mastery: number;
 }
 
@@ -306,8 +292,8 @@ export function techniqueMastery(p: Progress, id: TechniqueId): TechniqueMastery
   const pool = PROBLEMS.filter((q) => q.techniques.includes(id));
   const solved = pool.filter((q) => hasSolved(p, q.id)).length;
   const lessonRead = p.lessonsRead.includes(id);
-  const solveShare = pool.length ? solved / pool.length : 0;
-  return { id, solved, total: pool.length, lessonRead, mastery: 0.2 * (lessonRead ? 1 : 0) + 0.8 * solveShare };
+  const mastery = pool.length ? solved / pool.length : 0;
+  return { id, solved, total: pool.length, lessonRead, mastery };
 }
 
 export function allMastery(p: Progress): TechniqueMastery[] {
