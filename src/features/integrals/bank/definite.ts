@@ -1016,4 +1016,24 @@ export const Definite: Problem[] = [
       "So the whole integral collapses to just the constant piece: 4050.",
     ],
   },
+  {
+    id: "rs26-sin-quadratics-orthogonal",
+    kind: "definite",
+    integrand: "\\sin\\!\\left((x-1)(5x-1)\\right)\\sin\\!\\left(x(3x-2)\\right)",
+    integrandExpr: "sin((x-1)*(5*x-1))*sin(x*(3*x-2))",
+    lower: "0",
+    upper: "1",
+    answer: "0",
+    answerLatex: "0",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["symmetry"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: [
+      "The integrand isn't identically zero on [0,1] — this is a genuine cancellation between positive and negative regions, not a trivial vanishing. Check f(x) and f(1-x) numerically before assuming a clean symmetry mechanism.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration: the product integrates to exactly 0 on [0,1].",
+    ],
+  },
 ];

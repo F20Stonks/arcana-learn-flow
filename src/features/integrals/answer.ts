@@ -11,7 +11,8 @@
  * and `0.5*log(abs(x))` all have to reach the evaluator as the same thing, so `normalize` accepts
  * pasted LaTeX, textbook shorthand (`sin^2 x`, `arctan`, `ln`), and mathjs syntax alike.
  */
-import { parse, type EvalFunction } from "mathjs";
+import type { EvalFunction } from "mathjs";
+import { parse } from "./mathEngine";
 import type { Problem, Verdict } from "./types";
 
 /** Names mathjs will treat as functions — everything else followed by "(" means multiplication. */
@@ -21,7 +22,7 @@ const FUNCTIONS = new Set([
   "sinh", "cosh", "tanh", "sech", "csch", "coth",
   "asinh", "acosh", "atanh", "asech", "acsch", "acoth",
   "log", "log10", "log2", "exp", "sqrt", "cbrt", "nthRoot",
-  "abs", "sign", "floor", "ceil", "round", "min", "max", "gamma", "erf",
+  "abs", "sign", "floor", "ceil", "round", "min", "max", "gamma", "erf", "lambertw",
 ]);
 
 /** Textbook spellings → mathjs spellings, applied per identifier rather than by regex. */

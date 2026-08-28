@@ -674,3 +674,47 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   - 1821/1821 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
     pushed. This closes out both 2025 Semifinal and Finals — next per the standing authorization:
     2026 Regular Season, 2026 Quarterfinal, 2026 Semifinal, 2026 Finals.
+  - Mined MIT 2026 Regular Season (20 problems, the largest single non-qualifying document):
+    15 of 20 added. Along the way, finally did the `lambertw` engineering work the runbook
+    pre-authorized back when the HMMT set was mined but never actually implemented: added
+    `src/features/integrals/mathEngine.ts`, a shared `create(all)`-based mathjs instance with a
+    hand-rolled Newton/Halley `lambertw` (principal branch, valid for x>-1/e, with a square-root
+    expansion near the branch point for numerical stability) registered via `math.import`. Both
+    `answer.ts` (live grading) and `problems.test.ts` (the self-verifying suite) now import `parse`
+    from this shared instance instead of bare `mathjs`, and `"lambertw"` was added to `FUNCTIONS` in
+    `answer.ts`. Verified the swap alone changes nothing (1722/1722 still passing before adding any
+    new content) before using it. This unlocked a genuinely elegant problem (Regular Season #18):
+    the infinite power-tower `x^{x^{x^{\cdots}}}` integral, solved by recognizing implicit
+    differentiation gives `d/dx[1/h]` where `h` is the tower — turning the integral into
+    `[1/h]` evaluated at the endpoints, with `h(x)=-W(-\ln x)/\ln x` in closed form and the famous
+    `h(\sqrt2)=2` identity landing the answer at exactly `-3/2`, confirmed both by hand and via the
+    new `lambertw`.
+    - Added across `substitution.ts` (4, including the power-tower problem and a `x^{2025}e^{x^{2026}}`
+      problem graded as indefinite on a safe domain since the competition's own `[0,2026]` bounds
+      would require evaluating `e^{2026^{2026}}`, overflowing double precision — same overflow
+      pattern documented in earlier sessions), `partialFractions.ts` (3), `trigSubstitution.ts` (2),
+      `trigIdentities.ts` (2, including a sign-function integral of a four-term sine sum, verified
+      by quadrature against the sum-of-sines closed form's zero crossings), `parts.ts` (3, including
+      a genuine double-by-parts `(\operatorname{arcsinh}x)^2` and a "guess a quotient-rule-shaped
+      antiderivative and confirm by differentiating" problem), and `definite.ts` (1, a clean
+      cancellation-to-zero problem verified numerically without a full symmetry proof).
+    - Caught and fixed two of my own hand-derivation overreaches before committing, per this
+      session's established self-review practice: (1) an initially-claimed reciprocal-substitution
+      symmetry for Problem 12 (`x^8/(x^8-x^6+x^4-x^2+1)` on `[\tfrac12,2]`) turned out false when
+      checked numerically (`f(x)+f(1/x)` is not constant) — rewritten to state only the verified
+      denominator factorization `(x^{10}+1)/(x^2+1)` and rely on the numeric check rather than a
+      wrong proof; (2) a fabricated-looking `\cos(x/2)` factor in a sum-of-sines identity was
+      dropped after re-deriving the standard `\sum\sin(kx)` closed form from scratch.
+    - Skipped with reason, not forced: Problem 3 (`e^x` minus `x` minus `\sqrt{x^4/4-x+1}-\frac1{2x}`
+      under nested radicals, OCR too garbled to reconstruct with confidence); Problem 4 (four
+      iterated definite integrals stacked in a way the OCR renders ambiguously — not confidently
+      the standard Cauchy repeated-integration pattern); Problem 11 (`\sum_{k=1}^\infty\frac1k
+      \lfloor x/k\rfloor`, a genuine infinite sum with no simple closed form — a real divisor-
+      summatory-function object, schema mismatch); Problem 19 (algebra check showed the OCR'd
+      identity claiming the integrand equals 1 is false as transcribed — the true expression is
+      unrecoverable from the garbled source); Problem 20 (a genuinely deep self-referential nested
+      power-tower-of-4 continued structure — flagged as worth a dedicated session rather than
+      attempted under time pressure here).
+    - 1851/1851 tests passing (whole repo), `tsc --noEmit` clean, `eslint` clean on every touched
+      file including the new `mathEngine.ts`. Committed and pushed. Continuing next to 2026
+      Quarterfinal.

@@ -7,7 +7,7 @@
  * than telling a student who is right that they're wrong.
  */
 import { describe, expect, it } from "vitest";
-import { parse } from "mathjs";
+import { parse } from "./mathEngine";
 import { gradeAnswer, normalize } from "./answer";
 import { PROBLEMS, problemsForSource, problemsForTechniques, SOURCES, sourceKey } from "./problems";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "./techniques";
