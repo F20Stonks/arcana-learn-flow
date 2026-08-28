@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import Tex from "@/features/integrals/components/Tex";
 import RunPanel from "@/features/integrals/components/RunPanel";
 import TechniqueLesson from "@/features/integrals/components/TechniqueLesson";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
@@ -88,7 +89,9 @@ export default function IntegralTraining() {
                     {m.solved}/{m.total}
                   </span>
                 </div>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{t.tagline}</p>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+                  <Tex>{t.tagline}</Tex>
+                </p>
                 <div
                   role="progressbar"
                   aria-valuenow={m.solved}
@@ -283,13 +286,15 @@ export function TrainingTechnique() {
                   : "Mixed practice"}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            {technique
-              ? technique.tagline
-              : custom
-                ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
-                : source
-                  ? "This competition's set, worked exactly as it was set."
-                  : "Every problem in the bank, technique unannounced."}{" "}
+            <Tex>
+              {technique
+                ? technique.tagline
+                : custom
+                  ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
+                  : source
+                    ? "This competition's set, worked exactly as it was set."
+                    : "Every problem in the bank, technique unannounced."}
+            </Tex>{" "}
             ·{" "}
             <span className="readout tabular-nums">
               {index + 1}/{queue.length}
