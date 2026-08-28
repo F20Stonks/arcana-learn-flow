@@ -370,4 +370,25 @@ export const FloorFunction: Problem[] = [
       "Summing \\int_{k^2/4}^{(k+1)^2/4}\\frac{dx}{(x+1+k)^2} over all k\\ge0 (each a simple \\left[-\\frac1{x+1+k}\\right] evaluation) and telescoping the resulting series in k gives \\frac{2\\pi^2}3-\\frac{73}{12} — confirmed numerically by direct quadrature over the infinite domain.",
     ],
   },
+  {
+    id: "qf26-floor2-ceil2",
+    kind: "definite",
+    integrand: "\\frac1{\\lfloor x\\rfloor^2\\lceil x\\rceil^2}",
+    integrandExpr: "1/(floor(x)^2*ceil(x)^2)",
+    lower: "1",
+    upper: "\\infty",
+    answer: "(pi^2-9)/3",
+    answerLatex: "\\frac{\\pi^2-9}3",
+    domain: [1, Infinity],
+    difficulty: 4,
+    techniques: ["floor-function"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "On each unit interval (n,n+1) for integer n\\ge1, \\lfloor x\\rfloor=n and \\lceil x\\rceil=n+1 (except exactly at the integer x=n itself, measure zero), so the integrand is the constant \\frac1{n^2(n+1)^2} there.",
+      "\\frac1{n^2(n+1)^2} = \\left(\\frac1n-\\frac1{n+1}\\right)^2 = \\frac1{n^2}-\\frac2{n(n+1)}+\\frac1{(n+1)^2}, a telescoping-friendly split.",
+    ],
+    steps: [
+      "\\sum_{n=1}^\\infty\\frac1{n^2(n+1)^2} = \\sum\\frac1{n^2}+\\sum\\frac1{(n+1)^2}-2\\sum\\frac1{n(n+1)} = \\zeta(2)+(\\zeta(2)-1)-2\\cdot1 = 2\\zeta(2)-3 = \\frac{\\pi^2}3-3 = \\frac{\\pi^2-9}3.",
+    ],
+  },
 ];

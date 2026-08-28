@@ -315,4 +315,25 @@ export const GammaFunction: Problem[] = [
       "With n=5, a=1: 5!\\,e^{-1}\\left(1+1+\\tfrac12+\\tfrac16+\\tfrac1{24}+\\tfrac1{120}\\right) = 120e^{-1}\\cdot\\frac{326}{120} = \\frac{326}{e}.",
     ],
   },
+  {
+    id: "qf26-x1p5-exp-neg-x5-over-2025",
+    kind: "definite",
+    integrand: "x^{3/2}e^{-x^5/2025}",
+    integrandExpr: "x^1.5*exp(-x^5/2025)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "9*sqrt(pi)",
+    answerLatex: "9\\sqrt\\pi",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["gamma-function"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal Tiebreakers" },
+    hints: [
+      "The general form \\int_0^\\infty x^{s-1}e^{-ax^p}\\,dx = \\frac1p a^{-s/p}\\Gamma\\!\\left(\\frac sp\\right) applies with s=\\tfrac52,\\ p=5,\\ a=\\tfrac1{2025}.",
+      "2025=45^2, which is exactly what makes a^{-s/p}=a^{-1/2}=\\sqrt{2025}=45 come out clean.",
+    ],
+    steps: [
+      "\\frac15\\left(\\frac1{2025}\\right)^{-1/2}\\Gamma\\!\\left(\\frac12\\right) = \\frac15\\cdot45\\cdot\\sqrt\\pi = 9\\sqrt\\pi.",
+    ],
+  },
 ];

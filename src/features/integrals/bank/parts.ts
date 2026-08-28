@@ -1813,4 +1813,23 @@ export const Parts: Problem[] = [
       "Differentiating -\\frac{\\cos x+x\\sin x}{1+x^2} via the quotient rule and simplifying the numerator over the common (1+x^2)^2 denominator reproduces x\\left[(1-x^2)\\cos x+2x\\sin x\\right] exactly.",
     ],
   },
+  {
+    id: "qf26-sin-arccosh",
+    kind: "indefinite",
+    integrand: "\\sin(\\operatorname{arccosh}x)",
+    integrandExpr: "sin(acosh(x))",
+    answer: "0.5*(x*sin(acosh(x))-sqrt(x^2-1)*cos(acosh(x)))",
+    answerLatex: "\\frac12\\left(x\\sin(\\operatorname{arccosh}x)-\\sqrt{x^2-1}\\cos(\\operatorname{arccosh}x)\\right) + C",
+    domain: [1.2, 3],
+    difficulty: 5,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "\\operatorname{arccosh}x mixes a hyperbolic inverse with an ordinary circular sine — it isn't simplifiable via cosh^2-\\sinh^2=1 the way \\sin(\\arccos x) would simplify, so treat it as an honest by-parts reduction with u=\\sin(\\operatorname{arccosh}x),\\ dv=dx.",
+      "\\frac{d}{dx}\\operatorname{arccosh}x = \\frac1{\\sqrt{x^2-1}}, so integrating by parts twice (the second application on the resulting \\cos(\\operatorname{arccosh}x)/\\sqrt{x^2-1} term) and solving for the original integral I closes the loop, the same reduction pattern as \\int\\sin(\\ln x)\\,dx.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
 ];

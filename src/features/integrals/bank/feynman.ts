@@ -233,4 +233,25 @@ export const Feynman: Problem[] = [
       "Confirmed directly against the integral's own numeric value.",
     ],
   },
+  {
+    id: "qf26-cos4x-over-x4plus4",
+    kind: "definite",
+    integrand: "\\frac{4\\cos(4x)}{x^4+4}",
+    integrandExpr: "4*cos(4*x)/(x^4+4)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/(2*exp(4))*(sin(4)+cos(4))",
+    answerLatex: "\\frac\\pi{2e^4}\\left(\\sin4+\\cos4\\right)",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "This is a Feynman/contour-integration flagship: differentiate I(a)=\\int_0^\\infty\\frac{4\\cos(ax)}{x^4+4}\\,dx twice with respect to a to get an ODE that I(a) satisfies (from the x^4+4 denominator's roots), then solve it with the known boundary values I(0) and I'(0).",
+      "x^4+4=(x^2-2x+2)(x^2+2x+2) (Sophie Germain's identity), whose complex roots at 1\\pm i,\\ -1\\pm i are exactly what produce the e^{-4} decay and the \\sin4+\\cos4 combination via residues at a=4.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration against the closed form — the oscillatory integrand decays like 1/x^4, so the shared quadrature resolves it cleanly despite the cos(4x) factor.",
+    ],
+  },
 ];

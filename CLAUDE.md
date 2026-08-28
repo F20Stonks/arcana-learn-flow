@@ -718,3 +718,30 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     - 1851/1851 tests passing (whole repo), `tsc --noEmit` clean, `eslint` clean on every touched
       file including the new `mathEngine.ts`. Committed and pushed. Continuing next to 2026
       Quarterfinal.
+  - Mined MIT 2026 Quarterfinal (#1-4 + Tiebreakers, 13 problems): 9 of 13 added — a mixed
+    arcsinh/arcsin antiderivative and a quartic-split arctan/arctanh antiderivative
+    (`trigSubstitution.ts`), a dilogarithm special-value problem on `[0,\tfrac12]`
+    (`zetaSeries.ts`), `1/(x^6+1)` on `[0,∞)=\pi/3` (`betaIntegrals.ts`), a Gamma-function problem
+    with `x^{3/2}e^{-x^5/2025}` engineered so `2025=45^2` cancels cleanly to `9\sqrt\pi`
+    (`gammaFunction.ts`), a floor/ceil-squared telescoping-series problem (`floorFunction.ts`), a
+    Feynman-trick oscillatory infinite integral verified by quadrature only
+    (`feynman.ts`), a genuine by-parts reduction mixing circular and hyperbolic inverse functions
+    `\sin(\operatorname{arccosh}x)` (`parts.ts`), and a `u=\sqrt x` substitution problem needing
+    polynomial long division to close (`substitution.ts`).
+    - One exact duplicate found and left alone rather than re-added: `x^3/(e^x+1)` on `[0,∞)` was
+      already present, correctly sourced to HMMT — skipped rather than duplicated or re-attributed
+      (the existing citation is real and shouldn't be overwritten just because a second competition
+      also used the same integral).
+    - One genuinely interesting catch: Quarterfinal #3 Problem 3, `\int_0^{\sqrt3}\arctan\!\left(
+      \frac{3x-x^3}{1-3x^2}\right)dx`, uses the tan-triple-angle identity, but the stated answer
+      `\pi\sqrt3-3\ln2` does NOT match either the raw branch-jumping integrand or the analytically
+      hand-derived piecewise form (`3\arctan x` minus `\pi` past the branch cut at `x=1/\sqrt3`) —
+      verified with real effort (both a direct quadrature of the literal arctan expression and an
+      independent closed-form derivation of the piecewise antiderivative, which agree with each
+      other at ≈-0.266 but not with the OCR'd answer) rather than just assumed wrong. Set aside as
+      an OCR/transcription mismatch, not forced.
+    - Skipped with reason: Quarterfinal #3 Problem 2, an alternating sign raised to an infinite sum
+      of floor terms in the exponent — same infinite-series-in-the-integrand schema mismatch as
+      Regular Season #11, not attempted.
+    - 1869/1869 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
+      pushed. Continuing next to 2026 Semifinal.

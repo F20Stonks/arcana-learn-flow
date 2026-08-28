@@ -290,4 +290,25 @@ export const ZetaSeries: Problem[] = [
       "\\int_0^\\infty\\frac{x}{e^{2x}+1}\\,dx = \\int_0^\\infty\\frac{u/2}{e^u+1}\\cdot\\frac{du}2 = \\frac14\\int_0^\\infty\\frac{u}{e^u+1}\\,du = \\frac14\\cdot\\frac{\\pi^2}{12} = \\frac{\\pi^2}{48}.",
     ],
   },
+  {
+    id: "qf26-log-1mx-over-x-half",
+    kind: "definite",
+    integrand: "\\frac{\\ln(1-x)}{x}",
+    integrandExpr: "log(1-x)/x",
+    lower: "0",
+    upper: "1/2",
+    answer: "log(2)^2/2-pi^2/12",
+    answerLatex: "\\frac{\\ln^22}2-\\frac{\\pi^2}{12}",
+    domain: [0, 0.5],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #2" },
+    hints: [
+      "This is the dilogarithm \\operatorname{Li}_2\\!\\left(\\tfrac12\\right) in disguise: \\int_0^{1/2}\\frac{\\ln(1-x)}x\\,dx = -\\operatorname{Li}_2\\!\\left(\\tfrac12\\right).",
+      "The classic special value \\operatorname{Li}_2\\!\\left(\\tfrac12\\right)=\\frac{\\pi^2}{12}-\\frac{\\ln^22}2 (derivable from the dilogarithm reflection formula \\operatorname{Li}_2(x)+\\operatorname{Li}_2(1-x)=\\frac{\\pi^2}6-\\ln x\\ln(1-x) at x=\\tfrac12) gives the result directly.",
+    ],
+    steps: [
+      "-\\operatorname{Li}_2\\!\\left(\\tfrac12\\right) = -\\left(\\frac{\\pi^2}{12}-\\frac{\\ln^22}2\\right) = \\frac{\\ln^22}2-\\frac{\\pi^2}{12}.",
+    ],
+  },
 ];

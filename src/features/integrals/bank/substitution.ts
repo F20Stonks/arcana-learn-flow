@@ -2929,4 +2929,26 @@ export const Substitution: Problem[] = [
       "\\int_{1/4}^{\\sqrt2} = \\left[\\frac1h\\right]_{1/4}^{\\sqrt2} = \\frac12-2 = -\\frac32.",
     ],
   },
+  {
+    id: "qf26-1-minus-x-5over2-over-1-minus-x",
+    kind: "definite",
+    integrand: "\\frac{1-x^{5/2}}{1-x}",
+    integrandExpr: "(1-x^2.5)/(1-x)",
+    lower: "0",
+    upper: "1",
+    answer: "46/15-2*log(2)",
+    answerLatex: "\\frac{46}{15}-2\\ln2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["u-sub"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #1" },
+    hints: [
+      "x=t^2,\\ dx=2t\\,dt turns the half-integer power into an ordinary one: \\frac{1-t^5}{1-t^2}\\cdot2t\\,dt, and \\frac{1-t^5}{1-t^2}=\\frac{1+t+t^2+t^3+t^4}{1+t} (using \\frac{1-t^5}{1-t}=1+t+t^2+t^3+t^4 and \\frac{1-t^2}{1-t}=1+t).",
+      "Polynomial long division on \\frac{1+t+t^2+t^3+t^4}{1+t} gives t^3+t+\\frac1{1+t} — now everything integrates in closed form.",
+    ],
+    steps: [
+      "The full integrand becomes 2t\\left(t^3+t+\\frac1{1+t}\\right) = 2t^4+2t^2+\\frac{2t}{1+t} = 2t^4+2t^2+2-\\frac2{1+t}.",
+      "\\int_0^1\\left(2t^4+2t^2+2-\\frac2{1+t}\\right)dt = \\left[\\frac{2t^5}5+\\frac{2t^3}3+2t-2\\ln(1+t)\\right]_0^1 = \\frac25+\\frac23+2-2\\ln2 = \\frac{46}{15}-2\\ln2.",
+    ],
+  },
 ];

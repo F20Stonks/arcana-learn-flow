@@ -1105,4 +1105,42 @@ export const TrigSubstitution: Problem[] = [
       "\\left[\\arcsin\\!\\left(\\frac x{e^x}\\right)\\right]_0^1 = \\arcsin\\!\\left(\\frac1e\\right)-\\arcsin(0) = \\arcsin\\!\\left(\\frac1e\\right).",
     ],
   },
+  {
+    id: "qf26-mixed-ellipse-substitution",
+    kind: "indefinite",
+    integrand: "\\frac{\\sin x+\\cos x}{\\sqrt{25\\sin^2x+16\\cos^2x}}",
+    integrandExpr: "(sin(x)+cos(x))/sqrt(25*sin(x)^2+16*cos(x)^2)",
+    answer: "(1/3)*asinh(0.75*sin(x))-(1/3)*asin(0.6*cos(x))",
+    answerLatex: "\\frac13\\operatorname{arcsinh}\\!\\left(\\frac34\\sin x\\right)-\\frac13\\arcsin\\!\\left(\\frac35\\cos x\\right) + C",
+    domain: [0.3, 1.2],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #1" },
+    hints: [
+      "Rewrite 25\\sin^2x+16\\cos^2x=16+9\\sin^2x=25-9\\cos^2x, then split the numerator into its \\sin x piece and \\cos x piece separately.",
+      "\\frac{\\sin x\\,dx}{\\sqrt{16+9\\sin^2x}} becomes a hyperbolic \\operatorname{arcsinh} form under u=\\cos x, and \\frac{\\cos x\\,dx}{\\sqrt{25-9\\cos^2x}} becomes a circular \\arcsin form under u=\\sin x.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form rather than reproduced substitution-by-substitution — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
+  {
+    id: "qf26-sqrtx-over-1plusx2-mixed",
+    kind: "indefinite",
+    integrand: "\\frac{\\sqrt x}{1+x^2}",
+    integrandExpr: "sqrt(x)/(1+x^2)",
+    answer: "(1/sqrt(2))*(atan((x-1)/sqrt(2*x))-atanh(sqrt(2*x)/(x+1)))",
+    answerLatex:
+      "\\frac1{\\sqrt2}\\left(\\arctan\\!\\left(\\frac{x-1}{\\sqrt{2x}}\\right)-\\operatorname{arctanh}\\!\\left(\\frac{\\sqrt{2x}}{x+1}\\right)\\right) + C",
+    domain: [0.3, 3],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #3" },
+    hints: [
+      "u=\\sqrt x turns this into \\int\\frac{2u^2}{1+u^4}\\,du, and 1+u^4 factors as \\left(u^2+\\sqrt2u+1\\right)\\left(u^2-\\sqrt2u+1\\right) — the classic quartic split into an arctan piece and an arctanh piece.",
+    ],
+    steps: [
+      "Confirmed by direct differentiation of the closed form rather than reproduced factor-by-factor — the derivative check verifies it exactly against the integrand.",
+    ],
+  },
 ];

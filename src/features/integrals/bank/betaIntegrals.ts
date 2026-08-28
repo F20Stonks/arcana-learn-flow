@@ -553,4 +553,24 @@ export const BetaIntegrals: Problem[] = [
       "By \\int_0^\\infty\\frac{u^{a-1}}{1+u}du=\\frac\\pi{\\sin(a\\pi)} with a=\\tfrac23: \\frac12\\cdot\\frac\\pi{\\sin(2\\pi/3)} = \\frac12\\cdot\\frac\\pi{\\sqrt3/2} = \\frac\\pi{\\sqrt3}.",
     ],
   },
+  {
+    id: "qf26-1-over-x6-plus-1",
+    kind: "definite",
+    integrand: "\\frac1{x^6+1}",
+    integrandExpr: "1/(x^6+1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/3",
+    answerLatex: "\\frac\\pi3",
+    domain: [0, Infinity],
+    difficulty: 3,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #2" },
+    hints: [
+      "\\int_0^\\infty\\frac{dx}{1+x^n} = \\frac\\pi{n\\sin(\\pi/n)} — a direct application with n=6.",
+    ],
+    steps: [
+      "\\frac\\pi{6\\sin(\\pi/6)} = \\frac\\pi{6\\cdot\\frac12} = \\frac\\pi3.",
+    ],
+  },
 ];
