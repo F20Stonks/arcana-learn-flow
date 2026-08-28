@@ -22,9 +22,12 @@ export interface SolveRecord {
   everSolvedWithoutHints: boolean;
 }
 
+/** One entry per problem in the day's set, in slot order (see `DAILY_SLOTS` in daily.ts). */
 export interface DailyRecord {
-  problemId: string;
+  problemIds: string[];
+  /** True only once every slot is solved — a day is "beaten" as a whole, not per-problem. */
   solved: boolean;
+  solvedCount: number;
   seconds: number;
   hintsUsed: number;
   wrongAttempts: number;
@@ -158,26 +161,46 @@ export function recordTrainingSolve(facts: SolveFacts) {
   });
 }
 
-/** A daily attempt. Returns the facts a future leaderboard submission would carry. */
+/** One slot's outcome within a daily session — same shape as `SolveFacts`, plus whether it landed. */
+export interface DailySlotOutcome {
+  problemId: string;
+  solved: boolean;
+  seconds: number;
+  hintsUsed: number;
+  wrongAttempts: number;
+  score: number;
+}
+
+/**
+ * A finished daily session — every slot's outcome at once, since the day's record (and whether the
+ * streak extends) depends on all of them together. Per-slot solves still bank individually into
+ * `p.solves` and XP, exactly as a training solve would; this additionally writes the day's combined
+ * record and, only when every slot was solved, extends the streak.
+ */
 export function recordDaily(
-  facts: SolveFacts & { solved: boolean },
+  slots: DailySlotOutcome[],
   date = new Date(),
 ): DailyRecord & { dayKey: string; streak: number } {
   const key = dayKey(date);
   let out!: DailyRecord & { dayKey: string; streak: number };
   update((p) => {
-    if (facts.solved) {
-      applySolve(p, facts);
-      p.xp += facts.xp;
+    for (const slot of slots) {
+      if (!slot.solved) continue;
+      applySolve(p, { ...slot, xp: slot.score });
+      p.xp += slot.score;
+    }
+    const allSolved = slots.length > 0 && slots.every((s) => s.solved);
+    if (allSolved) {
       p.streak = nextStreak({ ...p.streak, current: liveStreak(p, key) }, key);
     }
     const record: DailyRecord = {
-      problemId: facts.problemId,
-      solved: facts.solved,
-      seconds: facts.seconds,
-      hintsUsed: facts.hintsUsed,
-      wrongAttempts: facts.wrongAttempts,
-      score: facts.solved ? facts.score : 0,
+      problemIds: slots.map((s) => s.problemId),
+      solved: allSolved,
+      solvedCount: slots.filter((s) => s.solved).length,
+      seconds: slots.reduce((sum, s) => sum + s.seconds, 0),
+      hintsUsed: slots.reduce((sum, s) => sum + s.hintsUsed, 0),
+      wrongAttempts: slots.reduce((sum, s) => sum + s.wrongAttempts, 0),
+      score: slots.reduce((sum, s) => sum + s.score, 0),
     };
     p.daily[key] = record;
     p.badges = { ...p.badges, ...earnedBadges(p) };

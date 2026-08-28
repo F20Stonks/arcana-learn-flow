@@ -17,15 +17,31 @@ vi.mock("@/hooks/useAuth", () => ({
 import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import IntegralTraining, { TrainingTechnique } from "@/pages/IntegralTraining";
-import { dailyProblem } from "./daily";
+import { dailyProblem, dailyProblems } from "./daily";
 import { getProgress, resetProgress } from "./progress";
 import { orderQueue } from "./queue";
 import { problemsForTechnique } from "./problems";
+import type { Problem } from "./types";
 
 beforeEach(() => {
   resetProgress();
   window.localStorage.clear();
 });
+
+/** Solves every slot of the day's daily in order, clicking through to the next between them. */
+async function solveDaily(problems: Problem[]) {
+  for (let i = 0; i < problems.length; i++) {
+    const input = screen.getByPlaceholderText(/your answer|a number/i);
+    fireEvent.change(input, { target: { value: problems[i].answer } });
+    fireEvent.click(screen.getByRole("button", { name: /check/i }));
+    if (i < problems.length - 1) {
+      await waitFor(() => expect(screen.getByText("Correct.")).toBeInTheDocument());
+      fireEvent.click(screen.getByRole("button", { name: /Next integral/i }));
+    } else {
+      await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    }
+  }
+}
 
 const at = (path: string, element: React.ReactNode, route: string) =>
   render(
@@ -38,20 +54,16 @@ const at = (path: string, element: React.ReactNode, route: string) =>
 
 describe("the daily", () => {
   it("shows today's integral and grades a correct answer", async () => {
-    const problem = dailyProblem();
+    const problems = dailyProblems();
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/Daily #\d+/);
 
-    const input = screen.getByPlaceholderText(/your answer|a number/i);
-    fireEvent.change(input, { target: { value: problem.answer } });
-    fireEvent.click(screen.getByRole("button", { name: /check/i }));
-
-    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
-    expect(screen.getByText(/How it goes/)).toBeInTheDocument();
+    await solveDaily(problems);
+    expect(screen.getAllByText(/How it goes/).length).toBeGreaterThan(0);
 
     const p = getProgress();
-    expect(p.solves[problem.id]).toBeTruthy();
+    for (const problem of problems) expect(p.solves[problem.id]).toBeTruthy();
     expect(p.xp).toBeGreaterThan(0);
     expect(p.streak.current).toBe(1);
   });
@@ -89,13 +101,9 @@ describe("the daily", () => {
   });
 
   it("does not hand out a second attempt after the day is finished", async () => {
-    const problem = dailyProblem();
+    const problems = dailyProblems();
     const first = at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
-    fireEvent.change(screen.getByPlaceholderText(/your answer|a number/i), {
-      target: { value: problem.answer },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /check/i }));
-    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    await solveDaily(problems);
     first.unmount();
 
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
@@ -108,21 +116,16 @@ describe("the leaderboard, when its tables are not deployed", () => {
   it("says so and leaves the run intact", async () => {
     // No Supabase in jsdom, so every call fails — which is exactly the state a player is in
     // before the migration is applied. The daily must not care.
-    const problem = dailyProblem();
+    const problems = dailyProblems();
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
-    fireEvent.change(screen.getByPlaceholderText(/your answer|a number/i), {
-      target: { value: problem.answer },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /check/i }));
-
-    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    await solveDaily(problems);
     await waitFor(() => expect(screen.getByText(/board isn't reachable yet/)).toBeInTheDocument());
 
     // The score, the solve and the streak are all still banked locally.
     const p = getProgress();
     expect(p.xp).toBeGreaterThan(0);
     expect(p.streak.current).toBe(1);
-    expect(p.solves[problem.id]).toBeTruthy();
+    for (const problem of problems) expect(p.solves[problem.id]).toBeTruthy();
     expect(screen.getByText(/your streak is safe/)).toBeInTheDocument();
   });
 });
@@ -134,13 +137,9 @@ describe("the hub", () => {
     expect(screen.getByText(/Level 1/)).toBeInTheDocument();
     unmount();
 
-    const problem = dailyProblem();
+    const problems = dailyProblems();
     const daily = at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
-    fireEvent.change(screen.getByPlaceholderText(/your answer|a number/i), {
-      target: { value: problem.answer },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /check/i }));
-    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    await solveDaily(problems);
     daily.unmount();
 
     at("/integrals", <IntegralsHub />, "/integrals");

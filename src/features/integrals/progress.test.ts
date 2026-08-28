@@ -67,14 +67,31 @@ describe("recording", () => {
   });
 
   it("advances the streak on a solved daily", () => {
-    const r1 = recordDaily({ ...solveFacts("power-monomial"), solved: true }, new Date(2026, 7, 24, 12));
+    const r1 = recordDaily([{ ...solveFacts("power-monomial"), solved: true }], new Date(2026, 7, 24, 12));
     expect(r1.streak).toBe(1);
-    const r2 = recordDaily({ ...solveFacts("power-polynomial"), solved: true }, new Date(2026, 7, 25, 12));
+    const r2 = recordDaily(
+      [{ ...solveFacts("power-polynomial"), solved: true }],
+      new Date(2026, 7, 25, 12),
+    );
     expect(r2.streak).toBe(2);
   });
 
+  it("only advances the streak once every slot is solved", () => {
+    const day = new Date(2026, 7, 24, 12);
+    const r = recordDaily(
+      [
+        { ...solveFacts("power-monomial"), solved: true },
+        { ...solveFacts("power-polynomial"), solved: false },
+      ],
+      day,
+    );
+    expect(r.streak).toBe(0);
+    expect(r.solved).toBe(false);
+    expect(r.solvedCount).toBe(1);
+  });
+
   it("records a failed daily without touching the streak or XP", () => {
-    recordDaily({ ...solveFacts("power-monomial"), solved: false }, new Date(2026, 7, 24, 12));
+    recordDaily([{ ...solveFacts("power-monomial"), solved: false }], new Date(2026, 7, 24, 12));
     const p = getProgress();
     expect(p.xp).toBe(0);
     expect(p.streak.current).toBe(0);
@@ -83,8 +100,8 @@ describe("recording", () => {
 
   it("keeps one record per day", () => {
     const d = new Date(2026, 7, 24, 12);
-    recordDaily({ ...solveFacts("power-monomial"), solved: false }, d);
-    recordDaily({ ...solveFacts("power-monomial"), solved: true }, d);
+    recordDaily([{ ...solveFacts("power-monomial"), solved: false }], d);
+    recordDaily([{ ...solveFacts("power-monomial"), solved: true }], d);
     expect(Object.keys(getProgress().daily)).toHaveLength(1);
     expect(getProgress().daily["2026-08-24"].solved).toBe(true);
   });

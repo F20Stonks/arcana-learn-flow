@@ -249,7 +249,7 @@ export function TrainingTechnique() {
   const [lessonOpen, setLessonOpen] = useState(false);
 
   const problem = queue[index];
-  const run = useIntegralRun(problem ?? PROBLEMS[0], "training");
+  const run = useIntegralRun(problem ?? PROBLEMS[0]);
 
   if (!mixed && !custom && !isSource && !technique) return <Navigate to="/integrals/train" replace />;
   if (isSource && !source) return <Navigate to="/integrals/train" replace />;

@@ -34,9 +34,11 @@ export interface DayCell {
  */
 export function heatLevel(record: DailyRecord | undefined): HeatLevel {
   if (!record?.solved) return 0;
-  const difficulty = PROBLEM_BY_ID[record.problemId]?.difficulty;
-  const par = difficulty ? BASE_POINTS[difficulty] : 100;
-  const ratio = record.score / par;
+  const par = record.problemIds.reduce((sum, id) => {
+    const difficulty = PROBLEM_BY_ID[id]?.difficulty;
+    return sum + (difficulty ? BASE_POINTS[difficulty] : 100);
+  }, 0);
+  const ratio = record.score / (par || 1);
   if (ratio < 0.7) return 1;
   if (ratio < 1.0) return 2;
   if (ratio < 1.3) return 3;

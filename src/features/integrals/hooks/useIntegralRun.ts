@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gradeAnswer } from "../answer";
-import { recordDaily, recordTrainingSolve, getProgress, hasSolved, liveStreak } from "../progress";
+import { recordTrainingSolve, getProgress, hasSolved, liveStreak } from "../progress";
 import { scoreAttempt, type ScoreBreakdown } from "../scoring";
 import type { Problem, Verdict } from "../types";
 
@@ -27,10 +27,12 @@ export interface RunApi extends RunState {
 }
 
 /**
- * One attempt at one integral. Owns the clock, the hint ladder and the grading, and writes the
- * result to the progress store exactly once — on the transition into `solved` or `revealed`.
+ * One training attempt at one integral. Owns the clock, the hint ladder and the grading, and
+ * writes the result to the progress store exactly once — on solving. The daily has its own
+ * session-scoped hook (`useDailyRun`) since a day is `DAILY_SLOTS` problems recorded together,
+ * not one at a time.
  */
-export function useIntegralRun(problem: Problem, mode: "daily" | "training"): RunApi {
+export function useIntegralRun(problem: Problem): RunApi {
   const [state, setState] = useState<RunState>(() => initial());
   const startedAt = useRef(Date.now());
   const recorded = useRef(false);
@@ -72,27 +74,25 @@ export function useIntegralRun(problem: Problem, mode: "daily" | "training"): Ru
         hintsUsed: s.hintsUsed,
         wrongAttempts: s.wrongAttempts,
         streak: liveStreak(progress),
-        mode,
+        mode: "training",
         repeat: hasSolved(progress, problem.id),
       });
 
       if (!recorded.current) {
         recorded.current = true;
-        const facts = {
+        recordTrainingSolve({
           problemId: problem.id,
           seconds: elapsed,
           hintsUsed: s.hintsUsed,
           wrongAttempts: s.wrongAttempts,
           xp: score.total,
           score: score.total,
-        };
-        if (mode === "daily") recordDaily({ ...facts, solved: true });
-        else recordTrainingSolve(facts);
+        });
       }
 
       return { ...s, status: "solved", verdict, elapsed, score };
     });
-  }, [problem, mode]);
+  }, [problem]);
 
   const revealHint = useCallback(() => {
     setState((s) =>
@@ -106,21 +106,9 @@ export function useIntegralRun(problem: Problem, mode: "daily" | "training"): Ru
     setState((s) => {
       if (s.status !== "running") return s;
       const elapsed = seconds(startedAt.current);
-      if (mode === "daily" && !recorded.current) {
-        recorded.current = true;
-        recordDaily({
-          problemId: problem.id,
-          seconds: elapsed,
-          hintsUsed: s.hintsUsed,
-          wrongAttempts: s.wrongAttempts,
-          xp: 0,
-          score: 0,
-          solved: false,
-        });
-      }
       return { ...s, status: "revealed", elapsed };
     });
-  }, [problem.id, mode]);
+  }, []);
 
   const restart = useCallback(() => {
     setState(initial());

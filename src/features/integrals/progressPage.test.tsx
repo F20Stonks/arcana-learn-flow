@@ -26,15 +26,16 @@ const renderPage = () =>
 
 const playDaily = (date: Date, over: { solved?: boolean; score?: number } = {}) =>
   recordDaily(
-    {
-      problemId: PROBLEMS[0].id,
-      seconds: 25,
-      hintsUsed: 0,
-      wrongAttempts: 0,
-      xp: over.score ?? 60,
-      score: over.score ?? 60,
-      solved: over.solved ?? true,
-    },
+    [
+      {
+        problemId: PROBLEMS[0].id,
+        seconds: 25,
+        hintsUsed: 0,
+        wrongAttempts: 0,
+        score: over.score ?? 60,
+        solved: over.solved ?? true,
+      },
+    ],
     date,
   );
 

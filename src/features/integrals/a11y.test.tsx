@@ -17,13 +17,28 @@ vi.mock("@/hooks/useAuth", () => ({
 import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import { TrainingTechnique } from "@/pages/IntegralTraining";
-import { dailyProblem } from "./daily";
+import { dailyProblem, dailyProblems } from "./daily";
 import { resetProgress } from "./progress";
+import type { Problem } from "./types";
 
 beforeEach(() => {
   resetProgress();
   window.localStorage.clear();
 });
+
+/** Solves every slot of the day's daily in order, clicking through to the next between them. */
+async function solveDaily(problems: Problem[]) {
+  for (let i = 0; i < problems.length; i++) {
+    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: problems[i].answer } });
+    fireEvent.click(screen.getByRole("button", { name: /check/i }));
+    if (i < problems.length - 1) {
+      await waitFor(() => expect(screen.getByText("Correct.")).toBeInTheDocument());
+      fireEvent.click(screen.getByRole("button", { name: /Next integral/i }));
+    } else {
+      await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    }
+  }
+}
 
 const at = (path: string, element: React.ReactNode, route: string) =>
   render(
@@ -93,13 +108,20 @@ describe("the run", () => {
     await waitFor(() => expect(screen.getByRole("status")).not.toBeEmptyDOMElement());
   });
 
-  it("moves focus to the result when the run ends", async () => {
-    const problem = dailyProblem();
+  it("moves focus to the result when a slot ends", async () => {
     at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
+    const problem = dailyProblem();
     fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: problem.answer } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
 
-    await waitFor(() => expect(screen.getByText("Solved.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Correct.")).toBeInTheDocument());
+    expect(document.activeElement?.contains(screen.getByText("Correct."))).toBe(true);
+  });
+
+  it("moves focus to the result when the whole day ends", async () => {
+    const problems = dailyProblems();
+    at("/integrals/daily", <DailyIntegral />, "/integrals/daily");
+    await solveDaily(problems);
     expect(document.activeElement?.contains(screen.getByText("Solved."))).toBe(true);
   });
 });

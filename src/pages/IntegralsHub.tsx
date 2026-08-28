@@ -13,7 +13,7 @@ import XpBar from "@/features/integrals/components/XpBar";
 import { DifficultyStars } from "@/features/integrals/components/IntegralPrompt";
 import { integralLatex } from "@/features/integrals/latex";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
-import { dailyNumber, dailyProblem, WEEKDAY_NAMES } from "@/features/integrals/daily";
+import { dailyNumber, dailyProblems, WEEKDAY_NAMES } from "@/features/integrals/daily";
 import { allMastery, BADGES, stats, todaysDaily } from "@/features/integrals/progress";
 import { TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import { DIFFICULTY_LABEL } from "@/features/integrals/problems";
@@ -30,7 +30,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 export default function IntegralsHub() {
   const progress = useProgress();
   const s = stats(progress);
-  const today = dailyProblem();
+  const today = dailyProblems();
   const record = todaysDaily(progress);
   const mastery = allMastery(progress);
   const earned = new Set(s.badges.map((b) => b.id));
@@ -43,8 +43,8 @@ export default function IntegralsHub() {
             Integral Arena
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
-            One integral a day, the same one for everyone — plus a training room where you can learn a
-            technique and then grind it until it's reflex.
+            Three integrals a day, the same ones for everyone — plus a training room where you can
+            learn a technique and then grind it until it's reflex.
           </p>
         </header>
 
@@ -79,10 +79,11 @@ export default function IntegralsHub() {
                   Daily #{dailyNumber()}
                 </span>
                 <span className="text-[13px] text-muted-foreground">
-                  {WEEKDAY_NAMES[new Date().getDay()]} · {DIFFICULTY_LABEL[today.difficulty]}
+                  {WEEKDAY_NAMES[new Date().getDay()]} · {DIFFICULTY_LABEL[today[0].difficulty]} ·{" "}
+                  {today.length} integrals
                 </span>
               </div>
-              <DifficultyStars level={today.difficulty} />
+              <DifficultyStars level={today[0].difficulty} />
             </div>
 
             {/* Blur hides the problem from sight but not from assistive tech, which would read
@@ -92,10 +93,12 @@ export default function IntegralsHub() {
               aria-hidden={record ? undefined : true}
             >
               <Tex block className={`text-foreground ${record ? "" : "blur-[7px] select-none"}`}>
-                {integralLatex(today)}
+                {integralLatex(today[0])}
               </Tex>
             </div>
-            {!record && <p className="sr-only">Today's integral is hidden until you start the run.</p>}
+            {!record && (
+              <p className="sr-only">Today's {today.length} integrals are hidden until you start the run.</p>
+            )}
 
             <div className="flex items-center justify-between text-[13px]">
               {record ? (
@@ -154,9 +157,9 @@ export default function IntegralsHub() {
             <Users className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Head to head</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Everyone gets the same integral, so the scores mean something. Solve today's and you take
-              a place on its board — ranked by score, then by time. One attempt per puzzle, which is
-              what stops it becoming a retry contest.
+              Everyone gets the same three integrals, so the combined score means something. Solve
+              today's and you take a place on its board — ranked by score, then by time. One attempt
+              per puzzle, which is what stops it becoming a retry contest.
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               {record ? "See the board →" : "Play today's →"}

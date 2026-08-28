@@ -61,7 +61,7 @@ export function useDailyBoard(
       if (!submittedPuzzles().includes(puzzleNumber)) {
         const outcome = await submitDaily(userId, {
           puzzleNumber,
-          problemId: record.problemId,
+          problemId: record.problemIds.join(","),
           solved: record.solved,
           seconds: record.seconds,
           hintsUsed: record.hintsUsed,

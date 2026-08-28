@@ -10,8 +10,9 @@ function withDaily(entries: Array<[string, Partial<Progress["daily"][string]>]>)
   const p = emptyProgress();
   for (const [key, record] of entries) {
     p.daily[key] = {
-      problemId: "power-monomial",
+      problemIds: ["power-monomial"],
       solved: true,
+      solvedCount: 1,
       seconds: 30,
       hintsUsed: 0,
       wrongAttempts: 0,
@@ -29,11 +30,11 @@ describe("heat level", () => {
 
   it("is nothing at all for a day that was missed or lost", () => {
     expect(heatLevel(undefined)).toBe(0);
-    expect(heatLevel({ problemId: "power-monomial", solved: false, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score: 0 })).toBe(0);
+    expect(heatLevel({ problemIds: ["power-monomial"], solved: false, solvedCount: 0, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score: 0 })).toBe(0);
   });
 
   it("grades against that day's par rather than the raw score", () => {
-    const day = (score: number) => ({ problemId: "power-monomial", solved: true, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
+    const day = (score: number) => ({ problemIds: ["power-monomial"], solved: true, solvedCount: 1, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
     expect(heatLevel(day(par * 0.5))).toBe(1);
     expect(heatLevel(day(par * 0.85))).toBe(2);
     expect(heatLevel(day(par * 1.1))).toBe(3);
@@ -45,7 +46,7 @@ describe("heat level", () => {
     // than a scraped Saturday.
     const hard = PROBLEMS.find((p) => p.difficulty === 5)!;
     const easy = PROBLEMS.find((p) => p.difficulty === 1)!;
-    const at = (id: string, score: number) => ({ problemId: id, solved: true, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
+    const at = (id: string, score: number) => ({ problemIds: [id], solved: true, solvedCount: 1, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
     expect(heatLevel(at(hard.id, BASE_POINTS[5] * 1.4))).toBe(4);
     expect(heatLevel(at(easy.id, BASE_POINTS[1] * 1.4))).toBe(4);
     // ...and the same raw score means very different things on each.
