@@ -42,7 +42,7 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   const [solved, setSolved] = useState<Problem[]>([]);
   const [skipped, setSkipped] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
-  const [remaining, setRemaining] = useState(config.seconds);
+  const [remaining, setRemaining] = useState<number>(config.seconds);
   const [justSolved, setJustSolved] = useState<Problem | null>(null);
   const [result, setResult] = useState<SprintResult | null>(null);
 
