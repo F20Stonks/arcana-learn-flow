@@ -275,6 +275,45 @@ export type Database = {
           },
         ]
       }
+      integral_daily_results: {
+        Row: {
+          created_at: string
+          hints_used: number
+          id: string
+          problem_id: string
+          puzzle_number: number
+          score: number
+          seconds: number
+          solved: boolean
+          user_id: string
+          wrong_attempts: number
+        }
+        Insert: {
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_id: string
+          puzzle_number: number
+          score?: number
+          seconds: number
+          solved: boolean
+          user_id: string
+          wrong_attempts?: number
+        }
+        Update: {
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_id?: string
+          puzzle_number?: number
+          score?: number
+          seconds?: number
+          solved?: boolean
+          user_id?: string
+          wrong_attempts?: number
+        }
+        Relationships: []
+      }
       learning_tracks: {
         Row: {
           archived_at: string | null
@@ -1645,6 +1684,30 @@ export type Database = {
         }
         Relationships: []
       }
+      integral_daily_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          hints_used: number | null
+          puzzle_number: number | null
+          rank: number | null
+          score: number | null
+          seconds: number | null
+          user_id: string | null
+          wrong_attempts: number | null
+        }
+        Relationships: []
+      }
+      integral_daily_turnout: {
+        Row: {
+          average_score: number | null
+          players: number | null
+          puzzle_number: number | null
+          solvers: number | null
+          top_score: number | null
+        }
+        Relationships: []
+      }
       user_resource_analytics: {
         Row: {
           average_score: number | null
@@ -1675,6 +1738,7 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      integral_current_puzzle_number: { Args: never; Returns: number }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
       match_resource_chunks: {
         Args: {
