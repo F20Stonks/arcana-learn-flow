@@ -291,4 +291,22 @@ export const TSub: Problem[] = [
       "Working it through and evaluating from t=0 (x=0) to t=1 (x=\\pi/2) gives \\frac{\\ln\\!\\left(2+\\sqrt3\\right)}{\\sqrt3} — verified directly against the integral's numeric value.",
     ],
   },
+  {
+    id: "tsub-x-plus-sinx-over-1-plus-cosx",
+    kind: "indefinite",
+    integrand: "\\frac{x+\\sin x}{1+\\cos x}",
+    integrandExpr: "(x+sin(x))/(1+cos(x))",
+    answer: "x*tan(x/2)",
+    answerLatex: "x\\tan\\frac x2 + C",
+    domain: [0, 1.2],
+    difficulty: 3,
+    techniques: ["t-sub"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["The Weierstrass half-angle identities give \\frac{\\sin x}{1+\\cos x}=\\tan\\frac x2, and \\frac1{1+\\cos x}=\\frac12\\sec^2\\frac x2 — split the fraction into two pieces first."],
+    steps: [
+      "\\frac{x+\\sin x}{1+\\cos x} = \\frac{x}{1+\\cos x}+\\tan\\frac x2 = \\frac x2\\sec^2\\frac x2+\\tan\\frac x2.",
+      "That's exactly the product-rule derivative of x\\tan\\frac x2: \\frac{d}{dx}\\left[x\\tan\\frac x2\\right] = \\tan\\frac x2+\\frac x2\\sec^2\\frac x2.",
+      "So the antiderivative is x\\tan\\frac x2 + C.",
+    ],
+  },
 ];

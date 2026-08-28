@@ -808,4 +808,23 @@ export const TrigSubstitution: Problem[] = [
       "The definite integral is 0-\\left(-\\frac23\\right) = \\frac23.",
     ],
   },
+  {
+    id: "trigsub-def-two-semicircle-difference",
+    kind: "definite",
+    integrand: "\\sqrt{4-(1+|x|)^2}-\\left(\\sqrt3-\\sqrt{4-x^2}\\right)",
+    integrandExpr: "sqrt(4-(1+abs(x))^2)-(sqrt(3)-sqrt(4-x^2))",
+    lower: "-1",
+    upper: "1",
+    answer: "2*pi-2*sqrt(3)",
+    answerLatex: "2\\pi-2\\sqrt3",
+    domain: [-1, 1],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["Both radicals describe circular arcs (radius 2, shifted centers) — this is a difference of two circular-segment areas, computable geometrically without ever finding a symbolic antiderivative."],
+    steps: [
+      "\\sqrt{4-(1+|x|)^2} traces part of a radius-2 circle centered where 1+|x| runs from 1 to 2 as x runs 0\\to\\pm1; \\sqrt{4-x^2} traces a radius-2 circle centered at 0.",
+      "The definite integral of this geometric difference over [-1,1] works out to 2\\pi-2\\sqrt3 — confirmed by direct numeric integration.",
+    ],
+  },
 ];

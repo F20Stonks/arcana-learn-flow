@@ -598,4 +598,22 @@ export const IntroducingConstants: Problem[] = [
       "\\int x^{\\ln2-2}\\,dx = \\frac{x^{\\ln2-1}}{\\ln2-1} + C.",
     ],
   },
+  {
+    id: "ic-4sinx-plus-3cosx-over-3sinx-plus-4cosx",
+    kind: "indefinite",
+    integrand: "\\frac{4\\sin x+3\\cos x}{3\\sin x+4\\cos x}",
+    integrandExpr: "(4*sin(x)+3*cos(x))/(3*sin(x)+4*cos(x))",
+    answer: "(24*x-7*log(abs(3*sin(x)+4*cos(x))))/25",
+    answerLatex: "\\frac{24x-7\\ln|3\\sin x+4\\cos x|}{25} + C",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee", round: "Regular Season" },
+    hints: ["Write the numerator as A(3\\sin x+4\\cos x)+B(3\\cos x-4\\sin x) — a multiple of the denominator plus a multiple of its derivative — and solve for A,B."],
+    steps: [
+      "4\\sin x+3\\cos x = A(3\\sin x+4\\cos x)+B(4\\sin x\\cdot(-1)+3\\cos x)\\ \\text{(matching coefficients)}: solving 3A-4B=4,\\ 4A+3B=3 gives A=\\frac{24}{25},\\ B=-\\frac7{25}.",
+      "So the integrand splits as \\frac{24}{25}+\\frac{-7}{25}\\cdot\\frac{3\\cos x-4\\sin x}{3\\sin x+4\\cos x} — a constant plus (a multiple of the derivative of the denominator) over the denominator.",
+      "\\int = \\frac{24}{25}x-\\frac7{25}\\ln|3\\sin x+4\\cos x| + C = \\frac{24x-7\\ln|3\\sin x+4\\cos x|}{25} + C.",
+    ],
+  },
 ];
