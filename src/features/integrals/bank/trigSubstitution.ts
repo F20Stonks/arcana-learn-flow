@@ -847,4 +847,24 @@ export const TrigSubstitution: Problem[] = [
       "Evaluating and halving both pieces together gives \\frac\\pi{3\\sqrt3}.",
     ],
   },
+  {
+    id: "trigsub-sin-4-arctan-x",
+    kind: "indefinite",
+    integrand: "\\sin(4\\arctan x)",
+    integrandExpr: "sin(4*atan(x))",
+    answer: "-4/(1+x^2)-2*log(1+x^2)",
+    answerLatex: "-\\frac4{1+x^2}-2\\ln(1+x^2) + C",
+    domain: [0.3, 2],
+    difficulty: 5,
+    techniques: ["trig-sub"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Let \\theta=\\arctan x, so x=\\tan\\theta and \\sin(4\\theta) expands via double-angle twice into a rational function of \\tan\\theta — an ordinary substitution back in x.",
+    ],
+    steps: [
+      "\\theta=\\arctan x: \\sin(4\\theta) = 2\\sin(2\\theta)\\cos(2\\theta) = 4\\sin\\theta\\cos\\theta(\\cos^2\\theta-\\sin^2\\theta).",
+      "With \\tan\\theta=x,\\ \\sin\\theta=\\frac{x}{\\sqrt{1+x^2}},\\ \\cos\\theta=\\frac1{\\sqrt{1+x^2}}: \\sin(4\\arctan x) = \\frac{4x(1-x^2)}{(1+x^2)^2}, an ordinary rational function of x.",
+      "Integrating \\frac{4x(1-x^2)}{(1+x^2)^2}\\,dx by u=1+x^2 gives -\\frac4{1+x^2}-2\\ln(1+x^2) + C — verified directly by differentiating.",
+    ],
+  },
 ];

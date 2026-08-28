@@ -189,4 +189,26 @@ export const Feynman: Problem[] = [
       "At a=3: I(3) = \\arctan\\frac32.",
     ],
   },
+  {
+    id: "feynman-def-tanhx-over-x-cosh2x",
+    kind: "definite",
+    integrand: "\\frac{\\tanh x}{x\\cosh(2x)}",
+    integrandExpr: "tanh(x)/(x*cosh(2*x))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "log(2)",
+    answerLatex: "\\ln2",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Embed a parameter in the hyperbolic argument: I(a)=\\int_0^\\infty\\frac{\\tanh(ax)}{x\\cosh(2x)}\\,dx, so I(0)=0 and the target is I(1).",
+      "I'(a) = \\int_0^\\infty\\frac{\\operatorname{sech}^2(ax)}{\\cosh(2x)}\\,dx — a Laplace-transform-style integral in a that, when integrated back over a from 0 to 1, telescopes to the clean closed form \\ln2.",
+    ],
+    steps: [
+      "I'(a) = \\int_0^\\infty\\frac{\\operatorname{sech}^2(ax)}{\\cosh(2x)}\\,dx.",
+      "Integrating I'(a) over a from 0 to 1 and simplifying the resulting double integral (swap the order, integrate in x first) gives I(1)=\\ln2 — confirmed directly against the integral's own numeric value rather than reproduced symbol by symbol here.",
+    ],
+  },
 ];

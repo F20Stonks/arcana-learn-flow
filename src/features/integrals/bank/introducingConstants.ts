@@ -582,6 +582,28 @@ export const IntroducingConstants: Problem[] = [
     ],
   },
   {
+    id: "ic-chebyshev-iterated-square-minus-2-four-times",
+    kind: "definite",
+    integrand: "\\left(\\left(\\left((x^2-2)^2-2\\right)^2-2\\right)^2-2\\right)^2-2",
+    integrandExpr: "(((x^2-2)^2-2)^2-2)^2-2",
+    lower: "-2",
+    upper: "2",
+    answer: "-8/255",
+    answerLatex: "-\\frac8{255}",
+    domain: [-2, 2],
+    difficulty: 5,
+    techniques: ["introducing-constants"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "With x=2\\cos\\theta, x^2-2=2\\cos(2\\theta) exactly (the Chebyshev doubling identity) — iterating the same map on 2\\cos\\theta doubles the angle every time.",
+    ],
+    steps: [
+      "x=2\\cos\\theta: x^2-2=2\\cos2\\theta,\\ (x^2-2)^2-2=2\\cos4\\theta,\\ \\dots, and after four iterations the integrand is 2\\cos(16\\theta).",
+      "With dx=-2\\sin\\theta\\,d\\theta (\\theta:\\pi\\to0 as x:-2\\to2), the integral becomes \\int_0^\\pi4\\cos(16\\theta)\\sin\\theta\\,d\\theta, an ordinary product-to-sum integral.",
+      "Evaluating that (or equivalently, integrating the resolved x-form \\left(\\left(\\left((x^2-2)^2-2\\right)^2-2\\right)^2-2\\right)^2-2 directly) gives -\\frac8{255} — confirmed numerically.",
+    ],
+  },
+  {
     id: "ic-two-power-logx-over-x2",
     kind: "indefinite",
     integrand: "\\frac{2^{\\ln x}}{x^2}",
