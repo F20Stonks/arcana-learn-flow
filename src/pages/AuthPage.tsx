@@ -6,7 +6,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthPage() {
-  const { session, profile, loading, signIn, signUp } = useAuth();
+  const { session, loading, signIn, signUp } = useAuth();
   const [params] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(params.get("mode") === "signup");
   const [email, setEmail] = useState("");
