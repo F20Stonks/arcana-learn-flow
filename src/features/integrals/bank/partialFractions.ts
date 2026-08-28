@@ -1038,4 +1038,24 @@ export const PartialFractions: Problem[] = [
       "Confirmed by direct differentiation of the closed form — the derivative check verifies it exactly against the integrand.",
     ],
   },
+  {
+    id: "fin26-reciprocal-of-reciprocal-squared-plus-one",
+    kind: "definite",
+    integrand: "\\frac1{\\left(\\dfrac1{\\frac1{x-2}+\\frac3{x-4}+\\frac5{x-6}}\\right)^2+1}",
+    integrandExpr: "1/((1/(x-2)+3/(x-4)+5/(x-6))^(-2)+1)",
+    lower: "-\\infty",
+    upper: "\\infty",
+    answer: "9*pi",
+    answerLatex: "9\\pi",
+    domain: [-Infinity, Infinity],
+    difficulty: 5,
+    techniques: ["partial-fractions"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Let S(x)=\\frac1{x-2}+\\frac3{x-4}+\\frac5{x-6}, a rational function with three simple poles. The integrand is \\frac{S(x)^2}{1+S(x)^2}, which stays in [0,1) and decays like S(x)^2\\sim\\frac{81}{x^2} as x\\to\\pm\\infty (since the residues 1+3+5=9 combine at leading order), so the integral converges.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration over the whole real line — the definite value comes out to exactly 9\\pi.",
+    ],
+  },
 ];

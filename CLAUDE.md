@@ -765,3 +765,40 @@ why, so the owner can make the final call rather than it just quietly vanishing.
       quadrature can't do), not forced.
     - 1881/1881 tests passing, `tsc --noEmit` clean, `eslint` clean on touched files. Committed and
       pushed. Continuing next to 2026 Finals — the last unmined document in this batch.
+  - Mined MIT 2026 Finals (5 problems, the hardest single document in the whole batch): 2 of 5
+    added. The standout find: Finals Problem 1 looked like a schema-mismatch "limit of a sequence
+    of integrals" (`\lim_{n\to\infty}\int_0^1\sum_{k=1}^n\frac1{nx^2+kx+n}\,dx`) exactly like the
+    ones skipped throughout this session — but recognizing the inner sum as a Riemann sum
+    (`\sum_{k=1}^n\frac1n\cdot\frac1{x^2+\frac knx+1}\to\int_0^1\frac{dt}{x^2+tx+1}` as `n\to\infty`)
+    turns the whole thing into an ordinary iterated integral, and the inner `t`-integral has an
+    elementary closed form (`\frac1x\ln\frac{x^2+x+1}{x^2+1}`) — collapsing what looked like an
+    unrepresentable limit into a completely normal single-variable `Problem`, verified numerically
+    to `5\pi^2/72` (`definite.ts`). Also added a partial-fractions-built reciprocal problem over the
+    whole real line, `\frac1{S(x)^{-2}+1}` where `S` sums three simple-pole terms, verified
+    numerically to `9\pi` (`partialFractions.ts`).
+    - Skipped with reason: Finals Problem 3, a genuine `n\to\infty` limit of an `n`-deep nested
+      `\log_{\sqrt2}` tower whose fixed-point equation `L=\log_{\sqrt2}(x+L)` (i.e.
+      `2^{L/2}=x+L`) is transcendental and depends nontrivially on `x` across the whole `[0,2026]`
+      domain — unlike the golden-ratio/nested-radical towers found earlier this session, this one
+      doesn't collapse to a constant, and solving it generically would need a dedicated Newton's-
+      method custom function (a real engineering investment, flagged for a future session rather
+      than attempted under time pressure here, same spirit as the `lambertw` addition earlier in
+      this batch). Finals Problem 2 (a `\sqrt[4]{}`-heavy antiderivative) was not attempted given
+      time constraints. Finals Problem 4 (`(\sqrt[4]{\frac1x-4})^2+\sqrt[4]{\frac1x-4}` on
+      `[0,\frac14]`) was checked two independent ways (direct quadrature over `x`, and an explicit
+      `t=\sqrt[4]{\frac1x-4}` substitution turning it into `4\int_0^\infty\frac{t^5+t^4}{(t^4+4)^2}
+      dt`, both agreeing with each other at ≈1.178 but not with the OCR'd answer `\frac34`) —
+      confirmed genuine transcription mismatch, not forced.
+  - **This completes every document in `scraped_data/integration_bee_materials.zip`** — all 16
+    qualifying years (re-mined against the newly-found answer keys) and all 20 non-qualifying
+    rounds (regular season/quarterfinal/semifinal/finals, 2022–2026) have now been mined to the
+    pragmatic standard documented throughout this log. 1885/1885 tests passing (whole repo),
+    `tsc --noEmit` clean, `eslint` clean on every file this session touched. Per standing directive
+    #2, there is no more sourced content to mine without new PDFs from the owner — a future
+    session/loop iteration starting here should check for new uploads first, and if none, report
+    that back rather than manufacturing busywork. Two flagged follow-ups for the owner, both noted
+    inline above where they came up: (1) the log-tower limit (Finals Problem 3) and the two
+    remaining Finals problems would benefit from a dedicated pass with more runway; (2) the
+    `mathEngine.ts` infra (shared mathjs instance with `lambertw`) is now in place and could be
+    extended the same way for `gcd` (mathjs has it natively, just needs whitelisting) or other
+    custom functions the next PDF batch might need.

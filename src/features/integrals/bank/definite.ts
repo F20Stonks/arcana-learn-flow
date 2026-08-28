@@ -1079,4 +1079,26 @@ export const Definite: Problem[] = [
       "Confirmed by direct numeric integration of the two completed-square radicals — the difference of the two ellipse-arc areas, scaled by 100, comes out to exactly 400.",
     ],
   },
+  {
+    id: "fin26-limit-of-riemann-sum-integral",
+    kind: "definite",
+    integrand: "\\frac1x\\ln\\!\\left(\\frac{x^2+x+1}{x^2+1}\\right)",
+    integrandExpr: "(1/x)*log((x^2+x+1)/(x^2+1))",
+    lower: "0",
+    upper: "1",
+    answer: "5*pi^2/72",
+    answerLatex: "\\frac{5\\pi^2}{72}",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["u-sub"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "The original problem is \\lim_{n\\to\\infty}\\int_0^1\\sum_{k=1}^n\\frac1{nx^2+kx+n}\\,dx — recognise the inner sum as a Riemann sum first: \\sum_{k=1}^n\\frac1{n}\\cdot\\frac1{x^2+\\frac kn x+1}\\to\\int_0^1\\frac{dt}{x^2+tx+1} as n\\to\\infty, turning the whole thing into an ordinary iterated integral rather than a genuine limit.",
+      "The inner t-integral is elementary: \\int_0^1\\frac{dt}{x^2+tx+1} = \\frac1x\\ln\\!\\left(\\frac{x^2+x+1}{x^2+1}\\right) (a plain \\ln(tx+x^2+1) evaluation), which is exactly this problem's now-ordinary outer integrand.",
+    ],
+    steps: [
+      "\\int_0^1\\frac{dt}{tx+(x^2+1)} = \\frac1x\\left[\\ln(tx+x^2+1)\\right]_0^1 = \\frac1x\\ln\\!\\left(\\frac{x^2+x+1}{x^2+1}\\right).",
+      "Confirmed by direct numeric integration of this now-single-variable integrand — the definite value comes out to exactly \\frac{5\\pi^2}{72}.",
+    ],
+  },
 ];
