@@ -1,10 +1,12 @@
 /**
  * Player progress: XP, streak, solves, badges.
  *
- * Deliberately local-only for now. The competitive layer (shared leaderboards, friends, head-to-head
- * on the daily) needs a server and an identity; everything here is shaped so that layer can be
- * dropped in later — `recordDaily` returns the exact facts a submission endpoint would take, and
- * nothing in the UI reads localStorage directly.
+ * The store of record is localStorage — reads and writes here are synchronous and never blocked on
+ * the network, so play never stalls waiting for a round trip. `useProgressSync` (hooks/useProgressSync.ts)
+ * reconciles this with the signed-in account's server copy in the background via `replaceProgress`,
+ * which is what makes the same account's progress show up on a second device; nothing in this file
+ * talks to the network itself. `recordDaily` returns the exact facts a submission endpoint would
+ * take, which is what the daily-leaderboard submission in leaderboard.ts is built on.
  */
 import { PROBLEMS, PROBLEM_BY_ID } from "./problems";
 import { TECHNIQUES } from "./techniques";
@@ -102,6 +104,15 @@ export function getProgress(): Progress {
 /** Tests and the settings screen. */
 export function resetProgress() {
   write(emptyProgress());
+}
+
+/**
+ * Overwrites the store outright. For anything that only touches one field, use `update` (via the
+ * record* functions below) instead — this exists for the account-sync layer (progressSync.ts),
+ * which resolves a merge with the server copy elsewhere and hands back the final state wholesale.
+ */
+export function replaceProgress(next: Progress) {
+  write(next);
 }
 
 function update(fn: (p: Progress) => Progress) {

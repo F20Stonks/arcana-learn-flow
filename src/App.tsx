@@ -28,6 +28,7 @@ import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
+import { useProgressSync } from "@/features/integrals/hooks/useProgressSync";
 import DrillPlay from "./pages/DrillPlay";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
@@ -72,6 +73,10 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { session, profile, loading } = useAuth();
+  // Mounted once for the app's lifetime rather than per Integral Arena page, so progress starts
+  // reconciling with the account's server copy the moment a session exists — not only once the
+  // player happens to open /integrals. No-ops entirely while signed out.
+  useProgressSync();
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
