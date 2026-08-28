@@ -1671,6 +1671,39 @@ export type Database = {
       }
     }
     Views: {
+      drill_leaderboard: {
+        Row: {
+          accuracy: number | null
+          avatar_url: string | null
+          best_score: number | null
+          display_name: string | null
+          drill_key: string | null
+          last_played: string | null
+          mode: string | null
+          problems_correct: number | null
+          problems_seen: number | null
+          rank: number | null
+          runs: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      drill_leaderboard_overall: {
+        Row: {
+          accuracy: number | null
+          avatar_url: string | null
+          display_name: string | null
+          games_played: number | null
+          last_played: string | null
+          problems_correct: number | null
+          problems_seen: number | null
+          rank: number | null
+          runs: number | null
+          user_id: string | null
+          xp: number | null
+        }
+        Relationships: []
+      }
       drill_weak_spots: {
         Row: {
           accuracy: number | null
@@ -1680,6 +1713,20 @@ export type Database = {
           drill_key: string | null
           last_seen: string | null
           problem_tag: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      integral_arena_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          avg_seconds: number | null
+          best_score: number | null
+          days_played: number | null
+          days_solved: number | null
+          display_name: string | null
+          rank: number | null
+          total_score: number | null
           user_id: string | null
         }
         Relationships: []
