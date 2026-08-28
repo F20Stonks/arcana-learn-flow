@@ -7,9 +7,12 @@ import {
   recordDaily,
   recordTrainingSolve,
   resetProgress,
+  scopedKey,
+  setProgressScope,
   stats,
   techniqueMastery,
 } from "./progress";
+import { heatLevel } from "./history";
 import { PROBLEMS } from "./problems";
 import { levelForXp, levelState, scoreAttempt, xpForLevel } from "./scoring";
 import { dayKey } from "./daily";
@@ -226,5 +229,45 @@ describe("levels", () => {
     expect(s.progress).toBeGreaterThan(0);
     expect(s.progress).toBeLessThan(1);
     expect(s.rank).toBeTruthy();
+  });
+});
+
+describe("migrating stored data", () => {
+  // Before the daily held DAILY_SLOTS problems, a stored daily record had a single `problemId`
+  // string and no `solvedCount`. Anyone who played that version has exactly this shape sitting in
+  // their browser's localStorage, and every page that reads today's Progress has to survive it.
+  it("upgrades a pre-DAILY_SLOTS record instead of crashing on the missing problemIds array", () => {
+    setProgressScope("migration-test-user");
+    const oldShape = {
+      version: 1,
+      xp: 100,
+      solves: {},
+      daily: {
+        "2026-08-20": {
+          problemId: "power-monomial",
+          solved: true,
+          seconds: 30,
+          hintsUsed: 0,
+          wrongAttempts: 0,
+          score: 40,
+        },
+      },
+      streak: { current: 1, longest: 1, lastDayKey: "2026-08-20" },
+      badges: {},
+      lessonsRead: [],
+      sprints: {},
+    };
+    window.localStorage.setItem(scopedKey("arcana.integrals.progress.v1"), JSON.stringify(oldShape));
+    setProgressScope(null);
+    setProgressScope("migration-test-user"); // re-enter the scope so read() reloads from storage
+
+    const record = getProgress().daily["2026-08-20"];
+    expect(record.problemIds).toEqual(["power-monomial"]);
+    expect(record.solvedCount).toBe(1);
+    expect(record.solved).toBe(true);
+    expect(() => heatLevel(record)).not.toThrow();
+    expect(heatLevel(record)).toBeGreaterThan(0);
+
+    setProgressScope(null);
   });
 });

@@ -88,11 +88,36 @@ export function emptyProgress(): Progress {
 let memory: Progress | null = null;
 const listeners = new Set<() => void>();
 
+/**
+ * Upgrades a stored `daily` record from before the day held `DAILY_SLOTS` problems (a single
+ * `problemId` string, no `solvedCount`) to the current shape. Without this, anyone who played the
+ * single-problem daily before this change crashes every page that reads `problemIds` — it's an
+ * array only going forward, but their stored JSON still has the old field.
+ */
+function migrateDailyRecord(raw: unknown): DailyRecord {
+  const r = raw as Partial<DailyRecord> & { problemId?: string };
+  if (Array.isArray(r.problemIds)) return r as DailyRecord;
+  const problemIds = r.problemId ? [r.problemId] : [];
+  return {
+    problemIds,
+    solved: r.solved ?? false,
+    solvedCount: r.solvedCount ?? (r.solved ? problemIds.length : 0),
+    seconds: r.seconds ?? 0,
+    hintsUsed: r.hintsUsed ?? 0,
+    wrongAttempts: r.wrongAttempts ?? 0,
+    score: r.score ?? 0,
+  };
+}
+
 function read(): Progress {
   if (memory) return memory;
   try {
     const raw = globalThis.localStorage?.getItem(scopedKey(STORAGE_KEY));
-    memory = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
+    const parsed = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
+    parsed.daily = Object.fromEntries(
+      Object.entries(parsed.daily).map(([key, record]) => [key, migrateDailyRecord(record)]),
+    );
+    memory = parsed;
   } catch {
     memory = emptyProgress();
   }
