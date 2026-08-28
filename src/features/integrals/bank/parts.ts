@@ -1589,6 +1589,26 @@ export const Parts: Problem[] = [
     ],
   },
   {
+    id: "parts-arcsin-arccos",
+    kind: "indefinite",
+    integrand: "\\arcsin x\\arccos x",
+    integrandExpr: "asin(x)*acos(x)",
+    answer: "x*(asin(x)*acos(x)+2)+sqrt(1-x^2)*(acos(x)-asin(x))",
+    answerLatex: "x\\left(\\arcsin x\\arccos x+2\\right)+\\sqrt{1-x^2}\\left(\\arccos x-\\arcsin x\\right) + C",
+    domain: [-0.7, 0.7],
+    difficulty: 5,
+    techniques: ["parts"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #2" },
+    hints: [
+      "\\arccos x=\\frac\\pi2-\\arcsin x, so the integrand is a quadratic in \\arcsin x — expand it first, then integrate the resulting \\arcsin x and (\\arcsin x)^2 pieces by parts separately.",
+    ],
+    steps: [
+      "Write u=\\arcsin x: the integrand is u\\left(\\frac\\pi2-u\\right) = \\frac\\pi2u-u^2.",
+      "\\int\\arcsin x\\,dx = x\\arcsin x+\\sqrt{1-x^2}, and \\int(\\arcsin x)^2dx = x(\\arcsin x)^2-2x+2\\sqrt{1-x^2}\\arcsin x (a standard reduction, two rounds of parts).",
+      "Combining \\frac\\pi2\\int u\\,dx-\\int u^2\\,dx and rewriting \\frac\\pi2-\\arcsin x back as \\arccos x throughout gives the closed form above — verified directly by differentiating.",
+    ],
+  },
+  {
     id: "parts-reciprocal-logx-plus-loglogx",
     kind: "indefinite",
     integrand: "\\frac1{\\ln x}+\\ln(\\ln x)",

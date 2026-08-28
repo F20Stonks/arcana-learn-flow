@@ -415,4 +415,23 @@ export const BetaIntegrals: Problem[] = [
       "-\\ln\\pi-1=-\\ln(\\pi e), and \\ln x-\\ln\\pi=\\ln(x/\\pi), so F'(x)=\\frac{\\ln(x/\\pi)}{(\\ln x)^{\\ln(\\pi e)}} — exactly the integrand.",
     ],
   },
+  {
+    id: "beta-x4-over-sqrt-1mx",
+    kind: "definite",
+    integrand: "\\frac{x^4}{\\sqrt{1-x}}",
+    integrandExpr: "x^4/sqrt(1-x)",
+    lower: "0",
+    upper: "1",
+    answer: "256/315",
+    answerLatex: "\\frac{256}{315}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #3" },
+    hints: ["This is B(5,\\tfrac12) — the Beta function with the standard \\int_0^1x^{a-1}(1-x)^{b-1}dx form, a=5,\\ b=\\tfrac12."],
+    steps: [
+      "B\\!\\left(5,\\tfrac12\\right) = \\frac{\\Gamma(5)\\Gamma(1/2)}{\\Gamma(11/2)} = \\frac{4!\\sqrt\\pi}{\\Gamma(11/2)}.",
+      "Working out \\Gamma(11/2)=\\frac{9!!}{2^5}\\sqrt\\pi (the half-integer Gamma recursion) and simplifying the ratio gives \\frac{256}{315}.",
+    ],
+  },
 ];
