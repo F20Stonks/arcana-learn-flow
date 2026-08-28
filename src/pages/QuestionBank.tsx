@@ -380,7 +380,7 @@ export default function QuestionBank() {
           onClick={() => navigate(backHome)}
           className="reveal mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> {backHome === "/waitlist" ? "Back" : "Dashboard"}
+          <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
         </button>
 
         <header className="reveal" style={{ animationDelay: "60ms" }}>
