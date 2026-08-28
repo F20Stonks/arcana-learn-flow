@@ -3,10 +3,10 @@
  * integral in a one-parameter family I(a), so the "integrand" is really I(a) evaluated at a
  * specific a; the worked steps show the family and the differentiation that solves it.
  *
- * Kept to finite intervals on purpose. The technique's flagship examples (the Dirichlet integral
- * ∫₀^∞ sin(x)/x dx and its relatives) are improper, and grading those would need the self-check's
- * quadrature to handle an infinite domain — a genuine engineering task, not a content one. Finite
- * intervals still teach the real move: introduce a parameter, differentiate, integrate back.
+ * Originally kept to finite intervals — the technique's flagship examples (the Dirichlet integral
+ * ∫₀^∞ sin(x)/x dx and its relatives) are improper, and grading those needed the self-check's
+ * quadrature to handle an infinite domain. That engineering work is done (problems.test.ts's
+ * quadrature() now maps (0,∞) and (-∞,∞)), so infinite-interval Feynman examples belong here too.
  */
 import type { Problem } from "../types";
 
@@ -165,6 +165,28 @@ export const Feynman: Problem[] = [
     steps: [
       "I(a) = \\int_0^1\\frac{x^a-1}{\\ln x}\\,dx has I(a)=\\ln(a+1), by differentiating under the integral sign with respect to a.",
       "At a=7: I(7)=\\ln8=3\\ln2.",
+    ],
+  },
+  {
+    id: "feynman-def-eneg2x-sin3x-over-x",
+    kind: "definite",
+    integrand: "\\frac{e^{-2x}\\sin(3x)}x",
+    integrandExpr: "exp(-2*x)*sin(3*x)/x",
+    lower: "0",
+    upper: "\\infty",
+    answer: "atan(3/2)",
+    answerLatex: "\\arctan\\frac32",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Embed the 3 as a parameter: I(a)=\\int_0^\\infty\\frac{e^{-2x}\\sin(ax)}x\\,dx. Differentiating under the integral sign in a removes the troublesome \\frac1x.",
+    ],
+    steps: [
+      "I'(a) = \\int_0^\\infty e^{-2x}\\cos(ax)\\,dx = \\frac2{4+a^2} (a standard Laplace-transform integral).",
+      "Integrating back: I(a) = \\arctan\\frac a2+C, and I(0)=0 fixes C=0.",
+      "At a=3: I(3) = \\arctan\\frac32.",
     ],
   },
 ];

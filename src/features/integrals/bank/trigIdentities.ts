@@ -1463,4 +1463,24 @@ export const TrigIdentities: Problem[] = [
       "That surviving contribution works out to -\\frac\\pi{16} — confirmed by direct numeric integration.",
     ],
   },
+  {
+    id: "trig-sqrt-sum-of-squares-three-frequencies",
+    kind: "indefinite",
+    integrand: "\\sqrt{(\\sin20x+3\\sin21x+\\sin22x)^2+(\\cos20x+3\\cos21x+\\cos22x)^2}",
+    integrandExpr: "3+2*cos(x)",
+    answer: "3*x+2*sin(x)",
+    answerLatex: "3x+2\\sin x + C",
+    domain: [0, 2],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Read (\\cos\\theta,\\sin\\theta) pairs as the real/imaginary parts of e^{i\\theta}. The whole expression under the root is |Z| for Z=e^{i20x}+3e^{i21x}+e^{i22x} — factor out e^{i21x}.",
+    ],
+    steps: [
+      "Z=e^{i20x}+3e^{i21x}+e^{i22x} = e^{i21x}\\left(e^{-ix}+3+e^{ix}\\right) = e^{i21x}(3+2\\cos x).",
+      "|Z| = |e^{i21x}|\\cdot|3+2\\cos x| = 3+2\\cos x (always positive, since 3+2\\cos x\\ge1).",
+      "\\int(3+2\\cos x)\\,dx = 3x+2\\sin x + C.",
+    ],
+  },
 ];

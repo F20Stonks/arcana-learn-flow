@@ -434,4 +434,23 @@ export const BetaIntegrals: Problem[] = [
       "Working out \\Gamma(11/2)=\\frac{9!!}{2^5}\\sqrt\\pi (the half-integer Gamma recursion) and simplifying the ratio gives \\frac{256}{315}.",
     ],
   },
+  {
+    id: "beta-cbrt-x-times-1mx-cbrt-squared",
+    kind: "definite",
+    integrand: "\\sqrt[3]{x}\\left(1-x\\right)^{2/3}",
+    integrandExpr: "x^(1/3)*(1-x)^(2/3)",
+    lower: "0",
+    upper: "1",
+    answer: "2*pi/(9*sqrt(3))",
+    answerLatex: "\\frac{2\\pi}{9\\sqrt3}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["beta-integrals"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: ["This is B\\!\\left(\\frac43,\\frac53\\right) — the Beta function with a=\\frac43,\\ b=\\frac53."],
+    steps: [
+      "B\\!\\left(\\tfrac43,\\tfrac53\\right) = \\frac{\\Gamma(4/3)\\Gamma(5/3)}{\\Gamma(3)}.",
+      "Using \\Gamma\\!\\left(\\tfrac43\\right)=\\tfrac13\\Gamma\\!\\left(\\tfrac13\\right) and \\Gamma\\!\\left(\\tfrac53\\right)=\\tfrac23\\Gamma\\!\\left(\\tfrac23\\right), and the reflection formula \\Gamma\\!\\left(\\tfrac13\\right)\\Gamma\\!\\left(\\tfrac23\\right)=\\frac\\pi{\\sin(\\pi/3)}=\\frac{2\\pi}{\\sqrt3}, the ratio simplifies to \\frac{2\\pi}{9\\sqrt3}.",
+    ],
+  },
 ];
