@@ -6,7 +6,7 @@
  * execute a substitution — they fail because they don't know which of eight things to reach for, so
  * every lesson leads with the recognition cue rather than the recipe.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
 import AppShell from "@/components/AppShell";
