@@ -11,62 +11,48 @@ interface FinishRunArgs {
   durationS: number;
 }
 
-/** XP is the only live gamification hook — weekly_streak is displayed in the shell but nothing in
- *  the app increments it yet (checked: assess-session never touches it), so drills don't invent a
- *  streak semantic that doesn't exist anywhere else. */
-function xpFor(correctCount: number, incorrectCount: number): number {
-  return Math.max(0, correctCount * 2 - Math.min(incorrectCount, correctCount));
-}
-
+/**
+ * Scores and XP are recomputed server-side from the raw attempt list (see the `record_drill_run`
+ * database routine) — the client can no longer write drill rows or its own XP directly, so a
+ * forged request can't put a fabricated score on the leaderboard. The local numbers below are
+ * only an optimistic fallback for the summary screen when the write fails.
+ */
 export async function finishDrillRun({ userId, drillKey, mode, config, attempts, durationS }: FinishRunArgs) {
-  const correctCount = attempts.filter((a) => a.correct).length;
-  const incorrectCount = attempts.length - correctCount;
-  const perMinute = durationS > 0 ? correctCount / (durationS / 60) : correctCount;
-  const score = Math.round(perMinute * 10) / 10;
-  const xpEarned = xpFor(correctCount, incorrectCount);
+  void userId;
+  const localCorrect = attempts.filter((a) => a.correct).length;
+  const localIncorrect = attempts.length - localCorrect;
+  const perMinute = durationS > 0 ? localCorrect / (durationS / 60) : localCorrect;
 
-  const { data: session, error: sessionError } = await supabase
-    .from("drill_sessions")
-    .insert({
-      user_id: userId,
-      drill_key: drillKey,
-      mode,
-      config: config as Json,
-      problems_seen: attempts.length,
-      problems_correct: correctCount,
-      score,
-      duration_s: durationS,
-      xp_earned: xpEarned,
-    })
-    .select("id")
-    .single();
-
-  if (sessionError || !session) {
-    console.warn("Drill session write failed:", sessionError?.message);
-    return { correctCount, incorrectCount, score, xpEarned, perMinute };
-  }
-
-  if (attempts.length > 0) {
-    const rows = attempts.map((a) => ({
-      session_id: session.id,
-      user_id: userId,
-      drill_key: drillKey,
-      problem_tag: a.tag,
+  const { data, error } = await supabase.rpc("record_drill_run", {
+    p_drill_key: drillKey,
+    p_mode: mode,
+    p_config: config as Json,
+    p_attempts: attempts.map((a) => ({
+      tag: a.tag,
       correct: a.correct,
-      latency_ms: Math.round(a.latencyMs),
-    }));
-    const { error: attemptsError } = await supabase.from("drill_attempts").insert(rows);
-    if (attemptsError) console.warn("Drill attempts write failed:", attemptsError.message);
+      latencyMs: Math.round(a.latencyMs),
+    })) as unknown as Json,
+    p_duration_s: Math.round(durationS),
+  });
+
+  if (error || !data) {
+    console.warn("Drill run write failed:", error?.message);
+    return {
+      correctCount: localCorrect,
+      incorrectCount: localIncorrect,
+      score: Math.round(perMinute * 10) / 10,
+      xpEarned: 0,
+      perMinute,
+    };
   }
 
-  if (xpEarned > 0) {
-    const { data: profile } = await supabase.from("profiles").select("total_xp").eq("user_id", userId).maybeSingle();
-    if (profile) {
-      await supabase.from("profiles").update({ total_xp: (profile.total_xp || 0) + xpEarned }).eq("user_id", userId);
-    }
-  }
-
-  return { correctCount, incorrectCount, score, xpEarned, perMinute };
+  const result = data as unknown as {
+    correctCount: number;
+    incorrectCount: number;
+    score: number;
+    xpEarned: number;
+  };
+  return { ...result, perMinute };
 }
 
 export async function fetchWeakSpots(userId: string, drillKey: string, limit = 5): Promise<WeakSpot[]> {
