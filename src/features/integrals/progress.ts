@@ -14,6 +14,18 @@ import { levelState } from "./scoring";
 import type { TechniqueId } from "./types";
 
 const STORAGE_KEY = "arcana.integrals.progress.v1";
+const LEGACY_CLAIMED_KEY = "arcana.integrals.progress.claimed";
+
+/**
+ * Whose progress is in memory. Local storage is per-browser, not per-account, so without this a
+ * second person signing in on the same machine inherits the first person's solved count.
+ */
+let scopeUserId: string | null = null;
+
+/** Namespaced storage key for any per-player local record (progress, submitted puzzles, …). */
+export function scopedKey(base: string): string {
+  return scopeUserId ? `${base}:${scopeUserId}` : base;
+}
 
 export interface SolveRecord {
   solvedAt: string;
