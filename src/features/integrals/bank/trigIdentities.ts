@@ -1525,4 +1525,24 @@ export const TrigIdentities: Problem[] = [
       "So the whole sum of cosine terms vanishes, leaving exactly \\frac\\pi2 — independent of which odd multiple (23, or any other) is used.",
     ],
   },
+  {
+    id: "trig-four-cosine-product-difference",
+    kind: "indefinite",
+    integrand: "\\cos3x\\cos5x\\cos6x\\cos7x-\\cos x\\cos2x\\cos4x\\cos8x",
+    integrandExpr: "cos(3*x)*cos(5*x)*cos(6*x)*cos(7*x)-cos(x)*cos(2*x)*cos(4*x)*cos(8*x)",
+    answer: "(1/8)*(sin(21*x)/21-sin(13*x)/13)",
+    answerLatex: "\\frac18\\left(\\frac{\\sin(21x)}{21}-\\frac{\\sin(13x)}{13}\\right) + C",
+    domain: [0.1, 1],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #1" },
+    hints: [
+      "Repeatedly apply the product-to-sum identity 2\\cos A\\cos B=\\cos(A-B)+\\cos(A+B) to collapse each four-term product down to a sum of two cosines.",
+    ],
+    steps: [
+      "\\cos3x\\cos5x\\cos6x\\cos7x expands (via repeated product-to-sum) into a sum of cosines of frequencies including 21 and 13 among others; \\cos x\\cos2x\\cos4x\\cos8x expands similarly.",
+      "In the difference, every frequency cancels except \\cos(21x) and \\cos(13x), each carrying a coefficient of \\frac18.",
+      "\\int\\frac18\\left(\\cos21x-\\cos13x\\right)dx = \\frac18\\left(\\frac{\\sin21x}{21}-\\frac{\\sin13x}{13}\\right) + C.",
+    ],
+  },
 ];
