@@ -1603,4 +1603,22 @@ export const TrigIdentities: Problem[] = [
       "\\int\\left(\\frac12\\csc^2x-1\\right)dx = -\\frac12\\cot x-x + C.",
     ],
   },
+  {
+    id: "trig-sinx-over-1plussinx-times-cosx-over-1pluscosx",
+    kind: "indefinite",
+    integrand: "\\frac{\\sin x}{1+\\sin x}\\cdot\\frac{\\cos x}{1+\\cos x}",
+    integrandExpr: "(sin(x)/(1+sin(x)))*(cos(x)/(1+cos(x)))",
+    answer: "x+log((1+cos(x))/(1+sin(x)))",
+    answerLatex: "x+\\ln\\!\\left(\\frac{1+\\cos x}{1+\\sin x}\\right) + C",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["trig-identity"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: ["Guess F(x)=x+\\ln(1+\\cos x)-\\ln(1+\\sin x) and differentiate it — the two log pieces individually give \\frac{\\sin x}{1+\\sin x} and \\frac{\\cos x}{1+\\cos x}-flavored terms that combine with the leading x."],
+    steps: [
+      "\\frac{d}{dx}\\left[\\ln(1+\\cos x)\\right] = \\frac{-\\sin x}{1+\\cos x},\\quad\\frac{d}{dx}\\left[-\\ln(1+\\sin x)\\right] = \\frac{-\\cos x}{1+\\sin x}.",
+      "F'(x) = 1-\\frac{\\sin x}{1+\\cos x}-\\frac{\\cos x}{1+\\sin x}.",
+      "Combining 1-\\frac{\\sin x}{1+\\cos x}=\\frac{1+\\cos x-\\sin x}{1+\\cos x} and simplifying the whole expression algebraically reproduces \\frac{\\sin x\\cos x}{(1+\\sin x)(1+\\cos x)} — exactly the integrand (verified directly).",
+    ],
+  },
 ];
