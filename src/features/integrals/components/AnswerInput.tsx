@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef } from "react";
-import { CornerDownLeft } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Calculator, CornerDownLeft } from "lucide-react";
 import Tex from "./Tex";
+import MathKeyboard from "./MathKeyboard";
 import { previewLatex } from "../answer";
 import type { Verdict } from "../types";
 
@@ -28,12 +29,25 @@ export default function AnswerInput({
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const id = useId();
+  const [keypadOpen, setKeypadOpen] = useState(false);
   useEffect(() => {
     if (!disabled) ref.current?.focus();
   }, [disabled]);
 
+  // inputMode="none" only suppresses a touch device's own virtual keyboard — a physical keyboard
+  // still works either way. Blurring and refocusing forces the browser to re-read that attribute
+  // immediately rather than waiting for the next natural focus.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement === el) {
+      el.blur();
+      el.focus();
+    }
+  }, [keypadOpen]);
+
   const preview = value.trim() ? previewLatex(value) : null;
   const bad = verdict !== null && verdict.status !== "correct";
+  const keypadId = `${id}-keypad`;
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -55,6 +69,7 @@ export default function AnswerInput({
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}
+          inputMode={keypadOpen ? "none" : undefined}
           className={`w-full rounded-xl border-2 bg-card py-3.5 pl-4 pr-24 font-mono text-[17px] text-foreground outline-hidden transition-colors placeholder:text-muted-foreground/40 disabled:opacity-60 ${
             bad ? "border-destructive/50" : "border-border focus:border-primary/60"
           }`}
@@ -68,22 +83,52 @@ export default function AnswerInput({
         </button>
       </div>
 
-      <div id={`${id}-preview`} className="min-h-[26px] px-1 text-[13px]">
-        {preview ? (
-          <span className="text-muted-foreground">
-            reads as <Tex className="ml-1 text-foreground">{preview}</Tex>
-          </span>
-        ) : value.trim() ? (
-          <span className="text-muted-foreground/70">…still reading that</span>
-        ) : (
-          <span className="text-muted-foreground/60">
-            Type it however you like — <code className="font-mono">ln|x|</code>,{" "}
-            <code className="font-mono">sin x</code>, <code className="font-mono">arctan x</code>,{" "}
-            <code className="font-mono">x**3</code>, or pasted LaTeX. The{" "}
-            <code className="font-mono">+ C</code> is optional.
-          </span>
-        )}
+      <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          aria-expanded={keypadOpen}
+          aria-controls={keypadId}
+          aria-label={keypadOpen ? "Hide math keyboard" : "Show math keyboard"}
+          title={keypadOpen ? "Hide math keyboard" : "Math keyboard"}
+          disabled={disabled}
+          onClick={() => setKeypadOpen((v) => !v)}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors disabled:pointer-events-none disabled:opacity-40 ${
+            keypadOpen
+              ? "border-primary/60 bg-primary/[0.1] text-primary"
+              : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          }`}
+        >
+          <Calculator className="h-4 w-4" />
+        </button>
+
+        <div id={`${id}-preview`} className="min-h-[26px] flex-1 text-[13px]">
+          {preview ? (
+            <span className="text-muted-foreground">
+              reads as <Tex className="ml-1 text-foreground">{preview}</Tex>
+            </span>
+          ) : value.trim() ? (
+            <span className="text-muted-foreground/70">…still reading that</span>
+          ) : (
+            <span className="text-muted-foreground/60">
+              Type it however you like — <code className="font-mono">ln|x|</code>,{" "}
+              <code className="font-mono">sin x</code>, <code className="font-mono">arctan x</code>,{" "}
+              <code className="font-mono">x**3</code>, or pasted LaTeX. The{" "}
+              <code className="font-mono">+ C</code> is optional.
+            </span>
+          )}
+        </div>
       </div>
+
+      {keypadOpen && (
+        <MathKeyboard
+          id={keypadId}
+          inputRef={ref}
+          value={value}
+          onChange={onChange}
+          onSubmit={onSubmit}
+          disabled={disabled}
+        />
+      )}
     </div>
   );
 }
