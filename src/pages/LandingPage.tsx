@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { MotionConfig, motion } from "framer-motion";
-import { Sigma, Zap } from "lucide-react";
 import Reveal from "@/components/landing/Reveal";
 import VectorField from "@/components/landing/VectorField";
 import TrackDemo from "@/components/landing/TrackDemo";
 import SessionChat from "@/components/landing/SessionChat";
 import SceneDemo from "@/components/landing/SceneDemo";
+import integralArenaShot from "@/assets/landing/integral-arena.png";
+import zetamacShot from "@/assets/landing/zetamac-drill.png";
 import "@/components/landing/landing.css";
 
 /**
@@ -257,8 +258,8 @@ export default function LandingPage() {
             <div className="tool-grid">
               <Reveal delay={0.08}>
                 <div className="tool-card">
-                  <div className="tool-icon">
-                    <Sigma className="h-5 w-5" />
+                  <div className="tool-shot">
+                    <img src={integralArenaShot} alt="A daily integral in Integral Arena — a five-star “brutal” trig integral, rendered in full LaTeX, with the type-or-build answer input below it." loading="lazy" />
                   </div>
                   <h3>Integral Arena</h3>
                   <p>
@@ -279,8 +280,8 @@ export default function LandingPage() {
               </Reveal>
               <Reveal delay={0.16}>
                 <div className="tool-card">
-                  <div className="tool-icon">
-                    <Zap className="h-5 w-5" />
+                  <div className="tool-shot">
+                    <img src={zetamacShot} alt="A live Zetamac++ sprint — a six-answer streak, a countdown timer, and a fresh arithmetic problem waiting for input." loading="lazy" />
                   </div>
                   <h3>Zetamac++ &amp; the drill arcade</h3>
                   <p>
