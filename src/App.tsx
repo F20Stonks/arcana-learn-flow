@@ -179,6 +179,9 @@ function AppRoutes() {
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
       )}
+      {/* Same unguarded-twin pattern as the /dev/integrals/* block above, for drills. */}
+      {import.meta.env.DEV && <Route path="/dev/drills" element={<DrillsHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/drills/:drillKey" element={<DrillPlay />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

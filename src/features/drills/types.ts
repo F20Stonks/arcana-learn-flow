@@ -79,7 +79,7 @@ export interface DrillDefinition {
   key: string;
   name: string;
   tagline: string;
-  domain: "arithmetic" | "number-theory" | "algebra" | "logic" | "topology";
+  domain: "arithmetic" | "number-theory" | "algebra" | "logic" | "topology" | "probability";
   defaultDurationS: number;
   modes: DrillModeSpec[];
   generate: (args: GenerateArgs) => DrillProblem;
