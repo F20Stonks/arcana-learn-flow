@@ -235,3 +235,58 @@ workstream, noting what shipped, what was skipped and why, and what is next.
 - A lesson's derivation cannot be verified numerically. Do not ship prose you could not check.
 - Any finding that a standing directive in `CLAUDE.md` now conflicts with this objective. That is
   the owner's call, not the agent's.
+
+---
+
+# Extension: post-burst workstreams (added 29 Aug, after WS-1–WS-6 shipped)
+
+The original six shipped and are verified at 2042/2042. Two gaps remain, both real, both
+independently buildable. **These two touch disjoint files and are intended to run in parallel.**
+
+**WS-7 · The campaign — a dated, self-administering training track.** *File ownership: new
+`uk/campaign*.ts`, new `hooks/useCampaign.ts`, new `pages/IntegralCampaign.tsx`, plus route lines in
+`App.tsx` and a tile in `IntegralsHub.tsx`. Do not touch `techniques.ts`.*
+
+The burst delivered five excellent components and no conductor. Paper mode, the scheduler, the error
+taxonomy, the recognition drill and the values deck sit on five separate routes, and the 70-day
+programme that decides which of them today calls for lives only in a document the owner must
+self-administer. For a solo competitor with no coach, that is the thing that gets abandoned in week
+three. Adherence is the unbuilt feature.
+
+- **Target date**: user-settable, persisted, **defaulting to 7 Nov 2026**. Do not block on the real
+  date being known — it is host-dependent and the owner is confirming it. Derive days remaining,
+  which block (A/B/C) and which week.
+- **Blocks**, from the agreed programme: **A · breadth** (to 27 Sep) — ~25 problems/day, cold mix,
+  difficulty-3 weighted, prioritising techniques never attempted; **B · depth** (28 Sep–25 Oct) —
+  ~25/day weighted difficulty 4–5 and MIT bee-round sourced, plus one full paper per week;
+  **C · taper** (26 Oct on) — reduced volume, no new techniques, error-log review, and nothing new
+  in the final 48 hours.
+- **Today's session** is a generated, ordered plan of steps — e.g. a recognition round, then N
+  scheduled problems, then on paper days a full sitting — that the owner presses start on and works
+  through. Compose it from what already exists; reimplement none of it.
+- **Adherence**: track sessions completed, not just solves. The streak that matters is showing up.
+- **Readiness readout** against the agreed measures: attempt rate, Q1–10 pace, error rate on
+  completed attempts, tail reach, and paper-score trend versus the owner's own first cold sit.
+- Advisory, not a cage: the owner can always override and go drill something specific.
+
+**WS-8 · Finish the lesson rebuild — the remaining 11 techniques.** *File ownership:
+`techniques.ts`, `lessonExamples.test.ts`, and `LessonBody.tsx` only if a new section genuinely
+needs rendering. Do not touch routes, the hub, or anything under `uk/`.*
+
+WS-2 rebuilt 10 of 21 lessons — the A-level bridge and the definite-integral core. The other 11 keep
+the old single-example reference-card format the owner specifically objected to. Several of them are
+exactly the advanced arsenal that makes a hard tail problem fast, which is what "finals-grade so the
+qualifier is trivial" actually requires.
+
+Apply the WS-2 schema — `prerequisites`, `intuition` (the *why*, derived, before the recipe says the
+*what*), faded `examples[]`, `checkYourself` — in this order:
+
+1. **The finals arsenal, highest value first**: `beta-integrals`, `gamma-function`, `zeta-series`,
+   `wallis-product`, `reciprocal-substitution`, `recurrence`.
+2. `introducing-constants`, `floor-function`, `inverse-integral`, `log-power-integrals`,
+   `gaussian-hypersphere`.
+
+**The WS-2 guardrail stands and is not optional**: every derivation step and worked example must be
+verified numerically before it ships, and any example stating a literal evaluatable integral gets an
+`integrandExpr`/`resultExpr` mirror so `lessonExamples.test.ts` actually checks it. A lesson
+containing wrong algebra is worse than a terse correct one.
