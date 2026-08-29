@@ -846,3 +846,55 @@ why, so the owner can make the final call rather than it just quietly vanishing.
 
   **Next**: WS-2, the lesson rebuild — see the entry that follows once it lands, or (if this file
   is being read mid-workstream) check `git log` on this branch for the latest state.
+
+  **WS-2 · Rebuild the lessons for a reader fresh out of A-level — shipped, commit `20bea88`.**
+  Extended `Technique` (`types.ts`) additively: `prerequisites?`, `intuition?`,
+  `examples?: WorkedExample[]` (graduated — first spells out every step, later ones compress),
+  `checkYourself?: {prompt, answer, hint}` (reveal-only, no live grading). The legacy singular
+  `example` field stays required and every rebuilt technique sets it to `examples[0]` via a shared
+  local const, so it can never drift from `examples` and `mathText.test.ts`'s existing
+  "everything in the curriculum renders" check (which reads `.example` directly) kept passing
+  completely unedited. `WorkedExample` also grows an optional
+  `integrandExpr`/`resultExpr`/`domain`/`kind` — same machine-checkable-mirror pattern as
+  `Problem.integrandExpr`/`answer` — set only on examples stating a literal evaluatable integral.
+  - New `lessonExamples.test.ts` (42 tests) checks every gradeable example the same way
+    `problems.test.ts` checks the graded bank — `derivative()`/`quadrature()` duplicated verbatim
+    (not imported, so importing this file can never re-trigger another file's test registrations)
+    — plus a strict-mode KaTeX-render check across all 21 techniques' new and old prose fields.
+  - Rebuilt all 10 techniques the runbook named, in its stated order: the A-level bridge (`power`,
+    `u-sub`, `parts`, `trig-identity`, `trig-sub`, `partial-fractions`, `complete-square`) then the
+    definite-integral core (`symmetry`, `t-sub`, `feynman`). Each got a prerequisites chip list, an
+    intuition paragraph deriving *why* the move works, two graduated worked examples, and a
+    checkYourself self-check. `t-sub` specifically now derives \sin x=\frac{2t}{1+t^2} etc. from
+    the double-angle formulas in `intuition` (rather than asserting it) and spells out the `dx`
+    cancellation step by step in its example instead of folding it in silently — the exact gap the
+    runbook called out by name. Every one of the 30 new numeric claims across the 10 lessons was
+    verified with a throwaway Node script (plain `Math.*`, not reusing mathjs/`normalize()`,
+    mirroring `problems.test.ts`'s methods including the infinite-domain substitutions) before
+    being written down, with comfortable margins (smallest ~3100x tolerance, most 10^6–10^11x) —
+    well clear of the "within ~50% of the boundary, find a cleaner example" guardrail. One genuinely
+    new addition (not just a rewrite of existing content): the Frullani integral
+    `\int_0^\infty\frac{e^{-x}-e^{-2x}}x\,dx=\ln2` as `feynman`'s first, more-spelled-out example,
+    with the existing `\ln3` example kept as the second, more compressed one.
+  - `LessonBody.tsx` rewritten to render the new sections when present (prerequisite chips linked
+    to their own lesson when the text names an existing technique; "Why it works"; graduated
+    "Worked examples", labelled "Example N of M" past the first; a reveal-only "Check yourself")
+    and to fall back cleanly to the old single "Worked example" heading with no extra sections for
+    the 11 techniques not rebuilt this pass. Verified in both real render contexts (the standalone
+    Lessons library, and the collapsed lesson panel on the training/practice screen) via a real
+    Playwright walkthrough against the dev server — including a non-rebuilt technique (Recurrence
+    relations) specifically to confirm the fallback path shows no empty sections.
+  - Verified: `npx vitest run` — 1953/1953 passing (was 1911/1911 after WS-1); `npx tsc --noEmit`
+    clean; `eslint` clean on every touched file.
+  - **Skipped, per the runbook's own ordering** ("stop when the window closes" / "everything else
+    only if time genuinely remains"): the other 11 techniques (`recurrence`, `inverse-integral`,
+    `floor-function`, `beta-integrals`, `introducing-constants`, `log-power-integrals`,
+    `reciprocal-substitution`, `gamma-function`, `zeta-series`, `wallis-product`,
+    `gaussian-hypersphere`) keep their original single-example lessons untouched. `checkYourself`
+    was deliberately NOT given its own machine-checkable mirror the way `WorkedExample` has — the
+    runbook fixed its shape at exactly `{prompt, answer, hint}` and I chose not to extend past that
+    spec — every `checkYourself` answer was still hand-verified via the same throwaway-script
+    method before shipping, just not wired into an automated regression fixture. Flagging this
+    scoping call explicitly per the runbook's own instinct to surface rather than silently guess.
+
+  **Next**: WS-3 (paper mode) per the runbook's order.
