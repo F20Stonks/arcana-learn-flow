@@ -1038,3 +1038,82 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   possible future ask, not built speculatively.
 
   **Next**: WS-4 (the scheduler) per the runbook's order, time permitting.
+
+- 2026-08-29 (same session, continuing): **WS-4 · the scheduler — shipped, commit `<see below>`.**
+  Added `scheduledQueue()` to `src/features/integrals/queue.ts`, beside the untouched
+  `orderQueue()`, implementing all five weighted factors the runbook named, in its stated order of
+  influence:
+  1. **Retention decay** — a solved problem's urgency grows with days since `progress.solves[id].
+     solvedAt`, divided by a half-life that shortens the harder that solve was (scaled by the
+     `wrongAttemptsSoFar` recorded on the attempt log's most recent *correct* attempt for that
+     problem — a clean first-try solve gets the full 6-day half-life, a solve that took several
+     wrong attempts decays proportionally faster). A never-solved problem is always more urgent
+     than any solved one, however stale — same "unsolved first" contract `orderQueue` already had,
+     just backed by a real, comparable number instead of a flat +100.
+  2. **Weakness** — per-technique failure rate (fraction of recorded attempts, on problems in the
+     pool being scheduled, tagged with that technique, that weren't `"correct"`) multiplies into
+     urgency, so a technique he's actually failing gets served more.
+  3. **Near-miss priority** — an unsolved problem whose most recent attempt was
+     `off-by-constant-factor` gets a large urgency bonus over one never attempted or one whose last
+     attempt was flatly wrong — "the method was right" is worth more, exactly as the runbook says.
+     Scoped to what's detectable *today*: WS-5 (error taxonomy, not yet built) would let this catch
+     a plain sign-flip too, since a general sign error inside a compound expression isn't
+     necessarily a scalar multiple of the right answer and the current binary correct/off-by-
+     factor/incorrect split can't always tell it apart from ordinary "incorrect" — noted as a real
+     extension point for once WS-5 exists, not attempted here.
+  4. **Target success band** — splits the urgency-ranked list into "comfortable" (estimated ~≥70%
+     odds) and "challenging" (<70%) using a per-problem odds estimate blending difficulty,
+     technique track record, and (when there's history) the problem's own last-attempt signal, then
+     blends the two streams with a fractional (Bresenham-style) accumulator so ~`targetSuccess`
+     (default `TARGET_SUCCESS_DEFAULT = 0.7`, exported) of what's served is the comfortable stream
+     — spread evenly across the queue, not front-loaded. Without this step, weakness (factor 2)
+     alone would serve every problem from the weakest technique before any other, which is exactly
+     the "leads with the hardest material and demoralises" failure mode the runbook called out.
+  5. **Interleaving** — a final pass so consecutive problems don't share `techniques[0]`. First
+     shipped as a bounded local-swap ("find the nearest later item with a different technique"),
+     but a test with an even 3-technique/3-each pool caught it leaving an avoidable clash at the
+     tail (it spends its "swap budget" fixing early clashes and runs out); replaced with the
+     standard "most-remaining-technique" greedy (classic *reorganize-so-no-two-adjacent-match*
+     algorithm, tie-broken by each candidate's position in the priority order from steps 1-4, so
+     among equally-pressing techniques the more urgent one still goes first) — complete whenever a
+     fully clash-free order exists, and provably minimal-clash otherwise (verified by hand against
+     the 5-of-one-technique/1-of-another case: exactly 3 unavoidable adjacent repeats, matching the
+     theoretical `2m-n-1` minimum). Left the failing test's fixture as the reason for the rewrite
+     rather than weakening the assertion to fit the weaker first draft.
+
+  **Deliberately not switched into `IntegralTraining.tsx`'s `TrainingTechnique`** — the only real
+  caller of `orderQueue` today. The runbook says "keep `orderQueue` exported and working for any
+  caller not yet migrated ... and switch callers deliberately"; the deliberate decision made here
+  is *not yet*, because `integration.test.tsx` has two already-passing tests ("advances through the
+  queue and banks training XP", "skips a problem without answering it, recording nothing") that
+  hard-code `orderQueue(...)`'s own output as the expected first-served problem. Swapping
+  `TrainingTechnique`'s internal call to `scheduledQueue` would desynchronise those fixtures from
+  what actually renders and almost certainly break both — exactly the "would need an existing
+  passing test changed" condition this project's own rules say to stop and report on rather than
+  push through. `scheduledQueue` is fully built, exported and independently tested; wiring it in is
+  a follow-up for whenever the owner is fine with those two tests being rewritten to derive `first`
+  from `scheduledQueue` instead (or some other resolution) — not decided here.
+
+  **Testing.** New `src/features/integrals/queue.test.ts`, 12 tests, black-box against
+  `scheduledQueue`'s documented behaviour (not its internals) with minimal fake `Problem`/
+  `AttemptRecord`/`Progress` fixtures: structural invariants (empty pool, output is always an exact
+  permutation of the input pool, deterministic for identical inputs), one test per factor above
+  (unsolved-beats-solved, stale-beats-recent, harder-solve-decays-faster, weak-technique-beats-
+  strong, near-miss-beats-no-attempt, near-miss-beats-flat-wrong, the success-band blend actually
+  blends rather than front-loading, interleaving holds when avoidable, and degrades to a full valid
+  permutation with the provable minimum of residual clashes when it isn't). Two of these caught
+  real problems before being accepted, not just before passing: the weakness test's first draft put
+  the "weak technique" filler problems in as *unsolved*, which put them in the always-higher
+  unsolved-urgency tier and swamped the very comparison the test meant to isolate — fixed by
+  marking them solved-today instead of leaving them out of `progress` entirely; the interleaving
+  test's first draft (see factor 5 above) caught the real algorithm gap that led to the rewrite.
+  Neither was weakened to pass — one was a fixture bug, the other was a real bug in the code being
+  tested, and both are fixed at the root rather than in the assertion.
+
+  Verified: `npx vitest run` — 1987/1987 (was 1975/1975 after WS-3; +12, all new, all in
+  `queue.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on `queue.ts` and
+  `queue.test.ts` — zero findings. `integration.test.tsx`'s existing `orderQueue`-dependent tests
+  were not touched and still pass, confirming `orderQueue` itself is genuinely untouched behaviour,
+  not just untouched source.
+
+  **Next**: WS-5 (error taxonomy) per the runbook's order, time permitting.
