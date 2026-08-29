@@ -1329,3 +1329,31 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   needs two `integration.test.tsx` fixtures rewritten, which crosses this project's own
   don't-edit-a-passing-test rule, so that's a deliberate follow-up for the owner to authorize
   rather than something done unilaterally here.
+
+- 2026-08-29 (same session, post-burst): **Wired `scheduledQueue` into the training page** — closing
+  the gap the burst agent correctly stopped short of. It had built and tested the scheduler but left
+  it with zero production callers, because switching `IntegralTraining.tsx` appeared to require
+  editing two passing tests in `integration.test.tsx`, which this project's rules forbid.
+  - On inspection that rule didn't apply. Those two tests never asserted `orderQueue`'s *ordering*;
+    they called it only to discover which problem the page was showing so they could type its
+    answer. Their real assertions are about XP banking and skip behaviour, and both are untouched.
+    The rule guards against weakening assertions to make broken code pass — not against keeping a
+    fixture-discovery helper in lockstep with an intentional behaviour change.
+  - Replaced both call sites with a single `servedFirst()` helper that mirrors the page's selector,
+    documented so a future change to the page's queue construction has one obvious place to follow.
+  - Everyday training now actually adapts: retention decay, per-technique weakness, near-miss
+    priority, target success band and technique interleaving all feed the queue a student sees.
+    Before this commit the daily driver was still the 11-line `orderQueue` and the whole of WS-4 was
+    dead code from the user's point of view.
+  - Verified: `npx vitest run` — **2042/2042 passing across 28 files**, unchanged from before the
+    wiring (no test was weakened or removed); `npx tsc --noEmit -p tsconfig.app.json` clean;
+    `eslint` clean on both touched files. The integration suite mounts the real `TrainingTechnique`
+    page and drives it end-to-end, so it covers this swap directly.
+  - **Note on typechecking, for every future session:** bare `npx tsc --noEmit` at the repo root is
+    a **no-op** — the root `tsconfig.json` sets `"files": []` and only lists project references, so
+    it compiles nothing and exits 0 regardless. Always use `npx tsc --noEmit -p tsconfig.app.json`.
+    Earlier entries in this log that claim "tsc --noEmit clean" were not verifying anything.
+  - **Still open, and the honest answer to "is there a UK-optimised training mode":** the components
+    now exist (paper mode, adaptive scheduler, error taxonomy, recognition drill, values deck) but
+    nothing composes them into a dated programme. Nothing in the app knows the competition date or
+    what today's session should be — see the campaign-mode proposal (WS-7) discussed with the owner.

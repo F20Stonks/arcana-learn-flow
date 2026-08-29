@@ -16,7 +16,8 @@ import LessonBody from "@/features/integrals/components/LessonBody";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
-import { orderQueue } from "@/features/integrals/queue";
+import { scheduledQueue } from "@/features/integrals/queue";
+import { getAttempts } from "@/features/integrals/attempts";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import {
   DIFFICULTY_LABEL,
@@ -250,9 +251,12 @@ export function TrainingTechnique() {
     return problemsForTechnique(techniqueId as TechniqueId);
   }, [isSource, source, mixed, custom, customIds, techniqueId]);
 
-  // Deliberately seeded from progress once, on mount: re-sorting as you solve would move the queue
-  // out from under you.
-  const [queue] = useState(() => orderQueue(pool, progress));
+  // Deliberately seeded once, on mount: re-sorting as you solve would move the queue out from
+  // under you. `scheduledQueue` (not the older `orderQueue`) is what makes a 70-day training block
+  // adaptive rather than a walk through the bank in difficulty order — it reads the attempt log for
+  // retention decay, per-technique weakness, near-miss priority and a target success band, then
+  // interleaves so consecutive problems don't share a technique.
+  const [queue] = useState(() => scheduledQueue(pool, progress, getAttempts()));
   const [index, setIndex] = useState(0);
   const [lessonOpen, setLessonOpen] = useState(false);
 
