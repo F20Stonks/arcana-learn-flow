@@ -917,3 +917,124 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     WS-3 WIP files present the suite is **1975/1975**; `tsc --noEmit` clean in both cases.
   - **Next session resumes here**, at WS-3, from `UK_BEE_BURST.md`. WS-4 (scheduler), WS-5 (error
     taxonomy) and WS-6 (recognition drill + values deck) remain untouched.
+
+- 2026-08-29 (new session, same branch): Resumed at WS-3 per the previous entry. Reproduced the
+  stated baseline first (1975/1975, working tree clean) before touching anything.
+
+  **Tooling finding, flagged rather than fixed — read this before trusting any past or future
+  "`tsc --noEmit` clean" claim in this log.** `npx tsc --noEmit` run from the repo root is a
+  no-op: the root `tsconfig.json` has `"files": []` and only `references` to
+  `tsconfig.app.json`/`tsconfig.node.json`, which tsc only resolves under `--build` mode. Without
+  `-b`, plain `tsc --noEmit` at the root type-checks **zero files** and exits 0 — confirmed with
+  `--listFiles` (empty output) and by deliberately re-triggering a real type error, which the root
+  invocation missed entirely while `npx tsc --noEmit -p tsconfig.app.json` (which really does
+  `"include": ["src"]`, i.e. the whole app) caught it immediately. This means the exact command
+  this runbook's verification loop names, run exactly as written, has likely been silently
+  checking nothing for this entire burst (and possibly longer — every "`tsc --noEmit` clean" line
+  earlier in this file was almost certainly a real `npm install`/`vitest` run but a no-op tsc run).
+  Did **not** fix the root `tsconfig.json` myself: it's shared build config outside this task's
+  stated paths, and — more importantly — making the root invocation real for the first time could
+  surface a backlog of pre-existing type errors anywhere in the app (this burst already knows the
+  app carries ~95 pre-existing lint findings outside its scope; the type-check equivalent is
+  unmeasured) which would then look like *this task* broke `tsc`, or block "clean" forever without
+  touching out-of-scope files. Used `npx tsc --noEmit -p tsconfig.app.json` for every real
+  typecheck in this session instead (confirmed clean throughout) and am flagging this here for the
+  owner rather than guessing at a fix to shared config. **If future sessions want the literal
+  `npx tsc --noEmit` from this runbook's verification loop to mean something, the fix is either
+  `-p tsconfig.app.json` explicitly or running `tsc -b`/adding a real `include` to the root
+  config — an owner call, not made here.**
+
+  **Found and fixed a real, if latent, type bug in the committed WS-3 WIP while verifying it with
+  the working tsc invocation above**: `usePaperRun.ts`'s `recordAttempt()` call already passed
+  `mode: "paper"` (the wiring to WS-1 the previous entry listed as still missing was actually
+  already written), but `attempts.ts`'s `RunMode` union was still `"training" | "daily" |
+  "sprint"` — `"paper"` was never added to it. Vite's dev/build path doesn't type-check (esbuild
+  strips types), so this was already working correctly at runtime and every `AttemptRecord` in
+  this session's walkthrough came out with the right `mode` — but it was a real static-type gap
+  that `-p tsconfig.app.json` caught immediately. Fixed by adding `"paper"` to `RunMode`
+  (additive, one line); confirmed nothing else switches exhaustively on that union
+  (`scoring.ts`'s own `mode: "daily" | "training"` and `AnswerInput.tsx`'s Type/Build `mode` are
+  unrelated fields with the same name, unaffected).
+
+  **Shipped** (commit `<see below>`): `src/pages/IntegralPaper.tsx` — the paper-mode page, in
+  three phases driven by local state so `usePaperRun`'s clock never starts just from landing on
+  the route:
+  - **Landing**: the rules (three bands, one clock, pause stops the clock not the sitting, flags
+    are personal, hand-in vs. time-up both produce a pacing report), and — via
+    `paperResultForSeed` — last sitting's score/per-band marks if this week's paper was already
+    attempted, with a "Sit it again" CTA (assembles the identical 30 questions, by design, so a
+    retry benchmarks against itself).
+  - **Running**: single 120-minute clock (`role="timer"`, reddens under 5 minutes left), pause/
+    resume (a full overlay replacing the problem while paused), a hand-in button, a live
+    attempted/correct/flagged counter, a question-navigator grid grouped by band (each cell
+    colour-coded unattempted/attempted/correct, flagged cells get a small dot, current cell
+    ringed) driving `goTo`, and the current question rendered with the same `IntegralPrompt` /
+    `AnswerInput` / `VerdictLine` the rest of the feature already uses — nothing about grading or
+    assembly is reimplemented, exactly as the runbook asked.
+  - **Done**: score, triage-cost callout, a per-band pacing table (marks + `formatDuration` time
+    spent, from `PaperResult.bands` — already shaped for exactly this by the WIP author), a
+    "biggest time sinks" list (non-correct slots sorted by time spent, worst first, click-through
+    to review), and a full "review by question" section reusing the same nav grid in read-only
+    mode plus the existing `SolutionSteps` component (so every question's correct answer and
+    worked solution — not just an aggregate score — is genuinely reviewable, not only the
+    per-band summary the data model strictly requires). Per-question review detail (your last
+    input, correct/incorrect) is only available for the sitting just finished, in that same
+    session — `paperHistory.ts`'s snapshot (which carries per-slot detail) is deliberately cleared
+    on finalize and only the band-level aggregate persists, a design already fixed by the WIP
+    commit's own doc comments, not something this pass changed.
+  - Routes added to `src/App.tsx` following the existing pattern exactly: `/integrals/uk/round1`
+    (behind `DashboardGuard`, no `BetaGate` — matches sprint/daily/training) and its `import.meta.
+    env.DEV`-gated `/dev/integrals/uk/round1` twin.
+  - Added a "UK Round 1" tile to `IntegralsHub.tsx` (between Sprint and the full-width Head-to-
+    head tile, completing a clean 2×2 grid) — not explicitly required by the runbook's WS-3 bullet
+    list, but a route nothing links to is a route nobody finds; kept to one tile, same visual
+    pattern as the three tiles beside it, no other hub changes.
+
+  **Playwright walkthrough — mandatory per the runbook, done against a real dev server, not
+  skipped.** `npx playwright install chromium` (already cached in this sandbox's image at
+  `/opt/pw-browsers`, confirmed via `PLAYWRIGHT_BROWSERS_PATH`, so this was instant) since the
+  `playwright` npm package itself isn't a project devDependency (found it globally installed at
+  `npm root -g`; symlinked it into a scratch `node_modules` rather than adding it to this repo's
+  `package.json`, since it's a one-off verification tool, not app or test-suite code). Vite dev
+  server needed `--host 127.0.0.1` explicitly — the default `host: "::"` in `vite.config.ts`
+  fails with `EAFNOSUPPORT` in this sandbox (IPv6 wildcard bind unsupported); also had to use the
+  Bash tool's `run_in_background` rather than a manual `&`/`disown`, since a manually backgrounded
+  process didn't survive past the end of the tool call that started it (this environment resets
+  shell state between Bash invocations, and that reset appears to take detached children with it).
+  Read this week's actual assembled paper first via a throwaway `vite-node` script (seed 33,
+  "week of Aug 24," Q1 = `floor-plain-0to3`, a definite integral with the clean answer "3") so the
+  walkthrough could exercise a genuine correct-answer submission, not just a wrong one. Full
+  script drove: landing → begin → wrong answer on Q1 (verified red "not equivalent" state) →
+  correct answer "3" on Q1 (verified green "Correct.", nav cell turns primary-coloured, counters
+  update) → jump to Q5 via the nav grid and flag it (verified the flag badge and nav-cell dot) →
+  pause (verified the overlay, clock frozen) → resume → hand in early → done screen (verified the
+  pacing table numbers matched what was actually done: Accessible 1/10, Solid 0/10, Tail 0/10,
+  triage cost counting only the non-correct time) → clicked into the review grid → reloaded the
+  page from scratch and confirmed the landing screen now shows "Already sat this week" with the
+  right score, sourced from real `localStorage`, not component state. Read back
+  `arcana.integrals.attempts.v1` and `arcana.integrals.uk.paperHistory.v1` directly from the
+  browser's `localStorage` after the run (not just asserted via the UI) — both contained exactly
+  the expected records, `mode: "paper"` included, confirming the WS-1 wiring end-to-end through
+  real UI interaction rather than code inspection alone. Zero console errors, zero page errors,
+  across the whole walkthrough. Also screenshotted `/dev/integrals` to confirm the new hub tile
+  renders cleanly alongside the other three. 11 screenshots taken in total; none showed a visual
+  regression anywhere else on the pages touched.
+
+  **This closes out WS-3.** Verified: `npx vitest run` — 1975/1975 (unchanged from baseline — this
+  workstream is UI + wiring work verified by the mandatory Playwright walkthrough per the
+  runbook's own instruction that unit tests aren't sufficient evidence for a UI mode, not new unit
+  tests); `npx tsc --noEmit -p tsconfig.app.json` (the real check — see the tooling finding above)
+  clean; `eslint` on every touched file (`src/pages/IntegralPaper.tsx`, `src/pages/IntegralsHub.
+  tsx`, `src/App.tsx`, `src/features/integrals/attempts.ts`) — zero findings. No existing test was
+  edited. `normalize()` and `answer.ts` were not touched.
+
+  **Deliberately not done, and why**: no "retake with different questions" option — the runbook's
+  own paper.ts design (one seed per calendar week) makes "the same 30 questions" the intended
+  behaviour for a retry, not a gap; a real per-question replay of a *past* (not just-finished)
+  sitting — `paperHistory.ts`'s history record is intentionally aggregate-only (band-level), by
+  the WIP author's own design, and building per-question persistence for historical sittings would
+  mean widening what gets written to `localStorage` on every clock tick, which is exactly the cost
+  the existing doc comment in `paperHistory.ts` says was deliberately avoided; flagged here as a
+  possible future ask, not built speculatively.
+
+  **Next**: WS-4 (the scheduler) per the runbook's order, time permitting.

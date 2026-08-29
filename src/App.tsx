@@ -29,6 +29,7 @@ import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralLessons from "./pages/IntegralLessons";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
+import IntegralPaper from "./pages/IntegralPaper";
 import DrillPlay from "./pages/DrillPlay";
 import LeaderboardsPage from "./pages/LeaderboardsPage";
 import NotFound from "./pages/NotFound";
@@ -134,6 +135,8 @@ function AppRoutes() {
       <Route path="/integrals/lessons" element={<DashboardGuard><IntegralLessons /></DashboardGuard>} />
       <Route path="/integrals/train/source/:sourceKey" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
       <Route path="/integrals/train/:techniqueId" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
+      {/* UK Round 1 mock: 30 questions, 120 minutes, free navigation — see UK_BEE_BURST.md WS-3. */}
+      <Route path="/integrals/uk/round1" element={<DashboardGuard><IntegralPaper /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><BetaGate feature="Reference questions"><ReferenceQuestions /></BetaGate></ProtectedRoute>} />
@@ -179,6 +182,7 @@ function AppRoutes() {
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
       )}
+      {import.meta.env.DEV && <Route path="/dev/integrals/uk/round1" element={<IntegralPaper />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

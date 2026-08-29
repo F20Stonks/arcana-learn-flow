@@ -6,7 +6,7 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { BarChart3, BookOpen, Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
+import { BarChart3, BookOpen, Check, ClipboardList, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
@@ -182,6 +182,21 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Sprint →
+            </span>
+          </Link>
+
+          <Link
+            to="/integrals/uk/round1"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <ClipboardList className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">UK Round 1</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The weekly benchmark: 30 problems, 120 minutes, free navigation — the real solo qualifier
+              format, with a full pacing report at the end.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Sit the paper →
             </span>
           </Link>
 
