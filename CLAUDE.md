@@ -1238,3 +1238,94 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   (WS-1 through WS-5 all now shipped); WS-6 (recognition drill + values deck) is the one item the
   runbook itself says to cut first if the window is tight. Time/budget remains, so continuing to
   WS-6 next rather than stopping here.
+
+- 2026-08-29 (same session, continuing): **WS-6 · recognition drill + values deck — shipped,
+  commit `<see below>`.** The last workstream in the runbook's ordered list; nothing left cut.
+  Both halves built, verified, and Playwright-walked through together.
+
+  **"Name the weapon"** (`src/features/integrals/recognition.ts` + `recognitionHistory.ts` +
+  `hooks/useRecognitionRun.ts` + `hooks/useRecognitionAttempts.ts` + `pages/IntegralRecognition.tsx`,
+  routed at `/integrals/recognition` + its `/dev/` twin): a 20-question round, each with its own
+  3-second clock — the integrand, four technique buttons, no solving. Every problem is already
+  tagged (`Problem.techniques[0]`), so this needed zero new content, exactly as the runbook said.
+  - Distractors are drawn only from techniques NOT already tagged on the problem (a multi-tagged
+    problem, e.g. one cross-tagged `recurrence`/`wallis-product` from WS-2, never offers one of its
+    own valid tags as a "wrong" choice — verified against the real bank in a dedicated test, since
+    a single-tag problem can't expose that bug on its own).
+  - Every pick (or timeout — a null response, not a wrong guess) is recorded immediately to its
+    own capped ring-buffer store (`recognitionHistory.ts`, same `scopedKey`/fail-soft pattern as
+    `attempts.ts`, deliberately its own key rather than folded into `AttemptRecord`'s shape, which
+    has no clean field for "which of 4 buttons did you press"). Accuracy and median response time
+    per technique — the runbook's own scoring spec — are computed on demand from that log
+    (`recognitionStatsByTechnique`), the same "log everything, aggregate on read" pattern WS-5's
+    `buildErrorProfile` already established, not pre-aggregated/stored.
+  - One real correctness fix made before shipping: the first draft scheduled the auto-advance
+    `setTimeout` *inside* a `setAttempts` functional updater — updaters can run more than once
+    (React may re-invoke them, e.g. under StrictMode), which would double-schedule the advance.
+    Reworked to compute the next array up front and schedule the timeout as an ordinary side
+    effect in the callback body instead — not hit in practice here (this app doesn't use
+    StrictMode), fixed anyway rather than leaving a latent bug for whenever it might.
+  - All-time accuracy/median plus a "weakest so far" callout (lowest accuracy among techniques
+    with >= 3 picks, falling back to the whole set rather than showing nothing when there isn't
+    that much data yet) surfaces on the landing screen once there's any history at all.
+
+  **The values deck** (`src/features/integrals/valuesDeck.ts` + `pages/IntegralValues.tsx`, routed
+  at `/integrals/values` + its `/dev/` twin): flashcards sourced *only* from content already in the
+  repo, per standing directive #2 — every definite bank problem (381 cards total: 361 from the
+  bank, 20 from lesson worked examples with a literal stated result, i.e. `resultExpr` set, the
+  WS-2 convention that already distinguishes a stated closed-form value from a derivation or
+  qualitative aside). Front is the integral, back is the value; flip, Prev/Next, a technique filter,
+  reshuffle, Space/arrow-key shortcuts. Not scored or persisted — "reading isn't scored," the same
+  spirit the Lessons page already has.
+  - One real content-rendering bug caught by writing the tests, not just by eyeballing screenshots:
+    the first draft added `_{a}^{b}` bounds onto a lesson example's `\int ... dx` wrapper whenever
+    `example.domain` was set. At least one existing example (`feynman`'s Frullani integral) already
+    writes its own domain into the `integrand` text as prose — `"... \text{ on } [0,\infty)"` —
+    because `LessonBody.tsx`'s `ExampleCard` never adds bounds itself, so that was the only
+    rendering convention this content was ever written for. Adding bounds on top doubled them up
+    (`\int_{0}^{\infty} ... \text{ on } [0,\infty)\,dx`). Fixed by matching LessonBody.tsx's exact
+    convention instead of a "richer" one of this file's own invention — no bounds ever added, full
+    stop — with a regression test asserting a lesson card's front is *exactly*
+    `\int ${integrand}\,dx`, nothing more.
+
+  **Playwright walkthrough, done together for both halves against a real dev server**: hub
+  screenshot confirming both new tiles render in a clean 3-row grid; recognition landing (empty),
+  a real running question (`∫cos(x)ln(x) + sin(x)/x dx` against Gamma function / integration by
+  parts / reciprocal substitution / zeta-series — a genuine parts-by-inspection question), an
+  incorrect pick's feedback (red X on the wrong choice, blue check on the right one), then the
+  *entire* 20-question round played out through real clicks (not shortcut to "done" — a polling
+  loop that clicks whenever the button is actually enabled again, since the fixed-delay first
+  draft undercounted how long 20 real feedback pauses take and never reached the end within its
+  budget) to a genuine "Round done." screen with the full by-technique table, then back to landing
+  confirming all-time stats picked up all 20 real picks from localStorage. Values deck: front,
+  flip to the back, filter to one technique (13-card Feynman subset, confirmed against the real
+  DOM rather than assumed), Next. Zero console/page errors across the whole session.
+
+  Verified: `npx vitest run` — 2042/2042 (was 2013/2013 after WS-5; +29, all new — 14 in
+  `recognition.test.ts`, 8 in `recognitionHistory.test.ts`, 7 in `valuesDeck.test.ts`); `npx tsc
+  --noEmit -p tsconfig.app.json` clean; `eslint` on every touched file — zero findings (one
+  `@typescript-eslint/prefer-as-const` finding caught and fixed along the way, on a `const ALL:
+  "all" = "all"` that should have been `as const`). No existing test edited.
+
+  **Deliberately not done, and why**: no persistence/scoring for the values deck (it's a reference
+  tool, matching the existing Lessons page's own "reading isn't scored" precedent — the runbook
+  calls this workstream "cheap" and a study aid doesn't need a run history the way a drill does);
+  distractor techniques in the recognition drill are uniformly random among the eligible set, not
+  hand-curated "confusable" groups (e.g. grouping `t-sub`/`trig-sub`/`trig-identity` as
+  deliberately-similar distractors would make the drill sharper, but curating such groups is
+  design/authorship-adjacent work the runbook's own "cheap" framing didn't ask for — flagged here
+  as a real future enhancement, not a gap nobody noticed).
+
+  **This closes out every workstream in `UK_BEE_BURST.md` — WS-1 through WS-6, all shipped and
+  verified this session.** Final state: `npx vitest run` 2042/2042 across 28 files;
+  `npx tsc --noEmit -p tsconfig.app.json` clean; every file this session touched is
+  eslint-clean. Six commits this session (WS-3 through WS-6, each pushed individually to
+  `claude/pensive-tesla-421vh8` right after its own verification passed). Two systemic findings
+  flagged for the owner along the way rather than fixed unilaterally: (1) bare `npx tsc --noEmit`
+  at the repo root is a no-op (see the WS-3 entry above) — the runbook's own verification loop
+  should probably say `-p tsconfig.app.json` explicitly, or the root `tsconfig.json` needs a real
+  `include`/`-b`, but changing shared build config wasn't this task's call to make; (2) `WS-4`'s
+  `scheduledQueue` is fully built and tested but not wired into `TrainingTechnique` — doing so
+  needs two `integration.test.tsx` fixtures rewritten, which crosses this project's own
+  don't-edit-a-passing-test rule, so that's a deliberate follow-up for the owner to authorize
+  rather than something done unilaterally here.

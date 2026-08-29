@@ -6,7 +6,20 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { BarChart3, BookOpen, Check, ClipboardList, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  Check,
+  ClipboardList,
+  Dumbbell,
+  Flame,
+  Layers,
+  Sigma,
+  Timer,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
@@ -197,6 +210,36 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Sit the paper →
+            </span>
+          </Link>
+
+          <Link
+            to="/integrals/recognition"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Zap className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Name the weapon</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The integrand, four techniques, three seconds — no solving. Recognising the right move
+              on sight is most of the clock on an accessible question.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Drill →
+            </span>
+          </Link>
+
+          <Link
+            to="/integrals/values"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Values deck</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              Flashcards for the results worth having cold — flip and check yourself. Not scored,
+              read it like the lessons.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Study →
             </span>
           </Link>
 
