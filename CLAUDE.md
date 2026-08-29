@@ -1117,3 +1117,124 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   not just untouched source.
 
   **Next**: WS-5 (error taxonomy) per the runbook's order, time permitting.
+
+- 2026-08-29 (same session, continuing): **WS-5 · error taxonomy — shipped, commit `<see below>`.**
+  New `src/features/integrals/errorTaxonomy.ts`: `classifyError(problem, verdict, rawInput)` labels
+  an already-non-correct `Verdict` — it never decides correctness itself, only why a wrong one
+  looks the way it does, checked in priority order:
+  1. **`sign-flip` / `constant-factor`** — not separately detected at all; answer.ts's own
+     `off-by-constant-factor` verdict already carries the factor, so this is just
+     `Math.abs(factor + 1) < 0.02 ? "sign-flip" : "constant-factor"`. Verified the 0.02 tolerance
+     is safely inside the real gap: with `asSimpleRatio` only checking denominators up to 12, the
+     nearest *other* simple ratio to -1 the live grader can ever actually produce is -11/12
+     (~0.083 away) — so this can never ambiguously straddle real content.
+  2. **`correct-but-unsimplified`** — re-checks the submitted string against the reference with a
+     much looser tolerance (1e-4/1e-5 vs. answer.ts's 1e-6/1e-7) and a denser, differently-phased
+     resample (60 points vs. 11) — "was this actually right and the strict check just got
+     unlucky", surfaced purely as a label, never changing the real verdict already returned.
+  3. **`missing-absolute-value`** — the classic dropped-bars `ln|x|` slip. Doesn't assume the sign
+     change sits at x=0: numerically, it looks for a real gap in valid domain (points where the
+     reference evaluates but the student's answer doesn't — mathjs returns a Complex rather than
+     throwing, caught by the same `typeof v === "number"` guard answer.ts's own evalAt uses) while
+     still agreeing by a constant wherever both are defined, combined with a textual signal (a
+     `log(...)` call not already wrapped in `abs(...)`). Indefinite only.
+  4. **`right-family-wrong-parameter`** — a purely symbolic AST-shape comparison (mathjs's parsed
+     `Node` tree, recursively compared field-by-field) between the student's and reference's
+     parsed answer: same operators/functions/arguments throughout, differing only in one or more
+     numeric literals — `sin(2x)` vs `sin(3x)`, or `sqrt(2)/4` vs `sqrt(3)/4`. Applies to both
+     problem kinds, since a definite answer is itself a parsed expression, not just a decimal.
+  5. **`wrong-method`** — compares the set of function names (`sin`, `log`, `sqrt`, ...) used
+     anywhere in the student's vs. the reference's parsed expression; fires when they share none
+     and the reference actually needed some (a pure-algebra reference can't produce this class).
+  6. Everything else stays `incorrect`/unclassified — the runbook's own "an honest bucket beats a
+     wrong label."
+
+  **Two real design bugs found and fixed via the standard verify-before-shipping workflow** (a
+  throwaway `vite-node` script exercising real and synthetic problems, run before writing the
+  formal tests — same discipline `problems.test.ts` content authoring has always used, applied
+  here to classifier logic instead of bank content):
+  - First draft's `missing-absolute-value` numeric check was completely unreachable for content
+    where it should fire: on a domain evenly split across the sign change, `answer.ts`'s own
+    `checkIndefinite` happens to gather enough usable (same-sign) points to grade the dropped-abs
+    answer *correct outright* (it silently skips points where either side is undefined, same as
+    this module's own resampling) — so the "wrong" verdict this classifier needs to run on never
+    arrives from a balanced domain. Root-caused by testing several domain skews and literally
+    counting how many of the live checker's 11 points land on each side; fixed by widening
+    `RELAXED_SAMPLE_COUNT` to 60 (vs. the original 14) so a domain skewed enough to make the live
+    checker fail (too few usable points on the wrong side) still gives this module's own resample
+    enough of *that same* small side to draw a confident conclusion from.
+  - `correct-but-unsimplified` and `missing-absolute-value`'s first drafts used the exact same
+    "agree wherever both sides are defined" numeric core, which made the former structurally
+    swallow every case the latter should have caught — `log(x)` really does equal `log(abs(x))`
+    on their shared domain of definition, so "matches on the overlap" alone can never tell a
+    domain-narrowing mistake apart from a genuinely-equivalent one. Fixed by sharing one `scanDomain`
+    pass that also tracks `gapCount` (points where the reference is defined but the student's
+    answer isn't), and requiring `gapCount === 0` for `correct-but-unsimplified` vs.
+    `gapCount >= MIN_RELAXED_POINTS` for `missing-absolute-value` — mutually exclusive by
+    construction, not just by check order. A dedicated test
+    ("takes priority over missing-absolute-value when the domain gap is negligible, not real")
+    keeps this distinction pinned down.
+
+  **The required regression guard**, exactly as the runbook specified: `errorTaxonomy.test.ts`'s
+  first test sweeps the entire real bank (all 788 problems, not a sample), grades every problem's
+  own stored `answer` against itself, and asserts every single one comes back `correct` and
+  `classifyError` returns `null` for it — nothing in this module can turn a correct answer into a
+  labelled "error". Runs in under 100ms. 26 tests total, covering all six classes' positive and
+  negative cases plus the profile aggregator below, all against real bank problems or minimal
+  synthetic `Problem` fixtures (no reliance on going through `recordAttempt`/localStorage for the
+  classifier itself — `classifyError` is a pure function of `(problem, verdict, rawInput)`).
+  `normalize()` and `answer.ts`'s grading functions are called exactly as they are, never
+  reimplemented or loosened — `compile`/`evalAt`/`samplePoints` inside `errorTaxonomy.ts` are
+  deliberate near-duplicates (same pattern `lessonExamples.test.ts` already uses for
+  `derivative()`/`quadrature()`), not a second grading path.
+
+  **The profile** ("which error class dominates, and in which techniques"): `buildErrorProfile
+  (attempts)` in the same file walks the WS-1 attempt log, re-grades each non-correct/non-
+  unparseable attempt's stored `submitted` string against the problem's *current* answer (recovers
+  the off-by-constant-factor `factor` for free, since `AttemptRecord` only ever stored the coarse
+  `verdictClass` — no widening of WS-1's already-shipped schema needed), classifies it, and tallies
+  overall and per-primary-technique counts plus each level's dominant class. New
+  `hooks/useAttempts.ts` (same `useSyncExternalStore` pattern as the existing `useProgress`, over
+  `attempts.ts`'s separate store) feeds it into a new "Error profile" section on
+  `IntegralProgress.tsx`, between Sprint bests and Badges: a dominant-class callout, a bar per
+  class with a nonzero count, and a technique-by-technique table (technique, its most common miss,
+  how many classified) — empty-state copy when nothing's classified yet, matching the page's
+  existing "No sprints yet" pattern.
+
+  **Playwright walkthrough, mandatory per the runbook, done for real**: screenshotted the empty
+  Error profile state on a fresh profile, then drove `/dev/integrals/train/power` (the technique's
+  own `orderQueue`-first problem with empty progress, confirmed via a throwaway script rather than
+  guessed) through a sign-flipped submission and a doubled submission — both real UI interactions,
+  not fixture injection — then screenshotted the now-populated profile: "Most common: Constant
+  factor — 1 of 2 classified misses", both classes shown as bars, and a "Standard forms | Constant
+  factor | 2" technique row. Read `arcana.integrals.attempts.v1` back from real `localStorage`
+  after the run to confirm both attempts landed with the right `verdictClass`. Zero console/page
+  errors throughout. One real snag along the way, noted in case a future walkthrough hits the same
+  thing: the *third* scripted submission (the actual correct answer, meant only to tidy up the
+  demo) made `page.waitForSelector("text=Correct.")` hang — turns out training's solved state
+  transitions straight to a "Solved in Xs" summary and the input (and the momentary "Correct."
+  text beside it) leaves the DOM before a 30s wait would ever catch it; `integration.test.tsx`
+  already knew to wait for "Solved in" instead. Not actually needed for this walkthrough's point
+  (every submission is recorded whether or not the problem ever gets solved), so the fix was just
+  dropping that unnecessary third step rather than chasing the right selector.
+
+  Verified: `npx vitest run` — 2013/2013 (was 1987/1987 after WS-4; +26, all new, all in
+  `errorTaxonomy.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on every touched file
+  (`errorTaxonomy.ts`, `errorTaxonomy.test.ts`, `hooks/useAttempts.ts`, `pages/IntegralProgress.tsx`)
+  — zero findings. No existing test edited; `normalize()`/`answer.ts` untouched (only imported from,
+  read-only).
+
+  **Deliberately not done, and why**: no attempt to detect a general in-expression sign error (a
+  flipped sign on just one term of a multi-term answer, as opposed to the whole expression) — that
+  would need genuine symbolic differentiation/term-level diffing, not the numeric-ratio and AST-
+  shape tools this module has; the runbook's own "sign-flip" example is fully covered by the
+  factor-≈-1 case, which is what a whole-answer sign slip (the far more common mistake) actually
+  produces. `right-family-wrong-parameter` and `missing-absolute-value` are the only two classes
+  gated by problem kind (indefinite only for the latter, both kinds for the former, definite
+  trivially can't have a "domain of x" the way an indefinite antiderivative does) — not an
+  oversight, just what the math of each mistake actually supports.
+
+  **This was the last workstream explicitly named in `UK_BEE_BURST.md`'s ordered list**
+  (WS-1 through WS-5 all now shipped); WS-6 (recognition drill + values deck) is the one item the
+  runbook itself says to cut first if the window is tight. Time/budget remains, so continuing to
+  WS-6 next rather than stopping here.
