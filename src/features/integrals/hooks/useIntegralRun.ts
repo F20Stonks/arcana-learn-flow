@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gradeAnswer } from "../answer";
+import { recordAttempt } from "../attempts";
 import { recordTrainingSolve, getProgress, hasSolved, liveStreak } from "../progress";
 import { scoreAttempt, type ScoreBreakdown } from "../scoring";
 import type { Problem, Verdict } from "../types";
@@ -36,12 +37,16 @@ export function useIntegralRun(problem: Problem): RunApi {
   const [state, setState] = useState<RunState>(() => initial());
   const startedAt = useRef(Date.now());
   const recorded = useRef(false);
+  /** Set on the first keystroke of the run — null until then. Splits the clock into "how long did
+   *  it take to start writing" (recognition) and "how long from there to submitting" (execution). */
+  const firstKeystrokeAt = useRef<number | null>(null);
 
   // A fresh problem is a fresh run.
   useEffect(() => {
     setState(initial());
     startedAt.current = Date.now();
     recorded.current = false;
+    firstKeystrokeAt.current = null;
   }, [problem.id]);
 
   useEffect(() => {
@@ -53,6 +58,7 @@ export function useIntegralRun(problem: Problem): RunApi {
   }, [state.status, problem.id]);
 
   const setInput = useCallback((input: string) => {
+    if (firstKeystrokeAt.current === null) firstKeystrokeAt.current = Date.now();
     setState((s) => (s.status === "running" ? { ...s, input, verdict: null } : s));
   }, []);
 
@@ -60,6 +66,19 @@ export function useIntegralRun(problem: Problem): RunApi {
     setState((s) => {
       if (s.status !== "running" || !s.input.trim()) return s;
       const verdict = gradeAnswer(problem, s.input);
+      const now = Date.now();
+      recordAttempt({
+        problemId: problem.id,
+        mode: "training",
+        verdictClass: verdict.status,
+        submitted: s.input,
+        hintsOpen: s.hintsUsed,
+        wrongAttemptsSoFar: s.wrongAttempts,
+        msToFirstKeystroke:
+          firstKeystrokeAt.current !== null ? firstKeystrokeAt.current - startedAt.current : null,
+        msFirstKeystrokeToSubmit:
+          firstKeystrokeAt.current !== null ? now - firstKeystrokeAt.current : null,
+      });
       if (verdict.status !== "correct") {
         // A misread expression isn't a wrong answer — don't charge for it.
         const charged = verdict.status === "unparseable" ? s.wrongAttempts : s.wrongAttempts + 1;
@@ -114,6 +133,7 @@ export function useIntegralRun(problem: Problem): RunApi {
     setState(initial());
     startedAt.current = Date.now();
     recorded.current = false;
+    firstKeystrokeAt.current = null;
   }, []);
 
   return {

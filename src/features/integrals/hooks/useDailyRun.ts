@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gradeAnswer } from "../answer";
+import { recordAttempt } from "../attempts";
 import { getProgress, hasSolved, liveStreak, recordDaily, type DailySlotOutcome } from "../progress";
 import { scoreAttempt, type ScoreBreakdown } from "../scoring";
 import type { Problem, Verdict } from "../types";
@@ -48,11 +49,14 @@ export function useDailyRun(problems: Problem[]): DailyRunApi {
   const [outcomes, setOutcomes] = useState<DailySlotOutcome[]>([]);
   const startedAt = useRef(Date.now());
   const recordedSession = useRef(false);
+  /** Set on the first keystroke of the current slot — null until then; reset every slot. */
+  const firstKeystrokeAt = useRef<number | null>(null);
   const problem = problems[Math.min(slotIndex, problems.length - 1)];
 
   useEffect(() => {
     setSlot(initial());
     startedAt.current = Date.now();
+    firstKeystrokeAt.current = null;
   }, [slotIndex, problem.id]);
 
   useEffect(() => {
@@ -64,6 +68,7 @@ export function useDailyRun(problems: Problem[]): DailyRunApi {
   }, [slot.status]);
 
   const setInput = useCallback((input: string) => {
+    if (firstKeystrokeAt.current === null) firstKeystrokeAt.current = Date.now();
     setSlot((s) => (s.status === "running" ? { ...s, input, verdict: null } : s));
   }, []);
 
@@ -85,6 +90,19 @@ export function useDailyRun(problems: Problem[]): DailyRunApi {
     setSlot((s) => {
       if (s.status !== "running" || !s.input.trim()) return s;
       const verdict = gradeAnswer(problem, s.input);
+      const now = Date.now();
+      recordAttempt({
+        problemId: problem.id,
+        mode: "daily",
+        verdictClass: verdict.status,
+        submitted: s.input,
+        hintsOpen: s.hintsUsed,
+        wrongAttemptsSoFar: s.wrongAttempts,
+        msToFirstKeystroke:
+          firstKeystrokeAt.current !== null ? firstKeystrokeAt.current - startedAt.current : null,
+        msFirstKeystrokeToSubmit:
+          firstKeystrokeAt.current !== null ? now - firstKeystrokeAt.current : null,
+      });
       if (verdict.status !== "correct") {
         // A misread expression isn't a wrong answer — don't charge for it.
         const charged = verdict.status === "unparseable" ? s.wrongAttempts : s.wrongAttempts + 1;
