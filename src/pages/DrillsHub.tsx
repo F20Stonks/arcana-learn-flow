@@ -1,5 +1,5 @@
 /**
- * Drills — timed practice games sharing one engine (src/features/drills). Eleven games live: the
+ * Drills — timed practice games sharing one engine (src/features/drills). Twelve games live: the
  * arithmetic/number-theory/algebra/logic/probability/trading roster plus three topology games
  * (Invariant Match, Bridge Run, Knot or Not) built on real, correctly-labeled math rather than
  * improvised drawings.

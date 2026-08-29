@@ -10,6 +10,7 @@ import { bridgeRun } from "./games/bridgeRun";
 import { knotOrNot } from "./games/knotOrNot";
 import { probabilityFlash } from "./games/probabilityFlash";
 import { edgeCheck } from "./games/edgeCheck";
+import { estimateSprint } from "./games/estimateSprint";
 
 export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   zetamac,
@@ -23,6 +24,7 @@ export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   "knot-or-not": knotOrNot,
   "probability-flash": probabilityFlash,
   "edge-check": edgeCheck,
+  "estimate-sprint": estimateSprint,
 };
 
 export const DRILL_LIST = Object.values(DRILL_REGISTRY);
