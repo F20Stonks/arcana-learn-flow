@@ -898,3 +898,22 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     scoping call explicitly per the runbook's own instinct to surface rather than silently guess.
 
   **Next**: WS-3 (paper mode) per the runbook's order.
+
+  **WS-3 · Round 1 paper mode — STARTED, NOT FINISHED (commit `e0fb98f`).** The Sonnet agent
+  executing this burst was terminated mid-WS-3 by an API session rate limit, not by anything in the
+  code. What exists is committed deliberately as work-in-progress so an ephemeral container cannot
+  destroy it, and is safe to leave sitting there: **nothing imports any of it** (verified by grep
+  across `src/`), so it is inert with respect to the running app.
+  - Landed and passing: `uk/paper.ts` (deterministic 30-question assembly, three bands of ten by
+    difficulty ≤2/3/4–5, ~70% definite per band, seeded via the existing `shuffled` from `rng.ts`),
+    `uk/paperHistory.ts` (per-sitting record store), `hooks/usePaperRun.ts` (free-navigation answer
+    sheet, 120-minute clock), and 22 tests across `uk/paper.test.ts` + `uk/paperHistory.test.ts`.
+  - **Still missing before WS-3 can be called shipped**: the page component and the
+    `/integrals/uk/round1` route plus its `/dev/` twin in `App.tsx`; the end-of-paper review and
+    per-band pacing report; wiring `usePaperRun` to `recordAttempt` from WS-1 so paper sittings feed
+    the attempt log; and the mandatory Playwright walkthrough against the dev route. Until the
+    walkthrough exists this is unverified in the only way that counts for a UI mode.
+  - Verified state at the time of this entry: committed tree is **1953/1953** passing; with the
+    WS-3 WIP files present the suite is **1975/1975**; `tsc --noEmit` clean in both cases.
+  - **Next session resumes here**, at WS-3, from `UK_BEE_BURST.md`. WS-4 (scheduler), WS-5 (error
+    taxonomy) and WS-6 (recognition drill + values deck) remain untouched.
