@@ -44,7 +44,14 @@ format, and diagnose *how* he fails.
 
 ## Scope
 
-### In scope — build in this order, they depend on each other
+### In scope — build in this order
+
+Ordered by **need-by date**, not by size. The training programme starts Block A on 7 Sep (close
+every technique blank) and does not need paper mode until 28 Sep — so the lesson rework outranks it
+despite being the larger job.
+
+If the window closes with work outstanding, **cut from the bottom**: WS-6 first, then WS-5. WS-1
+through WS-3 shipping on time beats all six shipping late.
 
 **WS-1 · Attempt logging + split clock.** *Blocks everything else. Do this first.*
 Persist every attempt, not just every solve. Today a wrong attempt increments a counter and the
@@ -60,7 +67,45 @@ answer string is discarded, so seventy days of training would produce no evidenc
 - Wire from `useIntegralRun`, `useSprintRun`, `useDailyRun`.
 - Cap stored attempts (ring buffer, ~5000) so localStorage can't be filled.
 
-**WS-2 · Paper mode — 30 in 120.** *The weekly benchmark. Highest single-feature value.*
+**WS-2 · Rebuild the lessons for a reader fresh out of A-level.** *Needed by 7 Sep — earliest
+deadline of anything here.*
+
+The owner's own words: *"the lessons are not well made, people fresh out of A level need to be
+eased into lessons and can't be expected to copy-paste what they read into their head instantly."*
+He is right, and it is structural rather than a writing-quality problem. Measured across all 21
+lessons: every one has **exactly one worked example averaging three lines of work**, because
+`Technique.example` is *singular* — the schema has no room for graduated instruction.
+
+Concretely, `t-sub` asserts `\sin x = 2t/(1+t^2)` with no derivation, then its example compresses
+three algebraic steps into one line and silently folds in the `dx` substitution. That is a
+reference card for someone who already knows the method.
+
+**Schema.** Extend `Technique` (in `types.ts`) additively — existing fields keep their meaning:
+- `prerequisites: string[]` — what to be solid on first, so a stuck reader knows where to go back to.
+- `intuition: string` — *why* the move works, before the recipe says what it is. The Weierstrass
+  substitutions should be derived from the half-angle identities, not asserted.
+- `examples: WorkedExample[]` — **plural, ordered, faded**. The first spells out every algebraic
+  step including the ones that feel obvious; later ones compress as the reader gains footing.
+  Keep the existing `example` field working (treat it as `examples[0]`) so nothing breaks mid-migration.
+- `checkYourself?: { prompt, answer, hint }` — one scaffolded problem at the end of the lesson,
+  before the reader is dropped into the bank.
+
+**Content, in this order** (stop when the window closes — a lesson done properly beats three rushed):
+1. The A-level bridge, where "fresh out of A-level" actually bites: `power`, `u-sub`, `parts`,
+   `trig-identity`, `trig-sub`, `partial-fractions`, `complete-square`.
+2. The definite-integral core he needs for Round 1: `symmetry`, `t-sub`, `feynman`.
+3. Everything else only if time genuinely remains.
+
+**This is permitted content work.** Standing directive #2 forbids inventing *problems* — fabricating
+competition-style questions. Writing an honest derivation of a documented technique is exposition,
+not authorship of a problem, and is in scope.
+
+**Guardrail, and it is not optional:** every worked example and every derivation step you write must
+be verified numerically before it ships, by the same method `problems.test.ts` uses. A lesson
+containing wrong algebra is worse than a terse correct one, and prose is not checked by the existing
+suite. Where a lesson's example evaluates an integral, add it as a test fixture so it *is* checked.
+
+**WS-3 · Paper mode — 30 in 120.** *The weekly benchmark. Not needed until 28 Sep.*
 
 - `uk/paper.ts`: deterministic assembly from a seed → 30 problems in three bands of 10
   (difficulty ≤2 / 3 / 4–5), definite-weighted (~70%), no repeats within a paper.
@@ -73,7 +118,7 @@ answer string is discarded, so seventy days of training would produce no evidenc
   `App.tsx`.
 - Reuse `shuffled` from `rng.ts` and the existing run/grading machinery. Do not fork it.
 
-**WS-3 · The scheduler.** *The daily driver for 70 days. Replaces the 11-line queue.*
+**WS-4 · The scheduler.** *The daily driver for 70 days. Replaces the 11-line queue.*
 
 Replace `orderQueue` with a real selector reading the WS-1 attempt log. Weigh, roughly in this
 order of influence:
@@ -87,7 +132,7 @@ order of influence:
 Keep `orderQueue` exported and working for any caller not yet migrated; add the new selector
 beside it rather than editing in place, and switch callers deliberately.
 
-**WS-4 · Error taxonomy.** *Solo, nobody else catches his sign errors.*
+**WS-5 · Error taxonomy.** *Solo, nobody else catches his sign errors.*
 
 Extend the verdict vocabulary by comparing the student's parsed expression against the reference
 **symbolically and numerically** — differentiate their answer and compare to the integrand, take
@@ -101,7 +146,7 @@ own stored answer still grades `correct` and is never classified.
 
 Surface as a profile on the progress page: which error class dominates, and in which techniques.
 
-**WS-5 · Recognition drill + values deck.** *Cheap, aimed at the 90-second requirement.*
+**WS-6 · Recognition drill + values deck.** *Cheap, aimed at the 90-second requirement.*
 
 - **Name the weapon**: show the integrand, four technique buttons, ~3s clock, no solving. Every
   problem is already tagged, so this needs zero new content. Score recognition accuracy and median
@@ -185,7 +230,8 @@ workstream, noting what shipped, what was skipped and why, and what is next.
 - The test suite is red before your first edit.
 - Landing a workstream would require editing an existing passing test.
 - A workstream turns out to need new problem content to be worth shipping.
-- The window closes (13 Sep) with workstreams outstanding — **cut scope, do not extend the window**.
-  Shipping WS-1 and WS-2 on time beats shipping all five late.
+- The window closes (13 Sep) with workstreams outstanding — **cut scope, do not extend the window**,
+  cutting from the bottom (WS-6, then WS-5) per the ordering note above.
+- A lesson's derivation cannot be verified numerically. Do not ship prose you could not check.
 - Any finding that a standing directive in `CLAUDE.md` now conflicts with this objective. That is
   the owner's call, not the agent's.
