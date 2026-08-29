@@ -9,6 +9,7 @@ import { invariantMatch } from "./games/invariantMatch";
 import { bridgeRun } from "./games/bridgeRun";
 import { knotOrNot } from "./games/knotOrNot";
 import { probabilityFlash } from "./games/probabilityFlash";
+import { edgeCheck } from "./games/edgeCheck";
 
 export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   zetamac,
@@ -21,6 +22,7 @@ export const DRILL_REGISTRY: Record<string, DrillDefinition> = {
   "bridge-run": bridgeRun,
   "knot-or-not": knotOrNot,
   "probability-flash": probabilityFlash,
+  "edge-check": edgeCheck,
 };
 
 export const DRILL_LIST = Object.values(DRILL_REGISTRY);

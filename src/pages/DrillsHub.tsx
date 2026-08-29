@@ -1,12 +1,12 @@
 /**
- * Drills — timed practice games sharing one engine (src/features/drills). Ten games live: the
- * arithmetic/number-theory/algebra/logic/probability roster plus three topology games (Invariant
- * Match, Bridge Run, Knot or Not) built on real, correctly-labeled math rather than improvised
- * drawings.
+ * Drills — timed practice games sharing one engine (src/features/drills). Eleven games live: the
+ * arithmetic/number-theory/algebra/logic/probability/trading roster plus three topology games
+ * (Invariant Match, Bridge Run, Knot or Not) built on real, correctly-labeled math rather than
+ * improvised drawings.
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Zap, Hash, Sigma, CircleDot, Shapes, Dices, Info, Play, Trophy } from "lucide-react";
+import { Loader2, Zap, Hash, Sigma, CircleDot, Shapes, Dices, TrendingUp, Info, Play, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { DRILL_LIST } from "@/features/drills/registry";
@@ -20,6 +20,7 @@ const DOMAIN_ICON: Record<DrillDefinition["domain"], typeof Zap> = {
   logic: CircleDot,
   topology: Shapes,
   probability: Dices,
+  trading: TrendingUp,
 };
 
 export default function DrillsHub() {
