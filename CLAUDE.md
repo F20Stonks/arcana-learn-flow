@@ -802,3 +802,47 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     `mathEngine.ts` infra (shared mathjs instance with `lambertw`) is now in place and could be
     extended the same way for `gcd` (mathjs has it natively, just needs whitelisting) or other
     custom functions the next PDF batch might need.
+
+- 2026-08-29 (new session, `UK_BEE_BURST.md` supersedes this file for the window it names):
+  Started on `claude/pensive-tesla-421vh8` at baseline commit `5278b62` (1901/1901 passing,
+  `tsc --noEmit` clean, reproduced before the first edit as required). Working the runbook's
+  workstreams in order — see `UK_BEE_BURST.md` for the full spec; this file's own standing
+  directives and Workflow section still apply except where that runbook tightens them.
+
+  **WS-1 · Attempt logging + split clock — shipped, commit `438837d`.** New store
+  `src/features/integrals/attempts.ts`, alongside `progress.ts` (same fail-soft localStorage
+  pattern, reuses `progress.ts`'s `scopedKey` rather than widening `Progress` itself — its own
+  cache self-invalidates on scope change by re-checking `scopedKey` on every read, so no change to
+  `progress.ts` was needed at all). One row per submission — correct, incorrect,
+  off-by-constant-factor or unparseable, not just solves — with `problemId`, `mode`
+  (training/daily/sprint), verdict class, the raw submitted string, hints open,
+  `wrongAttemptsSoFar`, and the two clocks the runbook asked for: `msToFirstKeystroke`
+  (recognition) and `msFirstKeystrokeToSubmit` (execution), alongside the existing `elapsed`
+  clock in each run hook, untouched. Ring buffer capped at 5000 (`MAX_ATTEMPTS`, exported).
+  - Wired into `useIntegralRun`, `useSprintRun`, `useDailyRun`: each tracks a `firstKeystrokeAt`
+    ref (reset per problem/slot) set on the first `setInput` call, and calls `recordAttempt()` in
+    `submit()` before branching on the verdict. Sprint mode gets its own per-problem
+    `problemWrongAttempts` ref for `wrongAttemptsSoFar`, kept separate from the pre-existing
+    sprint-wide `wrongAttempts` state the result screen displays (untouched, still whole-run).
+    `giveUp()` does not log an attempt anywhere — no submitted string, nothing to classify;
+    "attempt" is read as "submission" throughout, matching the runbook's own field list.
+  - 10 new tests in `attempts.test.ts` (shape, ring-buffer cap + eviction order, per-account
+    scoping, storage-unavailable fail-soft, reset). The ring-buffer test pushes 5010 real records
+    through the real `recordAttempt()` — genuinely O(n²) since every write re-serialises the
+    growing log (the same cost the production write path pays on a long-running account, just
+    never hit synchronously 5000 times in a row by a human) — confirmed with a standalone Node
+    profile (~9s in plain V8, no jsdom) before concluding it wasn't a bug to chase. Swapped in a
+    fast in-memory `Storage` stub for that one test (still exercises the real
+    `globalThis.localStorage` code path, just a faster backend) and gave it an explicit 20s
+    timeout rather than weakening what it proves; merged what was originally two tests into one so
+    the cost is paid once (~7.4s) rather than twice.
+  - Verified: `npx vitest run` — 1911/1911 passing (was 1901/1901); `npx tsc --noEmit` clean;
+    `eslint` clean on every touched file. Also a real Playwright walkthrough against the dev
+    server (`/dev/integrals/train/power`, `/dev/integrals/daily`, `/dev/integrals/sprint` —
+    submitted wrong answers in training and sprint, skipped in sprint): attempts landed in
+    `localStorage` under `arcana.integrals.attempts.v1` as expected (1 after the training
+    submission, 2 after adding the sprint one), zero console/page errors, no visual regression.
+    Nothing in WS-1's stated scope was skipped.
+
+  **Next**: WS-2, the lesson rebuild — see the entry that follows once it lands, or (if this file
+  is being read mid-workstream) check `git log` on this branch for the latest state.
