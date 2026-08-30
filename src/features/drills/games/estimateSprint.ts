@@ -37,9 +37,12 @@ export const estimateSprint: DrillDefinition = {
     { id: "adaptive", label: "Adaptive staircase", description: "Starts simple, widens the numbers as you build a streak." },
     { id: "weak-spot", label: "Weak-spot pull", description: "Weights problems toward the format you've missed most." },
   ],
-  generate: ({ level, rng, biasTags }) => {
-    let kind: Kind = pick([...KINDS], rng);
-    if (biasTags?.length) {
+  generate: ({ level, rng, biasTags, config }) => {
+    const focusTag = (config as { focusTag?: string } | undefined)?.focusTag;
+    const isFocusable = (t?: string): t is Kind => !!t && (KINDS as readonly string[]).includes(t);
+
+    let kind: Kind = isFocusable(focusTag) ? focusTag : pick([...KINDS], rng);
+    if (!isFocusable(focusTag) && biasTags?.length) {
       const eligible = KINDS.filter((k) => biasTags.includes(k));
       if (eligible.length && rng() < 0.7) kind = pick([...eligible], rng);
     }

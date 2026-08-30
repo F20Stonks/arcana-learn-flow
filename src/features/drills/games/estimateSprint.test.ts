@@ -91,4 +91,20 @@ describe("estimateSprint", () => {
     }
     expect(matches / trials).toBeGreaterThan(0.4);
   });
+
+  it("config.focusTag pins every generated problem to that one kind", () => {
+    for (const tag of ["sqrt-round", "percent-round", "product-round", "division-round"]) {
+      for (let seed = 1; seed <= 40; seed++) {
+        const rng = seededRng(seed * 17 + 3);
+        const p = estimateSprint.generate({ level: seed % 6, rng, config: { focusTag: tag } });
+        expect(p.tag).toBe(tag);
+      }
+    }
+  });
+
+  it("an unrecognized focusTag falls back to normal random selection instead of throwing", () => {
+    const rng = seededRng(99);
+    const p = estimateSprint.generate({ level: 0, rng, config: { focusTag: "not-a-real-tag" } });
+    expect(["sqrt-round", "percent-round", "product-round", "division-round"]).toContain(p.tag);
+  });
 });

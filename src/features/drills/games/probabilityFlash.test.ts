@@ -133,4 +133,20 @@ describe("probabilityFlash", () => {
     // Baseline unbiased rate is 1/5; the 0.7 bias-override roll should push this well above chance.
     expect(matches / trials).toBeGreaterThan(0.4);
   });
+
+  it("config.focusTag pins every generated problem to that one kind", () => {
+    for (const tag of ["dice-sum", "ncr", "bayes-freq", "ev-coin", "ev-urn"]) {
+      for (let seed = 1; seed <= 40; seed++) {
+        const rng = seededRng(seed * 17 + 3);
+        const p = probabilityFlash.generate({ level: seed % 6, rng, config: { focusTag: tag } });
+        expect(p.tag).toBe(tag);
+      }
+    }
+  });
+
+  it("an unrecognized focusTag falls back to normal random selection instead of throwing", () => {
+    const rng = seededRng(99);
+    const p = probabilityFlash.generate({ level: 0, rng, config: { focusTag: "not-a-real-tag" } });
+    expect(["dice-sum", "ncr", "bayes-freq", "ev-coin", "ev-urn"]).toContain(p.tag);
+  });
 });
