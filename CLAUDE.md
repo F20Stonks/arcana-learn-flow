@@ -1384,3 +1384,90 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     matching `attempts.ts`'s scoped fail-soft pattern), `hooks/useCampaign.ts`,
     `pages/IntegralCampaign.tsx`, the `/integrals/campaign` route and its `/dev/` twin, a hub tile,
     and the readiness readout. Then WS-8, which is entirely untouched.
+
+- 2026-08-30 (new session, same branch): **WS-7 part 2 — persistence and UI, closing out the
+  campaign.** Picked up exactly where the previous entry left off. Mid-flight, a supervising
+  session landed a checkpoint commit (`7b09e39`) containing `campaignStore.ts`,
+  `campaignStore.test.ts` and `campaignReadiness.ts` — verified byte-identical to what this session
+  had already written (`git diff HEAD` empty for all three) before building anything on top, so
+  nothing was redone or reconciled. This session's own work landed as `abbdc6c`.
+  - `campaignStore.ts` persists the target date and a per-day tick log
+    (`CampaignSessionRecord {dayKey, completedSteps, updatedAt}`), matching `attempts.ts`'s pattern
+    exactly: `scopedKey`, fail-soft when storage is unavailable, a listener set, a cache that
+    self-invalidates by re-checking the scoped key on every read. Ring-buffer capped at 400 days
+    (`MAX_SESSION_DAYS`) — a ~70–100 day campaign never gets close. Ticking a step reuses
+    `nextStreak` directly from `progress.ts` for the adherence streak's calendar arithmetic (it
+    already operates on the same `{current, longest, lastDayKey}` shape, so no re-derivation was
+    needed); unticking a step deliberately does **not** roll the streak back — "did you show up
+    today" survives a mis-click undo, only a missed calendar day should cost the streak. 21 tests.
+  - `campaignReadiness.ts`: a small pure module reading the WS-1 attempt log directly — attempt
+    rate, median recognition time (median `msToFirstKeystroke`, the clock WS-1's own doc comment
+    already calls "did you even know where to start") and error rate on completed attempts, all
+    over a trailing 14-day window rather than all-time (all-time would blur breadth-block habits
+    into taper-block form for a competitor training for months). Every metric is `null`, not a
+    misleading zero, below `MIN_READINESS_SAMPLE = 5` samples — "keep it honest" taken literally,
+    the page renders a null as "not enough data yet" rather than a bare number. 9 tests.
+    Deliberately narrower than the full WS-7 spec in `UK_BEE_BURST.md` ("Q1–10 pace, tail reach, and
+    paper-score trend versus the owner's own first cold sit") — this session's delegated
+    instructions asked for exactly attempt rate / median recognition time / error rate, so that's
+    what shipped. The other two are a real, cheap future add — `uk/paperHistory.ts` already has the
+    per-sitting score data a trend line would need — flagged here rather than built speculatively
+    or silently dropped.
+  - `hooks/useCampaign.ts`: `useSyncExternalStore` over `campaignStore` (same shape as
+    `useProgress`/`useAttempts`), combining the persisted target date/sessions with `campaign.ts`'s
+    pure `campaignDay`/`planSession` to hand a page today's block, today's steps, and tick/read/set
+    actions already bound to "today." `campaign.ts` itself was not touched — its logic was never in
+    question, only consumed.
+  - `pages/IntegralCampaign.tsx`: today's session as an ordered, tickable list — a checkbox, the
+    step's own `label` and `why`, and a real `Go →` link to its `route`, using `step.kind` as the
+    React key (checked: no single day's `planSession` output ever repeats a `kind`, so this is
+    safe). Days remaining, the current block's name/aim/week, and a native `<input type="date">`
+    for the target date — no new dependency, and no other page in this app had an existing
+    date-picker pattern worth matching, so the plain native control was the least-surprising
+    choice. Below that: the adherence readout (sessions completed, live streak) and the readiness
+    readout with honest "not enough data yet" captions. Ticking is a self-report only — every step
+    is a plain `Link`, nothing gates on it, matching "advisory, not a cage" exactly.
+  - Route `/integrals/campaign` behind `DashboardGuard` (no `BetaGate`, matching every other
+    Integral Arena route) plus its `/dev/` twin in `App.tsx`; a "Campaign" tile added to
+    `IntegralsHub.tsx` between Values deck and the full-width Head-to-head tile.
+  - **Playwright walkthrough against `/dev/integrals/campaign`, done for real, screenshots taken**:
+    loaded fresh (cleared `localStorage` first); screenshotted the default-date landing (69 days
+    out from the real sandbox clock, Breadth block, 2 steps); changed the target date to 10 days
+    out through the actual date input and confirmed the plan really re-derived (3 steps — values
+    deck, problems, review, the taper block's shape — first step "Values deck — 20 cards", not
+    hardcoded); ticked that first step through a real click and confirmed `aria-pressed`, the
+    strikethrough, and both adherence tiles (0→1 sessions, 0→1 streak) updated live; read
+    `arcana.integrals.uk.campaign.v1` back from real `localStorage` and confirmed the stored JSON
+    matched exactly (`{"targetDate":"2026-09-09","sessions":[{"dayKey":"2026-08-30",
+    "completedSteps":["values"],...}],"streak":{"current":1,"longest":1,...}}`); reloaded the page
+    from scratch and confirmed the target date, the tick, and both adherence numbers all survived;
+    unticked the same step and confirmed the streak did **not** roll back (stayed at 1) — the
+    deliberate design decision, verified rather than assumed; set a three-days-ago target date and
+    confirmed the "Done / Round 1 has passed" state and its explanatory copy render sanely; visually
+    confirmed the hub tile renders correctly in the grid and links through. Zero console errors,
+    zero page errors, across the entire run. My own first draft of the walkthrough script used a
+    wrong selector (`h2.font-display` for the block name, which is actually a `<span>`) that made
+    two of its own assertions time out — caught by inspecting the real screenshots rather than
+    trusting the script's log alone, and the actual app behaviour underneath was correct throughout
+    (confirmed visually: "Breadth" / "Sharpen and taper" both render right).
+  - Verified: `npx vitest run` — **2087/2087 passing across 31 files** (was 2057/29 at this
+    session's start; +30, all new — 21 in `campaignStore.test.ts`, 9 in
+    `campaignReadiness.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on every
+    touched file (`campaignStore.ts`, `campaignStore.test.ts`, `campaignReadiness.ts`,
+    `campaignReadiness.test.ts`, `useCampaign.ts`, `IntegralCampaign.tsx`, `App.tsx`,
+    `IntegralsHub.tsx`) — zero findings. No existing test edited; `normalize()`/`answer.ts`
+    untouched; `techniques.ts`/`lessonExamples.test.ts`/`components/LessonBody.tsx` untouched,
+    reserved for WS-8 as instructed.
+  - **This closes out WS-7.** Both halves — the pure core (`uk/campaign.ts`, shipped by the
+    previous session) and persistence + UI (this session) — are done, tested, and Playwright-walked
+    through. The five components the original burst shipped (recognition, training, paper mode, the
+    error profile, the values deck) now have the conductor `UK_BEE_BURST.md` said was missing.
+  - **Noticed but not acted on, flagged rather than silently started or silently ignored**:
+    `UK_BEE_BURST.md` has grown an "Extension 2: winning, not qualifying" section since this
+    session started, scoping three more workstreams — WS-9 (headsolving — a no-typing, think-time-
+    only mode, marked highest priority of the three), WS-10 (deep absorption — completion problems,
+    self-explanation prompts, spaced concept review, layered onto `techniques.ts`, explicitly
+    ordered to run *after* WS-8, not concurrently with it), and WS-11 (the technique map, encoding
+    real relationships between techniques for the lessons page and for smarter recognition-drill
+    distractors). None of this was in this session's delegated scope, so none of it was built or
+    scoped further here — noted for whoever picks up next.
