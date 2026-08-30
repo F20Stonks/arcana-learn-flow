@@ -13,6 +13,7 @@
 import { shuffled } from "./rng";
 import { PROBLEMS } from "./problems";
 import { TECHNIQUES } from "./techniques";
+import { confusablesFor } from "./techniqueMap";
 import type { Problem, TechniqueId } from "./types";
 
 export const RECOGNITION_ROUND_LENGTH = 20;
@@ -26,15 +27,34 @@ export interface RecognitionQuestion {
 }
 
 /**
- * RECOGNITION_CHOICE_COUNT - 1 wrong technique ids for `problem`, drawn from every technique NOT
- * already tagged on it — a problem multi-tagged (e.g. a recurrence problem also tagged
- * wallis-product) never offers one of its own valid tags as a "wrong" choice, which would make the
- * question genuinely ambiguous rather than just hard.
+ * RECOGNITION_CHOICE_COUNT - 1 wrong technique ids for `problem`, drawn preferentially from
+ * confusablesFor(problem's primary technique) — the technique map's (techniqueMap.ts, WS-11) own
+ * family siblings and cross-links — before topping up with a uniformly random pick from whatever's
+ * left. A same-family distractor is a real test of discrimination (t-sub vs trig-identity, Gamma vs
+ * Beta); a random one (t-sub vs floor-function) is free, per UK_BEE_BURST.md's own framing.
+ *
+ * Whichever pool a candidate is drawn from, it is never a technique already tagged on `problem` —
+ * a problem multi-tagged (e.g. a recurrence problem also tagged wallis-product) never offers one of
+ * its own valid tags as a "wrong" choice, which would make the question genuinely ambiguous rather
+ * than just hard. This invariant is unchanged from before confusable-preference existed.
  */
-function distractorsFor(problem: Problem, seed: number): TechniqueId[] {
+export function distractorsFor(problem: Problem, seed: number): TechniqueId[] {
+  const needed = RECOGNITION_CHOICE_COUNT - 1;
   const excluded = new Set<TechniqueId>(problem.techniques);
-  const pool = TECHNIQUES.map((t) => t.id).filter((id) => !excluded.has(id));
-  return shuffled(pool, seed).slice(0, RECOGNITION_CHOICE_COUNT - 1);
+
+  // Preferred pool: the primary technique's family siblings + cross-links, minus anything already
+  // tagged on this problem. Empty for a technique with neither (floor-function, today) — falls
+  // straight through to the random-only path below.
+  const confusablePool = confusablesFor(problem.techniques[0]).filter((id) => !excluded.has(id));
+  const preferred = shuffled(confusablePool, seed).slice(0, needed);
+  if (preferred.length >= needed) return preferred;
+
+  // Not enough confusables to fill every slot (including zero) — top up with a uniformly random
+  // pick from every technique not already excluded or already chosen as a preferred distractor.
+  const chosen = new Set(preferred);
+  const randomPool = TECHNIQUES.map((t) => t.id).filter((id) => !excluded.has(id) && !chosen.has(id));
+  const filler = shuffled(randomPool, seed + 97).slice(0, needed - preferred.length);
+  return [...preferred, ...filler];
 }
 
 function questionFor(problem: Problem, seed: number): RecognitionQuestion {
