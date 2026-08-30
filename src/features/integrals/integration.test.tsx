@@ -19,14 +19,27 @@ import IntegralsHub from "@/pages/IntegralsHub";
 import IntegralTraining, { TrainingTechnique } from "@/pages/IntegralTraining";
 import { dailyProblem, dailyProblems } from "./daily";
 import { getProgress, resetProgress } from "./progress";
-import { orderQueue } from "./queue";
+import { scheduledQueue } from "./queue";
+import { getAttempts } from "./attempts";
 import { problemsForTechnique } from "./problems";
 import type { Problem } from "./types";
+import type { TechniqueId } from "./types";
 
 beforeEach(() => {
   resetProgress();
   window.localStorage.clear();
 });
+
+/**
+ * Which problem the training page serves first.
+ *
+ * These tests don't assert the ordering — they need to know which problem is on screen so they can
+ * type its answer. So this mirrors `IntegralTraining`'s own selector: if the page changes how it
+ * builds its queue, change it here too and the assertions below still hold unaltered.
+ */
+function servedFirst(techniqueId: TechniqueId): Problem {
+  return scheduledQueue(problemsForTechnique(techniqueId), getProgress(), getAttempts())[0];
+}
 
 /** Solves every slot of the day's daily in order, clicking through to the next between them. */
 async function solveDaily(problems: Problem[]) {
@@ -170,9 +183,9 @@ describe("training", () => {
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading.textContent).toBe("Integration by parts");
 
-    // The queue starts on the easiest unsolved problem; solve it.
+    // Whatever the scheduler serves first, solve it.
     const before = screen.getByText(/1\/\d+/).textContent;
-    const first = orderQueue(problemsForTechnique("parts"), getProgress())[0];
+    const first = servedFirst("parts");
     const input = screen.getByPlaceholderText(/your answer|a number/i);
     fireEvent.change(input, { target: { value: first.answer } });
     fireEvent.click(screen.getByRole("button", { name: /check/i }));
@@ -186,7 +199,7 @@ describe("training", () => {
 
   it("skips a problem without answering it, recording nothing", async () => {
     at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
-    const first = orderQueue(problemsForTechnique("parts"), getProgress())[0];
+    const first = servedFirst("parts");
     const before = screen.getByText(/1\/\d+/).textContent;
 
     fireEvent.click(screen.getByRole("button", { name: /^Skip$/i }));

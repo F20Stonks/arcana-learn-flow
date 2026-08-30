@@ -1,21 +1,145 @@
 /**
- * The body of a technique lesson — when to reach for it, the recipe, a worked example, the traps.
+ * The body of a technique lesson — prerequisites, when to reach for it, why it works, the recipe,
+ * worked example(s), the traps, and a self-check. Lives on its own so the same lesson renders in
+ * two places: collapsed inside the practice screen, and in the standalone Lessons library where you
+ * can read without drilling.
  *
- * Lives on its own so the same lesson renders in two places: collapsed inside the practice screen,
- * and in the standalone Lessons library where you can read without drilling.
+ * Graduated examples (`technique.examples`) are the A-level-bridge rebuild's answer to the old
+ * single-`example` schema being a reference card for someone who already knows the method: the
+ * first spells out every algebraic step, later ones compress as the reader gains footing. A lesson
+ * not yet rebuilt has no `examples` array — this falls back to the legacy singular `example`, which
+ * every technique still carries (see types.ts's Technique.example doc comment for why).
  */
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronRight, Lightbulb } from "lucide-react";
 import Tex from "@/features/integrals/components/Tex";
-import type { Technique } from "@/features/integrals/types";
+import { TECHNIQUES } from "@/features/integrals/techniques";
+import type { Technique, WorkedExample } from "@/features/integrals/types";
+
+function ExampleCard({ example, label }: { example: WorkedExample; label?: string }) {
+  return (
+    <div className="mt-2 rounded-xl bg-accent/50 px-4 py-4">
+      {label && (
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {label}
+        </div>
+      )}
+      <div className="overflow-x-auto text-center">
+        <Tex block className="text-foreground">{`\\int ${example.integrand}\\,dx`}</Tex>
+      </div>
+      <ul className="mt-3 flex flex-col gap-2">
+        {example.work.map((w, i) => (
+          <li key={i} className="text-[14px] leading-relaxed text-foreground">
+            <Tex>{w}</Tex>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 border-t border-border/60 pt-3 text-center">
+        <Tex className="text-foreground">{example.result}</Tex>
+      </div>
+    </div>
+  );
+}
+
+/** Links a prerequisite to its own lesson when the text names an existing technique; plain text
+ *  otherwise (a prerequisite can also be a bare skill — "the double-angle identities" — with no
+ *  lesson of its own to link to). */
+function PrerequisiteChip({ text }: { text: string }) {
+  const match = TECHNIQUES.find((t) => t.name.toLowerCase() === text.toLowerCase());
+  const inner = <Tex>{text}</Tex>;
+  return (
+    <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-[13px] text-foreground">
+      {match ? (
+        <Link
+          to={`/integrals/train/${match.id}`}
+          className="underline decoration-muted-foreground/40 underline-offset-2 hover:text-primary hover:decoration-primary"
+        >
+          {inner}
+        </Link>
+      ) : (
+        inner
+      )}
+    </span>
+  );
+}
+
+function CheckYourself({ item }: { item: NonNullable<Technique["checkYourself"]> }) {
+  const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  return (
+    <div className="mt-2 rounded-xl border border-dashed border-primary/30 bg-primary/[0.04] px-4 py-4">
+      <div className="overflow-x-auto text-center">
+        <Tex block className="text-foreground">{`\\int ${item.prompt}\\,dx`}</Tex>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[13px]">
+        <button
+          type="button"
+          onClick={() => setShowHint((v) => !v)}
+          aria-expanded={showHint}
+          className="text-muted-foreground underline decoration-muted-foreground/40 underline-offset-2 transition-colors hover:text-foreground"
+        >
+          {showHint ? "Hide hint" : "Need a hint?"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowAnswer((v) => !v)}
+          aria-expanded={showAnswer}
+          className="text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:opacity-80"
+        >
+          {showAnswer ? "Hide answer" : "Show answer"}
+        </button>
+      </div>
+      {showHint && (
+        <p className="mt-3 text-center text-[13px] leading-relaxed text-muted-foreground">
+          <Tex>{item.hint}</Tex>
+        </p>
+      )}
+      {showAnswer && (
+        <p className="mt-3 border-t border-border/60 pt-3 text-center text-[14px] text-foreground">
+          <Tex>{item.answer}</Tex>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function LessonBody({ technique }: { technique: Technique }) {
+  const examples = technique.examples ?? [technique.example];
+
   return (
     <>
-      <h3 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+      {technique.prerequisites && technique.prerequisites.length > 0 && (
+        <>
+          <h3 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+            Be solid on first
+          </h3>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {technique.prerequisites.map((p, i) => (
+              <PrerequisiteChip key={i} text={p} />
+            ))}
+          </div>
+        </>
+      )}
+
+      <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground first:mt-0">
         When to reach for it
       </h3>
       <p className="mt-2 text-[14px] leading-relaxed text-foreground">
         <Tex>{technique.whenToUse}</Tex>
       </p>
+
+      {technique.intuition && (
+        <>
+          <h3 className="mt-5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+            <Lightbulb className="h-3.5 w-3.5" /> Why it works
+          </h3>
+          <p className="mt-2 text-[14px] leading-relaxed text-foreground">
+            <Tex>{technique.intuition}</Tex>
+          </p>
+        </>
+      )}
 
       <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
         The recipe
@@ -32,23 +156,15 @@ export default function LessonBody({ technique }: { technique: Technique }) {
       </ol>
 
       <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-        Worked example
+        {examples.length > 1 ? "Worked examples" : "Worked example"}
       </h3>
-      <div className="mt-2 rounded-xl bg-accent/50 px-4 py-4">
-        <div className="overflow-x-auto text-center">
-          <Tex block className="text-foreground">{`\\int ${technique.example.integrand}\\,dx`}</Tex>
-        </div>
-        <ul className="mt-3 flex flex-col gap-2">
-          {technique.example.work.map((w, i) => (
-            <li key={i} className="text-[14px] leading-relaxed text-foreground">
-              <Tex>{w}</Tex>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 border-t border-border/60 pt-3 text-center">
-          <Tex className="text-foreground">{technique.example.result}</Tex>
-        </div>
-      </div>
+      {examples.map((ex, i) => (
+        <ExampleCard
+          key={i}
+          example={ex}
+          label={examples.length > 1 ? `Example ${i + 1} of ${examples.length}` : undefined}
+        />
+      ))}
 
       <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
         Where it goes wrong
@@ -61,6 +177,15 @@ export default function LessonBody({ technique }: { technique: Technique }) {
           </li>
         ))}
       </ul>
+
+      {technique.checkYourself && (
+        <>
+          <h3 className="mt-5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+            <ChevronRight className="h-3.5 w-3.5" /> Check yourself
+          </h3>
+          <CheckYourself item={technique.checkYourself} />
+        </>
+      )}
     </>
   );
 }
