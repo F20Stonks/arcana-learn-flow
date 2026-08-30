@@ -1721,3 +1721,155 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     the owner would rather it did. (3) per `UK_BEE_BURST.md`'s own ordering, WS-11 (the technique
     map) and WS-10 (deep absorption, unblocked since WS-8 closed) remain available for a future
     session — neither was started here, this session's delegated scope was WS-9 only.
+
+- 2026-08-30 (new session): **WS-10 — deep absorption. Schema shipped, 16 of 21 lessons carry the
+  new sections, spaced concept review shipped and wired into the UI.** Started on
+  `claude/pensive-tesla-421vh8` at baseline `2396c38` (2157/2157 passing, `tsc -p
+  tsconfig.app.json` clean, tree clean) — reproduced before the first edit. Read the WS-10 spec in
+  `UK_BEE_BURST.md`'s Extension 2 section, the WS-2/WS-8 progress-log entries, `types.ts`,
+  `t-sub`/`feynman`/`gamma-function` in full, and `LessonBody.tsx` before writing anything.
+
+  **Schema** (`types.ts`, commit `64b11e3`): new `Completion` interface —
+  `{setup: string[]; blank: string; answer: string}` plus the same optional
+  `integrandExpr`/`resultExpr`/`domain`/`kind` mirror `WorkedExample` already carries, set whenever
+  the completion states a literal evaluatable integral (every one shipped this session does).
+  `Technique.completions?: Completion[]` and `Technique.selfExplain?: {prompt, answer}` — the
+  latter reveal-only, same shape and rendering convention as `checkYourself`, deliberately with no
+  machine-checkable mirror (it's prose reasoning, not an evaluatable claim — any numeric or
+  algebraic fact stated inside one was still hand-verified, just not wired into a test fixture).
+
+  **`LessonBody.tsx`**: two new conditionally-rendered sections between worked examples and
+  pitfalls — "Complete it" (a `CompletionCard` per completion: the `setup` steps render like an
+  `ExampleCard`'s work list, then a dashed gap box shows `blank` with a reveal button for `answer`)
+  and "Think about it" (`SelfExplain`, the same reveal mechanic with no hint stage). Both fall back
+  to nothing extra for a technique that doesn't set them — verified explicitly via Playwright
+  against `recurrence` before this session touched it.
+
+  **`lessonExamples.test.ts`** extended with a `gradeableCompletions` set and a
+  `"completion problems are actually correct"` describe block, exact mirror of the existing
+  `gradeable`/`WorkedExample` machinery (same `derivative()`/`quadrature()` copies, same tolerance
+  scheme) — plus render checks for `completions`/`selfExplain` in the existing "lesson prose
+  renders" sweep. A guard test pins the minimum count so a dropped field fails loudly rather than
+  the `describe.each` silently iterating zero cases, updated at each content commit to track the
+  real number shipped (final: 32).
+
+  **Content — 2 completions + 1 selfExplain per technique, 16 of 21 techniques**, in the exact
+  priority order this session's instructions gave: all 10 techniques WS-2 rebuilt first (`power`,
+  `u-sub`, `parts`, `trig-identity`, `trig-sub`, `partial-fractions`, `complete-square`,
+  `symmetry`, `t-sub`, `feynman` — commit `64b11e3`), then all 6 of WS-8's "finals arsenal, highest
+  value first" (`beta-integrals`, `gamma-function` — commit `0f1f892`; `zeta-series`,
+  `wallis-product`, `reciprocal-substitution`, `recurrence` — commit `d9404f8`). Every one of the
+  32 numeric completion claims was derived by hand, verified in a throwaway Node script (plain
+  `Math.*`, mirroring `problems.test.ts`'s `derivative()`/`quadrature()` exactly, per the
+  guardrail) with comfortable margin — worst case 0.0003 of tolerance, most exactly 0 — *before*
+  being written into `techniques.ts`, then re-confirmed by the real `lessonExamples.test.ts` mirror.
+  Completions were designed to exercise each lesson's actual crux move (the pitfall it names, the
+  recipe step it's proudest of) rather than restate arithmetic already shown in the existing
+  worked examples — e.g. `power`'s n=-1 trap and the six reflex forms; `parts`'s loop-case
+  (`e^x sin x`) solved algebraically after two applications; `beta-integrals`'s digamma
+  log-differentiation trick carried through with real numbers
+  (`\int_0^1x^2(1-x)^3\ln x\,dx=-19/1200` via `\psi(n)=-\gamma+H_{n-1}`); `reciprocal-substitution`'s
+  own "the argument works for any `a>0`" claim independently re-verified at `a=5` rather than just
+  asserted; `recurrence`'s odd-vs-even base-case pitfall reinforced with a fresh algebraic (not
+  by-parts) recurrence via `\tan^2=\sec^2-1`. selfExplain prompts targeted genuine "why this and not
+  the similar-looking alternative" reasoning per the spec's own framing — comparing
+  `t-sub`'s universal applicability against `trig-identity`'s two-line solution on `\sin^3x`;
+  deriving *why* `\Gamma(k+1)=k!` makes the factorial-vs-Gamma pitfall a speed issue, not a
+  correctness one; walking through exactly where the Gamma-function by-parts reduction breaks on
+  `e^{-x^2}` (no elementary `v` exists) instead of just asserting "Gaussians are different."
+
+  **Two of my own mistakes caught before shipping, not after** — both by the render/verification
+  guardrails doing their job, not by luck: (1) an initial claim that `\sqrt{1-x^2}` "has no
+  elementary antiderivative" (false — it has one, `\tfrac{x\sqrt{1-x^2}}2+\tfrac{\arcsin x}2`,
+  it's simply not a *memorised* one the way `\tfrac1{\sqrt{1-x^2}}\to\arcsin x` is) was caught on
+  review before it was ever written down, and the `power` selfExplain rewritten to make the real
+  (correct) distinction — "already known" vs "needs deriving," not "exists" vs "doesn't." (2) a
+  real LaTeX bug — `\pm` nested inside a `\text{}` group in `reciprocal-substitution`'s
+  selfExplain — was caught by `lessonExamples.test.ts`'s strict-mode KaTeX render check
+  immediately, before that commit landed; fixed by moving `\pm` back into math mode. Also caught a
+  wrong rational-function-degree claim in `t-sub`'s selfExplain during my own design pass (asserted
+  "degree-7-over-degree-8" for `\sin^3x` under `t`-sub; the real simplified fraction is
+  `16t^3/(1+t^2)^4`, degree 3 over degree 8) — fixed to state the concrete fraction instead of an
+  asserted degree count, avoiding the error rather than needing a test to catch it later.
+
+  **Spaced concept review** (new `conceptReview.ts` + `conceptReview.test.ts` + `hooks/
+  useConceptReview.ts`, commit `e93cddf`) — the piece with real plumbing. Tracks when each
+  technique's lesson was last read on a parallel, timestamped, per-account-scoped store (same
+  `scopedKey`/fail-soft/self-invalidating-cache pattern every store since `attempts.ts` uses,
+  deliberately NOT widening `progress.ts`'s `Progress.lessonsRead`, which stays a plain
+  timestamp-free set for the "read" checkmark and the Scholar badge exactly as before). A simple
+  expanding schedule (`REVIEW_INTERVALS_DAYS=[1,3,7,14,30,60]`, Leitner-box shaped, explicitly not
+  a full SRS per the spec) decides what's "due for review": a read is deduplicated to one per
+  calendar day, and the interval only widens (stage advances) when a read lands on or after the
+  technique's own due day — reading early (peeking at a lesson mid-drill) updates "last seen"
+  without disturbing the schedule in flight, and reading late still advances, counting the new
+  interval from the actual read day rather than the original due day (forgiveness, not
+  punishment). Wired the read signal into both existing `markLessonRead` call sites
+  (`IntegralTraining.tsx`'s lesson-panel toggle, `IntegralLessons.tsx`'s accordion) rather than
+  into `progress.ts` itself. Added a "Due for review" banner to `IntegralLessons.tsx` — clickable
+  chips for every due technique, most-overdue first, opening straight into that lesson (and,
+  because it reuses the same `toggle()` the accordion already calls, genuinely re-recording the
+  read and advancing the schedule — verified through real UI interaction, not just unit tests, see
+  below). 16 tests in `conceptReview.test.ts` (empty state, first read, same-day dedupe,
+  early/on-time/late advancement, stage capping, `dueForReview` ordering, `conceptReviewStep`,
+  scoping, storage-unavailable, reset), all against fixed dates, black-box against the module's
+  documented behaviour rather than reaching into internal fields (an early draft of two tests did
+  reach into raw `dueDayIndex`/epoch arithmetic to predict expected values — reworked to assert
+  only through `dueForReview`/`daysOverdue` instead, since duplicating the module's own internal
+  date math in the test is exactly the kind of fragile mirroring this repo's own established
+  testing style avoids).
+
+  `conceptReview.ts` exports `conceptReviewStep()` — the single most-overdue technique, shaped for
+  a future `SessionStep` — but this session deliberately did **not** wire it into
+  `uk/campaign.ts`'s `planSession`, exactly as instructed. Inspected `planSession` first rather
+  than guessing: `planSession` is a pure function of `CampaignDay` alone today (no access to any
+  per-technique read history), and the existing `"review"` `StepKind` already means something
+  specific and different ("look at your own performance data," always routed to
+  `/integrals/progress`) — slotting concept review in cleanly would mean either overloading that
+  kind's meaning or adding a new one, deciding which block(s) it appears in, how often, and how it
+  interacts with the taper block's "no new material" rule. That's real session-composition
+  judgment, not a trivial addition, so it's left as a documented follow-up (in `conceptReview.ts`'s
+  own doc comment and here) rather than touched.
+
+  **Playwright walkthroughs, done twice** (required — `LessonBody.tsx` and `IntegralLessons.tsx`
+  both changed visually). First pass (after commit `e93cddf`): fresh-state lessons list; `power`
+  expanded showing the full rebuilt body including the new sections; a completion revealed; the
+  self-explain answer revealed; `recurrence` (untouched this session) confirmed to show neither
+  new section, proving the fallback path; two overdue `conceptReview` records seeded directly into
+  `localStorage`, page reloaded, "Due for review" banner confirmed rendering with real clickable
+  chips; clicked one and confirmed via a fresh `localStorage` read that it both opened the lesson
+  and genuinely advanced that technique's stored review stage. Zero console/page errors. Second
+  pass (after commit `d9404f8`): all 5 remaining touched techniques
+  (`reciprocal-substitution`/`gamma-function`/`zeta-series`/`wallis-product`/`recurrence`) opened,
+  every completion and self-explain answer clicked to reveal — forcing live in-browser KaTeX
+  rendering of every new string, not just the Node-side render-check in the test suite. Zero
+  console/page errors across both passes.
+
+  **Final state, this session's own scope**: `npx vitest run` — **2206/2206** across 34 files (was
+  2157/2157 at the session's baseline); `npx tsc --noEmit -p tsconfig.app.json` — clean throughout
+  (confirmed after every commit, using the correct project flag per the standing tooling note two
+  entries above); `eslint` on every file this session touched
+  (`types.ts`, `techniques.ts`, `components/LessonBody.tsx`, `lessonExamples.test.ts`,
+  `conceptReview.ts`, `conceptReview.test.ts`, `hooks/useConceptReview.ts`, `pages/
+  IntegralTraining.tsx`, `pages/IntegralLessons.tsx`) — zero findings. No existing test was edited;
+  `normalize()`/`answer.ts` untouched (only ever imported from); the legacy singular `example`
+  field and everything WS-2/WS-8 built keep working unchanged (confirmed both by the full suite
+  and by the `recurrence` fallback screenshot). No new practice problems were authored — every new
+  claim lives in `techniques.ts`'s lesson exposition, none in `bank/*.ts`. Four commits on
+  `claude/pensive-tesla-421vh8`: `64b11e3` (schema + all 10 WS-2 techniques), `e93cddf` (concept
+  review), `0f1f892` (beta-integrals, gamma-function), `d9404f8` (zeta-series, wallis-product,
+  reciprocal-substitution, recurrence).
+
+  **Deliberately not done, and why**: the remaining 5 techniques —
+  `introducing-constants`/`floor-function`/`inverse-integral`/`log-power-integrals`/
+  `gaussian-hypersphere`, WS-8's own SECOND tier, never named "finals arsenal" and not named at all
+  in this session's delegated instructions — were left at the WS-2/WS-8 baseline schema
+  (`prerequisites`/`intuition`/`examples`/`checkYourself`, no `completions`/`selfExplain`). This
+  session's instructions explicitly said to prioritise the named sets and prefer fewer techniques
+  done excellently over all 21 done adequately; having covered every technique named in either
+  priority tier (all 10 from WS-2, all 6 of WS-8's finals arsenal), extending to WS-8's lower-value
+  remainder would be scope creep beyond what was asked rather than finishing what was — a genuine
+  option for a future session, not a gap that was overlooked. `planSession`'s wiring to
+  `conceptReviewStep()` is the other explicit follow-up, flagged above and inline in
+  `conceptReview.ts`. WS-11 (the technique map) remains entirely unstarted, per
+  `UK_BEE_BURST.md`'s own ordering and outside this session's delegated scope.

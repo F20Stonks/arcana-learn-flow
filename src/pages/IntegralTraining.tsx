@@ -15,6 +15,7 @@ import RunPanel from "@/features/integrals/components/RunPanel";
 import LessonBody from "@/features/integrals/components/LessonBody";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
+import { recordConceptRead } from "@/features/integrals/conceptReview";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
 import { scheduledQueue } from "@/features/integrals/queue";
 import { getAttempts } from "@/features/integrals/attempts";
@@ -288,7 +289,10 @@ export function TrainingTechnique() {
 
   const openLesson = () => {
     setLessonOpen((v) => !v);
-    if (!lessonOpen && technique) markLessonRead(technique.id);
+    if (!lessonOpen && technique) {
+      markLessonRead(technique.id);
+      recordConceptRead(technique.id);
+    }
   };
 
   return (
