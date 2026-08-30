@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import {
   BarChart3,
   BookOpen,
+  Brain,
   CalendarDays,
   Check,
   ClipboardList,
@@ -226,6 +227,21 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Drill →
+            </span>
+          </Link>
+
+          <Link
+            to="/integrals/headsolve"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Brain className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Headsolve</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              No answer input at all — think it, stop the clock, self-grade. The only speed number
+              that transfers to a competition you write by hand.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Start →
             </span>
           </Link>
 

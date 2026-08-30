@@ -33,6 +33,7 @@ import IntegralPaper from "./pages/IntegralPaper";
 import IntegralRecognition from "./pages/IntegralRecognition";
 import IntegralValues from "./pages/IntegralValues";
 import IntegralCampaign from "./pages/IntegralCampaign";
+import IntegralHeadsolve from "./pages/IntegralHeadsolve";
 import DrillPlay from "./pages/DrillPlay";
 import LeaderboardsPage from "./pages/LeaderboardsPage";
 import NotFound from "./pages/NotFound";
@@ -148,6 +149,8 @@ function AppRoutes() {
           composing recognition/training/paper/values/progress into a daily plan. See
           UK_BEE_BURST.md WS-7. */}
       <Route path="/integrals/campaign" element={<DashboardGuard><IntegralCampaign /></DashboardGuard>} />
+      {/* Headsolve — think time only, no answer input. See UK_BEE_BURST.md Extension 2, WS-9. */}
+      <Route path="/integrals/headsolve" element={<DashboardGuard><IntegralHeadsolve /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><BetaGate feature="Reference questions"><ReferenceQuestions /></BetaGate></ProtectedRoute>} />
@@ -197,6 +200,7 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/recognition" element={<IntegralRecognition />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/values" element={<IntegralValues />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/campaign" element={<IntegralCampaign />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/headsolve" element={<IntegralHeadsolve />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
