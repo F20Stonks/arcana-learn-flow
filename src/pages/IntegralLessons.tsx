@@ -6,22 +6,28 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, Check, ChevronDown } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown, RotateCcw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import LessonBody from "@/features/integrals/components/LessonBody";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
+import { useConceptReview } from "@/features/integrals/hooks/useConceptReview";
+import { recordConceptRead } from "@/features/integrals/conceptReview";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
-import { TECHNIQUES } from "@/features/integrals/techniques";
+import { TECHNIQUE_BY_ID, TECHNIQUES } from "@/features/integrals/techniques";
 import type { TechniqueId } from "@/features/integrals/types";
 
 export default function IntegralLessons() {
   const progress = useProgress();
+  const { due } = useConceptReview();
   const [open, setOpen] = useState<TechniqueId | null>(null);
 
   const toggle = (id: TechniqueId) => {
     setOpen((cur) => (cur === id ? null : id));
-    if (open !== id) markLessonRead(id);
+    if (open !== id) {
+      markLessonRead(id);
+      recordConceptRead(id);
+    }
   };
 
   return (
@@ -43,6 +49,30 @@ export default function IntegralLessons() {
             traps. Reading doesn't count towards anything; only solved problems do.
           </p>
         </header>
+
+        {due.length > 0 && (
+          <div className="reveal mb-6 rounded-2xl border border-dashed border-primary/30 bg-primary/[0.04] px-5 py-4">
+            <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-primary">
+              <RotateCcw className="h-3.5 w-3.5" /> Due for review
+            </div>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Problems get resurfaced by the scheduler; ideas don't unless you bring them back
+              yourself. These haven't been reread in a while.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {due.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggle(id)}
+                  className="rounded-full border border-primary/30 bg-card px-3 py-1 text-[13px] text-foreground transition-colors hover:bg-accent/40"
+                >
+                  {TECHNIQUE_BY_ID[id].name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="reveal flex flex-col gap-3">
           {TECHNIQUES.map((t) => {
