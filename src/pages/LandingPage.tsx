@@ -177,6 +177,66 @@ export default function LandingPage() {
             </motion.div>
           </header>
 
+          {/* FREE TOOLS — Integral Arena and the drill arcade are both live for every signup,
+              no waitlist or approval step, unlike the rest of the app. Leads right off the hero
+              since these are the two things a visitor can actually try before signing up for
+              anything else. */}
+          <section className="tools" id="tools">
+            <Reveal>
+              <div className="sec-eyebrow">Try it free, right now</div>
+              <h2>Two tools live the moment you sign up.</h2>
+              <p className="teach-lede">
+                No waitlist, no approval step. Integral Arena and the drill arcade are
+                open to every account from the first minute.
+              </p>
+            </Reveal>
+            <div className="tool-grid">
+              <Reveal delay={0.08}>
+                <div className="tool-card">
+                  <div className="tool-shot">
+                    <img src={integralArenaShot} alt="A daily integral in Integral Arena: a five-star “brutal” trig integral, rendered in full LaTeX, with the type-or-build answer input below it." loading="lazy" />
+                  </div>
+                  <h3>Integral Arena</h3>
+                  <p>
+                    A free integration-bee trainer. A new <b>daily integral</b> for
+                    everyone, technique-by-technique training rooms with full worked
+                    lessons, and <b>788 problems</b> sourced from real competitions
+                    like MIT and HMMT.
+                  </p>
+                  <ul className="tool-stats">
+                    <li>788 sourced problems</li>
+                    <li>21 named techniques</li>
+                    <li>Daily streak &amp; leaderboard</li>
+                  </ul>
+                  <Link to="/auth?mode=signup" className="tool-cta">
+                    Try Integral Arena →
+                  </Link>
+                </div>
+              </Reveal>
+              <Reveal delay={0.16}>
+                <div className="tool-card">
+                  <div className="tool-shot">
+                    <img src={zetamacShot} alt="A live Zetamac++ sprint: a six-answer streak, a countdown timer, and a fresh arithmetic problem waiting for input." loading="lazy" />
+                  </div>
+                  <h3>Zetamac++ &amp; the drill arcade</h3>
+                  <p>
+                    A souped-up Zetamac: mixed arithmetic sprints with{" "}
+                    <b>adaptive difficulty</b> and weak-spot targeting, plus eight more
+                    timed drills across number theory, algebra, and topology.
+                  </p>
+                  <ul className="tool-stats">
+                    <li>9 drills</li>
+                    <li>Classic, adaptive &amp; weak-spot modes</li>
+                    <li>Global leaderboard</li>
+                  </ul>
+                  <Link to="/auth?mode=signup" className="tool-cta">
+                    Try the drills →
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
           {/* WHY IT WORKS */}
           <section id="why">
             <Reveal>
@@ -242,64 +302,6 @@ export default function LandingPage() {
             <Reveal delay={0.12}>
               <SceneDemo />
             </Reveal>
-          </section>
-
-          {/* FREE TOOLS — Integral Arena and the drill arcade are both live for every signup,
-              no waitlist or approval step, unlike the rest of the app. */}
-          <section className="tools" id="tools">
-            <Reveal>
-              <div className="sec-eyebrow">Try it free, right now</div>
-              <h2>Two tools live the moment you sign up.</h2>
-              <p className="teach-lede">
-                No waitlist, no approval step. Integral Arena and the drill arcade are
-                open to every account from the first minute.
-              </p>
-            </Reveal>
-            <div className="tool-grid">
-              <Reveal delay={0.08}>
-                <div className="tool-card">
-                  <div className="tool-shot">
-                    <img src={integralArenaShot} alt="A daily integral in Integral Arena: a five-star “brutal” trig integral, rendered in full LaTeX, with the type-or-build answer input below it." loading="lazy" />
-                  </div>
-                  <h3>Integral Arena</h3>
-                  <p>
-                    A free integration-bee trainer. A new <b>daily integral</b> for
-                    everyone, technique-by-technique training rooms with full worked
-                    lessons, and <b>788 problems</b> sourced from real competitions
-                    like MIT and HMMT.
-                  </p>
-                  <ul className="tool-stats">
-                    <li>788 sourced problems</li>
-                    <li>21 named techniques</li>
-                    <li>Daily streak &amp; leaderboard</li>
-                  </ul>
-                  <Link to="/auth?mode=signup" className="tool-cta">
-                    Try Integral Arena →
-                  </Link>
-                </div>
-              </Reveal>
-              <Reveal delay={0.16}>
-                <div className="tool-card">
-                  <div className="tool-shot">
-                    <img src={zetamacShot} alt="A live Zetamac++ sprint: a six-answer streak, a countdown timer, and a fresh arithmetic problem waiting for input." loading="lazy" />
-                  </div>
-                  <h3>Zetamac++ &amp; the drill arcade</h3>
-                  <p>
-                    A souped-up Zetamac: mixed arithmetic sprints with{" "}
-                    <b>adaptive difficulty</b> and weak-spot targeting, plus eight more
-                    timed drills across number theory, algebra, and topology.
-                  </p>
-                  <ul className="tool-stats">
-                    <li>9 drills</li>
-                    <li>Classic, adaptive &amp; weak-spot modes</li>
-                    <li>Global leaderboard</li>
-                  </ul>
-                  <Link to="/auth?mode=signup" className="tool-cta">
-                    Try the drills →
-                  </Link>
-                </div>
-              </Reveal>
-            </div>
           </section>
 
           {/* FINAL */}
