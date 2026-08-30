@@ -987,8 +987,11 @@ export const TECHNIQUES: Technique[] = [
     id: "gamma-function",
     name: "The Gamma function",
     tagline: "\\int_0^\\infty x^n e^{-x}\\,dx = n! — a reduction formula in disguise, over an infinite domain.",
+    prerequisites: ["Beta function integrals", "Integration by parts"],
     whenToUse:
       "A polynomial (or a single power of x) times a decaying exponential, integrated over (0,\\infty). If you see x^n e^{-x} — or e^{-ax}, or a^{-x} for some other base — recognise it as an instance of this family rather than reaching for integration by parts from scratch.",
+    intuition:
+      "\\int_0^\\infty x^ne^{-x}\\,dx has exactly the same peel-one-factor-off structure as the Beta integral — just run against a decaying exponential on (0,\\infty) instead of against (1-x) on [0,1]. Integrating by parts with u=x^n,\\ dv=e^{-x}\\,dx gives du=nx^{n-1}\\,dx,\\ v=-e^{-x}, and the boundary term -x^ne^{-x} vanishes at both ends — 0 outright at x=0 (for n\\ge1), and 0 in the limit because e^{-x} beats any polynomial as x\\to\\infty. What survives is I_n=nI_{n-1}, and unrolling that down to the base case I_0=\\int_0^\\infty e^{-x}\\,dx=1 gives I_n=n! in one pass — the SAME induction Beta integrals use, just indexed by one variable instead of two.",
     recipe: [
       "The base case: \\int_0^\\infty e^{-x}\\,dx = 1.",
       "Integration by parts (u=x^n,\\ dv=e^{-x}dx) gives the reduction \\int_0^\\infty x^n e^{-x}\\,dx = n\\int_0^\\infty x^{n-1}e^{-x}\\,dx — the boundary term vanishes at both ends since x^n e^{-x}\\to 0 as x\\to\\infty and equals 0 at x=0. Unrolling it gives \\int_0^\\infty x^n e^{-x}\\,dx = n!.",
@@ -996,21 +999,19 @@ export const TECHNIQUES: Technique[] = [
       "For a base other than e, rewrite it: b^{-x} = e^{-x\\ln b}, then apply the same formula with a=\\ln b.",
       "A trailing \\cos x or \\sin x alongside the exponential is the formula in disguise with a complex a: since \\cos x=\\mathrm{Re}(e^{ix}), \\int_0^\\infty x^ne^{-x}\\cos x\\,dx=\\mathrm{Re}\\int_0^\\infty x^ne^{-(1-i)x}\\,dx=\\mathrm{Re}\\frac{n!}{(1-i)^{n+1}} — the same \\frac{n!}{a^{n+1}} formula, with a=1-i.",
     ],
-    example: {
-      integrand: "x^3\\,3^{-x} \\text{ on } (0,\\infty)",
-      work: [
-        "Rewrite the base: 3^{-x} = e^{-x\\ln 3}, so this is \\int_0^\\infty x^3 e^{-x\\ln 3}\\,dx.",
-        "That's the a=\\ln 3 case of \\int_0^\\infty x^n e^{-ax}\\,dx=\\frac{n!}{a^{n+1}}, with n=3.",
-        "\\frac{3!}{(\\ln 3)^4} = \\frac{6}{(\\ln 3)^4}.",
-      ],
-      result: "\\frac{6}{(\\ln 3)^4}",
-    },
+    example: GAMMA_EXAMPLES[0],
+    examples: GAMMA_EXAMPLES,
     pitfalls: [
       "n! here means the ordinary integer factorial (0!=1, and it grows fast) — don't confuse it with the Gamma function's shift, \\Gamma(n+1)=n!, unless a problem genuinely has a non-integer exponent.",
       "The boundary term in the by-parts reduction only vanishes because e^{-x} beats any polynomial as x\\to\\infty — this whole family depends on genuinely exponential (or faster) decay, not merely \\to 0.",
       "A Gaussian integrand (e^{-x^2}, not e^{-x}) is a different animal — it doesn't reduce to a factorial by integration by parts the same way; it needs the dedicated Gaussian/hypersphere approach instead.",
       "The complex-a trick only lands on an elementary real answer when \\mathrm{Re}\\frac{n!}{a^{n+1}} actually simplifies to a real number by hand (as it does for a=1-i, since (1-i)^{n+1} works out to a real or purely imaginary Gaussian integer for every n) — for a generic complex a you'd need the modulus-argument form of a^{n+1}, which is beyond a 'type the number' answer.",
     ],
+    checkYourself: {
+      prompt: "x^4e^{-2x} \\text{ on } [0,\\infty)",
+      answer: "\\frac34",
+      hint: "Either substitute u=2x to land on the base case, or apply \\frac{n!}{a^{n+1}} directly with n=4,\\ a=2.",
+    },
   },
   {
     id: "zeta-series",
