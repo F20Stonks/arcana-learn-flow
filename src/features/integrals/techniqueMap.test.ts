@@ -9,6 +9,7 @@
  * reading TECHNIQUES does).
  */
 import { describe, expect, it } from "vitest";
+import katex from "katex";
 import {
   confusablesFor,
   CROSS_LINKS,
@@ -20,7 +21,17 @@ import {
   TECHNIQUE_FAMILIES,
 } from "./techniqueMap";
 import { TECHNIQUES } from "./techniques";
+import { toMathMode } from "./mathText";
 import type { TechniqueId } from "./types";
+
+// strict:"error" turns KaTeX's warnings (stray unicode, bad spacing) into failures too -- same
+// helper as lessonExamples.test.ts's own `renders`, duplicated rather than imported so importing
+// this file can never accidentally re-register another file's describe/it blocks (that file's own
+// stated rationale for the same duplication).
+const renders = (s: string) => {
+  katex.renderToString(toMathMode(s), { throwOnError: true, strict: "error", displayMode: false });
+  return true;
+};
 
 const ALL_IDS: TechniqueId[] = TECHNIQUES.map((t) => t.id);
 const sortedIds = (ids: readonly TechniqueId[]) => [...ids].sort();
@@ -183,6 +194,25 @@ describe("confusablesFor", () => {
       const confusables = confusablesFor(id);
       expect(new Set(confusables).size).toBe(confusables.length);
     }
+  });
+});
+
+describe("prose renders", () => {
+  // This content is about to be surfaced verbatim on the lessons page (WS-11's map section) --
+  // exactly the class of bug UK_BEE_BURST.md's own WS-8 log caught elsewhere in this feature
+  // (a stray markdown-style $...$ delimiter that this codebase's direct-LaTeX pipeline rejects).
+  // Verified here with the real strict-mode KaTeX pass rather than left to eyeballing screenshots.
+  it.each(TECHNIQUE_FAMILIES.map((f) => [f.id, f] as const))("family %s: bigIdea and every member cue render", (_id, family) => {
+    expect(renders(family.bigIdea)).toBe(true);
+    for (const member of family.members) expect(renders(member.cue)).toBe(true);
+  });
+
+  it.each(STANDALONE_TECHNIQUES.map((s) => [s.id, s] as const))("standalone %s: note renders", (_id, standalone) => {
+    expect(renders(standalone.note)).toBe(true);
+  });
+
+  it.each(CROSS_LINKS.map((l) => [`${l.a}<->${l.b}`, l] as const))("cross-link %s: note renders", (_label, link) => {
+    expect(renders(link.note)).toBe(true);
   });
 });
 
