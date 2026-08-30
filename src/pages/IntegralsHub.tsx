@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import {
   BarChart3,
   BookOpen,
+  CalendarDays,
   Check,
   ClipboardList,
   Dumbbell,
@@ -240,6 +241,21 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Study →
+            </span>
+          </Link>
+
+          <Link
+            to="/integrals/campaign"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <CalendarDays className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Campaign</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              A session for today, counted back from Round 1 — recognition, problems and papers on
+              schedule, plus how ready you actually are.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Plan →
             </span>
           </Link>
 
