@@ -1010,28 +1010,30 @@ export const TECHNIQUES: Technique[] = [
     id: "floor-function",
     name: "Floor function integrals",
     tagline: "The floor has no antiderivative — split the domain at every integer, where it's constant, instead.",
+    prerequisites: ["Standard forms"],
     whenToUse:
       "\\lfloor x\\rfloor, or the fractional part x - \\lfloor x\\rfloor, sits inside the integrand and the bounds span more than one integer. There is no calculus move that touches \\lfloor x\\rfloor directly — the only route in is chopping the interval into pieces where it's constant.",
+    intuition:
+      "There's no calculus trick that fixes this — \\lfloor x\\rfloor is discontinuous at every integer, so it has no derivative to reverse, and no substitution smooths it out. But a DEFINITE integral doesn't actually need an antiderivative; it's just signed area, and \\lfloor x\\rfloor is piecewise CONSTANT, which is the one shape whose area needs no calculus at all — a constant c held over a piece of width w contributes exactly c\\times w, by the plain definition of a rectangle's area. So the whole technique really is: find where the pieces are (the integers), read off the constant value on each one, and add up rectangles. Everything else in the recipe below is just bookkeeping around that one idea.",
     recipe: [
       "List every integer strictly inside the interval of integration — those are exactly where \\lfloor x\\rfloor jumps.",
       "Split \\int_a^b into a sum of integrals over [k,k+1] (with partial pieces at the two ends), replacing \\lfloor x\\rfloor by the fixed integer k on each piece.",
       "Integrate each ordinary piece — \\lfloor x\\rfloor is now just a constant — and sum the results.",
       "Look for the sum to collapse: it's often a short arithmetic series, or telescopes outright.",
     ],
-    example: {
-      integrand: "\\lfloor x\\rfloor \\text{ on } [0,3]",
-      work: [
-        "Split at the integers: [0,1),\\ [1,2),\\ [2,3], where \\lfloor x\\rfloor is 0, 1, 2 respectively.",
-        "\\int_0^3\\lfloor x\\rfloor\\,dx = 0\\cdot 1 + 1\\cdot 1 + 2\\cdot 1.",
-        "Sum the constant pieces.",
-      ],
-      result: "3",
-    },
+    example: FLOOR_EXAMPLES[0],
+    examples: FLOOR_EXAMPLES,
     pitfalls: [
       "The split points are the INTEGERS inside the interval, not the endpoints — double-check you haven't miscounted by one at either end.",
       "For x - \\lfloor x\\rfloor (the sawtooth), each piece [k,k+1) is just \\int_0^1 u\\,du = \\frac{1}{2} after shifting — every full unit interval contributes exactly \\frac{1}{2}, which is worth recognising on sight.",
       "\\lfloor x\\rfloor is discontinuous at every integer, so don't try to differentiate through one — this technique is fundamentally about summing, not about finding an antiderivative.",
+      "\\lfloor x\\rfloor rounds DOWN even for negative x, so \\lfloor -0.5\\rfloor=-1, not 0 — a domain that dips below zero needs exactly the same integer-by-integer care as one that doesn't.",
     ],
+    checkYourself: {
+      prompt: "x-\\lfloor x\\rfloor \\text{ on } [0, 2.5]",
+      answer: "\\frac98",
+      hint: "Two full unit intervals, each worth \\frac12 by the pitfall above, plus a partial piece [2,2.5) where x-\\lfloor x\\rfloor=x-2 ranges from 0 to 0.5.",
+    },
   },
   {
     id: "beta-integrals",
