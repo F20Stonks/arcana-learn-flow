@@ -12,10 +12,10 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Lightbulb } from "lucide-react";
+import { ChevronRight, HelpCircle, Lightbulb, PenLine } from "lucide-react";
 import Tex from "@/features/integrals/components/Tex";
 import { TECHNIQUES } from "@/features/integrals/techniques";
-import type { Technique, WorkedExample } from "@/features/integrals/types";
+import type { Completion, Technique, WorkedExample } from "@/features/integrals/types";
 
 function ExampleCard({ example, label }: { example: WorkedExample; label?: string }) {
   return (
@@ -61,6 +61,79 @@ function PrerequisiteChip({ text }: { text: string }) {
         inner
       )}
     </span>
+  );
+}
+
+/**
+ * A completion problem: the setup steps render exactly like an ExampleCard's `work` list, then a
+ * dashed "gap" box describes what's missing and reveals `answer` on demand — same reveal mechanic as
+ * CheckYourself, but the reader has already been walked most of the way there, which is the whole
+ * point (see Completion's doc comment in types.ts for why this sits between a full worked example
+ * and an unaided problem rather than duplicating either).
+ */
+function CompletionCard({ item, label }: { item: Completion; label?: string }) {
+  const [showAnswer, setShowAnswer] = useState(false);
+  return (
+    <div className="mt-2 rounded-xl bg-accent/50 px-4 py-4">
+      {label && (
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {label}
+        </div>
+      )}
+      <ul className="flex flex-col gap-2">
+        {item.setup.map((s, i) => (
+          <li key={i} className="text-[14px] leading-relaxed text-foreground">
+            <Tex>{s}</Tex>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 rounded-lg border border-dashed border-primary/30 bg-primary/[0.04] px-3 py-3 text-center">
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          <Tex>{item.blank}</Tex>
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowAnswer((v) => !v)}
+          aria-expanded={showAnswer}
+          className="mt-2.5 text-[13px] text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:opacity-80"
+        >
+          {showAnswer ? "Hide completion" : "Show completion"}
+        </button>
+        {showAnswer && (
+          <p className="mt-3 border-t border-border/60 pt-3 text-[14px] leading-relaxed text-foreground">
+            <Tex>{item.answer}</Tex>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A single reflection question — reveal-only, the same mechanic as CheckYourself but with no hint
+ *  stage: there's nothing to nudge towards, only reasoning to reveal. */
+function SelfExplain({ item }: { item: NonNullable<Technique["selfExplain"]> }) {
+  const [showAnswer, setShowAnswer] = useState(false);
+  return (
+    <div className="mt-2 rounded-xl border border-dashed border-primary/30 bg-primary/[0.04] px-4 py-4">
+      <p className="text-center text-[14px] leading-relaxed text-foreground">
+        <Tex>{item.prompt}</Tex>
+      </p>
+      <div className="mt-3 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setShowAnswer((v) => !v)}
+          aria-expanded={showAnswer}
+          className="text-[13px] text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:opacity-80"
+        >
+          {showAnswer ? "Hide answer" : "Show answer"}
+        </button>
+      </div>
+      {showAnswer && (
+        <p className="mt-3 border-t border-border/60 pt-3 text-center text-[14px] leading-relaxed text-foreground">
+          <Tex>{item.answer}</Tex>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -165,6 +238,34 @@ export default function LessonBody({ technique }: { technique: Technique }) {
           label={examples.length > 1 ? `Example ${i + 1} of ${examples.length}` : undefined}
         />
       ))}
+
+      {technique.completions && technique.completions.length > 0 && (
+        <>
+          <h3 className="mt-5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+            <PenLine className="h-3.5 w-3.5" /> Complete it
+          </h3>
+          {technique.completions.map((c, i) => (
+            <CompletionCard
+              key={i}
+              item={c}
+              label={
+                technique.completions!.length > 1
+                  ? `Completion ${i + 1} of ${technique.completions!.length}`
+                  : undefined
+              }
+            />
+          ))}
+        </>
+      )}
+
+      {technique.selfExplain && (
+        <>
+          <h3 className="mt-5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+            <HelpCircle className="h-3.5 w-3.5" /> Think about it
+          </h3>
+          <SelfExplain item={technique.selfExplain} />
+        </>
+      )}
 
       <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
         Where it goes wrong

@@ -18,7 +18,7 @@ import { parse } from "./mathEngine";
 import { normalize } from "./answer";
 import { toMathMode } from "./mathText";
 import { TECHNIQUES } from "./techniques";
-import type { WorkedExample } from "./types";
+import type { Completion, WorkedExample } from "./types";
 
 // strict:"error" turns KaTeX's warnings (stray unicode, bad spacing) into failures too — identical
 // to mathText.test.ts's own `renders` helper, duplicated here rather than imported so importing
@@ -104,6 +104,17 @@ describe("lesson prose renders", () => {
       expect(renders(t.checkYourself.answer)).toBe(true);
       expect(renders(t.checkYourself.hint)).toBe(true);
     }
+
+    for (const c of t.completions ?? []) {
+      for (const s of c.setup) expect(renders(s)).toBe(true);
+      expect(renders(c.blank)).toBe(true);
+      expect(renders(c.answer)).toBe(true);
+    }
+
+    if (t.selfExplain) {
+      expect(renders(t.selfExplain.prompt)).toBe(true);
+      expect(renders(t.selfExplain.answer)).toBe(true);
+    }
   });
 });
 
@@ -159,4 +170,66 @@ describe("lesson examples are actually correct", () => {
       );
     }
   });
+});
+
+interface GradeableCompletion {
+  label: string;
+  c: Completion & Required<Pick<Completion, "integrandExpr" | "resultExpr" | "domain" | "kind">>;
+}
+
+// Same gate as `gradeable` above, over Technique.completions instead of .examples — see Completion's
+// doc comment in types.ts: a completion carries the mirror fields exactly when `setup` + `blank` +
+// `answer` together state a literal evaluatable integral, which is true for nearly every one WS-10
+// wrote (the exception would be a completion whose gap is a qualitative or algebraic-identity step
+// rather than a final closed form — none exist yet, so this set is expected to track completions.ts
+// one-to-one for now).
+const gradeableCompletions: GradeableCompletion[] = TECHNIQUES.flatMap((t) =>
+  (t.completions ?? [])
+    .map((c, i) => ({ label: `${t.id}#${i}`, c }))
+    .filter(
+      (g): g is GradeableCompletion =>
+        g.c.integrandExpr !== undefined &&
+        g.c.resultExpr !== undefined &&
+        g.c.domain !== undefined &&
+        g.c.kind !== undefined,
+    ),
+);
+
+describe("completion problems are actually correct", () => {
+  it("has at least the completions WS-10 added", () => {
+    // Same purpose as the `gradeable` guard above: fails loudly on a dropped field rather than
+    // letting the describe.each below silently iterate zero cases.
+    expect(gradeableCompletions.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it.each(gradeableCompletions.map((g) => [g.label, g.c] as const))(
+    "%s: the completed answer is right",
+    (_label, c) => {
+      const [a, b] = c.domain;
+      if (c.kind === "indefinite") {
+        const F = fn(c.resultExpr);
+        const f = fn(c.integrandExpr);
+        const margin = (b - a) * 0.05;
+        const h = Math.min(1e-4, (b - a) * 1e-4);
+        let checked = 0;
+        for (let i = 0; i < 9; i++) {
+          const x = a + margin + ((b - a - 2 * margin) * (i + 0.5)) / 9;
+          const dF = derivative(F, x, h);
+          const target = f(x);
+          if (dF === null || target === null) continue;
+          checked++;
+          const tol = 1e-5 * (1 + Math.abs(target));
+          expect(Math.abs(dF - target), `at x=${x.toFixed(3)}`).toBeLessThan(tol);
+        }
+        expect(checked, "nothing was evaluable on this completion's own domain").toBeGreaterThanOrEqual(7);
+      } else {
+        const f = fn(c.integrandExpr);
+        const numeric = quadrature(f, a, b);
+        const expected = parse(normalize(c.resultExpr)).compile().evaluate({}) as number;
+        expect(Math.abs(numeric - expected), `quadrature gave ${numeric}`).toBeLessThan(
+          1e-4 * (1 + Math.abs(expected)),
+        );
+      }
+    },
+  );
 });

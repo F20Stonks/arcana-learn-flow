@@ -117,6 +117,35 @@ export interface WorkedExample {
   kind?: ProblemKind;
 }
 
+/**
+ * A completion problem: work shown down to a gap, then the gap itself. Evidence on retention (see
+ * UK_BEE_BURST.md WS-10) says a partially worked example with the last step or two left blank beats
+ * both a fully worked example and an unaided problem for a learner at this stage — it forces the
+ * reader to actually execute the technique's characteristic final move, rather than only recognising
+ * it on the page.
+ *
+ * `integrandExpr`/`resultExpr`/`domain`/`kind` are the same optional machine-checkable-mirror pattern
+ * as `WorkedExample` — set whenever `setup` + `blank` + `answer` together state a literal evaluatable
+ * integral (the overwhelming majority of completions), so lessonExamples.test.ts can differentiate or
+ * numerically integrate the claim exactly as it already does for graduated examples. `resultExpr` is
+ * the FULL closed form once the blank is filled in, not just the filled-in piece — the thing being
+ * checked is "this integral equals this," the same claim a WorkedExample makes, just revealed in two
+ * stages instead of one.
+ */
+export interface Completion {
+  /** LaTeX lines already filled in, prose-in-math exactly like WorkedExample.work — starts from the
+   *  integral itself and narrates the steps down to (but not including) the gap. */
+  setup: string[];
+  /** What's missing, described for the reader — shown before the reveal, alongside the setup. */
+  blank: string;
+  /** The correct completion, revealed on demand. */
+  answer: string;
+  integrandExpr?: string;
+  resultExpr?: string;
+  domain?: [number, number];
+  kind?: ProblemKind;
+}
+
 export interface Technique {
   id: TechniqueId;
   name: string;
@@ -161,6 +190,20 @@ export interface Technique {
    * (a hint, then the answer), not a live-graded input: this is a self-check, not another Problem.
    */
   checkYourself?: { prompt: string; answer: string; hint: string };
+  /**
+   * Partially worked examples — see `Completion`'s own doc comment for why these exist. Zero or more
+   * per technique; unlike `examples`, there is no legacy singular field to keep in sync with.
+   */
+  completions?: Completion[];
+  /**
+   * One question that forces processing rather than recognition — "why this substitution and not the
+   * obvious one," not "what is the substitution." Reveal-only, exactly like `checkYourself`'s shape
+   * and rendering convention, but there is no numeric answer to grade: this is prose reasoning, so it
+   * carries no machine-checkable mirror the way `checkYourself.answer` sometimes implicitly does via
+   * the technique's own worked examples. Any numeric or algebraic claim written into `answer` is still
+   * hand-verified before shipping, per the same guardrail as everything else in this file.
+   */
+  selfExplain?: { prompt: string; answer: string };
 }
 
 /** The verdict a graded attempt produces. */

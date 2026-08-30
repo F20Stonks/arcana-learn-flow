@@ -702,6 +702,36 @@ export const TECHNIQUES: Technique[] = [
       answer: "x^5 - 4\\sqrt{x} + C",
       hint: "Rewrite \\frac{2}{\\sqrt x} as 2x^{-1/2} before integrating.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\left(6x^2+\\frac1x-\\frac3{x^4}\\right)dx — split the sum and rewrite every term as a power of x first: 6x^2 stays; \\frac1x is the exception to the power rule; -\\frac3{x^4}=-3x^{-4}.",
+          "Apply the power rule to the two ordinary terms: \\int6x^2\\,dx=2x^3, and \\int-3x^{-4}\\,dx=-3\\cdot\\frac{x^{-3}}{-3}=x^{-3}.",
+        ],
+        blank: "What does the remaining \\frac1x term integrate to, and why can't the ordinary power rule reach it?",
+        answer: "\\ln|x| — the power rule \\frac{x^{n+1}}{n+1} would need n+1=0 there, i.e. dividing by zero, so \\frac1x is the one power with its own standard form. Full answer: 2x^3+\\ln|x|+x^{-3}+C.",
+        integrandExpr: "6*x^2 + 1/x - 3/x^4",
+        resultExpr: "2*x^3 + log(x) + x^(-3)",
+        domain: [1, 3],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\left(\\sec^2x-\\frac3{1+x^2}\\right)dx — split into two standard forms: \\int\\sec^2x\\,dx-3\\int\\frac{dx}{1+x^2}.",
+          "The first is one of the six reflex forms: \\int\\sec^2x\\,dx=\\tan x.",
+        ],
+        blank: "The second piece, and the combined answer.",
+        answer: "\\int\\frac{dx}{1+x^2}=\\arctan x, so the second piece is -3\\arctan x. Full answer: \\tan x-3\\arctan x+C.",
+        integrandExpr: "1/cos(x)^2 - 3/(1+x^2)",
+        resultExpr: "tan(x) - 3*atan(x)",
+        domain: [-1, 1],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "\\frac1{\\sqrt{1-x^2}} integrates to \\arcsin x by the standard-forms list, but \\sqrt{1-x^2} itself (no reciprocal) is not on that list at all. Why does moving the same expression from a denominator to a bare factor change everything, and what would you actually reach for on \\int\\sqrt{1-x^2}\\,dx?",
+      answer: "The standard-forms list is just memorised derivatives read backwards — \\frac1{\\sqrt{1-x^2}} is on it because that IS \\frac d{dx}\\arcsin x, verbatim, with nothing to derive. \\sqrt{1-x^2} is a perfectly good elementary function to integrate, but it isn't ANY memorised function's derivative, so no amount of pattern-matching against the list finds it — you have to derive a fresh antiderivative, which is exactly what trigonometric substitution does (x=\\sin\\theta turns the root into \\cos\\theta via the Pythagorean identity, and \\int\\cos^2\\theta\\,d\\theta is a new integral, not a lookup). Two integrands that look like near-twins can need completely different amounts of work.",
+    },
   },
   {
     id: "u-sub",
@@ -728,6 +758,37 @@ export const TECHNIQUES: Technique[] = [
       prompt: "3x^2e^{x^3}",
       answer: "e^{x^3} + C",
       hint: "The derivative of the exponent, x^3, is sitting right there as a factor — that's the tell.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_0^2 x\\sqrt{x^2+1}\\,dx — inside function u=x^2+1, so du=2x\\,dx, giving x\\,dx=\\tfrac12\\,du.",
+          "Convert the bounds along with the substitution rather than converting back at the end: x=0\\Rightarrow u=1, and x=2\\Rightarrow u=5.",
+          "The integral becomes \\tfrac12\\int_1^5\\sqrt u\\,du=\\tfrac12\\left[\\tfrac23u^{3/2}\\right]_1^5=\\tfrac13\\left[u^{3/2}\\right]_1^5.",
+        ],
+        blank: "Evaluate at the two converted bounds and finish — do you still need to substitute x^2+1 back in anywhere?",
+        answer: "\\tfrac13\\left(5^{3/2}-1^{3/2}\\right)=\\tfrac13\\left(5\\sqrt5-1\\right). No — the bounds were already converted to u, so evaluating directly in u gives the final number; substituting back would mean re-converting to x-bounds you've already used, undoing useful work rather than finishing it.",
+        integrandExpr: "x*sqrt(x^2+1)",
+        resultExpr: "(1/3)*(5*sqrt(5)-1)",
+        domain: [0, 2],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int4x(x^2-3)^5\\,dx — inside function u=x^2-3, so du=2x\\,dx.",
+          "The integrand has 4x, not 2x — but that's just a constant multiple away: 4x\\,dx=2\\cdot(2x\\,dx)=2\\,du.",
+        ],
+        blank: "Rewrite fully in u, integrate, and substitute back.",
+        answer: "2\\int u^5\\,du=2\\cdot\\frac{u^6}6+C=\\frac{u^6}3+C=\\frac{(x^2-3)^6}3+C.",
+        integrandExpr: "4*x*(x^2-3)^5",
+        resultExpr: "(x^2-3)^6/3",
+        domain: [-1, 1],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "For an indefinite integral you always substitute u back for x at the end — but for a definite integral with converted bounds, you don't, and substituting back anyway (using the ORIGINAL x-bounds on a u-shaped antiderivative) is a common way to get a garbage number. Why does converting the bounds change what \\text{'finishing'} the problem means?",
+      answer: "\\int_a^bf(g(x))g'(x)\\,dx and \\int_{g(a)}^{g(b)}f(u)\\,du are literally the same number — the substitution didn't just change the integrand, it changed which variable the two boundary numbers belong to. An indefinite integral has no boundary numbers attached, only x itself, so the antiderivative MUST be handed back in x to mean anything as a function of x. But once you've converted the bounds to u-values, evaluating the u-antiderivative at those u-bounds already gives the correct signed area — converting back to x afterward and reusing the ORIGINAL x-bounds on a function that's secretly still in u terms double-processes the substitution and answers a different question entirely.",
     },
   },
   {
@@ -757,6 +818,38 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\sin x - x\\cos x + C",
       hint: "u = x (it gets simpler when differentiated), dv = \\sin x\\,dx.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\arctan x\\,dx — no visible product, but LIATE still applies: u=\\arctan x,\\ dv=dx (the dx itself is the second factor).",
+          "du=\\frac{dx}{1+x^2},\\quad v=x.",
+          "Assemble: uv-\\int v\\,du=x\\arctan x-\\int\\frac x{1+x^2}\\,dx.",
+        ],
+        blank: "Finish the remaining integral (it's a plain u-substitution) and combine.",
+        answer: "\\int\\frac x{1+x^2}\\,dx=\\tfrac12\\ln(1+x^2) (substitute w=1+x^2), so the full answer is x\\arctan x-\\tfrac12\\ln(1+x^2)+C.",
+        integrandExpr: "atan(x)",
+        resultExpr: "x*atan(x) - (1/2)*log(1+x^2)",
+        domain: [-1, 1],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "I=\\int e^x\\sin x\\,dx — first pass: u=\\sin x,\\ dv=e^x\\,dx, so du=\\cos x\\,dx,\\ v=e^x. I=e^x\\sin x-\\int e^x\\cos x\\,dx.",
+          "The new integral is the same shape — apply parts again, same choice of which factor is u: u=\\cos x,\\ dv=e^x\\,dx, so du=-\\sin x\\,dx,\\ v=e^x. \\int e^x\\cos x\\,dx=e^x\\cos x+\\int e^x\\sin x\\,dx=e^x\\cos x+I.",
+          "Substitute that back into the first line: I=e^x\\sin x-\\left(e^x\\cos x+I\\right)=e^x\\sin x-e^x\\cos x-I.",
+        ],
+        blank: "This is one equation in I, not a dead end — solve for it.",
+        answer: "2I=e^x\\sin x-e^x\\cos x, so I=\\frac{e^x(\\sin x-\\cos x)}2+C (the +C only appears once you've actually solved for the indefinite integral, since each application of parts only fixed things up to a constant).",
+        integrandExpr: "exp(x)*sin(x)",
+        resultExpr: "(exp(x)*(sin(x)-cos(x)))/2",
+        domain: [-1, 1],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "LIATE ranks logs and inverse trig functions ABOVE plain algebraic terms like x^2 for u — but \\frac d{dx}\\ln x=\\frac1x doesn't look obviously simpler than \\ln x itself the way \\frac d{dx}x^2=2x is simpler than x^2. Why do logs and inverse trig still go first?",
+      answer: "\\text{'Simpler when differentiated'} is the right heuristic for choosing between two algebraic-type factors (x^2 vs x), but \\ln x and \\arctan x have no elementary antiderivative of their own to fall back on as dv — if you tried dv=\\ln x\\,dx, you'd need v=\\int\\ln x\\,dx first, which is a harder problem than the one you started with. Putting them as u sidesteps this: their derivative (\\frac1x or \\frac1{1+x^2}) is an ordinary rational function, easy to integrate against whatever v turns out to be. LIATE isn't really ranking how much simpler the derivative looks in isolation — it's ranking which factor is safe to differentiate against which factor you actually know how to integrate, and logs and inverse trig fail the second test completely.",
+    },
   },
   {
     id: "trig-identity",
@@ -784,6 +877,37 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac x2 - \\frac{\\sin2x}4 + C",
       hint: "Halve the degree with \\sin^2x=\\frac{1-\\cos2x}2 first — this one won't substitute directly.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\sin^4x\\cos^3x\\,dx — the cos power is odd: peel one off, \\sin^4x\\cos^2x\\cdot\\cos x.",
+          "Convert the even part with \\cos^2x=1-\\sin^2x: \\sin^4x(1-\\sin^2x)\\cos x=(\\sin^4x-\\sin^6x)\\cos x.",
+          "Now u=\\sin x,\\ du=\\cos x\\,dx, leaving \\int(u^4-u^6)\\,du.",
+        ],
+        blank: "Integrate in u and substitute back.",
+        answer: "\\frac{u^5}5-\\frac{u^7}7+C=\\frac{\\sin^5x}5-\\frac{\\sin^7x}7+C.",
+        integrandExpr: "sin(x)^4*cos(x)^3",
+        resultExpr: "sin(x)^5/5 - sin(x)^7/7",
+        domain: [0.3, 2.5],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\sin^2x\\cos^2x\\,dx — both powers are even AND there's a product: combine first using \\sin x\\cos x=\\tfrac12\\sin2x, so \\sin^2x\\cos^2x=(\\sin x\\cos x)^2=\\tfrac14\\sin^22x.",
+          "That's a new even power, of \\sin2x this time — halve ITS degree the same way: \\sin^22x=\\tfrac{1-\\cos4x}2, so the integrand becomes \\tfrac18(1-\\cos4x).",
+        ],
+        blank: "Integrate termwise, watching for the doubled-angle factor in the second term.",
+        answer: "\\tfrac18\\left(x-\\tfrac{\\sin4x}4\\right)+C=\\tfrac x8-\\tfrac{\\sin4x}{32}+C.",
+        integrandExpr: "sin(x)^2*cos(x)^2",
+        resultExpr: "x/8 - sin(4*x)/32",
+        domain: [0.3, 2.5],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "\\sin^3x is handled by peeling off one factor and using \\sin^2x=1-\\cos^2x; \\sin^4x is handled by halving the degree with the double-angle identity instead. Why does the SAME-looking problem (an integer power of \\sin x) split into two completely different techniques depending on parity, and what goes wrong if you try to peel a factor off \\sin^4x the same way?",
+      answer: "Peeling one factor off an odd power always leaves an EVEN power behind (\\sin^3x=\\sin^2x\\cdot\\sin x, and 3-1=2 is even) — and \\sin^2x=1-\\cos^2x turns that even power into a plain polynomial in \\cos x, with the lone leftover \\sin x acting as exactly du for u=\\cos x. Try peeling a factor off the even power \\sin^4x the same way and you get \\sin^3x\\cdot\\sin x — but 4-1=3 is odd, so the identity has no even power left to convert; \\sin^3x itself still contains a stray, unconvertible \\sin x. The peel-and-convert move only closes up when peeling ONE factor leaves an EVEN remainder, which is exactly the odd-power case; an even total power has no such split, so it needs the double-angle identity instead, which works on any power by attacking the angle rather than by peeling a factor.",
+    },
   },
   {
     id: "trig-sub",
@@ -810,6 +934,37 @@ export const TECHNIQUES: Technique[] = [
       prompt: "\\frac1{(x^2+4)^{3/2}}",
       answer: "\\frac{x}{4\\sqrt{x^2+4}} + C",
       hint: "x=2\\tan\\theta turns x^2+4 into 4\\sec^2\\theta, and the power \\tfrac32 collapses into a plain \\cos\\theta integral.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int\\frac{\\sqrt{x^2-16}}x\\,dx — matches \\sqrt{x^2-a^2} with a=4: put x=4\\sec\\theta, so dx=4\\sec\\theta\\tan\\theta\\,d\\theta and \\sqrt{x^2-16}=4\\tan\\theta.",
+          "Substitute everything: \\frac{4\\tan\\theta}{4\\sec\\theta}\\cdot4\\sec\\theta\\tan\\theta\\,d\\theta=4\\tan^2\\theta\\,d\\theta.",
+          "Convert with \\tan^2\\theta=\\sec^2\\theta-1: 4\\int(\\sec^2\\theta-1)\\,d\\theta=4\\tan\\theta-4\\theta.",
+        ],
+        blank: "Draw the triangle (adjacent 4, opposite \\sqrt{x^2-16}, hypotenuse x) and convert both \\tan\\theta and \\theta back to x.",
+        answer: "\\tan\\theta=\\frac{\\sqrt{x^2-16}}4, and \\theta=\\arccos\\frac4x (from \\cos\\theta=\\text{adjacent}/\\text{hypotenuse}), so the full answer is \\sqrt{x^2-16}-4\\arccos\\!\\left(\\frac4x\\right)+C.",
+        integrandExpr: "sqrt(x^2-16)/x",
+        resultExpr: "sqrt(x^2-16) - 4*acos(4/x)",
+        domain: [5, 8],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\frac x{\\sqrt{9-x^2}}\\,dx — before reaching for x=3\\sin\\theta, check whether the numerator is already (a multiple of) the derivative of what's under the root. Here \\frac d{dx}(9-x^2)=-2x, and the numerator is x — off by only a constant.",
+          "That means a plain substitution beats trig substitution here: u=9-x^2,\\ du=-2x\\,dx, so x\\,dx=-\\tfrac12du.",
+        ],
+        blank: "Finish with the plain substitution — no triangle needed.",
+        answer: "-\\tfrac12\\int\\frac{du}{\\sqrt u}=-\\tfrac12\\cdot2\\sqrt u+C=-\\sqrt u+C=-\\sqrt{9-x^2}+C.",
+        integrandExpr: "x/sqrt(9-x^2)",
+        resultExpr: "-sqrt(9-x^2)",
+        domain: [-2, 2],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "\\sqrt{a^2-x^2} calls for x=a\\sin\\theta, \\sqrt{a^2+x^2} calls for x=a\\tan\\theta, and \\sqrt{x^2-a^2} calls for x=a\\sec\\theta. Why those three specific functions, and not (say) x=a\\cos\\theta for the first one, which has the same range?",
+      answer: "Each substitution exists to turn a^2\\pm x^2 into a PERFECT SQUARE via a Pythagorean identity, and each of the three identities (1-\\sin^2=\\cos^2,\\ 1+\\tan^2=\\sec^2,\\ \\sec^2-1=\\tan^2) matches exactly one sign pattern. x=a\\sin\\theta works because a^2-a^2\\sin^2\\theta=a^2\\cos^2\\theta lines up the minus sign in a^2-x^2 with the minus sign in 1-\\sin^2\\theta — and x=a\\cos\\theta would work by the identical algebra (\\sin and \\cos satisfy the same identity with the roles swapped); sine is simply the convention, chosen so \\theta increases with x over the usual range rather than running backwards. \\tan and \\sec are less interchangeable: theirs is the one standard trig identity that comes in a PLUS form (1+\\tan^2=\\sec^2), which is what a^2+x^2 needs, and the same identity rearranged (\\sec^2-1=\\tan^2) is what x^2-a^2 needs — \\sin and \\cos have no version of their identity with a plus sign at all, which is exactly why they only ever appear in the a^2-x^2 case.",
     },
   },
   {
@@ -839,6 +994,38 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac14\\ln\\left|\\frac{x-2}{x+2}\\right| + C",
       hint: "Factor the denominator first: x^2-4=(x-2)(x+2).",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\frac{3x+5}{(x+2)^2}\\,dx — a repeated factor needs both terms: \\frac{3x+5}{(x+2)^2}=\\frac A{x+2}+\\frac B{(x+2)^2}, i.e. 3x+5=A(x+2)+B.",
+          "x=-2 gives B=-1; matching the x-coefficient gives A=3.",
+          "So the integrand splits into \\frac3{x+2}-\\frac1{(x+2)^2}.",
+        ],
+        blank: "Integrate each piece.",
+        answer: "3\\ln|x+2|+\\frac1{x+2}+C (the second piece is a plain power of (x+2): \\int-(x+2)^{-2}\\,dx=(x+2)^{-1}).",
+        integrandExpr: "(3*x+5)/(x+2)^2",
+        resultExpr: "3*log(x+2) + 1/(x+2)",
+        domain: [-1, 3],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\frac4{x(x^2+4)}\\,dx — set up with a linear top over the irreducible quadratic: \\frac4{x(x^2+4)}=\\frac Ax+\\frac{Bx+C}{x^2+4}, i.e. 4=A(x^2+4)+(Bx+C)x.",
+          "Match coefficients: the x^2 term gives A+B=0; the x term gives C=0; the constant gives 4A=4\\Rightarrow A=1, so B=-1.",
+          "The integrand splits into \\frac1x-\\frac x{x^2+4} — a plain log, and a log-shaped piece (the numerator is exactly half the denominator's derivative).",
+        ],
+        blank: "Integrate both pieces — and notice there's no arctan here, even though an irreducible quadratic usually produces one. Why not, this time?",
+        answer: "\\ln|x|-\\tfrac12\\ln(x^2+4)+C. The arctan piece needs a genuine leftover CONSTANT numerator after splitting off the \\frac{Bx}{x^2+4} log part — here C=0 exactly, so there's nothing left to produce an arctan; the quadratic's own numerator was entirely derivative-shaped, with no constant remainder.",
+        integrandExpr: "4/(x*(x^2+4))",
+        resultExpr: "log(x) - (1/2)*log(x^2+4)",
+        domain: [0.5, 3],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The recipe insists on polynomial long division first whenever the numerator's degree is at least the denominator's. What actually goes wrong with the method — not just \\text{'you get the wrong answer'} but why — if you skip that step and set up \\frac A{x-a}+\\frac B{x-b}+\\cdots directly against a top-heavy fraction?",
+      answer: "\\frac A{x-a}+\\frac B{x-b}+\\cdots is a sum of terms that each vanish as x\\to\\infty (every one behaves like a constant over x for large x), so ANY such sum recombines into a fraction whose numerator has strictly SMALLER degree than its denominator — that's a structural property of the partial-fraction form itself, not a choice you make while solving. A top-heavy fraction (numerator degree \\geq denominator degree) does not go to zero as x\\to\\infty — it grows like a polynomial — so no combination of A,B,\\ldots can ever reproduce it; the system of equations you'd write down to solve for the constants is either inconsistent or (worse) silently produces numbers that don't actually recombine to the fraction you started with. Dividing first peels off the polynomial part explicitly, leaving a genuinely proper fraction that the partial-fraction form can represent.",
+    },
   },
   {
     id: "complete-square",
@@ -866,6 +1053,38 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\arcsin\\!\\left(\\frac{x+1}2\\right) + C",
       hint: "Complete the square on 3-2x-x^2 — factor out the minus sign on the x^2 term first.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\frac1{\\sqrt{-x^2+4x}}\\,dx — the x^2 coefficient is negative, so factor that out first: -x^2+4x=-(x^2-4x).",
+          "Complete the square inside the brackets: x^2-4x=(x-2)^2-4, so -x^2+4x=-\\left[(x-2)^2-4\\right]=4-(x-2)^2.",
+          "Substitute u=x-2,\\ du=dx: the integral is \\int\\frac{du}{\\sqrt{4-u^2}} — a plain arcsin standard form with a=2.",
+        ],
+        blank: "Finish with the arcsin standard form and substitute back.",
+        answer: "\\arcsin\\frac u2+C=\\arcsin\\!\\left(\\frac{x-2}2\\right)+C.",
+        integrandExpr: "1/sqrt(-x^2+4*x)",
+        resultExpr: "asin((x-2)/2)",
+        domain: [1, 3],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\frac{x-2}{x^2+2x+2}\\,dx — split the numerator against the denominator's derivative, D'(x)=2x+2: write x-2=\\lambda(2x+2)+\\mu.",
+          "Match the x-coefficient: 2\\lambda=1\\Rightarrow\\lambda=\\tfrac12. Match the constant: 2\\lambda+\\mu=-2\\Rightarrow\\mu=-3 (check: \\tfrac12(2x+2)-3=x+1-3=x-2, correct).",
+          "Split: \\tfrac12\\int\\frac{2x+2}{x^2+2x+2}\\,dx-3\\int\\frac{dx}{x^2+2x+2}. The first piece is \\tfrac12\\ln(x^2+2x+2).",
+        ],
+        blank: "Complete the square on the second piece's denominator and finish.",
+        answer: "x^2+2x+2=(x+1)^2+1, so \\int\\frac{dx}{x^2+2x+2}=\\arctan(x+1), giving -3\\arctan(x+1). Full answer: \\tfrac12\\ln(x^2+2x+2)-3\\arctan(x+1)+C.",
+        integrandExpr: "(x-2)/(x^2+2*x+2)",
+        resultExpr: "(1/2)*log(x^2+2*x+2) - 3*atan(x+1)",
+        domain: [-2, 2],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "For a monic quadratic x^2+bx+c, completing the square always gives \\left(x+\\tfrac b2\\right)^2+\\left(c-\\tfrac{b^2}4\\right). Why does the SIGN of that leftover constant, c-\\tfrac{b^2}4, decide whether you finish with \\arctan (as in the lesson's worked examples) or with a factored log (which is really Partial fractions territory) — and what does that sign actually measure about the original quadratic?",
+      answer: "c-\\tfrac{b^2}4 is just -\\tfrac14 times the discriminant b^2-4c, so its sign is the discriminant's sign flipped. When the leftover is POSITIVE (discriminant negative), the quadratic has no real roots — it never factors over the reals, which is exactly why Partial fractions has no linear pieces to split it into, and completing the square lands on u^2+a^2, the \\arctan shape. When the leftover is NEGATIVE (discriminant positive), the quadratic DOES have two real roots, and completing the square lands on u^2-a^2 instead — which factors immediately as (u-a)(u+a), exactly Partial fractions' territory (\\frac1{u^2-a^2} splits into two linear fractions and integrates to a log). The two techniques aren't really separate tools for unrelated situations — they're the same complete-the-square-and-see-what's-left move, branching on the one number (the discriminant) that already tells you whether the denominator factors over the reals at all.",
+    },
   },
   {
     id: "symmetry",
@@ -892,6 +1111,36 @@ export const TECHNIQUES: Technique[] = [
       prompt: "\\frac{x\\sin x}{1+\\cos^2x} \\text{ on } [0,\\pi]",
       answer: "\\frac{\\pi^2}{4}",
       hint: "Apply king's rule with a=\\pi (using \\sin(\\pi-x)=\\sin x and \\cos(\\pi-x)=-\\cos x), add the two versions of the integral, then finish the leftover \\pi\\int f(x)\\,dx with u=\\cos x.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_{-3}^3\\frac{x^5}{x^4+1}\\,dx — check parity: f(-x)=\\frac{(-x)^5}{(-x)^4+1}=\\frac{-x^5}{x^4+1}=-f(x) — the integrand is odd (an odd power on top, an even one on the bottom, and odd/even is odd).",
+          "The interval [-3,3] is symmetric about 0.",
+        ],
+        blank: "What's the value of the integral, and why is no antiderivative needed at all?",
+        answer: "0. An odd function's graph on [-3,0] is the exact upside-down mirror of its graph on [0,3] — f(-x)=-f(x) means the value at -x is minus the value at x, for every x — so the signed area exactly cancels, however complicated \\frac{x^5}{x^4+1}\\text{'s actual antiderivative would be to find.}",
+        integrandExpr: "x^5/(x^4+1)",
+        resultExpr: "0",
+        domain: [-3, 3],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "I=\\int_0^{\\pi/2}\\frac{\\sin^3x}{\\sin^3x+\\cos^3x}\\,dx. King's rule with a=\\tfrac\\pi2 swaps \\sin and \\cos (since \\sin\\left(\\tfrac\\pi2-x\\right)=\\cos x and \\cos\\left(\\tfrac\\pi2-x\\right)=\\sin x).",
+          "So I=\\int_0^{\\pi/2}\\frac{\\cos^3x}{\\cos^3x+\\sin^3x}\\,dx as well — same value, denominator unchanged (just reordered), only the numerator swapped.",
+        ],
+        blank: "Add the two expressions for I and finish.",
+        answer: "2I=\\int_0^{\\pi/2}\\frac{\\sin^3x+\\cos^3x}{\\sin^3x+\\cos^3x}\\,dx=\\int_0^{\\pi/2}1\\,dx=\\frac\\pi2, so I=\\frac\\pi4 — exactly the same answer as the n=1 case in the lesson's own worked example, and by the identical argument this works for ANY power n, not just 1 or 3.",
+        integrandExpr: "sin(x)^3/(sin(x)^3+cos(x)^3)",
+        resultExpr: "pi/4",
+        domain: [0, Math.PI / 2],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "King's rule gives you a second, equally valid expression for the SAME integral I — but by itself, that second expression is usually no easier to evaluate than the first (in the completion above, \\frac{\\cos^3x}{\\cos^3x+\\sin^3x} is no more tractable alone than \\frac{\\sin^3x}{\\sin^3x+\\cos^3x} was). Why does ADDING the two expressions together unlock the problem when neither one alone does?",
+      answer: "The two expressions are equally hard as STANDALONE integrals because they're structurally the same shape — swapping \\sin and \\cos doesn't make a cubic-in-trig quotient any easier to antidifferentiate on its own. But I is a single NUMBER, and King's rule says two different-looking integrand expressions both equal that same number — so I+I=2I can be computed either by literally doubling one hard integral, or, more usefully, by adding the two INTEGRANDS first and integrating the SUM. That sum has the same denominator on both terms, so it collapses algebraically (the numerator becomes \\sin^3x+\\cos^3x, identical to the denominator) — a cancellation that only exists once the two pieces are combined under one integral sign, before integrating either. Neither original expression contains that cancellation on its own; it only appears in their sum.",
     },
   },
   {
@@ -922,6 +1171,38 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\ln 2",
       hint: "Same family as the worked example: I(a)=\\int_0^1\\frac{x^a-1}{\\ln x}\\,dx. Which value of a matches this integrand?",
     },
+    completions: [
+      {
+        setup: [
+          "Generalize: let I(a)=\\int_0^\\infty\\frac{\\sin(ax)}xe^{-x}\\,dx, so the target is I(1).",
+          "Differentiate under the integral sign: \\frac{\\partial}{\\partial a}\\sin(ax)=x\\cos(ax), and that x cancels the \\frac1x exactly, giving I'(a)=\\int_0^\\infty\\cos(ax)e^{-x}\\,dx.",
+          "This is a standard Laplace-type integral: writing \\cos(ax)=\\operatorname{Re}(e^{iax}), I'(a)=\\operatorname{Re}\\int_0^\\infty e^{-(1-ia)x}\\,dx=\\operatorname{Re}\\frac1{1-ia}=\\operatorname{Re}\\frac{1+ia}{1+a^2}=\\frac1{1+a^2}.",
+        ],
+        blank: "Integrate I'(a) back in a, pin the constant, and evaluate at a=1.",
+        answer: "I(a)=\\arctan a+C. At a=0 the integrand is identically 0 (\\sin0=0), so I(0)=0=\\arctan0+C, giving C=0. So I(a)=\\arctan a, and I(1)=\\arctan1=\\frac\\pi4.",
+        integrandExpr: "sin(x)*exp(-x)/x",
+        resultExpr: "pi/4",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "Generalize: let I(a)=\\int_0^\\infty\\frac{e^{-x^2}-e^{-ax^2}}x\\,dx, so the target is I(4).",
+          "Differentiate under the integral sign: the e^{-x^2} term is constant in a and vanishes, and \\frac{\\partial}{\\partial a}\\left(-e^{-ax^2}\\right)=x^2e^{-ax^2} — the awkward \\frac1x cancels exactly (one factor of x is left over, not zero), giving I'(a)=\\int_0^\\infty xe^{-ax^2}\\,dx.",
+          "That's an easy substitution (u=ax^2): I'(a)=\\frac1{2a}.",
+        ],
+        blank: "Integrate back in a, then pin the constant — notice a=0 does NOT make this integral trivial here (e^{-0\\cdot x^2}=1, not 0), so find the value of a that DOES.",
+        answer: "I(a)=\\tfrac12\\ln a+C. At a=1, the two exponentials in the original integrand are identical, so the numerator is 0 everywhere and I(1)=0 — giving \\tfrac12\\ln1+C=0, so C=0. Hence I(a)=\\tfrac12\\ln a, and I(4)=\\tfrac12\\ln4=\\ln2.",
+        integrandExpr: "(exp(-x^2)-exp(-4*x^2))/x",
+        resultExpr: "log(2)",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "Differentiating under the integral sign swaps \\frac d{da} and \\int — two operations that don't obviously commute in general. What could actually go wrong if you did this carelessly, and what property of the two worked examples' integrands makes the swap safe?",
+      answer: "\\frac d{da}\\int f(x,a)\\,dx and \\int\\frac{\\partial f}{\\partial a}\\,dx can differ when the integrand's behaviour changes too violently as a varies near the value you care about — e.g. if a singularity of f in x moves as a changes, or the integral's own convergence depends delicately on a (finite for one a but divergent for a nearby one is an instant warning sign). In both worked examples here, the integrand and its a-derivative stay bounded and well-behaved on an open interval of a around the value used — \\frac{e^{-x}-e^{-ax}}x has no singularity in x for any a near 2 (the apparent \\frac1x singularity at x=0 is removable, since the numerator also \\to0 there), and the same holds for \\frac{x^a-1}{\\ln x} near a=2. That good behaviour is what licenses swapping the two operations — a fact usually justified rigorously via the dominated convergence theorem, well beyond what's needed by name here — and the technique becomes unsafe exactly when a problem's own parameter range crosses a singularity or a boundary of convergence, which is precisely the first pitfall's warning.",
+    },
   },
   {
     id: "t-sub",
@@ -949,6 +1230,37 @@ export const TECHNIQUES: Technique[] = [
       prompt: "\\frac1{1+\\sin x+\\cos x}",
       answer: "\\ln\\left|1+\\tan\\frac x2\\right| + C",
       hint: "Same substitution — express \\sin x+\\cos x in t, and don't forget the \\frac2{1+t^2} from dx.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int\\frac{dx}{5-3\\cos x} — substitute \\cos x=\\frac{1-t^2}{1+t^2}: 5-3\\cos x=\\frac{5(1+t^2)-3(1-t^2)}{1+t^2}=\\frac{2+8t^2}{1+t^2}=\\frac{2(1+4t^2)}{1+t^2}.",
+          "So \\frac1{5-3\\cos x}=\\frac{1+t^2}{2(1+4t^2)}, and multiplying by dx=\\frac2{1+t^2}\\,dt cancels the (1+t^2) exactly, leaving \\frac1{1+4t^2}\\,dt.",
+        ],
+        blank: "Integrate (a standard arctan form, just with a coefficient inside) and back-substitute.",
+        answer: "\\int\\frac{dt}{1+4t^2}=\\frac12\\arctan(2t)+C, so \\frac12\\arctan\\!\\left(2\\tan\\frac x2\\right)+C.",
+        integrandExpr: "1/(5-3*cos(x))",
+        resultExpr: "(1/2)*atan(2*tan(x/2))",
+        domain: [-2, 2],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int_0^{\\pi/2}\\frac{dx}{1+\\sin x} — with t=\\tan\\frac x2: 1+\\sin x=1+\\frac{2t}{1+t^2}=\\frac{(1+t)^2}{1+t^2}, so \\frac1{1+\\sin x}=\\frac{1+t^2}{(1+t)^2}.",
+          "Multiplying by dx=\\frac2{1+t^2}\\,dt cancels the (1+t^2) completely: \\frac{1+t^2}{(1+t)^2}\\cdot\\frac2{1+t^2}=\\frac2{(1+t)^2} — the integrand becomes purely a power of (1+t).",
+          "Convert the bounds instead of substituting back: x=0\\Rightarrow t=0, and x=\\tfrac\\pi2\\Rightarrow t=\\tan\\tfrac\\pi4=1.",
+        ],
+        blank: "Integrate \\frac2{(1+t)^2} and evaluate between the converted bounds.",
+        answer: "\\int_0^1\\frac2{(1+t)^2}\\,dt=\\left[-\\frac2{1+t}\\right]_0^1=-1-(-2)=1.",
+        integrandExpr: "1/(1+sin(x))",
+        resultExpr: "1",
+        domain: [0, Math.PI / 2],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "t=\\tan\\frac x2 can, in principle, turn ANY integral of \\sin x and \\cos x into a rational function of t — including something as simple as \\int\\sin^3x\\,dx, which Trig identities solves in two lines by peeling off one factor. Since t-sub always works, why is reaching for it on \\int\\sin^3x\\,dx a bad idea?",
+      answer: "Always works is a statement about t-sub eventually landing on some rational function of t — not a promise that it's the easy route there. \\sin^3x under t-sub becomes \\left(\\frac{2t}{1+t^2}\\right)^3\\cdot\\frac2{1+t^2}\\,dt=\\frac{16t^3}{(1+t^2)^4}\\,dt, a genuinely messy rational function that needs real partial-fractions work to integrate, then back-substitution through t=\\tan\\frac x2 at the end. Trig identities reaches the same answer in two lines because \\sin^3x=(1-\\cos^2x)\\sin x already has an obvious du=-\\sin x\\,dx sitting in it — no universal machine is needed when a direct pattern is already visible. t-sub is the fallback for when no such pattern is visible (a genuinely stubborn denominator like a+b\\cos x), not the first thing to try on every trig integral.",
     },
   },
   {
