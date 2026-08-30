@@ -514,6 +514,165 @@ const RECURRENCE_EXAMPLES: WorkedExample[] = [
   },
 ];
 
+const INTRODUCING_CONSTANTS_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\frac{x^2+7x+8}{x^2+5x+3}",
+    work: [
+      "The numerator is the denominator plus a remainder — subtract to find it: (x^2+7x+8)-(x^2+5x+3)=2x+5, so x^2+7x+8=(x^2+5x+3)+(2x+5).",
+      "Split the integral along that split: \\int\\frac{x^2+7x+8}{x^2+5x+3}\\,dx=\\int1\\,dx+\\int\\frac{2x+5}{x^2+5x+3}\\,dx.",
+      "The first piece is just x. The second happens to have exactly the denominator's own derivative on top — D'(x)=2x+5 — so it's a plain log by substitution: \\ln|x^2+5x+3|.",
+      "Add the two pieces together.",
+    ],
+    result: "x+\\ln(x^2+5x+3)+C",
+    integrandExpr: "(x^2+7*x+8)/(x^2+5*x+3)",
+    resultExpr: "x + log(x^2+5*x+3)",
+    domain: [0, 3],
+    kind: "indefinite",
+  },
+  {
+    integrand: "\\frac{3x+1}{x^2+2x+10}",
+    work: [
+      "This time the remainder isn't a clean match, so match coefficients directly: write 3x+1=\\lambda D'(x)+\\mu with D'(x)=2x+2, i.e. \\lambda(2x+2)+\\mu=2\\lambda x+(2\\lambda+\\mu).",
+      "Match the x-coefficient: 2\\lambda=3\\Rightarrow\\lambda=\\frac32. Match the constant: 2\\lambda+\\mu=1\\Rightarrow\\mu=1-3=-2 — and indeed \\frac32(2x+2)-2=3x+3-2=3x+1, confirming the split.",
+      "Split: \\frac32\\int\\frac{2x+2}{x^2+2x+10}\\,dx-2\\int\\frac{dx}{x^2+2x+10}.",
+      "The first piece is \\frac32\\ln(x^2+2x+10). The second needs Completing the square first: x^2+2x+10=(x+1)^2+9, giving -2\\cdot\\frac13\\arctan\\frac{x+1}3=-\\frac23\\arctan\\frac{x+1}3 — reusing the standard form rather than re-deriving it.",
+    ],
+    result: "\\frac32\\ln(x^2+2x+10)-\\frac23\\arctan\\!\\left(\\frac{x+1}3\\right)+C",
+    integrandExpr: "(3*x+1)/(x^2+2*x+10)",
+    resultExpr: "(3/2)*log(x^2+2*x+10) - (2/3)*atan((x+1)/3)",
+    domain: [-2, 3],
+    kind: "indefinite",
+  },
+];
+
+const FLOOR_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\lfloor x\\rfloor \\text{ on } [0,3]",
+    work: [
+      "\\lfloor x\\rfloor jumps at every integer, so split there: it equals 0 on [0,1), 1 on [1,2), and 2 on [2,3].",
+      "On each piece \\lfloor x\\rfloor is just a constant, so each piece integrates to that constant times its width: \\int_0^3\\lfloor x\\rfloor\\,dx=0\\times1+1\\times1+2\\times1.",
+      "Sum the three pieces: 0+1+2.",
+    ],
+    result: "3",
+    integrandExpr: "floor(x)",
+    resultExpr: "3",
+    domain: [0, 3],
+    kind: "definite",
+  },
+  {
+    integrand: "\\lfloor x\\rfloor \\text{ on } [0,5]",
+    work: [
+      "Same split, five pieces this time: \\lfloor x\\rfloor equals 0,1,2,3,4 on [0,1),[1,2),[2,3),[3,4),[4,5] respectively.",
+      "Every piece has width 1, so the integral is just the SUM 0+1+2+3+4 — an arithmetic series, exactly the collapse the recipe's last bullet points at.",
+      "The sum of five consecutive integers starting at 0 is \\frac{(0+4)\\times5}2=10.",
+    ],
+    result: "10",
+    integrandExpr: "floor(x)",
+    resultExpr: "10",
+    domain: [0, 5],
+    kind: "definite",
+  },
+];
+
+const INVERSE_INTEGRAL_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\arctan x \\text{ on } [0,1]",
+    work: [
+      "Treat \\arctan as f^{-1}, so f=\\tan is the easy direction. Match the bounds: we need f(a)=0 and f(b)=1, the values \\arctan actually runs over here — \\tan0=0 gives a=0, and \\tan\\frac\\pi4=1 gives b=\\frac\\pi4.",
+      "The identity says \\int_0^{\\pi/4}\\tan x\\,dx+\\int_0^1\\arctan x\\,dx=b\\,f(b)-a\\,f(a)=\\frac\\pi4\\cdot1-0\\cdot0=\\frac\\pi4.",
+      "Compute the easy piece: \\int_0^{\\pi/4}\\tan x\\,dx=\\Big[-\\ln|\\cos x|\\Big]_0^{\\pi/4}=-\\ln\\frac{\\sqrt2}2+\\ln1=-\\ln\\frac1{\\sqrt2}=\\frac12\\ln2.",
+      "Solve for the target: \\int_0^1\\arctan x\\,dx=\\frac\\pi4-\\frac12\\ln2.",
+    ],
+    result: "\\frac\\pi4-\\frac12\\ln2",
+    integrandExpr: "atan(x)",
+    resultExpr: "pi/4 - (1/2)*log(2)",
+    domain: [0, 1],
+    kind: "definite",
+  },
+  {
+    integrand: "\\arcsin x \\text{ on } [0,1]",
+    work: [
+      "f(x)=\\sin x is the easy direction here, with f^{-1}=\\arcsin. Take a=0,\\ b=\\frac\\pi2 (so that f(b)=1).",
+      "\\int_0^{\\pi/2}\\sin x\\,dx+\\int_0^1\\arcsin x\\,dx=\\frac\\pi2\\cdot1-0\\cdot0=\\frac\\pi2.",
+      "The first integral is 1 (elementary), so \\int_0^1\\arcsin x\\,dx=\\frac\\pi2-1.",
+    ],
+    result: "\\frac\\pi2-1",
+    integrandExpr: "asin(x)",
+    resultExpr: "pi/2 - 1",
+    domain: [0, 1],
+    kind: "definite",
+  },
+];
+
+const LOG_POWER_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "x^2\\ln x \\text{ on } [0,1]",
+    work: [
+      "Match the pattern with n=2,\\ k=1.",
+      "J(a)=\\int_0^1x^a\\,dx=\\frac1{a+1} for a>-1 (a plain power rule) — the trivial integral hiding underneath.",
+      "Differentiate both sides with respect to a: on the left, differentiating x^a=e^{a\\ln x} with respect to a brings down exactly one factor of \\ln x (chain rule on the exponent), so the left side becomes J'(a)=\\int_0^1x^a\\ln x\\,dx. On the right, \\frac{d}{da}(a+1)^{-1}=-(a+1)^{-2}.",
+      "Set a=2 to match n=2: J'(2)=-\\frac1{3^2}=-\\frac19.",
+    ],
+    result: "-\\frac19",
+    integrandExpr: "x^2*log(x)",
+    resultExpr: "-1/9",
+    domain: [0, 1],
+    kind: "definite",
+  },
+  {
+    integrand: "x\\ln^2x \\text{ on } [0,1]",
+    work: [
+      "Match the pattern with n=1,\\ k=2 and apply the closed form directly: \\int_0^1x\\ln^2x\\,dx=\\frac{(-1)^2\\,2!}{(1+1)^3}.",
+      "\\frac28.",
+    ],
+    result: "\\frac14",
+    integrandExpr: "x*log(x)^2",
+    resultExpr: "1/4",
+    domain: [0, 1],
+    kind: "definite",
+  },
+];
+
+const GAUSSIAN_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "e^{-x^2} \\text{ on } [0,\\infty)",
+    work: [
+      "Let I=\\int_{-\\infty}^\\infty e^{-x^2}\\,dx (the whole real line, so squaring works cleanly). I equals \\int_{-\\infty}^\\infty e^{-y^2}\\,dy under any other dummy-variable name too, so I^2=\\left(\\int e^{-x^2}dx\\right)\\left(\\int e^{-y^2}dy\\right)=\\iint_{\\mathbb R^2}e^{-(x^2+y^2)}\\,dx\\,dy.",
+      "Switch to polar coordinates: x^2+y^2=r^2. A small polar patch between r,r+dr and \\theta,\\theta+d\\theta is, to first order, a rectangle with sides dr (radial) and r\\,d\\theta (tangential — arc length is radius times angle), so its area is r\\,dr\\,d\\theta, giving dx\\,dy=r\\,dr\\,d\\theta with r from 0 to \\infty and \\theta from 0 to 2\\pi.",
+      "I^2=\\int_0^{2\\pi}\\int_0^\\infty e^{-r^2}\\,r\\,dr\\,d\\theta. The \\theta-integral is just 2\\pi. For the r-integral, u=r^2,\\ du=2r\\,dr, so \\int_0^\\infty e^{-r^2}r\\,dr=\\frac12\\int_0^\\infty e^{-u}\\,du=\\frac12 — the EXTRA r the area element supplied is exactly what makes this integral elementary.",
+      "So I^2=2\\pi\\cdot\\frac12=\\pi, giving I=\\sqrt\\pi (positive, since e^{-x^2}>0 everywhere).",
+      "e^{-x^2} is even, so the two halves of I contribute equally: \\int_0^\\infty e^{-x^2}\\,dx=\\frac I2=\\frac{\\sqrt\\pi}2.",
+    ],
+    result: "\\frac{\\sqrt\\pi}2",
+    integrandExpr: "exp(-x^2)",
+    resultExpr: "sqrt(pi)/2",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "x^2e^{-x^2} \\text{ on } [0,\\infty)",
+    work: [
+      "By parts with u=x,\\ dv=xe^{-x^2}\\,dx: du=dx,\\ v=-\\frac12e^{-x^2} (v is itself a plain substitution, w=x^2 inside).",
+      "\\int_0^\\infty x^2e^{-x^2}\\,dx=\\left[-\\frac x2e^{-x^2}\\right]_0^\\infty+\\frac12\\int_0^\\infty e^{-x^2}\\,dx. The boundary term is 0 at both ends — 0 outright at x=0, and e^{-x^2} beats any polynomial as x\\to\\infty.",
+      "The remaining integral is exactly the base result derived above: \\frac12\\cdot\\frac{\\sqrt\\pi}2.",
+    ],
+    result: "\\frac{\\sqrt\\pi}4",
+    integrandExpr: "x^2*exp(-x^2)",
+    resultExpr: "sqrt(pi)/4",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "\\text{The hypersphere formula, checked at } d=3",
+    work: [
+      "\\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)}. At d=3: \\omega_2=\\frac{2\\pi^{3/2}}{\\Gamma(3/2)}.",
+      "\\Gamma\\left(\\frac{3}{2}\\right)=\\frac{1}{2}\\Gamma\\left(\\frac{1}{2}\\right)=\\frac{\\sqrt\\pi}{2}, using \\Gamma(1/2)=\\sqrt\\pi — which is exactly I=\\sqrt\\pi from the first worked example, in Gamma-function notation.",
+      "\\omega_2 = \\frac{2\\pi^{3/2}}{\\sqrt\\pi/2} = 4\\pi, and the surface area of a radius-r sphere is \\omega_2r^2=4\\pi r^2 — the familiar formula.",
+    ],
+    result: "4\\pi r^2",
+  },
+];
+
 export const TECHNIQUES: Technique[] = [
   {
     id: "power",
@@ -908,28 +1067,29 @@ export const TECHNIQUES: Technique[] = [
     id: "introducing-constants",
     name: "Introducing constants",
     tagline: "Split the numerator by adding and subtracting a constant, so one half is trivial and the other is a form you already know.",
+    prerequisites: ["Partial fractions", "Completing the square"],
     whenToUse:
       "A rational (or rational-in-trig) integrand whose numerator is 'almost' a multiple of the denominator, or almost the denominator's derivative, plus some leftover constant. Especially useful for isolating a piece you've already solved elsewhere — this is a great second pass once a first technique gets you most of the way.",
+    intuition:
+      "Writing N=\\lambda D+\\mu isn't a trick that changes the integral at all — it's just the identity N=\\lambda D+(N-\\lambda D), true for ANY \\lambda whatsoever, since the two \\lambda D terms cancel on the right. What makes one choice of \\lambda good is that it makes the LEFTOVER piece, N-\\lambda D, collapse to something trivial: a bare constant (matching \\lambda to N and D's leading behaviour), or a multiple of D' (choosing \\lambda so N's x-dependent part matches D''s exactly). Either way, one of the two resulting integrals — \\int1\\,dx or \\int\\frac{D'}D\\,dx — is immediate, and the other is exactly the SAME \\int\\frac{dx}{D(x)} you'd have needed to solve anyway, now isolated instead of tangled up in a numerator that obscured it. Finding \\lambda and \\mu is ordinary coefficient matching, no different from clearing denominators in Partial fractions.",
     recipe: [
       "Write the numerator as \\lambda\\cdot(\\text{denominator, or its derivative}) + \\mu, solving for \\lambda and \\mu by matching coefficients.",
       "Split into \\lambda\\int 1\\,dx (or \\lambda\\int\\frac{D'}{D}\\,dx) plus \\mu\\int\\frac{dx}{D(x)}.",
       "The first piece is now trivial. For the second, reuse whatever standard form or previously-solved result applies to D(x) — don't re-derive it from scratch.",
       "The multiplicative version of the same idea — multiply and divide by a well-chosen constant — can reveal a hidden derivative; it's rarer, but worth trying when nothing else moves.",
     ],
-    example: {
-      integrand: "\\frac{x^2+7x+8}{x^2+5x+3}",
-      work: [
-        "The numerator is the denominator plus a remainder: x^2+7x+8 = (x^2+5x+3) + (2x+5).",
-        "Split: \\int 1\\,dx + \\int\\frac{2x+5}{x^2+5x+3}\\,dx.",
-        "The second piece is exactly \\ln|x^2+5x+3|, since 2x+5 is the denominator's own derivative.",
-      ],
-      result: "x + \\ln(x^2+5x+3) + C",
-    },
+    example: INTRODUCING_CONSTANTS_EXAMPLES[0],
+    examples: INTRODUCING_CONSTANTS_EXAMPLES,
     pitfalls: [
       "Match coefficients carefully — get \\lambda or \\mu wrong and every downstream integral is off by a constant that's easy to miss.",
       "The 'remainder' after subtracting off \\lambda\\cdot D(x) must genuinely be a constant, or (for the derivative version) the rest must genuinely be D'(x); if it isn't, the split hasn't actually simplified anything.",
       "This is a setup move, not a finishing one — you still have to know how to integrate \\frac{1}{D(x)} once you've isolated it.",
     ],
+    checkYourself: {
+      prompt: "\\frac{5x-3}{x^2+4}",
+      answer: "\\frac52\\ln(x^2+4)-\\frac32\\arctan\\!\\left(\\frac x2\\right)+C",
+      hint: "D'(x)=2x here, with no constant term to match — split 5x-3=\\frac52(2x)+(-3), then integrate each piece separately (a log and a scaled arctan).",
+    },
   },
   {
     id: "log-power-integrals",
