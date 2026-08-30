@@ -983,55 +983,58 @@ export const TECHNIQUES: Technique[] = [
     id: "inverse-integral",
     name: "Integral of an inverse function",
     tagline: "Swap a hard integral for the easy area of its inverse, using the rectangle they share.",
+    prerequisites: ["Integration by parts", "Substitution"],
     whenToUse:
       "You need \\int f(x)\\,dx for an f whose own antiderivative is annoying (\\arcsin, \\arctan, \\ln), but whose INVERSE — \\sin, \\tan, e^x — is trivial to integrate. The picture is a rectangle split by the curve y=f(x): the area under f and the area under f^{-1} (read off the y-axis) fill it between them.",
+    intuition:
+      "This isn't a separate trick — it's integration by parts and a substitution, bundled into one formula so you never redo either by hand. Let F(x)=x\\,f(x); the product rule gives F'(x)=f(x)+x\\,f'(x). Integrate both sides from a to b: F(b)-F(a)=\\int_a^bf(x)\\,dx+\\int_a^bx\\,f'(x)\\,dx, so \\int_a^bf(x)\\,dx=\\big[b\\,f(b)-a\\,f(a)\\big]-\\int_a^bx\\,f'(x)\\,dx. Now substitute y=f(x) in that last piece: x=f^{-1}(y) and dy=f'(x)\\,dx, so x\\,f'(x)\\,dx becomes f^{-1}(y)\\,dy, with the bounds turning into f(a) and f(b) — giving \\int_{f(a)}^{f(b)}f^{-1}(y)\\,dy. Rearranging lands exactly on the identity below.",
     recipe: [
       "Identify f and confirm it's injective (monotonic) on the interval — that's what gives it an inverse at all.",
       "Use \\int_a^b f(x)\\,dx + \\int_{f(a)}^{f(b)} f^{-1}(x)\\,dx = b\\,f(b) - a\\,f(a).",
       "Pick whichever of the two integrals is the easy one — usually the inverse function, since it's the one you actually know how to integrate — and compute it directly.",
       "Solve for the integral you actually wanted.",
     ],
-    example: {
-      integrand: "\\arcsin x \\text{ on } [0,1]",
-      work: [
-        "f(x) = \\sin x is the easy direction, with f^{-1} = \\arcsin. Here a=0, b=\\frac{\\pi}{2} (so that f(b)=1).",
-        "\\int_0^{\\pi/2}\\sin x\\,dx + \\int_0^1 \\arcsin x\\,dx = \\frac{\\pi}{2}\\cdot 1 - 0\\cdot 0 = \\frac{\\pi}{2}.",
-        "The first integral is 1 (elementary), so \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2} - 1.",
-      ],
-      result: "\\frac{\\pi}{2} - 1",
-    },
+    example: INVERSE_INTEGRAL_EXAMPLES[0],
+    examples: INVERSE_INTEGRAL_EXAMPLES,
     pitfalls: [
       "The identity needs f INJECTIVE on the interval you're using — check that before reaching for it, or the 'inverse' isn't well defined.",
       "Matching the bounds is the whole trick: b must satisfy f(b) equal to the upper limit you actually want on the inverse integral, not just some convenient value.",
       "This is a shortcut around integration by parts, not a different answer — if you're unsure the identity applies, by parts on \\arcsin/\\arctan/\\ln always works too and is worth checking against.",
     ],
+    checkYourself: {
+      prompt: "\\ln x \\text{ on } [1,e]",
+      answer: "1",
+      hint: "f(x)=e^x is the easy direction here. Match bounds: f(a)=1\\Rightarrow a=0, and f(b)=e\\Rightarrow b=1.",
+    },
   },
   {
     id: "floor-function",
     name: "Floor function integrals",
     tagline: "The floor has no antiderivative — split the domain at every integer, where it's constant, instead.",
+    prerequisites: ["Standard forms"],
     whenToUse:
       "\\lfloor x\\rfloor, or the fractional part x - \\lfloor x\\rfloor, sits inside the integrand and the bounds span more than one integer. There is no calculus move that touches \\lfloor x\\rfloor directly — the only route in is chopping the interval into pieces where it's constant.",
+    intuition:
+      "There's no calculus trick that fixes this — \\lfloor x\\rfloor is discontinuous at every integer, so it has no derivative to reverse, and no substitution smooths it out. But a DEFINITE integral doesn't actually need an antiderivative; it's just signed area, and \\lfloor x\\rfloor is piecewise CONSTANT, which is the one shape whose area needs no calculus at all — a constant c held over a piece of width w contributes exactly c\\times w, by the plain definition of a rectangle's area. So the whole technique really is: find where the pieces are (the integers), read off the constant value on each one, and add up rectangles. Everything else in the recipe below is just bookkeeping around that one idea.",
     recipe: [
       "List every integer strictly inside the interval of integration — those are exactly where \\lfloor x\\rfloor jumps.",
       "Split \\int_a^b into a sum of integrals over [k,k+1] (with partial pieces at the two ends), replacing \\lfloor x\\rfloor by the fixed integer k on each piece.",
       "Integrate each ordinary piece — \\lfloor x\\rfloor is now just a constant — and sum the results.",
       "Look for the sum to collapse: it's often a short arithmetic series, or telescopes outright.",
     ],
-    example: {
-      integrand: "\\lfloor x\\rfloor \\text{ on } [0,3]",
-      work: [
-        "Split at the integers: [0,1),\\ [1,2),\\ [2,3], where \\lfloor x\\rfloor is 0, 1, 2 respectively.",
-        "\\int_0^3\\lfloor x\\rfloor\\,dx = 0\\cdot 1 + 1\\cdot 1 + 2\\cdot 1.",
-        "Sum the constant pieces.",
-      ],
-      result: "3",
-    },
+    example: FLOOR_EXAMPLES[0],
+    examples: FLOOR_EXAMPLES,
     pitfalls: [
       "The split points are the INTEGERS inside the interval, not the endpoints — double-check you haven't miscounted by one at either end.",
       "For x - \\lfloor x\\rfloor (the sawtooth), each piece [k,k+1) is just \\int_0^1 u\\,du = \\frac{1}{2} after shifting — every full unit interval contributes exactly \\frac{1}{2}, which is worth recognising on sight.",
       "\\lfloor x\\rfloor is discontinuous at every integer, so don't try to differentiate through one — this technique is fundamentally about summing, not about finding an antiderivative.",
+      "\\lfloor x\\rfloor rounds DOWN even for negative x, so \\lfloor -0.5\\rfloor=-1, not 0 — a domain that dips below zero needs exactly the same integer-by-integer care as one that doesn't.",
     ],
+    checkYourself: {
+      prompt: "x-\\lfloor x\\rfloor \\text{ on } [0, 2.5]",
+      answer: "\\frac98",
+      hint: "Two full unit intervals, each worth \\frac12 by the pitfall above, plus a partial piece [2,2.5) where x-\\lfloor x\\rfloor=x-2 ranges from 0 to 0.5.",
+    },
   },
   {
     id: "beta-integrals",
@@ -1095,28 +1098,29 @@ export const TECHNIQUES: Technique[] = [
     id: "log-power-integrals",
     name: "Log-power integrals",
     tagline: "\\int_0^1 x^n\\ln^k x\\,dx is a closed-form rational number for every n,k \\geq 0 — a generating-function trick reads it off in one line.",
+    prerequisites: ["Feynman's trick", "Standard forms"],
     whenToUse:
       "The integrand is x to a nonnegative integer power times a nonnegative integer power of \\ln x, over [0,1]. Repeated integration by parts always works, peeling one power of \\ln x off each time, but for k \\geq 2 it's a lot of bookkeeping for something with a one-line closed form.",
+    intuition:
+      "Differentiating x^a with respect to a — not x — is the whole trick, and it's legal because x^a is secretly x^a=e^{a\\ln x}: differentiating that with respect to a (chain rule on the exponent) gives \\ln x\\cdot e^{a\\ln x}=x^a\\ln x, so EVERY derivative in a brings down exactly one more factor of \\ln x, by the same chain rule each time. That turns the trivial integral J(a)=\\int_0^1x^a\\,dx=\\frac1{a+1} into a whole ladder of integrals for free: J'(a) has one \\ln x inside, J''(a) has two, and so on. The right-hand side climbs the same ladder by ordinary differentiation: \\frac{d}{da}(a+1)^{-1}=-(a+1)^{-2}, and differentiating AGAIN gives 2(a+1)^{-3} — each step multiplies in one more factor and knocks the exponent down by one, exactly the pattern (-1)^kk!(a+1)^{-(k+1)} continues by induction. This is Feynman's trick's own differentiate-under-the-integral-sign move, just aimed at the SAME trivial integral J(a) over and over instead of introducing a fresh parameter each time.",
     recipe: [
       "Introduce a parameter: J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, valid for any a > -1 — this is the trivial integral hiding underneath.",
       "Differentiate J with respect to a. Since \\frac{\\partial}{\\partial a}x^a = x^a\\ln x, each derivative brings down one more factor of \\ln x inside the integral: J^{(k)}(a) = \\int_0^1 x^a\\ln^k x\\,dx.",
       "Differentiate the closed form the same number of times: \\frac{d^k}{da^k}\\frac{1}{a+1} = \\frac{(-1)^k k!}{(a+1)^{k+1}}.",
       "Set a = n (the integer power actually in the problem): \\int_0^1 x^n\\ln^k x\\,dx = \\frac{(-1)^k k!}{(n+1)^{k+1}}.",
     ],
-    example: {
-      integrand: "x^2\\ln x \\text{ on } [0,1]",
-      work: [
-        "Match to the pattern with n=2, k=1.",
-        "J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, so J'(a) = \\int_0^1 x^a\\ln x\\,dx = -\\frac{1}{(a+1)^2}.",
-        "Set a=2: J'(2) = -\\frac{1}{9}.",
-      ],
-      result: "-\\frac{1}{9}",
-    },
+    example: LOG_POWER_EXAMPLES[0],
+    examples: LOG_POWER_EXAMPLES,
     pitfalls: [
       "The sign alternates with k — \\ln x is negative on (0,1), so odd k gives a negative answer and even k gives a positive one. Sanity-check the sign before trusting the arithmetic.",
       "The exponent on the denominator is k+1, not k — it's easy to drop the extra +1 that comes from differentiating \\frac{1}{a+1} itself once more than you differentiated a^{\\text{power}}.",
       "This is the same differentiate-under-the-integral-sign move as the Feynman technique, just packaged as a formula worth recognising on sight instead of re-deriving from scratch every time.",
     ],
+    checkYourself: {
+      prompt: "\\ln^3x \\text{ on } [0,1]",
+      answer: "-6",
+      hint: "This is n=0,\\ k=3 — x^0=1 is still a valid power. Differentiate J(a)=\\frac1{a+1} three times and set a=0.",
+    },
   },
   {
     id: "reciprocal-substitution",
@@ -1241,8 +1245,11 @@ export const TECHNIQUES: Technique[] = [
     id: "gaussian-hypersphere",
     name: "Gaussian integrals & the hypersphere",
     tagline: "Squaring \\int e^{-x^2}dx turns it into a 2-D integral you can do in polar coordinates — the same trick, run in d dimensions, gives the volume of a hypersphere.",
+    prerequisites: ["Substitution", "The Gamma function"],
     whenToUse:
       "A polynomial times e^{-x^2} (or e^{-ax^2}) integrated over (0,\\infty) or (-\\infty,\\infty). There's no elementary antiderivative for e^{-x^2} itself — this family is solved by a dimension-raising trick, not by finding F(x).",
+    intuition:
+      "Squaring a single integral turns it into a genuinely 2-D one: if I=\\int e^{-x^2}\\,dx over the whole line, then I^2 is the SAME integral run twice, over two INDEPENDENT variables — which is exactly \\iint e^{-(x^2+y^2)}\\,dx\\,dy over the whole plane, a function that depends only on distance from the origin. That radial symmetry is what makes polar coordinates pay off: chop the plane into thin rings of radius r and thickness dr, each ring further split into wedges of angle d\\theta. To first order, one such patch is a rectangle with sides dr (radial) and r\\,d\\theta (tangential — arc length is radius times angle), so its area is r\\,dr\\,d\\theta, not just dr\\,d\\theta. That extra factor of r is the whole payoff: \\int e^{-r^2}r\\,dr is elementary by u=r^2, even though \\int e^{-x^2}\\,dx alone never was — the area element itself supplies exactly the factor a plain substitution needs.",
     recipe: [
       "Let I=\\int_{-\\infty}^\\infty e^{-x^2}\\,dx. Then I^2 = \\left(\\int_{-\\infty}^\\infty e^{-x^2}dx\\right)\\left(\\int_{-\\infty}^\\infty e^{-y^2}dy\\right) = \\iint_{\\mathbb{R}^2}e^{-(x^2+y^2)}\\,dx\\,dy.",
       "Switch to polar coordinates: x^2+y^2=r^2 and dx\\,dy=r\\,dr\\,d\\theta, so I^2=\\int_0^{2\\pi}\\int_0^\\infty e^{-r^2}r\\,dr\\,d\\theta — and the r makes the radial integral elementary (u=r^2).",
@@ -1250,20 +1257,18 @@ export const TECHNIQUES: Technique[] = [
       "For x^{2n}e^{-x^2} or e^{-ax^2}, don't re-derive — substitute u=x^2 or u=\\sqrt{a}\\,x to reduce to this base result or to a gamma-function integral (odd powers of x actually land there: x^{2n+1}e^{-x^2} has an elementary antiderivative once u=x^2 is applied, no \\sqrt\\pi involved).",
       "The same squaring trick generalises: \\int_{\\mathbb{R}^d}e^{-|x|^2}dx = \\pi^{d/2} (d independent 1-D Gaussians), and also equals \\int_0^\\infty e^{-r^2}\\,\\omega_{d-1}r^{d-1}\\,dr where \\omega_{d-1} is the surface area of the unit (d-1)-sphere. Matching the two (the radial integral is a gamma-function integral, \\frac{1}{2}\\Gamma(d/2)) gives \\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)} — the surface area of a radius-r sphere in d dimensions is \\frac{2\\pi^{d/2}}{\\Gamma(d/2)}r^{d-1}.",
     ],
-    example: {
-      integrand: "\\text{The hypersphere formula, checked at } d=3",
-      work: [
-        "\\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)}. At d=3: \\omega_2=\\frac{2\\pi^{3/2}}{\\Gamma(3/2)}.",
-        "\\Gamma\\left(\\frac{3}{2}\\right)=\\frac{1}{2}\\Gamma\\left(\\frac{1}{2}\\right)=\\frac{\\sqrt\\pi}{2}, using \\Gamma(1/2)=\\sqrt\\pi (which is exactly I=\\sqrt\\pi from the derivation, in Gamma-function notation).",
-        "\\omega_2 = \\frac{2\\pi^{3/2}}{\\sqrt\\pi/2} = 4\\pi, and the surface area of a radius-r sphere is \\omega_2r^2=4\\pi r^2 — the familiar formula.",
-      ],
-      result: "4\\pi r^2",
-    },
+    example: GAUSSIAN_EXAMPLES[0],
+    examples: GAUSSIAN_EXAMPLES,
     pitfalls: [
       "\\int e^{-x^2}dx has no elementary antiderivative at all — every problem in this family is solved by a substitution or symmetry trick that avoids ever needing F(x), not by finding one.",
       "Odd powers (x,\\,x^3,\\,x^5,\\ldots) times e^{-x^2} are secretly elementary — u=x^2 turns x^{2n+1}e^{-x^2}dx into a plain gamma-function integral in u, with no \\sqrt\\pi in the answer. Only even powers carry the \\sqrt\\pi.",
       "\\Gamma(1/2)=\\sqrt\\pi is exactly this technique's I=\\sqrt\\pi in disguise — if a problem elsewhere needs \\Gamma at a half-integer, this derivation is where that value comes from.",
     ],
+    checkYourself: {
+      prompt: "x^4e^{-x^2} \\text{ on } [0,\\infty)",
+      answer: "\\frac{3\\sqrt\\pi}8",
+      hint: "By parts with u=x^3,\\ dv=xe^{-x^2}dx reduces this to a multiple of the second worked example's result, \\frac{\\sqrt\\pi}4.",
+    },
   },
 ];
 
