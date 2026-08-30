@@ -983,28 +983,29 @@ export const TECHNIQUES: Technique[] = [
     id: "inverse-integral",
     name: "Integral of an inverse function",
     tagline: "Swap a hard integral for the easy area of its inverse, using the rectangle they share.",
+    prerequisites: ["Integration by parts", "Substitution"],
     whenToUse:
       "You need \\int f(x)\\,dx for an f whose own antiderivative is annoying (\\arcsin, \\arctan, \\ln), but whose INVERSE — \\sin, \\tan, e^x — is trivial to integrate. The picture is a rectangle split by the curve y=f(x): the area under f and the area under f^{-1} (read off the y-axis) fill it between them.",
+    intuition:
+      "This isn't a separate trick — it's integration by parts and a substitution, bundled into one formula so you never redo either by hand. Let F(x)=x\\,f(x); the product rule gives F'(x)=f(x)+x\\,f'(x). Integrate both sides from a to b: F(b)-F(a)=\\int_a^bf(x)\\,dx+\\int_a^bx\\,f'(x)\\,dx, so \\int_a^bf(x)\\,dx=\\big[b\\,f(b)-a\\,f(a)\\big]-\\int_a^bx\\,f'(x)\\,dx. Now substitute y=f(x) in that last piece: x=f^{-1}(y) and dy=f'(x)\\,dx, so x\\,f'(x)\\,dx becomes f^{-1}(y)\\,dy, with the bounds turning into f(a) and f(b) — giving \\int_{f(a)}^{f(b)}f^{-1}(y)\\,dy. Rearranging lands exactly on the identity below.",
     recipe: [
       "Identify f and confirm it's injective (monotonic) on the interval — that's what gives it an inverse at all.",
       "Use \\int_a^b f(x)\\,dx + \\int_{f(a)}^{f(b)} f^{-1}(x)\\,dx = b\\,f(b) - a\\,f(a).",
       "Pick whichever of the two integrals is the easy one — usually the inverse function, since it's the one you actually know how to integrate — and compute it directly.",
       "Solve for the integral you actually wanted.",
     ],
-    example: {
-      integrand: "\\arcsin x \\text{ on } [0,1]",
-      work: [
-        "f(x) = \\sin x is the easy direction, with f^{-1} = \\arcsin. Here a=0, b=\\frac{\\pi}{2} (so that f(b)=1).",
-        "\\int_0^{\\pi/2}\\sin x\\,dx + \\int_0^1 \\arcsin x\\,dx = \\frac{\\pi}{2}\\cdot 1 - 0\\cdot 0 = \\frac{\\pi}{2}.",
-        "The first integral is 1 (elementary), so \\int_0^1\\arcsin x\\,dx = \\frac{\\pi}{2} - 1.",
-      ],
-      result: "\\frac{\\pi}{2} - 1",
-    },
+    example: INVERSE_INTEGRAL_EXAMPLES[0],
+    examples: INVERSE_INTEGRAL_EXAMPLES,
     pitfalls: [
       "The identity needs f INJECTIVE on the interval you're using — check that before reaching for it, or the 'inverse' isn't well defined.",
       "Matching the bounds is the whole trick: b must satisfy f(b) equal to the upper limit you actually want on the inverse integral, not just some convenient value.",
       "This is a shortcut around integration by parts, not a different answer — if you're unsure the identity applies, by parts on \\arcsin/\\arctan/\\ln always works too and is worth checking against.",
     ],
+    checkYourself: {
+      prompt: "\\ln x \\text{ on } [1,e]",
+      answer: "1",
+      hint: "f(x)=e^x is the easy direction here. Match bounds: f(a)=1\\Rightarrow a=0, and f(b)=e\\Rightarrow b=1.",
+    },
   },
   {
     id: "floor-function",
