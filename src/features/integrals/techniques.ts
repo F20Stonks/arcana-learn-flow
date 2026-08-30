@@ -318,6 +318,201 @@ const FEYNMAN_EXAMPLES: WorkedExample[] = [
   },
 ];
 
+const BETA_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "x(1-x)^2 \\text{ on } [0,1]",
+    work: [
+      "Match to x^m(1-x)^n with m=1,\\ n=2. Expand the bracket first, the honest way: (1-x)^2=1-2x+x^2.",
+      "Multiply through by x: x(1-2x+x^2)=x-2x^2+x^3.",
+      "Integrate termwise and evaluate at the two ends: \\left[\\frac{x^2}2-\\frac{2x^3}3+\\frac{x^4}4\\right]_0^1=\\frac12-\\frac23+\\frac14.",
+      "Common denominator 12: \\frac6{12}-\\frac8{12}+\\frac3{12}=\\frac1{12}.",
+      "Check against the shortcut: \\frac{m!\\,n!}{(m+n+1)!}=\\frac{1!\\cdot2!}{4!}=\\frac2{24}=\\frac1{12} — the same number two different ways, which is exactly why the formula is safe to trust from here on.",
+    ],
+    result: "\\frac1{12}",
+    integrandExpr: "x*(1-x)^2",
+    resultExpr: "1/12",
+    domain: [0, 1],
+    kind: "definite",
+  },
+  {
+    integrand: "(x-2)^2(5-x)^3 \\text{ on } [2,5]",
+    work: [
+      "Not on [0,1] yet — rescale with u=\\frac{x-2}{5-2}=\\frac{x-2}3, so x=2+3u,\\ dx=3\\,du, and the bounds x=2,5 become u=0,1.",
+      "Then x-2=3u and 5-x=5-(2+3u)=3-3u=3(1-u), so the integrand becomes (3u)^2\\big(3(1-u)\\big)^3\\cdot3\\,du=9\\cdot27\\cdot3\\,u^2(1-u)^3\\,du=729\\,u^2(1-u)^3\\,du.",
+      "The rescaled integral is a plain Beta shape with m=2,\\ n=3: \\int_0^1u^2(1-u)^3\\,du=\\frac{2!\\,3!}{6!}=\\frac{12}{720}=\\frac1{60}.",
+      "Multiply back by the 729 the rescaling produced: 729\\cdot\\frac1{60}=\\frac{729}{60}.",
+    ],
+    result: "\\frac{243}{20}",
+    integrandExpr: "(x-2)^2*(5-x)^3",
+    resultExpr: "243/20",
+    domain: [2, 5],
+    kind: "definite",
+  },
+];
+
+const GAMMA_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "x^3e^{-x} \\text{ on } [0,\\infty)",
+    work: [
+      "Integrate by parts with u=x^3,\\ dv=e^{-x}\\,dx: du=3x^2\\,dx,\\ v=-e^{-x}.",
+      "\\int_0^\\infty x^3e^{-x}\\,dx=\\left[-x^3e^{-x}\\right]_0^\\infty+3\\int_0^\\infty x^2e^{-x}\\,dx. The boundary term is 0 at both ends: x^3=0 at x=0, and e^{-x}\\to0 faster than x^3\\to\\infty at the other end.",
+      "So writing I_n=\\int_0^\\infty x^ne^{-x}\\,dx, this says I_3=3I_2 — and the exact same by-parts argument gives I_2=2I_1 and I_1=1\\cdot I_0.",
+      "Base case: I_0=\\int_0^\\infty e^{-x}\\,dx=\\left[-e^{-x}\\right]_0^\\infty=0-(-1)=1.",
+      "Unwind: I_1=1\\cdot1=1,\\quad I_2=2\\cdot1=2,\\quad I_3=3\\cdot2=6 — exactly 3!.",
+    ],
+    result: "6",
+    integrandExpr: "x^3*exp(-x)",
+    resultExpr: "6",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "x^33^{-x} \\text{ on } [0,\\infty)",
+    work: [
+      "Rewrite the base so the decay is a plain e^{-ax}: 3^{-x}=e^{-x\\ln3}, so this is \\int_0^\\infty x^3e^{-x\\ln3}\\,dx.",
+      "That's the a=\\ln3 case of \\int_0^\\infty x^ne^{-ax}\\,dx=\\frac{n!}{a^{n+1}}, with n=3.",
+      "\\frac{3!}{(\\ln3)^4}=\\frac6{(\\ln3)^4}.",
+    ],
+    result: "\\frac6{(\\ln3)^4}",
+    integrandExpr: "x^3*3^(-x)",
+    resultExpr: "6/log(3)^4",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+];
+
+const ZETA_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\frac x{e^x-1} \\text{ on } [0,\\infty)",
+    work: [
+      "For x>0, e^{-x}\\in(0,1), so \\frac1{e^x-1}=\\frac{e^{-x}}{1-e^{-x}}=e^{-x}\\sum_{j=0}^\\infty\\left(e^{-x}\\right)^j=\\sum_{j=0}^\\infty e^{-(j+1)x}. Relabelling k=j+1 gives \\frac1{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}.",
+      "Multiply by x and integrate term by term: \\int_0^\\infty\\frac{x}{e^x-1}\\,dx=\\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx.",
+      "Each term is the n=1 Gamma-function integral, scaled: \\int_0^\\infty xe^{-kx}\\,dx=\\frac{1!}{k^2}=\\frac1{k^2}.",
+      "The sum is \\sum_{k=1}^\\infty\\frac1{k^2}=\\zeta(2)=\\frac{\\pi^2}6 — the Basel-problem constant, cited rather than re-derived here (the Gamma-function lesson's 'why it works' has the family this belongs to).",
+    ],
+    result: "\\frac{\\pi^2}6",
+    integrandExpr: "x/(exp(x)-1)",
+    resultExpr: "pi^2/6",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "\\frac x{e^x+1} \\text{ on } [0,\\infty)",
+    work: [
+      "Same expansion with an alternating sign: \\frac1{e^x+1}=e^{-x}\\sum_{j=0}^\\infty(-1)^je^{-jx}=\\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx}.",
+      "Term by term: \\int_0^\\infty\\frac x{e^x+1}\\,dx=\\sum_{k=1}^\\infty(-1)^{k-1}\\frac1{k^2} — the alternating twin of \\zeta(2), written \\eta(2).",
+      "Split \\zeta(2) into its even- and odd-indexed terms: the even ones, \\frac1{(2j)^2}, sum to \\frac14\\zeta(2), so the odd ones sum to the remaining \\frac34\\zeta(2). \\eta(2) is odd minus even: \\frac34\\zeta(2)-\\frac14\\zeta(2)=\\frac12\\zeta(2)=\\frac{\\pi^2}{12}.",
+    ],
+    result: "\\frac{\\pi^2}{12}",
+    integrandExpr: "x/(exp(x)+1)",
+    resultExpr: "pi^2/12",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+];
+
+const WALLIS_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\sin^5x \\text{ on } \\left[0,\\frac\\pi2\\right]",
+    work: [
+      "Write \\sin^5x=\\sin^4x\\cdot\\sin x and integrate by parts with u=\\sin^4x,\\ dv=\\sin x\\,dx: du=4\\sin^3x\\cos x\\,dx,\\ v=-\\cos x.",
+      "I_5=\\left[-\\sin^4x\\cos x\\right]_0^{\\pi/2}+4\\int_0^{\\pi/2}\\sin^3x\\cos^2x\\,dx. The boundary term is 0 at both ends: \\cos x=0 at \\frac\\pi2, and \\sin^4x=0 at 0.",
+      "Replace \\cos^2x=1-\\sin^2x: I_5=4\\int_0^{\\pi/2}\\sin^3x(1-\\sin^2x)\\,dx=4(I_3-I_5).",
+      "Solve for I_5: I_5+4I_5=4I_3\\Rightarrow I_5=\\frac45I_3 — the same shape as every I_n=\\frac{n-1}nI_{n-2}.",
+      "Base case I_1=\\int_0^{\\pi/2}\\sin x\\,dx=1, so I_3=\\frac23I_1=\\frac23, and I_5=\\frac45\\cdot\\frac23=\\frac8{15}.",
+    ],
+    result: "\\frac8{15}",
+    integrandExpr: "sin(x)^5",
+    resultExpr: "8/15",
+    domain: [0, Math.PI / 2],
+    kind: "definite",
+  },
+  {
+    integrand: "\\sin^6x \\text{ on } \\left[0,\\frac\\pi2\\right]",
+    work: [
+      "Same reduction, an even index this time — base case is I_0=\\frac\\pi2 instead of I_1=1.",
+      "I_2=\\frac12\\cdot\\frac\\pi2=\\frac\\pi4.\\quad I_4=\\frac34\\cdot\\frac\\pi4=\\frac{3\\pi}{16}.",
+      "I_6=\\frac56\\cdot\\frac{3\\pi}{16}=\\frac{15\\pi}{96}.",
+    ],
+    result: "\\frac{5\\pi}{32}",
+    integrandExpr: "sin(x)^6",
+    resultExpr: "5*pi/32",
+    domain: [0, Math.PI / 2],
+    kind: "definite",
+  },
+];
+
+const RECIPROCAL_SUB_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\frac{\\ln x}{1+x^2} \\text{ on } [0,\\infty)",
+    work: [
+      "Let I=\\int_0^\\infty\\frac{\\ln x}{1+x^2}\\,dx. Substitute x=\\frac1t: dx=-\\frac{dt}{t^2}, and the bounds (0,\\infty) flip to (\\infty,0) — flipping them back to (0,\\infty) is exactly what cancels that minus sign.",
+      "1+x^2=1+\\frac1{t^2}=\\frac{t^2+1}{t^2}, so \\frac{dx}{1+x^2}=\\frac{dt/t^2}{(t^2+1)/t^2}=\\frac{dt}{1+t^2} — the awkward t^2 cancels completely, leaving the SAME measure as the original.",
+      "And \\ln x=\\ln\\frac1t=-\\ln t. So I=\\int_0^\\infty\\frac{-\\ln t}{1+t^2}\\,dt=-I (relabelling t as x, this is just -1 times the original integral).",
+      "2I=0, so I=0 — no antiderivative was ever needed.",
+    ],
+    result: "0",
+    integrandExpr: "log(x)/(1+x^2)",
+    resultExpr: "0",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "\\frac1{(1+x^2)(1+x^3)} \\text{ on } [0,\\infty)",
+    work: [
+      "Let I=\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^3)}. Substitute x=\\frac1t as before: the (1+x^2) factor becomes \\frac{t^2+1}{t^2}$ and $(1+x^3)$ becomes $\\frac{t^3+1}{t^3}$, while $dx=-\\frac{dt}{t^2}$ — so $\\frac{dx}{(1+x^2)(1+x^3)}$ becomes $\\frac{t^3\\,dt}{(1+t^2)(1+t^3)}$ after the t^2 in the numerator cancels one power of t^2 from (1+x^2).",
+      "So I=\\int_0^\\infty\\frac{t^3\\,dt}{(1+t^2)(1+t^3)} — the SAME denominator as the original, just an extra t^3 upstairs. Relabelling t as x: I=\\int_0^\\infty\\frac{x^3\\,dx}{(1+x^2)(1+x^3)}.",
+      "Add this to the original expression for I: 2I=\\int_0^\\infty\\frac{1+x^3}{(1+x^2)(1+x^3)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\Big[\\arctan x\\Big]_0^\\infty=\\frac\\pi2.",
+      "So I=\\frac\\pi4 — and nothing about '3' was actually used, only that (1+x^3) canceled against itself; the same argument works with x^a in place of x^3 for any a>0.",
+    ],
+    result: "\\frac\\pi4",
+    integrandExpr: "1/((1+x^2)*(1+x^3))",
+    resultExpr: "pi/4",
+    domain: [0, Infinity],
+    kind: "definite",
+  },
+  {
+    integrand: "\\frac{\\arctan x}{x(1+\\ln^2x)} \\text{ on } [0,\\infty) \\text{ (a flagship that needs a second move)}",
+    work: [
+      "The raw x\\to\\frac1x pairing doesn't close up here — try it and the twin integral isn't simply related to the original. The fix is to substitute u=\\ln x FIRST: x=e^u,\\ dx=e^u\\,du, so x(1+\\ln^2x)=e^u(1+u^2) and the e^u cancels exactly, leaving I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^u)}{1+u^2}\\,du.",
+      "That's now an integral over the WHOLE real line — and x\\to\\frac1x, in log coordinates, is exactly u\\to-u. Relabel: I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^{-u})}{1+u^2}\\,du too (the domain (-\\infty,\\infty) is unchanged by u\\to-u, so this relabelling is free).",
+      "Add the two forms: 2I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^u)+\\arctan(e^{-u})}{1+u^2}\\,du. Since e^u>0 always, \\arctan(y)+\\arctan\\frac1y=\\frac\\pi2 for every y>0 (complementary angles in a right triangle with legs y and 1) — so the numerator is the CONSTANT \\frac\\pi2.",
+      "2I=\\frac\\pi2\\int_{-\\infty}^\\infty\\frac{du}{1+u^2}=\\frac\\pi2\\cdot\\pi=\\frac{\\pi^2}2, so I=\\frac{\\pi^2}4.",
+    ],
+    result: "\\frac{\\pi^2}4",
+  },
+];
+
+const RECURRENCE_EXAMPLES: WorkedExample[] = [
+  {
+    integrand: "\\frac{x^2}{1+x} \\text{ on } [0,1]",
+    work: [
+      "Let I_n=\\int_0^1\\frac{x^n}{1+x}\\,dx. Add I_n and I_{n-1}: I_n+I_{n-1}=\\int_0^1\\frac{x^n+x^{n-1}}{1+x}\\,dx.",
+      "Factor the numerator: x^n+x^{n-1}=x^{n-1}(x+1), and that (x+1) cancels the (1+x) in the denominator exactly, leaving \\int_0^1x^{n-1}\\,dx=\\frac1n.",
+      "So I_n=\\frac1n-I_{n-1}. Base case: I_0=\\int_0^1\\frac{dx}{1+x}=\\Big[\\ln(1+x)\\Big]_0^1=\\ln2.",
+      "Unwind: I_1=1-\\ln2, \\quad I_2=\\frac12-I_1=\\frac12-(1-\\ln2)=\\ln2-\\frac12.",
+    ],
+    result: "\\ln2-\\frac12",
+    integrandExpr: "x^2/(1+x)",
+    resultExpr: "log(2) - 1/2",
+    domain: [0, 1],
+    kind: "definite",
+  },
+  {
+    integrand: "x^2e^x \\text{ on } [0,1]",
+    work: [
+      "A different mechanism this time — by parts, not algebra. u=x^n,\\ dv=e^x\\,dx: I_n=\\left[x^ne^x\\right]_0^1-n\\int_0^1x^{n-1}e^x\\,dx=e-nI_{n-1} (the boundary term is e at x=1, and 0 at x=0).",
+      "Base case: I_0=\\int_0^1e^x\\,dx=e-1.",
+      "Unwind: I_1=e-1\\cdot(e-1)=1,\\quad I_2=e-2\\cdot1=e-2.",
+    ],
+    result: "e-2",
+    integrandExpr: "x^2*exp(x)",
+    resultExpr: "e - 2",
+    domain: [0, 1],
+    kind: "definite",
+  },
+];
+
 export const TECHNIQUES: Technique[] = [
   {
     id: "power",
@@ -681,8 +876,11 @@ export const TECHNIQUES: Technique[] = [
     id: "beta-integrals",
     name: "Beta function integrals",
     tagline: "\\int_0^1 x^m(1-x)^n\\,dx is always a clean rational number — recognise the shape and skip the algebra.",
+    prerequisites: ["Integration by parts", "Standard forms"],
     whenToUse:
       "The integrand is a power of x times a power of (1-x) (or of u and a-u, after rescaling to [0,1]). Expanding (1-x)^n by hand and integrating term by term always works, but for anything beyond n=2 it's slower than just knowing the closed form.",
+    intuition:
+      "\\int_0^1x^m(1-x)^n\\,dx has no shortcut as written, but integration by parts with u=(1-x)^n,\\ dv=x^m\\,dx peels off one power of (1-x) at the cost of raising the power of x by one: du=-n(1-x)^{n-1}\\,dx,\\ v=\\frac{x^{m+1}}{m+1}, and the boundary term x^{m+1}(1-x)^n vanishes at both ends — x^{m+1}=0 at x=0, and (1-x)^n=0 at x=1. What's left is B(m,n)=\\frac n{m+1}B(m+1,n-1): the SAME shape of integral, just one step lower in n. Unrolling that all the way down to n=0, where B(m+n,0)=\\int_0^1x^{m+n}\\,dx=\\frac1{m+n+1} is a plain power rule, multiplies n! into the numerator against (m+1)(m+2)\\cdots(m+n) in the denominator — exactly the m! worth of factors an ordinary (m+n)! is missing — which is why B(m,n)=\\frac{m!\\,n!}{(m+n+1)!} drops out in one pass, without ever expanding a genuine product by hand.",
     recipe: [
       "Get the integral into the form \\int_0^1 x^m(1-x)^n\\,dx. An interval [a,b] rescales to [0,1] with u=\\frac{x-a}{b-a}.",
       "Use \\int_0^1 x^m(1-x)^n\\,dx = \\frac{m!\\,n!}{(m+n+1)!} — provable by repeated integration by parts, peeling one factor of (1-x) off at a time.",
@@ -690,21 +888,19 @@ export const TECHNIQUES: Technique[] = [
       "For non-integer exponents the same pattern holds with factorials replaced by the Gamma function — the integer case is the one this bank drills.",
       "A stray \\ln x (or \\ln(1-x)) alongside the powers is a sign to differentiate the Beta identity itself: \\int_0^1 x^{m+\\varepsilon}(1-x)^n\\,dx = \\frac{\\Gamma(m+1+\\varepsilon)n!}{\\Gamma(m+n+2+\\varepsilon)}, and differentiating both sides with respect to \\varepsilon at \\varepsilon=0 brings down exactly one factor of \\ln x. The digamma values that appear are differences of digammas at (half-)integers, which are always elementary — the \\gamma constant that digamma normally carries cancels between the two terms.",
     ],
-    example: {
-      integrand: "x^2(1-x)^3 \\text{ on } [0,1]",
-      work: [
-        "Match to the pattern with m=2, n=3.",
-        "\\frac{m!\\,n!}{(m+n+1)!} = \\frac{2!\\cdot 3!}{6!} = \\frac{2\\cdot 6}{720}.",
-        "Simplify the fraction.",
-      ],
-      result: "\\frac{1}{60}",
-    },
+    example: BETA_EXAMPLES[0],
+    examples: BETA_EXAMPLES,
     pitfalls: [
       "The formula needs the interval to be [0,1] with the two factors exactly x and 1-x — rescale first if it isn't, don't try to patch the formula.",
       "m and n must be nonnegative integers for the factorial form; a fractional power needs the Gamma function instead.",
       "Don't forget the +1 in the denominator's (m+n+1)! — it's the single most common slip with this identity.",
       "The digamma trick only stays elementary when the un-differentiated exponent is an integer or a half-integer (so \\Gamma of it is elementary too) — differentiating at a genuinely fractional exponent leaves the Euler-Mascheroni constant \\gamma sitting in the answer instead of cancelling.",
     ],
+    checkYourself: {
+      prompt: "x^4(1-x) \\text{ on } [0,1]",
+      answer: "\\frac1{30}",
+      hint: "m=4,\\ n=1 in \\frac{m!\\,n!}{(m+n+1)!}.",
+    },
   },
   {
     id: "introducing-constants",
