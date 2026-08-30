@@ -1471,3 +1471,126 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     real relationships between techniques for the lessons page and for smarter recognition-drill
     distractors). None of this was in this session's delegated scope, so none of it was built or
     scoped further here — noted for whoever picks up next.
+
+- 2026-08-30 (new session): **WS-8 — finish the lesson rebuild. All 11 remaining techniques done,
+  in the order the runbook named.** Started on `claude/pensive-tesla-421vh8` at baseline `6e3823d`
+  (2087/2087 passing, `tsc --noEmit -p tsconfig.app.json` clean, tree clean) — reproduced before
+  the first edit as required. Read the WS-8 spec and Extension 2 in `UK_BEE_BURST.md`, `types.ts`
+  (`Technique`/`WorkedExample`), `lessonExamples.test.ts`, and three already-rebuilt lessons
+  (`t-sub`, `feynman`, `parts`) before writing anything, per this task's own instructions.
+
+  Applied the WS-2 schema (`prerequisites`, `intuition`, faded `examples[]`, `checkYourself`) to
+  all 11 remaining techniques: the finals arsenal first — `beta-integrals`, `gamma-function`,
+  `zeta-series`, `wallis-product`, `reciprocal-substitution`, `recurrence` — then
+  `introducing-constants`, `floor-function`, `inverse-integral`, `log-power-integrals`,
+  `gaussian-hypersphere`. **Nothing remains — all 21 techniques in `techniques.ts` now carry the
+  full schema.** Verified programmatically at the end (a throwaway `vite-node` script importing
+  the real `TECHNIQUES` array), not just by eye: every technique has non-empty `prerequisites` and
+  `intuition`, at least 2 graduated `examples`, `example === examples[0]` by reference (so the
+  legacy singular field can never drift, exactly as WS-2 established), and a `checkYourself`.
+
+  Commits, one per technique as instructed (each preceded by the full verification loop —
+  `npx vitest run` on the WHOLE repo, `npx tsc --noEmit -p tsconfig.app.json`, `npx eslint` on
+  touched files — and pushed immediately after):
+  `2bac557` beta-integrals, `ad0ad69` gamma-function, `2c68250` zeta-series, `76ee630`
+  wallis-product, `5b07d90` reciprocal-substitution, `2bde1b8` recurrence (closes the finals
+  arsenal), `dc0d606` introducing-constants, `d952416` floor-function, `354229a` inverse-integral,
+  `ab2569c` log-power-integrals, `a72f57a` gaussian-hypersphere (closes WS-8 entirely).
+
+  Every derivation followed the guardrail: derive the closed form by hand, verify numerically in
+  a throwaway script (`scratchpad/verify_ws8.mjs`, `derivative()`/`quadrature()` copied verbatim
+  from `problems.test.ts`/`lessonExamples.test.ts`, independent expected-value literals typed
+  directly rather than computed via a shared formula helper) with comfortable margin *before*
+  writing it into `techniques.ts`, then add the `integrandExpr`/`resultExpr`/`domain`/`kind`
+  mirror so `lessonExamples.test.ts` actually checks it. Every `integrandExpr` written in terms of
+  `x` regardless of the derivation's own variable names. Cross-checked several picks against
+  already-shipped, already-tested bank problems before using them (e.g. `logpow-n2-k1`/`n1-k2`/
+  `n0-k3` in `bank/logPowerIntegrals.ts` are the exact same integrals as the log-power examples;
+  `recip-log-over-1px2`/`recip-pi4-a1`/`recip-pi4-a3` in `bank/reciprocalSubstitution.ts` match the
+  reciprocal-substitution examples; `exp(-x^2)`/`x^2*exp(-x^2)` on `[0,inf)` in
+  `bank/gaussianHypersphere.ts` match the Gaussian examples) — independent confirmation beyond the
+  throwaway script, not a coincidence to be suspicious of, since these really are each technique's
+  most natural flagship integrals.
+
+  **lessonExamples.test.ts now has 64 tests** (was 42): 21 "lesson prose renders" checks (one per
+  technique, confirming every lesson's prose — old and new — still passes strict-mode KaTeX), the
+  guard test, and 42 gradeable "the stated result is right" checks (was 20; +22 from this session
+  — 9 techniques with 2 graded examples each, plus reciprocal-substitution and gaussian-hypersphere
+  at 2 graded + 1 deliberately-ungraded each). **Neither `reciprocal-substitution` nor
+  `gaussian-hypersphere` got 3 graded examples** — both kept a third `WorkedExample` deliberately
+  without an `integrandExpr` mirror, matching the precedent `WorkedExample`'s own doc comment sets
+  out ("a derivation of an identity... with no single closed-form claim"): the reciprocal-
+  substitution flagship (`arctan(x)/(x(1+ln^2x))` on `[0,inf) = pi^2/4`) decays only
+  logarithmically and the shared quadrature can't resolve it cleanly even at `n=20000` (reconfirmed
+  fresh in `verify_ws8.mjs`, not just trusted from the prior session's note); the
+  gaussian-hypersphere aside states a parametrised surface-area formula (`4*pi*r^2`), not a single
+  evaluable integral, same as before this session touched it.
+
+  **A real, substantive error in the pre-existing lesson text was found and fixed, not just
+  polished**: the un-rebuilt `reciprocal-substitution` lesson's own worked example asserted "the
+  raw `x -> 1/x` pairing doesn't close up here" for the `arctan(x)/(x(1+ln^2x))` flagship — checked
+  by hand, this is simply wrong. The raw substitution `x=1/t` DOES relate the integral to itself
+  plus a second, genuinely solvable integral `J` (`2I = (pi/2)J`), and `J` separately collapses via
+  `w=ln(t)`. Rewrote the derivation to show this faithfully and in full (every algebraic step of
+  the measure transformation, the `arctan(y)+arctan(1/y)=pi/2` identity with a one-line
+  justification instead of a bare assertion, `J`'s own `w=ln(t)` collapse, and the final algebra),
+  rather than replacing it with an unrelated framing — independently re-verified piece by piece in
+  `verify_ws8.mjs` (`J` via `w=ln(t)` converges cleanly to `pi`; the raw `t`-domain form of `J`
+  does not, matching the documented pattern; the resulting `I` matches `pi^2/4` to ~4e-9).
+
+  **A mechanical mistake was caught by the render test and fixed the same commit it was
+  introduced in**: the first draft of the zeta-series `intuition` (and, found by grepping while
+  fixing it, one work-line in the not-yet-wired reciprocal-substitution example) used
+  markdown-style `$...$` math delimiters, which this codebase's direct-LaTeX-to-KaTeX pipeline
+  doesn't accept (`toMathMode()` auto-detects prose runs and wraps them in `\text{}` itself — see
+  `mathText.ts` — so plain flowing LaTeX with no `$` is the actual convention, confirmed by
+  rereading it and the already-rebuilt lessons). `lessonExamples.test.ts`'s "lesson prose renders"
+  check caught it immediately (a KaTeX `ParseError`) before that commit landed — exactly the
+  guardrail doing its job, not a near-miss that shipped.
+
+  **File ownership respected exactly as scoped**: only `techniques.ts` was touched. Did not touch
+  `LessonBody.tsx` — every field WS-8 needed (`prerequisites`, `intuition`, `examples`,
+  `checkYourself`) was already rendered by the component WS-2 built, confirmed by reading it before
+  starting and by a Playwright walkthrough (below) rather than assumed. Did not touch routes, the
+  hub, or anything under `uk/`. Did not author any new practice problems — every new `Problem`-
+  shaped claim lives in `techniques.ts`'s `WorkedExample`s, not `bank/*.ts`.
+
+  **Playwright walkthrough against `/dev/integrals/lessons`, done though not strictly required**
+  (WS-8 touched no UI files, so the runbook's own "for any UI work" Playwright mandate doesn't
+  technically apply — but the owner reads this content closely, so it was worth the extra check
+  beyond the automated KaTeX-strict-mode render test). Screenshotted five rebuilt lessons expanded
+  in the real library UI (`beta-integrals`, `zeta-series`, `reciprocal-substitution`, `recurrence`,
+  `gaussian-hypersphere` — chosen to cover the shortest lesson, the one that had the `$`-delimiter
+  bug, both 3-example lessons, and one mid-sized one) — prerequisite chips, the "Why it works"
+  section, graduated "Example N of M" cards, pitfalls and the Check-yourself reveal all rendered
+  correctly, zero console/page errors across all five. One pre-existing, unrelated cosmetic quirk
+  noticed (not introduced by this session — the gaussian-hypersphere aside's `integrand` field is
+  prose, not a real integrand, so the `ExampleCard`'s fixed `\int ... \,dx` wrapper renders as
+  "∫ The hypersphere formula, checked at d=3 dx", slightly awkward) — flagged here rather than
+  fixed, since changing it would mean touching `LessonBody.tsx`'s rendering convention or this
+  example's field shape, neither of which WS-8 asked for and both out of this session's file
+  ownership.
+
+  One flaky, unrelated test failure surfaced once during the per-technique verification loop (a
+  single test failed on one `npx vitest run` of the whole repo mid-session, then 2103/2103 passed
+  clean on immediate retry, and `lessonExamples.test.ts` alone passed 58/58 in isolation at the
+  same moment) — not reproducible across several subsequent full runs, not related to this
+  change, noted rather than silently ignored.
+
+  **Final state**: `npx vitest run` — **2109/2109** across 31 files (was 2087/2087 at this
+  session's start); `npx tsc --noEmit -p tsconfig.app.json` — clean; `eslint` on every file this
+  session touched (`techniques.ts` — the only file changed) — zero findings. No existing test was
+  edited. `normalize()`/`answer.ts` untouched (only ever imported from, read-only, via
+  `lessonExamples.test.ts`'s pre-existing `fn()` helper). Working tree clean, all 11 commits
+  pushed to `claude/pensive-tesla-421vh8`.
+
+  **This closes WS-8 completely** — the runbook's own two-line summary ("WS-2 rebuilt 10 of 21
+  lessons... the other 11 keep the old single-example reference-card format") is no longer true;
+  all 21 do now. **Nothing remains in WS-8's own scope.** What's next, per `UK_BEE_BURST.md`'s own
+  ordering, is the owner's call, not made here: WS-7 (the campaign) was already closed out by a
+  prior session; WS-9 (headsolving, marked highest priority of the Extension-2 trio) and WS-11 (the
+  technique map) are independently buildable; **WS-10 (deep absorption) was explicitly gated to run
+  only *after* WS-8**, which is now true for the first time — so WS-10 is unblocked as of this
+  entry, but was not started here since it wasn't this session's delegated task. None of the three
+  were built or scoped further in this session — flagged for whoever picks up next, per the
+  runbook's own stop-and-report instinct, not silently started and not silently ignored.
