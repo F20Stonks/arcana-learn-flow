@@ -198,10 +198,11 @@ const gradeableCompletions: GradeableCompletion[] = TECHNIQUES.flatMap((t) =>
 describe("completion problems are actually correct", () => {
   it("has at least the completions WS-10 added", () => {
     // Same purpose as the `gradeable` guard above: fails loudly on a dropped field rather than
-    // letting the describe.each below silently iterate zero cases. 24 = 2 completions each across
-    // the 10 WS-2 A-level-bridge/definite-core techniques plus beta-integrals and gamma-function
-    // from WS-8's finals arsenal.
-    expect(gradeableCompletions.length).toBeGreaterThanOrEqual(24);
+    // letting the describe.each below silently iterate zero cases. 32 = 2 completions each across
+    // the 10 WS-2 A-level-bridge/definite-core techniques plus all six of WS-8's finals arsenal
+    // (beta-integrals, gamma-function, zeta-series, wallis-product, reciprocal-substitution,
+    // recurrence).
+    expect(gradeableCompletions.length).toBeGreaterThanOrEqual(32);
   });
 
   it.each(gradeableCompletions.map((g) => [g.label, g.c] as const))(

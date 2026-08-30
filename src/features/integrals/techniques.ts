@@ -1290,6 +1290,36 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac56-\\ln2",
       hint: "Same family as the first worked example: I_3=\\frac13-I_2. You already have I_2=\\ln2-\\frac12 from the lesson.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int_0^1x^3e^x\\,dx — continue the lesson's own by-parts family one step further: I_n=\\int_0^1x^ne^x\\,dx satisfies I_n=e-nI_{n-1} (same boundary-term argument as before: e at x=1, 0 at x=0). The lesson already found I_0=e-1 and I_2=e-2 — the target is I_3.",
+          "I_3=e-3I_2, and I_2=e-2 is already known from the lesson's own worked example.",
+        ],
+        blank: "Substitute and simplify.",
+        answer: "I_3=e-3(e-2)=e-3e+6=6-2e.",
+        integrandExpr: "x^3*exp(x)",
+        resultExpr: "6-2*e",
+        domain: [0, 1],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^{\\pi/4}\\tan^2x\\,dx — name the family I_n=\\int_0^{\\pi/4}\\tan^nx\\,dx. Relate I_n to I_{n-2} algebraically this time, not by parts: I_n+I_{n-2}=\\int_0^{\\pi/4}\\tan^{n-2}x\\big(\\tan^2x+1\\big)\\,dx=\\int_0^{\\pi/4}\\tan^{n-2}x\\sec^2x\\,dx, which is a plain u=\\tan x substitution: =\\left[\\frac{\\tan^{n-1}x}{n-1}\\right]_0^{\\pi/4}=\\frac1{n-1}.",
+          "So I_n=\\frac1{n-1}-I_{n-2}. Base case for even n: I_0=\\int_0^{\\pi/4}1\\,dx=\\frac\\pi4.",
+        ],
+        blank: "Apply the recurrence with n=2 to find I_2.",
+        answer: "I_2=\\frac1{2-1}-I_0=1-\\frac\\pi4.",
+        integrandExpr: "tan(x)^2",
+        resultExpr: "1 - pi/4",
+        domain: [0, Math.PI / 4],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The pitfalls note that a recurrence relating I_n to I_{n-2} needs BOTH I_0 and I_1 as base cases. Why can't knowing only I_0 ever let you unwind such a recurrence down to a number for an ODD n — walk through what actually happens if you try?",
+      answer: "Unwinding I_n=f(I_{n-2}) repeatedly subtracts 2 from the index each step: n\\to n-2\\to n-4\\to\\cdots. Starting from an ODD n, every index in that chain stays odd (odd minus an even number is always odd), so the chain can only ever reach 1,\\,3,\\,5,\\ldots — it will never land on 0, however many steps you take. I_0 sits on the EVEN chain entirely, unreachable from an odd starting index no matter how far you unwind; the two chains never touch. So an odd-indexed recurrence genuinely needs its own, separately-computed base case, I_1 — I_0 answers a different, disjoint question.",
+    },
   },
   {
     id: "inverse-integral",
@@ -1493,6 +1523,36 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac\\pi4",
       hint: "Same pairing as the second worked example, with a=1: substitute x=\\frac1t, add the twin to the original, and the (1+x^a) factors cancel, leaving a plain arctan.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int_0^\\infty\\frac{\\ln^3x}{1+x^2}\\,dx — let I be the integral. Substitute x=\\frac1t exactly as in the lesson's first example: \\frac{dx}{1+x^2} becomes \\frac{dt}{1+t^2} (the SAME measure, unchanged — this piece never depends on what sits in the numerator).",
+          "Only the numerator changes, and this time it's a CUBE: \\ln^3x=\\ln^3\\frac1t=(-\\ln t)^3=-\\ln^3t.",
+        ],
+        blank: "Write the transformed integral in terms of I and solve — does an odd power of \\ln x behave the same way the first power did in the lesson's own example?",
+        answer: "I=\\int_0^\\infty\\frac{-\\ln^3t}{1+t^2}\\,dt=-I (relabelling t as x), so 2I=0 and I=0 — any ODD power of \\ln x flips sign under x\\to\\frac1x the same way the first power did, so the same cancellation argument applies unchanged.",
+        integrandExpr: "log(x)^3/(1+x^2)",
+        resultExpr: "0",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^5)} — same pairing as the lesson's own second example, with a=5 instead of a=3. Let I be the integral. Substitute x=\\frac1t: (1+x^2)\\to\\frac{t^2+1}{t^2},\\ (1+x^5)\\to\\frac{t^5+1}{t^5}, and dx\\to-\\frac{dt}{t^2} (the bound-flip cancels the sign), so \\frac{dx}{(1+x^2)(1+x^5)} becomes \\frac{t^5\\,dt}{(1+t^2)(1+t^5)}.",
+          "Relabelling t as x: I=\\int_0^\\infty\\frac{x^5\\,dx}{(1+x^2)(1+x^5)} — the SAME denominator as the original, just an extra x^5 upstairs.",
+        ],
+        blank: "Add this to the original expression for I, and simplify — the (1+x^5) should cancel exactly.",
+        answer: "2I=\\int_0^\\infty\\frac{1+x^5}{(1+x^2)(1+x^5)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\Big[\\arctan x\\Big]_0^\\infty=\\frac\\pi2, so I=\\frac\\pi4 — confirming the lesson's own note that the value doesn't depend on the specific power, here with a=5 instead of a=3.",
+        integrandExpr: "1/((1+x^2)*(1+x^5))",
+        resultExpr: "pi/4",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The pitfalls note that this technique only pays off when the twin integral is genuinely related to the original — but Example 3 in the lesson raises I=\\int_0^\\infty\\frac{\\arctan x}{x(1+\\ln^2x)}\\,dx, whose twin turns out to be \\frac\\pi2J-I for a DIFFERENT integral J, not \\pm I. Why does the technique still count as \\text{'this move'} rather than a different trick entirely, when the twin isn't simply a multiple of I?",
+      answer: "The defining move isn't \\text{'the twin equals} \\pm I\\text{'} specifically — it's substituting x=\\frac1t to get a SECOND, equally valid expression for the same number I, then combining the two expressions to make something intractable collapse. When the twin literally IS \\pm I (as in the lesson's first two examples), combining means solving a one-line equation in I alone. When the twin instead involves a genuinely different quantity (J, in Example 3), combining still works the same way — you get one equation relating I and J, and if J happens to be independently computable (here, by a further substitution w=\\ln t), you can still solve for I. The substitution and the combining step are identical in both cases; only how much extra work is needed after combining differs. That's exactly why the pitfall frames it as \\text{'genuinely related to the original'} rather than \\text{'equal to} \\pm I\\text{'} — related is the real requirement, equal is just the easiest special case of it.",
+    },
   },
   {
     id: "gamma-function",
@@ -1582,6 +1642,36 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac{\\pi^2}6",
       hint: "Expand -\\ln(1-x)=\\sum_{k=1}^\\infty\\frac{x^k}k, divide by x, and integrate term by term on [0,1] instead of (0,\\infty) — the last recipe bullet is this exact move.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int_0^\\infty\\frac{x^3}{e^x-1}\\,dx — same expansion as the lesson's own example, one index up: \\frac1{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}, so \\int_0^\\infty\\frac{x^3}{e^x-1}\\,dx=\\sum_{k=1}^\\infty\\int_0^\\infty x^3e^{-kx}\\,dx.",
+          "Each term is a Gamma-function integral: \\int_0^\\infty x^3e^{-kx}\\,dx=\\frac{3!}{k^4}=\\frac6{k^4}.",
+        ],
+        blank: "Sum \\sum_{k=1}^\\infty\\frac6{k^4} — you'll need \\zeta(4)=\\sum_{k=1}^\\infty\\frac1{k^4}=\\frac{\\pi^4}{90} (cited, the same way \\zeta(2) was in the lesson's own worked example).",
+        answer: "6\\zeta(4)=6\\cdot\\frac{\\pi^4}{90}=\\frac{\\pi^4}{15}.",
+        integrandExpr: "x^3/(exp(x)-1)",
+        resultExpr: "pi^4/15",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^\\infty\\frac{x^3}{e^x+1}\\,dx — same family, alternating: \\int_0^\\infty\\frac{x^3}{e^x+1}\\,dx=3!\\,\\eta(4) where \\eta(4)=\\sum_{k=1}^\\infty(-1)^{k-1}\\frac1{k^4}.",
+          "Split \\zeta(4) (from the completion above) into even- and odd-indexed terms: the even ones, \\frac1{(2j)^4}, sum to \\frac1{16}\\zeta(4), so the odd ones sum to the remaining \\frac{15}{16}\\zeta(4). \\eta(4) is odd minus even.",
+        ],
+        blank: "Compute \\eta(4), then 3!\\,\\eta(4).",
+        answer: "\\eta(4)=\\frac{15}{16}\\zeta(4)-\\frac1{16}\\zeta(4)=\\frac{14}{16}\\zeta(4)=\\frac78\\zeta(4)=\\frac78\\cdot\\frac{\\pi^4}{90}=\\frac{7\\pi^4}{720}. So 3!\\,\\eta(4)=6\\cdot\\frac{7\\pi^4}{720}=\\frac{7\\pi^4}{120}.",
+        integrandExpr: "x^3/(exp(x)+1)",
+        resultExpr: "7*pi^4/120",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "This technique turns \\int_0^\\infty x^n/(e^x-1)\\,dx into n!\\,\\zeta(n+1) mechanically, regardless of whether n+1 is even or odd. So why does the pitfall single out ODD n+1 (like \\zeta(3)) as not having a closed form, when nothing about the integral-to-series step itself seemed to care about parity?",
+      answer: "The series-and-Gamma machinery genuinely doesn't care about parity — it lands on n!\\,\\zeta(n+1) either way, no extra work. The difficulty is entirely downstream, in a fact this technique doesn't derive: \\zeta at an EVEN integer has a known closed form in \\pi (Euler found \\zeta(2)=\\pi^2/6 by comparing \\sin x's power series to its factorisation over its roots, and every even \\zeta value follows the same route), but no analogous closed form at an odd integer is known at all — not merely harder to compute, but genuinely open. \\zeta(3) wasn't even proven irrational until 1978, let alone given a closed form. So this technique always lands you on a well-defined sum; whether that sum simplifies further is a fact about \\zeta itself, established independently of anything here, and one that happens to hand you an elementary answer at even n+1 and nothing at odd n+1.",
+    },
   },
   {
     id: "wallis-product",
@@ -1611,6 +1701,34 @@ export const TECHNIQUES: Technique[] = [
       prompt: "\\cos^7x \\text{ on } \\left[0,\\frac\\pi2\\right]",
       answer: "\\frac{16}{35}",
       hint: "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the same I_n as \\sin^nx on this interval — unwind the odd-index recursion starting from I_1=1.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_0^{\\pi/2}\\cos^8x\\,dx — \\cos^nx and \\sin^nx give the exact same I_n on [0,\\pi/2] (substitute x\\to\\tfrac\\pi2-x to see them trade places), so use the even reduction chain: I_0=\\tfrac\\pi2,\\quad I_2=\\tfrac12I_0=\\tfrac\\pi4,\\quad I_4=\\tfrac34I_2=\\tfrac{3\\pi}{16},\\quad I_6=\\tfrac56I_4=\\tfrac{5\\pi}{32}.",
+        ],
+        blank: "One more step: I_8=\\frac78I_6.",
+        answer: "I_8=\\frac78\\cdot\\frac{5\\pi}{32}=\\frac{35\\pi}{256}.",
+        integrandExpr: "cos(x)^8",
+        resultExpr: "35*pi/256",
+        domain: [0, Math.PI / 2],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^{\\pi/2}\\cos^3\\theta\\sin^5\\theta\\,d\\theta — matches the two-power formula \\int_0^{\\pi/2}\\cos^{2\\alpha-1}\\theta\\sin^{2\\beta-1}\\theta\\,d\\theta=\\frac{\\Gamma(\\alpha)\\Gamma(\\beta)}{2\\Gamma(\\alpha+\\beta)} with 2\\alpha-1=3\\Rightarrow\\alpha=2, and 2\\beta-1=5\\Rightarrow\\beta=3.",
+        ],
+        blank: "Apply the formula (\\Gamma at a positive integer is just factorial: \\Gamma(k)=(k-1)!) and simplify.",
+        answer: "\\frac{\\Gamma(2)\\Gamma(3)}{2\\Gamma(5)}=\\frac{1!\\cdot2!}{2\\cdot4!}=\\frac{1\\cdot2}{2\\cdot24}=\\frac2{48}=\\frac1{24}.",
+        integrandExpr: "cos(x)^3*sin(x)^5",
+        resultExpr: "1/24",
+        domain: [0, Math.PI / 2],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The squeeze argument shows I_{n+1}\\le I_n\\le I_{n-1}, divides through by I_{n-1} to get \\frac{I_{n+1}}{I_{n-1}}\\le\\frac{I_n}{I_{n-1}}\\le1, and notes \\frac{I_{n+1}}{I_{n-1}}=\\frac n{n+1}\\to1. Why does this FORCE \\frac{I_n}{I_{n-1}}\\to1 — what's the actual logical machinery, and would the argument still work if \\frac{I_{n+1}}{I_{n-1}} only approached, say, \\frac23 instead of 1?",
+      answer: "This is the squeeze (sandwich) theorem: a sequence trapped between two others that converge to the SAME limit has no room to do anything except converge to that limit too. Here \\frac{I_n}{I_{n-1}} is sandwiched between \\frac{I_{n+1}}{I_{n-1}}=\\frac n{n+1} below and the constant 1 above, and both bounds converge to 1 as n\\to\\infty — so \\frac{I_n}{I_{n-1}} has nowhere left to go but 1 as well. If the lower bound instead approached \\tfrac23, the squeeze would only prove \\frac{I_n}{I_{n-1}} is EVENTUALLY between \\tfrac23 and 1 — not pinned to a single value, since the upper bound (1) and that hypothetical lower limit (\\tfrac23) would no longer coincide. The argument's entire force comes from both bounds landing on exactly the same number in the limit; a gap of any size leaves the squeezed sequence free to wander anywhere inside it.",
     },
   },
   {
