@@ -1098,28 +1098,29 @@ export const TECHNIQUES: Technique[] = [
     id: "log-power-integrals",
     name: "Log-power integrals",
     tagline: "\\int_0^1 x^n\\ln^k x\\,dx is a closed-form rational number for every n,k \\geq 0 — a generating-function trick reads it off in one line.",
+    prerequisites: ["Feynman's trick", "Standard forms"],
     whenToUse:
       "The integrand is x to a nonnegative integer power times a nonnegative integer power of \\ln x, over [0,1]. Repeated integration by parts always works, peeling one power of \\ln x off each time, but for k \\geq 2 it's a lot of bookkeeping for something with a one-line closed form.",
+    intuition:
+      "Differentiating x^a with respect to a — not x — is the whole trick, and it's legal because x^a is secretly x^a=e^{a\\ln x}: differentiating that with respect to a (chain rule on the exponent) gives \\ln x\\cdot e^{a\\ln x}=x^a\\ln x, so EVERY derivative in a brings down exactly one more factor of \\ln x, by the same chain rule each time. That turns the trivial integral J(a)=\\int_0^1x^a\\,dx=\\frac1{a+1} into a whole ladder of integrals for free: J'(a) has one \\ln x inside, J''(a) has two, and so on. The right-hand side climbs the same ladder by ordinary differentiation: \\frac{d}{da}(a+1)^{-1}=-(a+1)^{-2}, and differentiating AGAIN gives 2(a+1)^{-3} — each step multiplies in one more factor and knocks the exponent down by one, exactly the pattern (-1)^kk!(a+1)^{-(k+1)} continues by induction. This is Feynman's trick's own differentiate-under-the-integral-sign move, just aimed at the SAME trivial integral J(a) over and over instead of introducing a fresh parameter each time.",
     recipe: [
       "Introduce a parameter: J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, valid for any a > -1 — this is the trivial integral hiding underneath.",
       "Differentiate J with respect to a. Since \\frac{\\partial}{\\partial a}x^a = x^a\\ln x, each derivative brings down one more factor of \\ln x inside the integral: J^{(k)}(a) = \\int_0^1 x^a\\ln^k x\\,dx.",
       "Differentiate the closed form the same number of times: \\frac{d^k}{da^k}\\frac{1}{a+1} = \\frac{(-1)^k k!}{(a+1)^{k+1}}.",
       "Set a = n (the integer power actually in the problem): \\int_0^1 x^n\\ln^k x\\,dx = \\frac{(-1)^k k!}{(n+1)^{k+1}}.",
     ],
-    example: {
-      integrand: "x^2\\ln x \\text{ on } [0,1]",
-      work: [
-        "Match to the pattern with n=2, k=1.",
-        "J(a) = \\int_0^1 x^a\\,dx = \\frac{1}{a+1}, so J'(a) = \\int_0^1 x^a\\ln x\\,dx = -\\frac{1}{(a+1)^2}.",
-        "Set a=2: J'(2) = -\\frac{1}{9}.",
-      ],
-      result: "-\\frac{1}{9}",
-    },
+    example: LOG_POWER_EXAMPLES[0],
+    examples: LOG_POWER_EXAMPLES,
     pitfalls: [
       "The sign alternates with k — \\ln x is negative on (0,1), so odd k gives a negative answer and even k gives a positive one. Sanity-check the sign before trusting the arithmetic.",
       "The exponent on the denominator is k+1, not k — it's easy to drop the extra +1 that comes from differentiating \\frac{1}{a+1} itself once more than you differentiated a^{\\text{power}}.",
       "This is the same differentiate-under-the-integral-sign move as the Feynman technique, just packaged as a formula worth recognising on sight instead of re-deriving from scratch every time.",
     ],
+    checkYourself: {
+      prompt: "\\ln^3x \\text{ on } [0,1]",
+      answer: "-6",
+      hint: "This is n=0,\\ k=3 — x^0=1 is still a valid power. Differentiate J(a)=\\frac1{a+1} three times and set a=0.",
+    },
   },
   {
     id: "reciprocal-substitution",
