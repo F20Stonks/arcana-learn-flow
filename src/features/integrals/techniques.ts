@@ -472,12 +472,13 @@ const RECIPROCAL_SUB_EXAMPLES: WorkedExample[] = [
     kind: "definite",
   },
   {
-    integrand: "\\frac{\\arctan x}{x(1+\\ln^2x)} \\text{ on } [0,\\infty) \\text{ (a flagship that needs a second move)}",
+    integrand: "\\frac{\\arctan x}{x(1+\\ln^2x)} \\text{ on } [0,\\infty)",
     work: [
-      "The raw x\\to\\frac1x pairing doesn't close up here — try it and the twin integral isn't simply related to the original. The fix is to substitute u=\\ln x FIRST: x=e^u,\\ dx=e^u\\,du, so x(1+\\ln^2x)=e^u(1+u^2) and the e^u cancels exactly, leaving I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^u)}{1+u^2}\\,du.",
-      "That's now an integral over the WHOLE real line — and x\\to\\frac1x, in log coordinates, is exactly u\\to-u. Relabel: I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^{-u})}{1+u^2}\\,du too (the domain (-\\infty,\\infty) is unchanged by u\\to-u, so this relabelling is free).",
-      "Add the two forms: 2I=\\int_{-\\infty}^\\infty\\frac{\\arctan(e^u)+\\arctan(e^{-u})}{1+u^2}\\,du. Since e^u>0 always, \\arctan(y)+\\arctan\\frac1y=\\frac\\pi2 for every y>0 (complementary angles in a right triangle with legs y and 1) — so the numerator is the CONSTANT \\frac\\pi2.",
-      "2I=\\frac\\pi2\\int_{-\\infty}^\\infty\\frac{du}{1+u^2}=\\frac\\pi2\\cdot\\pi=\\frac{\\pi^2}2, so I=\\frac{\\pi^2}4.",
+      "Let I=\\int_0^\\infty\\frac{\\arctan x}{x(1+\\ln^2x)}\\,dx. Substitute x=\\frac1t: dx=-\\frac{dt}{t^2}, and the (0,\\infty)\\to(\\infty,0) bound-flip cancels that minus sign as usual. Since \\ln x=\\ln\\frac1t=-\\ln t, the \\ln^2x=\\ln^2t term is unchanged, so x(1+\\ln^2x)=\\frac1t(1+\\ln^2t), and \\frac{dx}{x(1+\\ln^2x)}=\\frac{-dt/t^2}{(1+\\ln^2t)/t}=-\\frac{dt}{t(1+\\ln^2t)} — the SAME measure as the original, up to that sign the bound-flip already cancels.",
+      "Only the numerator actually changes: \\arctan x becomes \\arctan\\frac1t. For any y>0, \\arctan y+\\arctan\\frac1y=\\frac\\pi2 (complementary angles in a right triangle with legs y and 1), so \\arctan\\frac1t=\\frac\\pi2-\\arctan t.",
+      "Assemble: I=\\int_0^\\infty\\frac{\\frac\\pi2-\\arctan t}{t(1+\\ln^2t)}\\,dt=\\frac\\pi2J-I, where J=\\int_0^\\infty\\frac{dt}{t(1+\\ln^2t)} and the second piece is exactly I again (same integrand, t relabelled as x).",
+      "J itself collapses under w=\\ln t (so dw=\\frac{dt}t): J=\\int_{-\\infty}^\\infty\\frac{dw}{1+w^2}=\\Big[\\arctan w\\Big]_{-\\infty}^\\infty=\\pi.",
+      "So I=\\frac\\pi2\\cdot\\pi-I=\\frac{\\pi^2}2-I, giving 2I=\\frac{\\pi^2}2, hence I=\\frac{\\pi^2}4.",
     ],
     result: "\\frac{\\pi^2}4",
   },
@@ -960,28 +961,30 @@ export const TECHNIQUES: Technique[] = [
     id: "reciprocal-substitution",
     name: "Reciprocal substitution",
     tagline: "u=\\frac{1}{x} pairs an integral over (0,\\infty) with a twin of itself — average the two and the hard part cancels.",
+    prerequisites: ["Substitution", "Symmetry and definite tricks"],
     whenToUse:
       "The integral runs over (0,\\infty), and the integrand involves \\ln x or an odd power of x in a way that looks antisymmetric under x \\to \\frac{1}{x}. If substituting u=\\frac{1}{x} turns the integral into something you can add to (or subtract from) the original to kill the ugly part, this is the move.",
+    intuition:
+      "If I=\\int_0^\\infty f(x)\\,dx, substituting x=\\frac1u (so dx=-\\frac{du}{u^2}) doesn't change the VALUE of I — it just gives a SECOND formula for the same number, I=\\int_0^\\infty f\\!\\left(\\frac1u\\right)\\frac{du}{u^2} (the (0,\\infty)\\to(\\infty,0) bound-flip is exactly what cancels that minus sign). Usually f\\!\\left(\\frac1u\\right)/u^2 looks nothing like f(u) — but for the right integrands (built from \\ln x, or a ratio symmetric under x\\to\\frac1x up to a known factor) the two expressions are related closely enough that adding or subtracting them cancels the hard part entirely. That's the exact same move as King's rule in Symmetry and definite tricks, just reflecting through x\\to\\frac1x instead of x\\to a-x: relabel the same area two different ways, then combine the two expressions to make something intractable collapse.",
     recipe: [
       "Substitute u = \\frac{1}{x}, so x = \\frac{1}{u} and dx = -\\frac{du}{u^2}. The bounds (0,\\infty) map to (\\infty,0), and flipping them back cancels the minus sign.",
       "Rewrite every x in the integrand in terms of u, including \\ln x = -\\ln u if a logarithm is present.",
       "Compare the transformed integral to the original. If it's the negative of the original, the integral is 0 outright. If it's a different but related integral, add the two expressions together — the awkward piece is often designed to cancel or double.",
       "Solve the resulting (usually much simpler) equation for the original integral I.",
     ],
-    example: {
-      integrand: "\\frac{1}{x(1+x^2)(1+x^3)} \\text{ style pairing, worked for } \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx",
-      work: [
-        "Let I = \\int_0^\\infty \\frac{\\arctan x}{x(1+\\ln^2 x)}\\,dx. Substitute x=\\frac{1}{t}: \\arctan\\frac{1}{t} = \\frac{\\pi}{2}-\\arctan t, and \\ln^2 x = \\ln^2 t since \\ln\\frac{1}{t}=-\\ln t.",
-        "The measure works out to \\frac{dx}{x} = -\\frac{dt}{t}, so I = \\int_0^\\infty \\frac{\\frac{\\pi}{2}-\\arctan t}{t(1+\\ln^2 t)}\\,dt = \\frac{\\pi}{2}J - I, where J=\\int_0^\\infty \\frac{dt}{t(1+\\ln^2 t)}.",
-        "J collapses under w=\\ln t to \\int_{-\\infty}^\\infty\\frac{dw}{1+w^2}=\\pi. So 2I=\\frac{\\pi}{2}\\cdot\\pi, giving I=\\frac{\\pi^2}{4}.",
-      ],
-      result: "\\frac{\\pi^2}{4}",
-    },
+    example: RECIPROCAL_SUB_EXAMPLES[0],
+    examples: RECIPROCAL_SUB_EXAMPLES,
     pitfalls: [
       "Get the bounds and the sign right: (0,\\infty)\\to(\\infty,0) under x=\\frac{1}{t}, and flipping the limits back is exactly what cancels the minus sign in dx=-\\frac{dt}{t^2} — track this once, carefully, rather than by feel.",
       "\\ln\\frac{1}{t}=-\\ln t, so an even power of \\ln x survives the substitution unchanged while an odd power flips sign — that's usually the whole point of trying this move.",
       "The technique only pays off when the twin integral is genuinely related to the original (equal, opposite, or a known simpler one). If substituting just produces an unrelated mess, this isn't the right tool.",
+      "The twin doesn't have to equal \\pm I outright to be useful — Example 3's twin equals \\frac\\pi2J-I for a DIFFERENT, simpler integral J, and solving that equation for I is still exactly this technique at work.",
     ],
+    checkYourself: {
+      prompt: "\\frac1{(1+x^2)(1+x)} \\text{ on } [0,\\infty)",
+      answer: "\\frac\\pi4",
+      hint: "Same pairing as the second worked example, with a=1: substitute x=\\frac1t, add the twin to the original, and the (1+x^a) factors cancel, leaving a plain arctan.",
+    },
   },
   {
     id: "gamma-function",
