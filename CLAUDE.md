@@ -1357,3 +1357,30 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     now exist (paper mode, adaptive scheduler, error taxonomy, recognition drill, values deck) but
     nothing composes them into a dated programme. Nothing in the app knows the competition date or
     what today's session should be — see the campaign-mode proposal (WS-7) discussed with the owner.
+
+- 2026-08-29 (later, same session): **WS-7 part 1 — the campaign core (`uk/campaign.ts`).** Both
+  Sonnet agents launched for WS-7 and WS-8 died immediately on a shared API session rate limit
+  (resets 01:10 UTC) without producing anything; the WS-8 worktree auto-cleaned, nothing was lost.
+  Rather than idle for three hours, this session built the reasoning-dense core of WS-7 directly and
+  left the UI plumbing for Sonnet to pick up.
+  - **Design decision worth keeping**: blocks are derived *backwards from the target date*, not
+    pinned to calendar dates. Round 1 is hosted per-university on a date the competitor confirms
+    themselves, so a plan hardcoded to one November Saturday would silently mis-phase for any other
+    date and rot the moment it moved. `blockFor(daysRemaining)` gives taper ≤13 days out, depth
+    14–41, breadth 42+. A test pins this by asserting the same calendar day lands in *different*
+    blocks for two different target dates.
+  - Pure module, no storage and no clock of its own: dates in, a `SessionStep[]` out, so every rule
+    is testable without a browser. `planSession` composes pointers at modes that already exist
+    (recognition, training, paper, values, progress) and reimplements none of them. Rest days in the
+    final 48 hours; papers weekly in depth and twice weekly in taper.
+  - 15 tests in `uk/campaign.test.ts`, all against fixed dates so nothing depends on when the suite
+    runs. Two failed on first run — **both were my own fixtures, not the code**, and the second was
+    a genuinely useful catch: `daysOut(10)` from a Saturday target is a Wednesday, which *is* a
+    taper paper day by the rule as specified, so the plan correctly had no problems step. Fixed the
+    fixture dates rather than weakening either assertion.
+  - Verified: `npx vitest run` — **2057/2057 across 29 files** (was 2042); `npx tsc --noEmit
+    -p tsconfig.app.json` clean; `eslint` clean on both new files. No existing test touched.
+  - **Next, for whoever resumes**: `campaignStore.ts` (persist the target date + session completion,
+    matching `attempts.ts`'s scoped fail-soft pattern), `hooks/useCampaign.ts`,
+    `pages/IntegralCampaign.tsx`, the `/integrals/campaign` route and its `/dev/` twin, a hub tile,
+    and the readiness readout. Then WS-8, which is entirely untouched.
