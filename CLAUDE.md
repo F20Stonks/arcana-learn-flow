@@ -1873,3 +1873,158 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   `conceptReviewStep()` is the other explicit follow-up, flagged above and inline in
   `conceptReview.ts`. WS-11 (the technique map) remains entirely unstarted, per
   `UK_BEE_BURST.md`'s own ordering and outside this session's delegated scope.
+
+- 2026-08-30 (new session): **WS-11 — the technique map. Finished, and merged to `main`.
+  `UK_BEE_BURST.md`'s entire specced queue is now empty.** Started on
+  `claude/pensive-tesla-421vh8`, picking up right after a prior agent was killed by a rate limit
+  immediately after committing the core file (`dce9c58`, `techniqueMap.ts` — six real families,
+  five standalone techniques, cross-links, `familyOf`/`siblingsOf`/`crossLinksFor`/`confusablesFor`
+  lookups). Baseline reproduced first: 2206/2206, `tsc -p tsconfig.app.json` clean, tree clean.
+
+  **Reviewed `techniqueMap.ts` in full, changed nothing in it.** Independently re-derived the
+  21-id totality by hand before trusting the file's own claim (16 across six families + 5
+  standalone, each exactly once) — correct. The one thing worth recording: the header comment
+  points to "the 'considered and rejected' note on t-substitution below" for why t-sub sits in the
+  trig-integrand family rather than the symmetry-substitution family (despite
+  `UK_BEE_BURST.md`'s own WS-11 spec text listing "t-sub, reciprocal substitution and King's
+  reflection" together) — there is no block literally labeled that; the reasoning is instead
+  carried in the trig-integrand and symmetry-substitution `bigIdea` prose itself. Checked whether
+  this was a real error worth fixing: it isn't — the placement is mathematically the more correct
+  one (t-sub finds an antiderivative via a universal substitution; symmetry and reciprocal
+  substitution both work by relating `I` to itself under an involution and never integrate
+  anything, which t-sub does not do), so the file's own placement is right and the spec's own
+  three-way grouping is the imprecise part. Left the file untouched, as instructed, and note this
+  here rather than silently editing prose that isn't actually wrong.
+
+  **Shipped the other two-thirds, three commits on `claude/pensive-tesla-421vh8`:**
+  - `20a1ee2` — `techniqueMap.test.ts`, the totality check the header comment promises (24 tests:
+    every real `TechniqueId` placed exactly once, no duplicates within or across families,
+    `CROSS_LINKS` endpoints valid with no self-links or duplicate pairs, spot-checks of all four
+    lookup functions). Extended to 41 tests in the next commit with a strict-mode KaTeX render
+    check over every `bigIdea`/`cue`/`note`/cross-link `note` — this prose had never been rendered
+    or tested before being surfaced in the UI; it rendered clean, no bug found, but the check is
+    now a permanent regression guard (this exact class of bug — a stray `$...$` delimiter — bit
+    WS-8 once already, caught the same way).
+  - `03fec13` — wired `confusablesFor` into `recognition.ts`'s `distractorsFor`: prefers a
+    problem's primary technique's family siblings + cross-links over uniform-random distractors,
+    topping up with random picks when the confusable pool is smaller than needed (or empty, e.g.
+    `floor-function`). The pre-existing "never offer a technique already tagged on the problem"
+    invariant is unedited and still enforced — the real-788-problem-bank test for it in
+    `recognition.test.ts` was not touched and still passes. Exported the previously-private
+    `distractorsFor` (purely additive; checked every importer) so 5 new tests could exercise the
+    preference logic directly rather than fishing for it through `assembleRound`'s bank-wide
+    randomness.
+  - `c512e93` — the map section on `IntegralLessons.tsx`, placed right after the page header:
+    family cards (name, `bigIdea`, members linked to their practice route with their `cue`) and a
+    "Stand alone" card (each standalone technique linked, with its `note`). Static, not another
+    accordion, per the "legibility over flourish" steer. Built entirely from tokens/components
+    already used two inches below it on the same page (`bg-card`/`border-border`/`text-foreground`/
+    `text-muted-foreground`/`text-primary`, `Tex`, the `PrerequisiteChip`-style link-to-practice
+    convention) — zero new color logic, confirmed by screenshotting both the app's default dark
+    theme and (forcing `jarvis_theme=light` per `src/lib/appThemes.ts`) its light theme side by
+    side; both render correctly with no code changes needed for either.
+
+  **Playwright walkthrough, both pages, screenshots taken, zero console/page errors throughout.**
+  `/dev/integrals/lessons`: family cards and the standalone section confirmed rendering with real
+  KaTeX, member/standalone links carry the correct `/integrals/train/:id` hrefs (not followed
+  through login — `DashboardGuard` correctly redirects an unauthenticated session to `/auth`,
+  identically to every pre-existing `PrerequisiteChip` link on the same page; that's existing,
+  correct behavior, not something this change needed to route around). `/dev/integrals/recognition`:
+  played 5 real rounds (100 real questions, real clicks, real auto-advance) end to end. A live
+  "Integration by parts" question's three distractors came back as exactly {Standard forms,
+  Substitution, Integral of an inverse function} — `confusablesFor("parts")`'s full set, screenshot
+  captured before and after the click. Cross-checked all 100 live samples against the real
+  imported `confusablesFor` (not a hand-duplicated copy of the relationships): 88/96 classifiable
+  samples fully matched; the remaining 8 apparent mismatches were individually traced to real
+  multi-tagged bank problems (queried `PROBLEMS` directly, not assumed) whose secondary tag is
+  itself a confusable of the primary — the pre-existing per-problem exclusion invariant correctly
+  shrinking the eligible pool, exactly the scenario the dedicated unit test for it covers. Not a
+  bug; the verification script's own simplification (not knowing secondary tags) was the source of
+  the apparent mismatch, run to ground rather than left as an unresolved question mark.
+
+  **Merged to `main`** (the two prior in-session merges — visible as `main`'s own head commit
+  being a merge of this branch before this session started — used the same pattern, followed
+  here): `git fetch origin main`, diffed both sides against the merge-base first (`main` had only
+  touched `src/assets/landing/*`, `landing.css`, `LandingPage.tsx` since diverging — zero file
+  overlap with this branch's `src/features/integrals/*` + `IntegralLessons.tsx` changes, so a
+  clean merge was expected and got one). Merged `origin/claude/pensive-tesla-421vh8` into
+  `origin/main` inside an isolated detached worktree (`git worktree add --detach`, never checked
+  out `main` in the primary working directory) — no conflicts. Full verification on the merged
+  result inside the worktree: `npx vitest run` 2252/2252, `npx tsc --noEmit -p tsconfig.app.json`
+  clean, `eslint` clean on every touched file. Pushed; `main` is now `e1ce0f0`. Worktree removed.
+  Branch `claude/pensive-tesla-421vh8` sits at `c512e93`, one merge behind `main`'s `e1ce0f0` (the
+  merge commit itself only exists on `main`, per the established pattern — nothing further to sync
+  back). No pull request opened, per instructions.
+
+  **This closes `UK_BEE_BURST.md`'s entire specced queue** — WS-1 through WS-6 (the original
+  burst), WS-7 (the campaign), WS-8 (finishing the lesson rebuild), and Extension 2's WS-9
+  (headsolving), WS-10 (deep absorption) and WS-11 (this entry) — every workstream the runbook
+  named has shipped to at least the pragmatic completion standard documented at each one's own
+  entry above. Final whole-repo state at the end of this session: **2252/2252 tests passing**,
+  `npx tsc --noEmit -p tsconfig.app.json` clean, every file this session touched eslint-clean.
+
+  **What remains is flagged, un-actioned follow-ups, not undiscovered work — compiled here from
+  across this log so a future session doesn't have to re-read 1800+ lines to find them:**
+  1. **WS-7's readiness metrics are narrower than the full spec.** `campaignReadiness.ts` ships
+     attempt rate, median recognition time, and error rate over a trailing 14-day window. The full
+     `UK_BEE_BURST.md` WS-7 spec also asked for "Q1–10 pace, tail reach, and paper-score trend
+     versus the owner's own first cold sit" — pace/reach within a single paper sitting, and a
+     trend line across sittings. Neither is built. `uk/paperHistory.ts` already stores the
+     per-sitting, per-band data a trend line would need; this is a real, cheap future add, not
+     something requiring new content or new plumbing from scratch.
+  2. **Paper mode's accessible band has a real, verified repetition ceiling.** Checked against the
+     live bank (not assumed): the difficulty-1–2 pool has 136 problems, but the definite side —
+     70% of each week's ten accessible-band questions, 7 of 10 — is only 44 problems deep. At 7
+     drawn per week with each week's `weekSeed` reshuffling independently (no cross-week
+     exclusion), the definite accessible pool cycles roughly every 4–6 weekly papers before
+     repeats become common, meaning a competitor sitting this weekly will start seeing familiar
+     Q1–10 questions within a month or two of regular use. Not a bug — `assembleBand`'s own
+     defensive-backfill comment already anticipates a pool running short — but a real content
+     ceiling the owner should know about; the fix is more difficulty-1–2 definite problems, which
+     needs new source PDFs per standing directive #2, not an engineering change.
+  3. **`conceptReviewStep()` (WS-10's spaced-review module) is not wired into `uk/campaign.ts`'s
+     `planSession`.** Both pieces exist and work independently; composing them is real
+     session-design judgment (which block(s) it appears in, how often, how it interacts with the
+     taper block's "no new material" rule) that no session has made yet — flagged inline in
+     `conceptReview.ts`'s own doc comment as well as here.
+  4. **WS-10 left 5 of 21 lessons at the WS-2/WS-8 baseline schema** — `introducing-constants`,
+     `floor-function`, `inverse-integral`, `log-power-integrals`, `gaussian-hypersphere` have no
+     `completions`/`selfExplain`, only the earlier `prerequisites`/`intuition`/`examples`/
+     `checkYourself`. Explicitly scoped out as lower-priority (WS-8's own "second tier", never
+     named in WS-10's delegated instructions), not overlooked.
+  5. **Two WS-9 (headsolving) design calls the owner hasn't weighed in on**: `headsolve.ts`'s
+     `SEED_TIERS` technique-difficulty ordering is a reasoned prior, not measured data — worth a
+     look once real headsolve history accumulates; and self-graded "close" deliberately never
+     triggers `queue.ts`'s near-miss scheduling bonus (mapped to plain "incorrect" in the shared
+     attempt log instead), keeping an unverified self-report from quietly steering the typed-mode
+     scheduler — the owner may want it to count.
+  6. **The root `tsconfig.json` still makes bare `npx tsc --noEmit` a silent no-op** (`"files": []`,
+     only `references` — needs `-b` or an explicit `-p tsconfig.app.json` to actually check
+     anything). Known since the WS-3 entry above; not fixed because it's shared build config
+     outside every session's stated file scope, and fixing it for the first time could surface a
+     pre-existing type-error backlog elsewhere in the app. Every verification this session (and
+     every session since WS-3) ran the real `-p tsconfig.app.json` form.
+  7. **Three MIT 2026 Finals problems from the last content-mining pass are still unmined** — a
+     genuine transcendental nested-log-tower limit (needs a dedicated Newton's-method custom
+     function, real engineering investment) plus two others not attempted under time pressure —
+     and `mathEngine.ts`'s shared mathjs instance (added for `lambertw`) could similarly host a
+     whitelisted `gcd` for a future PDF batch. Both noted where they came up, not reattempted here
+     — outside this session's scope and, per standing directive #2, moot without new source PDFs.
+  8. **SPLASH/UK-guide `source.round` still doubles as a citation locator**, the same pattern
+     fixed for MIT specifically (247 problems, `round` was each citation locator instead of an
+     actual round label, collapsing the by-source practice view to one-problem groups) — SPLASH
+     (30→11 real groups) and the UK guide (28→20) would tighten the same way if the owner wants
+     the by-source view cleaner there too; left alone since the owner's original complaint named
+     MIT specifically.
+
+  One item earlier progress-log entries flagged as open is now resolved by this session, worth
+  closing out explicitly rather than leaving ambiguous: WS-6's own note that recognition-drill
+  distractors were "uniformly random among the eligible set, not hand-curated 'confusable' groups"
+  — WS-11's `confusablesFor` wiring (this entry) is that fix.
+
+  **Standing directive #2 still applies**: no new practice problems were authored this session
+  (every WS-11 claim lives in `techniqueMap.ts`'s descriptive prose, not `bank/*.ts`), and there is
+  no more sourced content to mine without new PDFs from the owner. A future session starting here
+  with runway and no new uploads should check the list above for something concrete to pick up
+  (all eight items are real, scoped, and actionable) rather than inventing problems or speculative
+  features — the "hard stop" this runbook's opening section anticipates is genuinely reached again.
