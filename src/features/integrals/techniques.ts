@@ -1047,8 +1047,11 @@ export const TECHNIQUES: Technique[] = [
     id: "wallis-product",
     name: "Wallis integrals",
     tagline: "\\int_0^{\\pi/2}\\sin^n x\\,dx follows the same reduction as the full-period version — and squeezing consecutive terms is how Wallis found his product for \\pi.",
+    prerequisites: ["Recurrence relations", "Trig identities"],
     whenToUse:
       "A power of \\sin x or \\cos x integrated over [0,\\pi/2] (or [0,\\pi], or a full period) — exactly the shape the recurrence technique reduces, but here the point is the family of values itself, and the surprising fact that comparing consecutive terms produces an infinite product for \\pi.",
+    intuition:
+      "On [0,\\pi/2], \\sin x\\in[0,1], so raising it to a higher power can only make it SMALLER (or equal) at every point: \\sin^{n+1}x\\le\\sin^nx\\le\\sin^{n-1}x throughout the interval. Integrating a pointwise inequality over a fixed interval preserves it, so I_{n+1}\\le I_n\\le I_{n-1}. Divide through by I_{n-1} (positive, so the inequality direction survives): \\frac{I_{n+1}}{I_{n-1}}\\le\\frac{I_n}{I_{n-1}}\\le1 — and the reduction formula from Recurrence relations gives \\frac{I_{n+1}}{I_{n-1}}=\\frac n{n+1}, which tends to 1 as n grows. Squeezed between something tending to 1 and 1 itself, \\frac{I_n}{I_{n-1}} has no choice but to tend to 1 as well: already by n=5 the ratio is \\frac{I_5}{I_4}\\approx0.905, and by n=50 it's \\frac{I_{50}}{I_{49}}\\approx0.990. Unrolling the even- and odd-indexed reductions separately and pushing that ratio to its limit is exactly what turns a statement about ONE sequence into the infinite product for \\pi below.",
     recipe: [
       "Reduce with parts exactly as in the recurrence technique: I_n=\\int_0^{\\pi/2}\\sin^nx\\,dx satisfies I_n=\\frac{n-1}{n}I_{n-2}, with base cases I_0=\\frac{\\pi}{2} and I_1=1.",
       "On [0,\\pi/2], \\sin x\\in[0,1], so higher powers are pointwise smaller: \\sin^{n+1}x\\leq\\sin^nx\\leq\\sin^{n-1}x for every x there, hence I_{n+1}\\leq I_n\\leq I_{n-1}.",
@@ -1056,21 +1059,19 @@ export const TECHNIQUES: Technique[] = [
       "Unrolling the even-index reduction all the way down and substituting into that ratio produces the Wallis product: \\frac{\\pi}{2}=\\prod_{k=1}^\\infty\\frac{2k}{2k-1}\\cdot\\frac{2k}{2k+1} = \\frac{2}{1}\\cdot\\frac{2}{3}\\cdot\\frac{4}{3}\\cdot\\frac{4}{5}\\cdot\\frac{6}{5}\\cdot\\frac{6}{7}\\cdots",
       "The two-power version \\int_0^{\\pi/2}\\cos^{2\\alpha-1}\\theta\\sin^{2\\beta-1}\\theta\\,d\\theta=\\frac{\\Gamma(\\alpha)\\Gamma(\\beta)}{2\\Gamma(\\alpha+\\beta)} comes from the same substitution that proves \\int_0^\\infty e^{-x^2}dx=\\frac{\\sqrt\\pi}{2}: write \\Gamma(\\alpha)\\Gamma(\\beta) as a product of two Gaussian integrals, switch to polar coordinates, and the angular integral left over is exactly this one.",
     ],
-    example: {
-      integrand: "\\sin^6 x \\text{ on } \\left[0,\\frac{\\pi}{2}\\right]",
-      work: [
-        "I_n=\\frac{n-1}{n}I_{n-2}, base case I_0=\\frac{\\pi}{2}.",
-        "I_2=\\frac{1}{2}\\cdot\\frac{\\pi}{2}=\\frac{\\pi}{4}.\\quad I_4=\\frac{3}{4}\\cdot\\frac{\\pi}{4}=\\frac{3\\pi}{16}.",
-        "I_6=\\frac{5}{6}\\cdot\\frac{3\\pi}{16}=\\frac{15\\pi}{96}.",
-      ],
-      result: "\\frac{5\\pi}{32}",
-    },
+    example: WALLIS_EXAMPLES[0],
+    examples: WALLIS_EXAMPLES,
     pitfalls: [
       "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the exact same I_n — substitute x\\to\\frac{\\pi}{2}-x to see sin and cos trade places over this particular interval — so don't re-derive the cosine case from scratch.",
       "The squeeze argument needs sin x\\in[0,1] on the interval, which is specific to [0,\\pi/2] (or [0,\\pi]) — it's not a general fact about \\sin^nx for arbitrary bounds.",
       "The reduction formula alone answers every 'evaluate this integral' problem; the squeeze/product derivation is the extra mile that explains *why* the Wallis product converges to \\pi, not a step you need for a numeric answer.",
       "\\Gamma at a quarter-integer (like \\Gamma(3/4)) has no simpler closed form — an answer is allowed to contain it as-is, the same way an answer is allowed to contain \\pi or \\sqrt2.",
     ],
+    checkYourself: {
+      prompt: "\\cos^7x \\text{ on } \\left[0,\\frac\\pi2\\right]",
+      answer: "\\frac{16}{35}",
+      hint: "\\int_0^{\\pi/2}\\cos^nx\\,dx equals the same I_n as \\sin^nx on this interval — unwind the odd-index recursion starting from I_1=1.",
+    },
   },
   {
     id: "gaussian-hypersphere",
