@@ -290,3 +290,75 @@ Apply the WS-2 schema — `prerequisites`, `intuition` (the *why*, derived, befo
 verified numerically before it ships, and any example stating a literal evaluatable integral gets an
 `integrandExpr`/`resultExpr` mirror so `lessonExamples.test.ts` actually checks it. A lesson
 containing wrong algebra is worse than a terse correct one.
+
+---
+
+# Extension 2: winning, not qualifying (added 30 Aug)
+
+Two things from the owner reframe what "good enough" means here.
+
+**He is training to win outright** — against Oxbridge and Imperial fields, not to place. So the
+ceiling matters more than the floor, and "decent knowledge → competitive" is the wrong target;
+"competitive → wins" is the target.
+
+**He is already practising headsolving** — working integrals mentally to build speed. This is the
+single most important signal in this document, because it exposes a flaw the app has carried from
+the start: **every clock in it measures mathematics plus typing.** Solve in six seconds, type for
+twenty-five, and the app records thirty-one and learns nothing. He has independently found the
+training method that routes around that. The app must support it as a first-class mode.
+
+**WS-9 · Headsolving.** *Highest priority of the three. Files: new `headsolve*.ts`,
+`hooks/useHeadsolveRun.ts`, `pages/IntegralHeadsolve.tsx`, routes, hub tile.*
+
+A mode with **no answer input at all**. Show the integral; the competitor thinks; they hit one key
+the moment they have it, which stops the clock; the answer is then revealed and they self-grade
+**got it / close / no**. That single design choice is the whole point — it measures *think time*,
+uncontaminated by keyboard, which is the only speed number that transfers to a competition where
+you write on paper.
+
+- Self-grading is not a weakness here, it is the only honest option: nothing typed means nothing to
+  parse. Trust the competitor; he is training alone and has no incentive to flatter himself.
+- Log to the WS-1 attempt store with its own mode so headsolve times never pollute typed-mode
+  statistics, and vice versa. The two clocks measure different things and must not be averaged.
+- Target times, derived from the solo Round 1 budget rather than invented: **accessible band ≤ 30 s
+  in the head, mid band ≤ 90 s.** Show the target on screen and whether the attempt beat it.
+- Ladder the difficulty by *headsolvability*, not by the bank's `difficulty`: a problem can be easy
+  on paper and impossible in the head (long algebra), or hard-looking and instant in the head (a
+  symmetry collapse). Derive an ordering from observed headsolve success, and seed it from
+  technique — symmetry, standard forms, parity tricks and recognition-led problems first.
+- A streak/ladder framing works well here: consecutive successes raise the difficulty, a miss drops
+  it. This is the one mode where gamifying is right, because the skill genuinely is fluency under
+  a rising bar.
+
+**WS-10 · Deep absorption.** *Files: `techniques.ts` schema additions + `LessonBody.tsx`. Runs
+AFTER WS-8, and extends the same schema — do not run these two concurrently.*
+
+The owner's ask: lessons he can "sponge" — absorb deeply, not just read. WS-2 and WS-8 fix the
+*shape* (derivation before recipe, faded examples). This adds the three things that evidence on
+learning actually supports and the schema still lacks:
+
+- **Completion problems.** A partially worked example where the last step or two are left blank
+  beats both a full worked example and an unaided problem for a learner at this stage. Add
+  `completions?: { setup: string[]; blank: string; answer: string }[]` — the work shown down to a
+  gap, and the gap.
+- **Self-explanation prompts.** One question per lesson that forces processing rather than
+  recognition — not "what is the substitution" but *"why does this substitution and not the obvious
+  one?"* Reveal-only, like `checkYourself`.
+- **Spaced concept review.** Problems are already spaced by WS-4's scheduler; *ideas* are not. A
+  lesson read once in week 2 is never revisited except through problems. Resurface each technique's
+  `intuition` and one worked example on a spacing schedule, as a short review step the campaign can
+  drop into a session.
+
+**WS-11 · The technique map.** *Files: new `techniqueMap.ts`, a section on the lessons page.*
+
+Twenty-one techniques presented as a flat list is twenty-one things to remember. Presented as a
+structure, it is a handful of ideas with variations — which is what deep absorption actually means
+and what separates someone who *knows* the techniques from someone who *sees* which one a problem
+wants.
+
+Encode the real relationships: t-sub, reciprocal substitution and King's reflection are all "change
+variable until a symmetry becomes visible"; Beta, Gamma and Wallis are one family reached by
+different routes; recurrence and reduction are the same idea indexed differently. Render as a map
+on the lessons page, and use it in the recognition drill to choose **confusable** distractors
+rather than random ones — a distractor from the same family is a real test of discrimination, a
+random one is free.
