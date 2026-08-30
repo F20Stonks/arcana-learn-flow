@@ -388,7 +388,7 @@ const ZETA_EXAMPLES: WorkedExample[] = [
       "For x>0, e^{-x}\\in(0,1), so \\frac1{e^x-1}=\\frac{e^{-x}}{1-e^{-x}}=e^{-x}\\sum_{j=0}^\\infty\\left(e^{-x}\\right)^j=\\sum_{j=0}^\\infty e^{-(j+1)x}. Relabelling k=j+1 gives \\frac1{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}.",
       "Multiply by x and integrate term by term: \\int_0^\\infty\\frac{x}{e^x-1}\\,dx=\\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx.",
       "Each term is the n=1 Gamma-function integral, scaled: \\int_0^\\infty xe^{-kx}\\,dx=\\frac{1!}{k^2}=\\frac1{k^2}.",
-      "The sum is \\sum_{k=1}^\\infty\\frac1{k^2}=\\zeta(2)=\\frac{\\pi^2}6 — the Basel-problem constant, cited rather than re-derived here (the Gamma-function lesson's 'why it works' has the family this belongs to).",
+      "The sum is \\sum_{k=1}^\\infty\\frac1{k^2}=\\zeta(2)=\\frac{\\pi^2}6 — the same constant Euler found by comparing \\frac{\\sin x}x's power series to its factorisation over its roots \\pm k\\pi; cited here rather than re-derived, exactly as \\Gamma\\!\\left(\\frac12\\right)=\\sqrt\\pi gets cited (not re-derived) wherever it's needed later.",
     ],
     result: "\\frac{\\pi^2}6",
     integrandExpr: "x/(exp(x)-1)",
@@ -460,7 +460,7 @@ const RECIPROCAL_SUB_EXAMPLES: WorkedExample[] = [
   {
     integrand: "\\frac1{(1+x^2)(1+x^3)} \\text{ on } [0,\\infty)",
     work: [
-      "Let I=\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^3)}. Substitute x=\\frac1t as before: the (1+x^2) factor becomes \\frac{t^2+1}{t^2}$ and $(1+x^3)$ becomes $\\frac{t^3+1}{t^3}$, while $dx=-\\frac{dt}{t^2}$ — so $\\frac{dx}{(1+x^2)(1+x^3)}$ becomes $\\frac{t^3\\,dt}{(1+t^2)(1+t^3)}$ after the t^2 in the numerator cancels one power of t^2 from (1+x^2).",
+      "Let I=\\int_0^\\infty\\frac{dx}{(1+x^2)(1+x^3)}. Substitute x=\\frac1t as before: (1+x^2) becomes \\frac{t^2+1}{t^2}, (1+x^3) becomes \\frac{t^3+1}{t^3}, and dx=-\\frac{dt}{t^2} (the bound-flip cancels the sign, as always) — so \\frac{dx}{(1+x^2)(1+x^3)} becomes \\frac{t^3\\,dt}{(1+t^2)(1+t^3)}, the t^2 from dx cancelling one of the two powers of t^2 sitting in the denominator's (1+x^2) factor.",
       "So I=\\int_0^\\infty\\frac{t^3\\,dt}{(1+t^2)(1+t^3)} — the SAME denominator as the original, just an extra t^3 upstairs. Relabelling t as x: I=\\int_0^\\infty\\frac{x^3\\,dx}{(1+x^2)(1+x^3)}.",
       "Add this to the original expression for I: 2I=\\int_0^\\infty\\frac{1+x^3}{(1+x^2)(1+x^3)}\\,dx=\\int_0^\\infty\\frac{dx}{1+x^2}=\\Big[\\arctan x\\Big]_0^\\infty=\\frac\\pi2.",
       "So I=\\frac\\pi4 — and nothing about '3' was actually used, only that (1+x^3) canceled against itself; the same argument works with x^a in place of x^3 for any a>0.",
@@ -1017,8 +1017,11 @@ export const TECHNIQUES: Technique[] = [
     id: "zeta-series",
     name: "Zeta-series integrals",
     tagline: "Expand \\frac{1}{e^x\\mp 1} as a geometric series in e^{-x}, then integrate term by term.",
+    prerequisites: ["The Gamma function", "Geometric series"],
     whenToUse:
       "The integrand has \\frac{1}{e^x-1} or \\frac{1}{e^x+1} (or a scaled version, \\frac{1}{e^{ax}\\mp 1}) multiplied by a power of x, over (0,\\infty). Neither denominator is something you can attack directly — but both hide a geometric series that turns the integral into a sum of gamma-function integrals.",
+    intuition:
+      "\\frac1{e^x-1} hides a geometric series once you factor out e^{-x}: \\frac1{e^x-1}=\\frac{e^{-x}}{1-e^{-x}}, and for x>0, e^{-x}\\in(0,1), so \\frac1{1-e^{-x}}=\\sum_{j=0}^\\infty\\left(e^{-x}\\right)^j converges exactly the way \\frac1{1-r}=\\sum r^j does for any ratio |r|<1. Multiplying by x and integrating that series term by term turns ONE hard integral into infinitely many EASY ones — each \\int_0^\\infty xe^{-kx}\\,dx is just the Gamma-function's own n=1 case, scaled — and what's left over afterward is a bare numerical series, \\sum\\frac1{k^2}. That's where \\pi enters: at even powers this kind of series has a closed form in \\pi (the Basel problem and its relatives), which is exactly what makes these particular integrals come out elementary at all, rather than being left as an infinite sum.",
     recipe: [
       "Factor out e^{-x}: \\frac{1}{e^x-1} = \\frac{e^{-x}}{1-e^{-x}}, which is a geometric series \\sum_{k=1}^\\infty e^{-kx} (and \\frac{1}{e^x+1} = \\sum_{k=1}^\\infty(-1)^{k-1}e^{-kx}, the alternating version).",
       "Multiply through by x^n and integrate term by term: \\int_0^\\infty x^n\\cdot\\frac{1}{e^x\\mp1}\\,dx = \\sum_{k=1}^\\infty(\\pm1)^{k-1}\\int_0^\\infty x^ne^{-kx}\\,dx.",
@@ -1027,20 +1030,18 @@ export const TECHNIQUES: Technique[] = [
       "The same series, differentiated once, handles \\frac{e^x}{(e^x-1)^2}: since \\frac{d}{dx}\\frac{1}{e^x-1}=-\\frac{e^x}{(e^x-1)^2}, the series \\sum e^{-kx} differentiates to \\sum ke^{-kx}, so \\int_0^\\infty x^n\\cdot\\frac{e^x}{(e^x-1)^2}\\,dx=\\sum_{k=1}^\\infty k\\int_0^\\infty x^ne^{-kx}\\,dx=n!\\,\\zeta(n).",
       "\\ln(1-x)=-\\sum_{k=1}^\\infty\\frac{x^k}{k}, so \\int_0^1\\frac{\\ln(1-x)}{x}\\,dx=-\\sum_{k=1}^\\infty\\int_0^1x^{k-1}\\,dx/k=-\\sum\\frac{1}{k^2}=-\\zeta(2)=-\\frac{\\pi^2}{6} — the same series trick, run on [0,1] instead of (0,\\infty).",
     ],
-    example: {
-      integrand: "\\frac{x}{e^x-1} \\text{ on } (0,\\infty)",
-      work: [
-        "\\frac{1}{e^x-1}=\\sum_{k=1}^\\infty e^{-kx}, so the integral is \\sum_{k=1}^\\infty\\int_0^\\infty xe^{-kx}\\,dx.",
-        "Each term is the n=1 gamma-function integral: \\int_0^\\infty xe^{-kx}\\,dx=\\frac{1}{k^2}.",
-        "The sum is \\sum_{k=1}^\\infty\\frac{1}{k^2}=\\zeta(2)=\\frac{\\pi^2}{6} — the same constant Euler found by comparing \\frac{\\sin x}{x}'s power series to its Weierstrass product over its roots \\pm k\\pi.",
-      ],
-      result: "\\frac{\\pi^2}{6}",
-    },
+    example: ZETA_EXAMPLES[0],
+    examples: ZETA_EXAMPLES,
     pitfalls: [
       "Swapping the sum and the integral needs justifying in a rigorous treatment (everything here is positive and the series converges absolutely, so it's fine) — but it's the one nontrivial step and worth naming, not just doing silently.",
       "\\frac{1}{e^x+1} gives the alternating series \\eta(n+1), not \\zeta(n+1) — mixing the two up gives an answer off by a factor of (1-2^{-n}).",
       "Only even n+1 has a known closed form in \\pi; \\zeta(3), for instance, has no elementary closed form, so \\int_0^\\infty\\frac{x^2}{e^x-1}\\,dx isn't a 'type the answer' problem the way the even cases are.",
     ],
+    checkYourself: {
+      prompt: "\\frac{-\\ln(1-x)}x \\text{ on } [0,1]",
+      answer: "\\frac{\\pi^2}6",
+      hint: "Expand -\\ln(1-x)=\\sum_{k=1}^\\infty\\frac{x^k}k, divide by x, and integrate term by term on [0,1] instead of (0,\\infty) — the last recipe bullet is this exact move.",
+    },
   },
   {
     id: "wallis-product",
