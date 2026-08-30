@@ -1245,8 +1245,11 @@ export const TECHNIQUES: Technique[] = [
     id: "gaussian-hypersphere",
     name: "Gaussian integrals & the hypersphere",
     tagline: "Squaring \\int e^{-x^2}dx turns it into a 2-D integral you can do in polar coordinates — the same trick, run in d dimensions, gives the volume of a hypersphere.",
+    prerequisites: ["Substitution", "The Gamma function"],
     whenToUse:
       "A polynomial times e^{-x^2} (or e^{-ax^2}) integrated over (0,\\infty) or (-\\infty,\\infty). There's no elementary antiderivative for e^{-x^2} itself — this family is solved by a dimension-raising trick, not by finding F(x).",
+    intuition:
+      "Squaring a single integral turns it into a genuinely 2-D one: if I=\\int e^{-x^2}\\,dx over the whole line, then I^2 is the SAME integral run twice, over two INDEPENDENT variables — which is exactly \\iint e^{-(x^2+y^2)}\\,dx\\,dy over the whole plane, a function that depends only on distance from the origin. That radial symmetry is what makes polar coordinates pay off: chop the plane into thin rings of radius r and thickness dr, each ring further split into wedges of angle d\\theta. To first order, one such patch is a rectangle with sides dr (radial) and r\\,d\\theta (tangential — arc length is radius times angle), so its area is r\\,dr\\,d\\theta, not just dr\\,d\\theta. That extra factor of r is the whole payoff: \\int e^{-r^2}r\\,dr is elementary by u=r^2, even though \\int e^{-x^2}\\,dx alone never was — the area element itself supplies exactly the factor a plain substitution needs.",
     recipe: [
       "Let I=\\int_{-\\infty}^\\infty e^{-x^2}\\,dx. Then I^2 = \\left(\\int_{-\\infty}^\\infty e^{-x^2}dx\\right)\\left(\\int_{-\\infty}^\\infty e^{-y^2}dy\\right) = \\iint_{\\mathbb{R}^2}e^{-(x^2+y^2)}\\,dx\\,dy.",
       "Switch to polar coordinates: x^2+y^2=r^2 and dx\\,dy=r\\,dr\\,d\\theta, so I^2=\\int_0^{2\\pi}\\int_0^\\infty e^{-r^2}r\\,dr\\,d\\theta — and the r makes the radial integral elementary (u=r^2).",
@@ -1254,20 +1257,18 @@ export const TECHNIQUES: Technique[] = [
       "For x^{2n}e^{-x^2} or e^{-ax^2}, don't re-derive — substitute u=x^2 or u=\\sqrt{a}\\,x to reduce to this base result or to a gamma-function integral (odd powers of x actually land there: x^{2n+1}e^{-x^2} has an elementary antiderivative once u=x^2 is applied, no \\sqrt\\pi involved).",
       "The same squaring trick generalises: \\int_{\\mathbb{R}^d}e^{-|x|^2}dx = \\pi^{d/2} (d independent 1-D Gaussians), and also equals \\int_0^\\infty e^{-r^2}\\,\\omega_{d-1}r^{d-1}\\,dr where \\omega_{d-1} is the surface area of the unit (d-1)-sphere. Matching the two (the radial integral is a gamma-function integral, \\frac{1}{2}\\Gamma(d/2)) gives \\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)} — the surface area of a radius-r sphere in d dimensions is \\frac{2\\pi^{d/2}}{\\Gamma(d/2)}r^{d-1}.",
     ],
-    example: {
-      integrand: "\\text{The hypersphere formula, checked at } d=3",
-      work: [
-        "\\omega_{d-1}=\\frac{2\\pi^{d/2}}{\\Gamma(d/2)}. At d=3: \\omega_2=\\frac{2\\pi^{3/2}}{\\Gamma(3/2)}.",
-        "\\Gamma\\left(\\frac{3}{2}\\right)=\\frac{1}{2}\\Gamma\\left(\\frac{1}{2}\\right)=\\frac{\\sqrt\\pi}{2}, using \\Gamma(1/2)=\\sqrt\\pi (which is exactly I=\\sqrt\\pi from the derivation, in Gamma-function notation).",
-        "\\omega_2 = \\frac{2\\pi^{3/2}}{\\sqrt\\pi/2} = 4\\pi, and the surface area of a radius-r sphere is \\omega_2r^2=4\\pi r^2 — the familiar formula.",
-      ],
-      result: "4\\pi r^2",
-    },
+    example: GAUSSIAN_EXAMPLES[0],
+    examples: GAUSSIAN_EXAMPLES,
     pitfalls: [
       "\\int e^{-x^2}dx has no elementary antiderivative at all — every problem in this family is solved by a substitution or symmetry trick that avoids ever needing F(x), not by finding one.",
       "Odd powers (x,\\,x^3,\\,x^5,\\ldots) times e^{-x^2} are secretly elementary — u=x^2 turns x^{2n+1}e^{-x^2}dx into a plain gamma-function integral in u, with no \\sqrt\\pi in the answer. Only even powers carry the \\sqrt\\pi.",
       "\\Gamma(1/2)=\\sqrt\\pi is exactly this technique's I=\\sqrt\\pi in disguise — if a problem elsewhere needs \\Gamma at a half-integer, this derivation is where that value comes from.",
     ],
+    checkYourself: {
+      prompt: "x^4e^{-x^2} \\text{ on } [0,\\infty)",
+      answer: "\\frac{3\\sqrt\\pi}8",
+      hint: "By parts with u=x^3,\\ dv=xe^{-x^2}dx reduces this to a multiple of the second worked example's result, \\frac{\\sqrt\\pi}4.",
+    },
   },
 ];
 
