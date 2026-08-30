@@ -796,28 +796,29 @@ export const TECHNIQUES: Technique[] = [
     id: "recurrence",
     name: "Recurrence relations",
     tagline: "Relate a hard integral to an easier one indexed one step down, then unwind.",
+    prerequisites: ["Integration by parts"],
     whenToUse:
       "The integral is naturally indexed by an integer n — a power like \\sin^n x, or a family like \\frac{x^n}{1+x} — and integration by parts, or a small algebraic trick, relates I_n to I_{n-1} or I_{n-2}. Reach for this whenever a problem hands you a family rather than a single integral.",
+    intuition:
+      "A family I_n indexed by an integer n often has no antiderivative pattern that works for every n at once — but relating I_n to I_{n-1} turns ONE hard problem into infinitely many EASY ones, plus a base case you compute directly. That's the same logic as proof by induction, just run forwards as a calculation instead of backwards as a proof: pin down the relationship once, compute the base case once, and every I_n for every n follows just by unwinding. The relationship doesn't have to come from integration by parts, either — for \\frac{x^n}{1+x}, adding I_n and I_{n-1} directly produces something that collapses on its own: x^n+x^{n-1}=x^{n-1}(x+1), and that (x+1) cancels the (1+x) sitting in the denominator exactly, leaving a plain power of x to integrate.",
     recipe: [
       "Name the family I_n. Try peeling one factor off with integration by parts, or adding/subtracting a related power algebraically, to relate I_n to a lower index.",
       "Solve the recurrence down to a base case you can compute directly — usually I_0 or I_1.",
       "Unwind the recurrence for the specific n you actually need.",
       "Watch the parity: many recurrences behave differently for even and odd n, so pin down which branch you're on before unwinding.",
     ],
-    example: {
-      integrand: "\\frac{x^2}{1+x} \\text{ on } [0,1]",
-      work: [
-        "Let I_n = \\int_0^1 \\frac{x^n}{1+x}\\,dx. Adding I_n and I_{n-1}: I_n + I_{n-1} = \\int_0^1 x^{n-1}\\,dx = \\frac{1}{n}.",
-        "So I_n = \\frac{1}{n} - I_{n-1}, and the base case is I_0 = \\int_0^1 \\frac{dx}{1+x} = \\ln 2.",
-        "I_1 = 1 - \\ln 2, so I_2 = \\frac{1}{2} - I_1 = \\ln 2 - \\frac{1}{2}.",
-      ],
-      result: "\\ln 2 - \\frac{1}{2}",
-    },
+    example: RECURRENCE_EXAMPLES[0],
+    examples: RECURRENCE_EXAMPLES,
     pitfalls: [
       "Unwinding by hand for a large n is exactly as much work as the original problem — look for whether the recurrence collapses into a product or telescopes before grinding through every step.",
       "A recurrence relating I_n to I_{n-2} needs BOTH I_0 and I_1 as base cases, one for each parity.",
       "Getting the algebra sign wrong in I_n + I_{n-1} = \\dots vs I_n - I_{n-1} = \\dots silently flips every answer downstream — verify the very first step against a value you can compute directly (n=1 or n=2) before trusting the pattern.",
     ],
+    checkYourself: {
+      prompt: "\\frac{x^3}{1+x} \\text{ on } [0,1]",
+      answer: "\\frac56-\\ln2",
+      hint: "Same family as the first worked example: I_3=\\frac13-I_2. You already have I_2=\\ln2-\\frac12 from the lesson.",
+    },
   },
   {
     id: "inverse-integral",
