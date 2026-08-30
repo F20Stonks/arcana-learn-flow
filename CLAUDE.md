@@ -1594,3 +1594,130 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   entry, but was not started here since it wasn't this session's delegated task. None of the three
   were built or scoped further in this session — flagged for whoever picks up next, per the
   runbook's own stop-and-report instinct, not silently started and not silently ignored.
+
+- 2026-08-30 (new session, same branch): **WS-9 — headsolving, shipped and merged to main.** Started
+  on `claude/pensive-tesla-421vh8` at baseline `f851b47` (2109/2109 passing across 31 files,
+  `tsc --noEmit -p tsconfig.app.json` clean, tree clean) — reproduced before the first edit. Read the
+  WS-9 spec in `UK_BEE_BURST.md`'s "Extension 2" section, `attempts.ts`, `useIntegralRun.ts`,
+  `useRecognitionRun.ts` + `IntegralRecognition.tsx` (closest existing analogue), and
+  `IntegralsHub.tsx`/`App.tsx` before writing anything, per this task's own instructions.
+
+  The core design point, preserved deliberately rather than diluted: every other clock in this app
+  measures mathematics plus typing. Headsolve mode has **no answer input at all** — a problem
+  appears, the competitor thinks, one keypress stops the clock, the answer reveals, and they
+  self-grade got it / close / no. Three new/touched files, one commit each, pushed after every one:
+
+  - `src/features/integrals/headsolve.ts` (commit `b1fef65`, with `headsolve.test.ts`, 35 tests):
+    pure domain logic. Ladders by **headsolvability, not the bank's own `difficulty`**, per the
+    runbook's own explicit instruction — a problem can be trivial on paper and impossible in the
+    head. Five seed tiers by primary technique, fastest-in-the-head first, each with its reasoning
+    documented inline: symmetry alone (the recognition IS the solve — its own recipe literally says
+    "the answer is 0, no work required"); the nine "finals arsenal" recognition-led/memorised-result
+    techniques (Beta, Gamma, zeta-series, Wallis, log-power, Gaussian, reciprocal-substitution,
+    inverse-integral, introducing-constants); one-clean-step techniques (power, u-sub, Feynman); a
+    drilled-multi-step tier (t-sub, trig-identity, complete-square, recurrence); heaviest-bookkeeping
+    last (parts, trig-sub, partial-fractions, floor-function). `techniqueAdjustments()` lets real
+    observed accuracy (≥5 decisive got-it/no picks) pull a technique up to ~1.2 tier-widths away from
+    its seed prior — verified with a dedicated test that this actually **reorders past** the seed
+    tier, not just perturbs within it, which is the "let observed success refine it" half of the
+    spec. 12 discrete levels windowed over the ranked bank; sanity-checked against the real
+    788-problem bank with a throwaway `vite-node` script (not just the unit-test fixtures) — ~66
+    problems per level, smooth tier/difficulty progression level to level, no empty level.
+    `applyGrade` is the whole ladder: `SUCCESS_STREAK_TO_LEVEL_UP = 3` consecutive "got it" climbs a
+    level and resets the streak; "close" resets the streak without demoting (the method was there);
+    "no" resets the streak and drops a level. Targets are the runbook's own numbers **verbatim**
+    (accessible ≤30s, mid ≤90s) — no target invented for the tail band, since the runbook didn't give
+    one; a caller renders that as "no fixed target," never a guessed number or a false miss.
+  - `src/features/integrals/headsolveHistory.ts` (same commit, with its own test file, 13 tests):
+    its own scoped/fail-soft/ring-buffered store (same pattern as `attempts.ts`/
+    `recognitionHistory.ts`/`campaignStore.ts`) holding the full grade/band/thinkMs/beatTarget plus
+    the persisted ladder, **and** mirrors every graded attempt into the shared WS-1 attempt log under
+    a new `RunMode` of `"headsolve"` (one-line additive change to `attempts.ts`), exactly as
+    instructed, so headsolve times can never silently average with typed ones. Both keystroke-split
+    timing fields (`msToFirstKeystroke`/`msFirstKeystrokeToSubmit`) are recorded as **null** on the
+    mirror — the honest value, since there genuinely is no keystroke event — which every existing
+    consumer of those fields (e.g. `uk/campaignReadiness.ts`'s median-recognition-time calculation)
+    already filters out before averaging, so no downstream file needed touching or filtering logic
+    added. Deliberately does **not** map self-graded "close" to the shared vocabulary's
+    `"off-by-constant-factor"` verdict class (mapped to `"incorrect"` instead, same as "no") — that
+    class is specifically read elsewhere by `queue.ts`'s `scheduledQueue` as a machine-verified
+    numeric near-miss signal that boosts serving priority, and a self-report is different-quality
+    evidence that shouldn't quietly pull that lever; flagging this design call here rather than
+    leaving it implicit.
+  - `hooks/useHeadsolveRun.ts` + `hooks/useHeadsolveHistory.ts` (commit `e9a022c`, no new tests —
+    matches this feature's existing convention that no hook under `src/features/integrals/hooks` has
+    its own unit test; coverage comes from the pure modules a hook calls, plus the mandatory
+    Playwright walkthrough for the page that uses it). The run hook is a three-phase state machine
+    (ready → thinking → revealed → back to thinking on the next pick) deliberately open-ended, unlike
+    the recognition drill's fixed 20-question round — headsolving is a streak/ladder drill you keep
+    going on. `recordHeadsolveAttempt` is called as a plain statement in `gradeSelf`'s body, never
+    inside a `setState` updater — the same discipline `useRecognitionRun.ts`'s own doc comment
+    already established (an updater can run more than once, which would double-record).
+  - `src/pages/IntegralHeadsolve.tsx` + routes + hub tile (commit `8ee7125`): keyboard-first per the
+    spec — Space stops the clock, 1/2/3 (or G/C/N) grade once revealed, guarded against a focused
+    input the same way `IntegralTraining.tsx`/`IntegralValues.tsx` already do. Reuses
+    `IntegralPrompt` and `SolutionSteps` verbatim rather than reimplementing either. Routed at
+    `/integrals/headsolve` (`DashboardGuard`, no `BetaGate`, matching every other Integral Arena
+    route) plus its `/dev/` twin; a "Headsolve" tile (Brain icon) placed between "Name the weapon"
+    and "Values deck" on the hub — the two no-typing speed drills sitting together — completing a
+    clean 8-tile 2-column grid before the full-width Head-to-head tile.
+    - One real bug caught and fixed before shipping, worth remembering: the first draft's keyboard
+      `useEffect` depended on the whole `run` object returned by the hook, which is a fresh object
+      literal every render — including every 100ms clock tick while thinking, which would have torn
+      down and re-added the `window` keydown listener ten times a second. Fixed by depending on the
+      two specific `useCallback`-memoized handlers (`run.stopClock`, `run.gradeSelf`) instead, which
+      only change reference when the run's actual phase changes.
+    - The mandatory Playwright walkthrough (`/dev/integrals/headsolve`, real dev server, screenshots)
+      hit one genuine test-script bug worth recording since it's a recurring class: the first
+      walkthrough draft used `page.click("text=Start")`, which Playwright substring-matches — and
+      the Ladder card's own description paragraph contains the word "starts" ("the ladder **starts**
+      with symmetry collapses..."), which sits earlier in DOM order than the actual Start button, so
+      the click landed on a paragraph and nothing happened. Same class of bug a previous session's
+      WS-7 walkthrough hit with a wrong CSS selector — fixed by switching every walkthrough selector
+      to `getByRole` with `exact: true` where ambiguity was possible, not by rewording the page copy.
+      Once fixed, the full walkthrough ran clean: start → think → Space to stop the clock → reveal
+      (`SolutionSteps` + beat/miss/no-target line) → grade "got it" via keyboard `1` → stop-via-
+      button-click → grade "close" via keyboard `2` → stop-via-button-click → grade "no" via
+      keyboard `3` → Stop → landing screen now showing real all-time stats. Read
+      `arcana.integrals.headsolve.v1` and `arcana.integrals.attempts.v1` back from real
+      `localStorage` afterward and confirmed by hand, not just asserted in the script: 3 headsolve
+      attempts with the right grades (`got-it, close, no`) and bands (`mid, tail, accessible`,
+      correctly picking up whichever difficulty the level-0 pool happened to serve), `beatTarget`
+      `true, null, true` (the mid-band "no" grade beat 90s trivially, the accessible one beat 30s
+      trivially, the tail-band pick correctly has no target at all); 3 mirrored `AttemptRecord`s, all
+      `mode: "headsolve"`, `verdictClass` correctly `correct, incorrect, incorrect`, both
+      keystroke-split timing fields null on all three, matching `problemId`s between the two logs.
+      A **second**, separate script specifically drove three consecutive "got it" grades and
+      confirmed the ladder actually **climbs a level** (`Level 1 of 12` → `Level 2 of 12` in the live
+      UI text, `{"level":1,"streak":0}` in storage) — not just asserted from the design, watched
+      happen both on screen and in storage. Zero console or page errors across every run. Screenshots
+      confirm the visual design matches the rest of the app exactly (same card/typography/color
+      language) with no regression anywhere else touched (hub grid, App.tsx routes).
+  - **Verification, whole repo, every checkpoint**: `npx vitest run` — **2157/2157 passing across 33
+    files** (was 2109/2109 across 31 at session start — +48 tests, all new, all in
+    `headsolve.test.ts`/`headsolveHistory.test.ts`; the hook and page checkpoints added zero new unit
+    tests by design, per the convention noted above, and were verified by the Playwright walkthrough
+    instead). `npx tsc --noEmit -p tsconfig.app.json` clean throughout (bare `npx tsc --noEmit` at
+    the repo root is **still** a no-op — see the 2026-08-29 entry above; this session used the real
+    `-p tsconfig.app.json` invocation for every check, never the bare one). `eslint` clean on every
+    file this session touched, checked explicitly file-by-file rather than eyeballed. No existing
+    test was edited. `normalize()`/`answer.ts` untouched (only ever imported from, read-only).
+  - **Merged to `main`**: fetched `origin/main`, confirmed no divergence overlapping this session's
+    files, merged `claude/pensive-tesla-421vh8` into `origin/main` in an isolated detached worktree
+    (never checked out `main` in the primary working directory), re-ran the full verification loop
+    inside the worktree, and pushed. See the merge commit for the exact SHA; both branches now carry
+    WS-9.
+  - **Nothing cut.** Every bullet in the WS-9 spec shipped: pure ranking/ladder module, its own
+    history store, the WS-1 mirror under a new `RunMode`, the run hook, the keyboard-first page,
+    routes, hub tile, and the mandatory Playwright walkthrough with a real level-up observed.
+  - **For the owner to weigh in on, flagged rather than decided unilaterally**: (1) the seed-tier
+    technique ordering in `SEED_TIERS` (`headsolve.ts`) is a reasoned starting prior, not measured
+    data — it's designed to self-correct from real observed accuracy per technique once ≥5 decisive
+    picks exist, but the initial order (documented inline with the reasoning) is this session's own
+    judgment call, not the owner's; worth a look once real headsolve data exists. (2) self-graded
+    "close" deliberately never triggers `queue.ts`'s near-miss scheduling bonus (mapped to
+    `"incorrect"` in the shared log instead of `"off-by-constant-factor"`) — a deliberate choice to
+    keep an unverified self-report from quietly influencing the typed-mode scheduler, flagged in case
+    the owner would rather it did. (3) per `UK_BEE_BURST.md`'s own ordering, WS-11 (the technique
+    map) and WS-10 (deep absorption, unblocked since WS-8 closed) remain available for a future
+    session — neither was started here, this session's delegated scope was WS-9 only.
