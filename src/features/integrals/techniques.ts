@@ -1377,6 +1377,37 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac1{30}",
       hint: "m=4,\\ n=1 in \\frac{m!\\,n!}{(m+n+1)!}.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int_1^3(x-1)^3(3-x)^2\\,dx — not on [0,1] yet: rescale with u=\\frac{x-1}{3-1}=\\frac{x-1}2, so x=1+2u,\\ dx=2\\,du, and the bounds x=1,3 become u=0,1.",
+          "Then x-1=2u and 3-x=3-(1+2u)=2-2u=2(1-u), so the integrand becomes (2u)^3\\big(2(1-u)\\big)^2\\cdot2\\,du=8\\cdot4\\cdot2\\,u^3(1-u)^2\\,du=64\\,u^3(1-u)^2\\,du.",
+        ],
+        blank: "The rescaled integral is a plain Beta shape with m=3,\\ n=2 — apply the formula and multiply back by the constant the rescaling produced.",
+        answer: "\\int_0^1u^3(1-u)^2\\,du=\\frac{3!\\,2!}{6!}=\\frac{12}{720}=\\frac1{60}. Multiplying back: 64\\cdot\\frac1{60}=\\frac{64}{60}=\\frac{16}{15}.",
+        integrandExpr: "(x-1)^3*(3-x)^2",
+        resultExpr: "16/15",
+        domain: [1, 3],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^1x^2(1-x)^3\\ln x\\,dx — introduce \\varepsilon on the ln x factor's exponent: I(\\varepsilon)=\\int_0^1x^{2+\\varepsilon}(1-x)^3\\,dx=\\frac{\\Gamma(3+\\varepsilon)\\cdot3!}{\\Gamma(7+\\varepsilon)} (the recipe's digamma-trick formula with m=2,\\ n=3), so the target is I'(0).",
+          "Differentiate: I'(\\varepsilon)=I(\\varepsilon)\\big[\\psi(3+\\varepsilon)-\\psi(7+\\varepsilon)\\big], where \\psi is the digamma function (the log-derivative of \\Gamma). At \\varepsilon=0, I(0)=\\frac{2!\\,3!}{6!}=\\frac1{60} — the ordinary Beta value.",
+          "For a positive integer n, \\psi(n)=-\\gamma+H_{n-1} where H_k=1+\\frac12+\\cdots+\\frac1k, so \\psi(3)-\\psi(7)=H_2-H_6 — the \\gamma cancels exactly, as the pitfall promises.",
+        ],
+        blank: "Compute H_2-H_6 and combine with I(0) to get the answer.",
+        answer: "H_2=\\frac32,\\quad H_6=\\frac{49}{20}, so \\psi(3)-\\psi(7)=\\frac32-\\frac{49}{20}=-\\frac{19}{20}. Then I'(0)=\\frac1{60}\\cdot\\left(-\\frac{19}{20}\\right)=-\\frac{19}{1200}.",
+        integrandExpr: "x^2*(1-x)^3*log(x)",
+        resultExpr: "-19/1200",
+        domain: [0, 1],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The pitfalls note that m and n must be nonnegative INTEGERS for \\frac{m!\\,n!}{(m+n+1)!} to make sense as written, with a fractional power needing \\Gamma instead. But \\Gamma(k+1)=k! for every nonnegative integer k — so why can't you just always write \\frac{\\Gamma(m+1)\\Gamma(n+1)}{\\Gamma(m+n+2)} and forget the distinction entirely, even when m,n happen to be integers?",
+      answer: "You CAN — \\frac{\\Gamma(m+1)\\Gamma(n+1)}{\\Gamma(m+n+2)} and \\frac{m!\\,n!}{(m+n+1)!} are the exact same number whenever m,n are nonnegative integers, since \\Gamma agrees with factorial there by definition. The distinction in the pitfall isn't about correctness, it's about what's easy to compute BY HAND: m! for an integer is arithmetic anyone can do in their head (3!=6), while \\Gamma\\!\\left(\\tfrac72\\right) needs the recursive identity \\Gamma(z+1)=z\\Gamma(z) unwound several times down to \\Gamma\\!\\left(\\tfrac12\\right)=\\sqrt\\pi — genuinely more work, and a place a competitor under time pressure is likelier to slip. The formula is universal; the advice to use the factorial form for integers is purely about which route to the same number is faster on paper.",
+    },
   },
   {
     id: "introducing-constants",
@@ -1491,6 +1522,35 @@ export const TECHNIQUES: Technique[] = [
       prompt: "x^4e^{-2x} \\text{ on } [0,\\infty)",
       answer: "\\frac34",
       hint: "Either substitute u=2x to land on the base case, or apply \\frac{n!}{a^{n+1}} directly with n=4,\\ a=2.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_0^\\infty xe^{-x}\\sin x\\,dx — a trailing \\sin x is the formula in disguise: \\sin x=\\operatorname{Im}(e^{ix}), so this is \\operatorname{Im}\\int_0^\\infty xe^{-(1-i)x}\\,dx — the a=1-i case of \\int_0^\\infty xe^{-ax}\\,dx=\\frac{1!}{a^2}.",
+          "So the integral is \\operatorname{Im}\\frac1{(1-i)^2}. Compute the denominator first: (1-i)^2=1-2i+i^2=1-2i-1=-2i.",
+        ],
+        blank: "Finish simplifying \\frac1{-2i} to a+bi form and take the imaginary part.",
+        answer: "\\frac1{-2i}=\\frac1{-2i}\\cdot\\frac ii=\\frac i{-2i^2}=\\frac i2, so \\operatorname{Im}\\frac1{(1-i)^2}=\\operatorname{Im}\\frac i2=\\frac12.",
+        integrandExpr: "x*exp(-x)*sin(x)",
+        resultExpr: "1/2",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^\\infty x^52^{-x}\\,dx — rewrite the base: 2^{-x}=e^{-x\\ln2}, so this is \\int_0^\\infty x^5e^{-x\\ln2}\\,dx, the a=\\ln2 case of \\int_0^\\infty x^ne^{-ax}\\,dx=\\frac{n!}{a^{n+1}}.",
+        ],
+        blank: "Plug in n=5,\\ a=\\ln2 and finish — don't forget n! here is the ordinary integer factorial, not something you need \\Gamma for.",
+        answer: "\\frac{5!}{(\\ln2)^6}=\\frac{120}{(\\ln2)^6}.",
+        integrandExpr: "x^5*2^(-x)",
+        resultExpr: "120/log(2)^6",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The pitfalls note that a Gaussian integrand (e^{-x^2}) needs the separate Gaussian/hypersphere approach, not this technique. Try the by-parts move directly on \\int_0^\\infty x^ne^{-x^2}\\,dx — u=x^n,\\ dv=e^{-x^2}\\,dx — and explain exactly where it breaks down, compared to the e^{-x} case where dv=e^{-x}\\,dx integrates immediately to v=-e^{-x}.",
+      answer: "The whole reduction depends on v being computable in the first place: dv=e^{-x}\\,dx integrates immediately to v=-e^{-x}, a genuine elementary antiderivative, which is what makes u=x^n,\\ dv=e^{-x}\\,dx a usable split at all. But \\int e^{-x^2}\\,dx has NO elementary antiderivative — that's the Gaussian integral's defining difficulty — so v can't even be written down as a formula, and the by-parts move never gets off the ground. (An ODD power, x^{2n+1}e^{-x^2}, dodges this entirely: substituting w=x^2 first turns it into a plain e^{-w} integral, which IS this technique's territory — it's only the even powers that are stuck needing v to exist for the bare e^{-x^2} factor.)",
     },
   },
   {
