@@ -802,3 +802,1229 @@ why, so the owner can make the final call rather than it just quietly vanishing.
     `mathEngine.ts` infra (shared mathjs instance with `lambertw`) is now in place and could be
     extended the same way for `gcd` (mathjs has it natively, just needs whitelisting) or other
     custom functions the next PDF batch might need.
+
+- 2026-08-29 (new session, `UK_BEE_BURST.md` supersedes this file for the window it names):
+  Started on `claude/pensive-tesla-421vh8` at baseline commit `5278b62` (1901/1901 passing,
+  `tsc --noEmit` clean, reproduced before the first edit as required). Working the runbook's
+  workstreams in order — see `UK_BEE_BURST.md` for the full spec; this file's own standing
+  directives and Workflow section still apply except where that runbook tightens them.
+
+  **WS-1 · Attempt logging + split clock — shipped, commit `438837d`.** New store
+  `src/features/integrals/attempts.ts`, alongside `progress.ts` (same fail-soft localStorage
+  pattern, reuses `progress.ts`'s `scopedKey` rather than widening `Progress` itself — its own
+  cache self-invalidates on scope change by re-checking `scopedKey` on every read, so no change to
+  `progress.ts` was needed at all). One row per submission — correct, incorrect,
+  off-by-constant-factor or unparseable, not just solves — with `problemId`, `mode`
+  (training/daily/sprint), verdict class, the raw submitted string, hints open,
+  `wrongAttemptsSoFar`, and the two clocks the runbook asked for: `msToFirstKeystroke`
+  (recognition) and `msFirstKeystrokeToSubmit` (execution), alongside the existing `elapsed`
+  clock in each run hook, untouched. Ring buffer capped at 5000 (`MAX_ATTEMPTS`, exported).
+  - Wired into `useIntegralRun`, `useSprintRun`, `useDailyRun`: each tracks a `firstKeystrokeAt`
+    ref (reset per problem/slot) set on the first `setInput` call, and calls `recordAttempt()` in
+    `submit()` before branching on the verdict. Sprint mode gets its own per-problem
+    `problemWrongAttempts` ref for `wrongAttemptsSoFar`, kept separate from the pre-existing
+    sprint-wide `wrongAttempts` state the result screen displays (untouched, still whole-run).
+    `giveUp()` does not log an attempt anywhere — no submitted string, nothing to classify;
+    "attempt" is read as "submission" throughout, matching the runbook's own field list.
+  - 10 new tests in `attempts.test.ts` (shape, ring-buffer cap + eviction order, per-account
+    scoping, storage-unavailable fail-soft, reset). The ring-buffer test pushes 5010 real records
+    through the real `recordAttempt()` — genuinely O(n²) since every write re-serialises the
+    growing log (the same cost the production write path pays on a long-running account, just
+    never hit synchronously 5000 times in a row by a human) — confirmed with a standalone Node
+    profile (~9s in plain V8, no jsdom) before concluding it wasn't a bug to chase. Swapped in a
+    fast in-memory `Storage` stub for that one test (still exercises the real
+    `globalThis.localStorage` code path, just a faster backend) and gave it an explicit 20s
+    timeout rather than weakening what it proves; merged what was originally two tests into one so
+    the cost is paid once (~7.4s) rather than twice.
+  - Verified: `npx vitest run` — 1911/1911 passing (was 1901/1901); `npx tsc --noEmit` clean;
+    `eslint` clean on every touched file. Also a real Playwright walkthrough against the dev
+    server (`/dev/integrals/train/power`, `/dev/integrals/daily`, `/dev/integrals/sprint` —
+    submitted wrong answers in training and sprint, skipped in sprint): attempts landed in
+    `localStorage` under `arcana.integrals.attempts.v1` as expected (1 after the training
+    submission, 2 after adding the sprint one), zero console/page errors, no visual regression.
+    Nothing in WS-1's stated scope was skipped.
+
+  **Next**: WS-2, the lesson rebuild — see the entry that follows once it lands, or (if this file
+  is being read mid-workstream) check `git log` on this branch for the latest state.
+
+  **WS-2 · Rebuild the lessons for a reader fresh out of A-level — shipped, commit `20bea88`.**
+  Extended `Technique` (`types.ts`) additively: `prerequisites?`, `intuition?`,
+  `examples?: WorkedExample[]` (graduated — first spells out every step, later ones compress),
+  `checkYourself?: {prompt, answer, hint}` (reveal-only, no live grading). The legacy singular
+  `example` field stays required and every rebuilt technique sets it to `examples[0]` via a shared
+  local const, so it can never drift from `examples` and `mathText.test.ts`'s existing
+  "everything in the curriculum renders" check (which reads `.example` directly) kept passing
+  completely unedited. `WorkedExample` also grows an optional
+  `integrandExpr`/`resultExpr`/`domain`/`kind` — same machine-checkable-mirror pattern as
+  `Problem.integrandExpr`/`answer` — set only on examples stating a literal evaluatable integral.
+  - New `lessonExamples.test.ts` (42 tests) checks every gradeable example the same way
+    `problems.test.ts` checks the graded bank — `derivative()`/`quadrature()` duplicated verbatim
+    (not imported, so importing this file can never re-trigger another file's test registrations)
+    — plus a strict-mode KaTeX-render check across all 21 techniques' new and old prose fields.
+  - Rebuilt all 10 techniques the runbook named, in its stated order: the A-level bridge (`power`,
+    `u-sub`, `parts`, `trig-identity`, `trig-sub`, `partial-fractions`, `complete-square`) then the
+    definite-integral core (`symmetry`, `t-sub`, `feynman`). Each got a prerequisites chip list, an
+    intuition paragraph deriving *why* the move works, two graduated worked examples, and a
+    checkYourself self-check. `t-sub` specifically now derives \sin x=\frac{2t}{1+t^2} etc. from
+    the double-angle formulas in `intuition` (rather than asserting it) and spells out the `dx`
+    cancellation step by step in its example instead of folding it in silently — the exact gap the
+    runbook called out by name. Every one of the 30 new numeric claims across the 10 lessons was
+    verified with a throwaway Node script (plain `Math.*`, not reusing mathjs/`normalize()`,
+    mirroring `problems.test.ts`'s methods including the infinite-domain substitutions) before
+    being written down, with comfortable margins (smallest ~3100x tolerance, most 10^6–10^11x) —
+    well clear of the "within ~50% of the boundary, find a cleaner example" guardrail. One genuinely
+    new addition (not just a rewrite of existing content): the Frullani integral
+    `\int_0^\infty\frac{e^{-x}-e^{-2x}}x\,dx=\ln2` as `feynman`'s first, more-spelled-out example,
+    with the existing `\ln3` example kept as the second, more compressed one.
+  - `LessonBody.tsx` rewritten to render the new sections when present (prerequisite chips linked
+    to their own lesson when the text names an existing technique; "Why it works"; graduated
+    "Worked examples", labelled "Example N of M" past the first; a reveal-only "Check yourself")
+    and to fall back cleanly to the old single "Worked example" heading with no extra sections for
+    the 11 techniques not rebuilt this pass. Verified in both real render contexts (the standalone
+    Lessons library, and the collapsed lesson panel on the training/practice screen) via a real
+    Playwright walkthrough against the dev server — including a non-rebuilt technique (Recurrence
+    relations) specifically to confirm the fallback path shows no empty sections.
+  - Verified: `npx vitest run` — 1953/1953 passing (was 1911/1911 after WS-1); `npx tsc --noEmit`
+    clean; `eslint` clean on every touched file.
+  - **Skipped, per the runbook's own ordering** ("stop when the window closes" / "everything else
+    only if time genuinely remains"): the other 11 techniques (`recurrence`, `inverse-integral`,
+    `floor-function`, `beta-integrals`, `introducing-constants`, `log-power-integrals`,
+    `reciprocal-substitution`, `gamma-function`, `zeta-series`, `wallis-product`,
+    `gaussian-hypersphere`) keep their original single-example lessons untouched. `checkYourself`
+    was deliberately NOT given its own machine-checkable mirror the way `WorkedExample` has — the
+    runbook fixed its shape at exactly `{prompt, answer, hint}` and I chose not to extend past that
+    spec — every `checkYourself` answer was still hand-verified via the same throwaway-script
+    method before shipping, just not wired into an automated regression fixture. Flagging this
+    scoping call explicitly per the runbook's own instinct to surface rather than silently guess.
+
+  **Next**: WS-3 (paper mode) per the runbook's order.
+
+  **WS-3 · Round 1 paper mode — STARTED, NOT FINISHED (commit `e0fb98f`).** The Sonnet agent
+  executing this burst was terminated mid-WS-3 by an API session rate limit, not by anything in the
+  code. What exists is committed deliberately as work-in-progress so an ephemeral container cannot
+  destroy it, and is safe to leave sitting there: **nothing imports any of it** (verified by grep
+  across `src/`), so it is inert with respect to the running app.
+  - Landed and passing: `uk/paper.ts` (deterministic 30-question assembly, three bands of ten by
+    difficulty ≤2/3/4–5, ~70% definite per band, seeded via the existing `shuffled` from `rng.ts`),
+    `uk/paperHistory.ts` (per-sitting record store), `hooks/usePaperRun.ts` (free-navigation answer
+    sheet, 120-minute clock), and 22 tests across `uk/paper.test.ts` + `uk/paperHistory.test.ts`.
+  - **Still missing before WS-3 can be called shipped**: the page component and the
+    `/integrals/uk/round1` route plus its `/dev/` twin in `App.tsx`; the end-of-paper review and
+    per-band pacing report; wiring `usePaperRun` to `recordAttempt` from WS-1 so paper sittings feed
+    the attempt log; and the mandatory Playwright walkthrough against the dev route. Until the
+    walkthrough exists this is unverified in the only way that counts for a UI mode.
+  - Verified state at the time of this entry: committed tree is **1953/1953** passing; with the
+    WS-3 WIP files present the suite is **1975/1975**; `tsc --noEmit` clean in both cases.
+  - **Next session resumes here**, at WS-3, from `UK_BEE_BURST.md`. WS-4 (scheduler), WS-5 (error
+    taxonomy) and WS-6 (recognition drill + values deck) remain untouched.
+
+- 2026-08-29 (new session, same branch): Resumed at WS-3 per the previous entry. Reproduced the
+  stated baseline first (1975/1975, working tree clean) before touching anything.
+
+  **Tooling finding, flagged rather than fixed — read this before trusting any past or future
+  "`tsc --noEmit` clean" claim in this log.** `npx tsc --noEmit` run from the repo root is a
+  no-op: the root `tsconfig.json` has `"files": []` and only `references` to
+  `tsconfig.app.json`/`tsconfig.node.json`, which tsc only resolves under `--build` mode. Without
+  `-b`, plain `tsc --noEmit` at the root type-checks **zero files** and exits 0 — confirmed with
+  `--listFiles` (empty output) and by deliberately re-triggering a real type error, which the root
+  invocation missed entirely while `npx tsc --noEmit -p tsconfig.app.json` (which really does
+  `"include": ["src"]`, i.e. the whole app) caught it immediately. This means the exact command
+  this runbook's verification loop names, run exactly as written, has likely been silently
+  checking nothing for this entire burst (and possibly longer — every "`tsc --noEmit` clean" line
+  earlier in this file was almost certainly a real `npm install`/`vitest` run but a no-op tsc run).
+  Did **not** fix the root `tsconfig.json` myself: it's shared build config outside this task's
+  stated paths, and — more importantly — making the root invocation real for the first time could
+  surface a backlog of pre-existing type errors anywhere in the app (this burst already knows the
+  app carries ~95 pre-existing lint findings outside its scope; the type-check equivalent is
+  unmeasured) which would then look like *this task* broke `tsc`, or block "clean" forever without
+  touching out-of-scope files. Used `npx tsc --noEmit -p tsconfig.app.json` for every real
+  typecheck in this session instead (confirmed clean throughout) and am flagging this here for the
+  owner rather than guessing at a fix to shared config. **If future sessions want the literal
+  `npx tsc --noEmit` from this runbook's verification loop to mean something, the fix is either
+  `-p tsconfig.app.json` explicitly or running `tsc -b`/adding a real `include` to the root
+  config — an owner call, not made here.**
+
+  **Found and fixed a real, if latent, type bug in the committed WS-3 WIP while verifying it with
+  the working tsc invocation above**: `usePaperRun.ts`'s `recordAttempt()` call already passed
+  `mode: "paper"` (the wiring to WS-1 the previous entry listed as still missing was actually
+  already written), but `attempts.ts`'s `RunMode` union was still `"training" | "daily" |
+  "sprint"` — `"paper"` was never added to it. Vite's dev/build path doesn't type-check (esbuild
+  strips types), so this was already working correctly at runtime and every `AttemptRecord` in
+  this session's walkthrough came out with the right `mode` — but it was a real static-type gap
+  that `-p tsconfig.app.json` caught immediately. Fixed by adding `"paper"` to `RunMode`
+  (additive, one line); confirmed nothing else switches exhaustively on that union
+  (`scoring.ts`'s own `mode: "daily" | "training"` and `AnswerInput.tsx`'s Type/Build `mode` are
+  unrelated fields with the same name, unaffected).
+
+  **Shipped** (commit `<see below>`): `src/pages/IntegralPaper.tsx` — the paper-mode page, in
+  three phases driven by local state so `usePaperRun`'s clock never starts just from landing on
+  the route:
+  - **Landing**: the rules (three bands, one clock, pause stops the clock not the sitting, flags
+    are personal, hand-in vs. time-up both produce a pacing report), and — via
+    `paperResultForSeed` — last sitting's score/per-band marks if this week's paper was already
+    attempted, with a "Sit it again" CTA (assembles the identical 30 questions, by design, so a
+    retry benchmarks against itself).
+  - **Running**: single 120-minute clock (`role="timer"`, reddens under 5 minutes left), pause/
+    resume (a full overlay replacing the problem while paused), a hand-in button, a live
+    attempted/correct/flagged counter, a question-navigator grid grouped by band (each cell
+    colour-coded unattempted/attempted/correct, flagged cells get a small dot, current cell
+    ringed) driving `goTo`, and the current question rendered with the same `IntegralPrompt` /
+    `AnswerInput` / `VerdictLine` the rest of the feature already uses — nothing about grading or
+    assembly is reimplemented, exactly as the runbook asked.
+  - **Done**: score, triage-cost callout, a per-band pacing table (marks + `formatDuration` time
+    spent, from `PaperResult.bands` — already shaped for exactly this by the WIP author), a
+    "biggest time sinks" list (non-correct slots sorted by time spent, worst first, click-through
+    to review), and a full "review by question" section reusing the same nav grid in read-only
+    mode plus the existing `SolutionSteps` component (so every question's correct answer and
+    worked solution — not just an aggregate score — is genuinely reviewable, not only the
+    per-band summary the data model strictly requires). Per-question review detail (your last
+    input, correct/incorrect) is only available for the sitting just finished, in that same
+    session — `paperHistory.ts`'s snapshot (which carries per-slot detail) is deliberately cleared
+    on finalize and only the band-level aggregate persists, a design already fixed by the WIP
+    commit's own doc comments, not something this pass changed.
+  - Routes added to `src/App.tsx` following the existing pattern exactly: `/integrals/uk/round1`
+    (behind `DashboardGuard`, no `BetaGate` — matches sprint/daily/training) and its `import.meta.
+    env.DEV`-gated `/dev/integrals/uk/round1` twin.
+  - Added a "UK Round 1" tile to `IntegralsHub.tsx` (between Sprint and the full-width Head-to-
+    head tile, completing a clean 2×2 grid) — not explicitly required by the runbook's WS-3 bullet
+    list, but a route nothing links to is a route nobody finds; kept to one tile, same visual
+    pattern as the three tiles beside it, no other hub changes.
+
+  **Playwright walkthrough — mandatory per the runbook, done against a real dev server, not
+  skipped.** `npx playwright install chromium` (already cached in this sandbox's image at
+  `/opt/pw-browsers`, confirmed via `PLAYWRIGHT_BROWSERS_PATH`, so this was instant) since the
+  `playwright` npm package itself isn't a project devDependency (found it globally installed at
+  `npm root -g`; symlinked it into a scratch `node_modules` rather than adding it to this repo's
+  `package.json`, since it's a one-off verification tool, not app or test-suite code). Vite dev
+  server needed `--host 127.0.0.1` explicitly — the default `host: "::"` in `vite.config.ts`
+  fails with `EAFNOSUPPORT` in this sandbox (IPv6 wildcard bind unsupported); also had to use the
+  Bash tool's `run_in_background` rather than a manual `&`/`disown`, since a manually backgrounded
+  process didn't survive past the end of the tool call that started it (this environment resets
+  shell state between Bash invocations, and that reset appears to take detached children with it).
+  Read this week's actual assembled paper first via a throwaway `vite-node` script (seed 33,
+  "week of Aug 24," Q1 = `floor-plain-0to3`, a definite integral with the clean answer "3") so the
+  walkthrough could exercise a genuine correct-answer submission, not just a wrong one. Full
+  script drove: landing → begin → wrong answer on Q1 (verified red "not equivalent" state) →
+  correct answer "3" on Q1 (verified green "Correct.", nav cell turns primary-coloured, counters
+  update) → jump to Q5 via the nav grid and flag it (verified the flag badge and nav-cell dot) →
+  pause (verified the overlay, clock frozen) → resume → hand in early → done screen (verified the
+  pacing table numbers matched what was actually done: Accessible 1/10, Solid 0/10, Tail 0/10,
+  triage cost counting only the non-correct time) → clicked into the review grid → reloaded the
+  page from scratch and confirmed the landing screen now shows "Already sat this week" with the
+  right score, sourced from real `localStorage`, not component state. Read back
+  `arcana.integrals.attempts.v1` and `arcana.integrals.uk.paperHistory.v1` directly from the
+  browser's `localStorage` after the run (not just asserted via the UI) — both contained exactly
+  the expected records, `mode: "paper"` included, confirming the WS-1 wiring end-to-end through
+  real UI interaction rather than code inspection alone. Zero console errors, zero page errors,
+  across the whole walkthrough. Also screenshotted `/dev/integrals` to confirm the new hub tile
+  renders cleanly alongside the other three. 11 screenshots taken in total; none showed a visual
+  regression anywhere else on the pages touched.
+
+  **This closes out WS-3.** Verified: `npx vitest run` — 1975/1975 (unchanged from baseline — this
+  workstream is UI + wiring work verified by the mandatory Playwright walkthrough per the
+  runbook's own instruction that unit tests aren't sufficient evidence for a UI mode, not new unit
+  tests); `npx tsc --noEmit -p tsconfig.app.json` (the real check — see the tooling finding above)
+  clean; `eslint` on every touched file (`src/pages/IntegralPaper.tsx`, `src/pages/IntegralsHub.
+  tsx`, `src/App.tsx`, `src/features/integrals/attempts.ts`) — zero findings. No existing test was
+  edited. `normalize()` and `answer.ts` were not touched.
+
+  **Deliberately not done, and why**: no "retake with different questions" option — the runbook's
+  own paper.ts design (one seed per calendar week) makes "the same 30 questions" the intended
+  behaviour for a retry, not a gap; a real per-question replay of a *past* (not just-finished)
+  sitting — `paperHistory.ts`'s history record is intentionally aggregate-only (band-level), by
+  the WIP author's own design, and building per-question persistence for historical sittings would
+  mean widening what gets written to `localStorage` on every clock tick, which is exactly the cost
+  the existing doc comment in `paperHistory.ts` says was deliberately avoided; flagged here as a
+  possible future ask, not built speculatively.
+
+  **Next**: WS-4 (the scheduler) per the runbook's order, time permitting.
+
+- 2026-08-29 (same session, continuing): **WS-4 · the scheduler — shipped, commit `<see below>`.**
+  Added `scheduledQueue()` to `src/features/integrals/queue.ts`, beside the untouched
+  `orderQueue()`, implementing all five weighted factors the runbook named, in its stated order of
+  influence:
+  1. **Retention decay** — a solved problem's urgency grows with days since `progress.solves[id].
+     solvedAt`, divided by a half-life that shortens the harder that solve was (scaled by the
+     `wrongAttemptsSoFar` recorded on the attempt log's most recent *correct* attempt for that
+     problem — a clean first-try solve gets the full 6-day half-life, a solve that took several
+     wrong attempts decays proportionally faster). A never-solved problem is always more urgent
+     than any solved one, however stale — same "unsolved first" contract `orderQueue` already had,
+     just backed by a real, comparable number instead of a flat +100.
+  2. **Weakness** — per-technique failure rate (fraction of recorded attempts, on problems in the
+     pool being scheduled, tagged with that technique, that weren't `"correct"`) multiplies into
+     urgency, so a technique he's actually failing gets served more.
+  3. **Near-miss priority** — an unsolved problem whose most recent attempt was
+     `off-by-constant-factor` gets a large urgency bonus over one never attempted or one whose last
+     attempt was flatly wrong — "the method was right" is worth more, exactly as the runbook says.
+     Scoped to what's detectable *today*: WS-5 (error taxonomy, not yet built) would let this catch
+     a plain sign-flip too, since a general sign error inside a compound expression isn't
+     necessarily a scalar multiple of the right answer and the current binary correct/off-by-
+     factor/incorrect split can't always tell it apart from ordinary "incorrect" — noted as a real
+     extension point for once WS-5 exists, not attempted here.
+  4. **Target success band** — splits the urgency-ranked list into "comfortable" (estimated ~≥70%
+     odds) and "challenging" (<70%) using a per-problem odds estimate blending difficulty,
+     technique track record, and (when there's history) the problem's own last-attempt signal, then
+     blends the two streams with a fractional (Bresenham-style) accumulator so ~`targetSuccess`
+     (default `TARGET_SUCCESS_DEFAULT = 0.7`, exported) of what's served is the comfortable stream
+     — spread evenly across the queue, not front-loaded. Without this step, weakness (factor 2)
+     alone would serve every problem from the weakest technique before any other, which is exactly
+     the "leads with the hardest material and demoralises" failure mode the runbook called out.
+  5. **Interleaving** — a final pass so consecutive problems don't share `techniques[0]`. First
+     shipped as a bounded local-swap ("find the nearest later item with a different technique"),
+     but a test with an even 3-technique/3-each pool caught it leaving an avoidable clash at the
+     tail (it spends its "swap budget" fixing early clashes and runs out); replaced with the
+     standard "most-remaining-technique" greedy (classic *reorganize-so-no-two-adjacent-match*
+     algorithm, tie-broken by each candidate's position in the priority order from steps 1-4, so
+     among equally-pressing techniques the more urgent one still goes first) — complete whenever a
+     fully clash-free order exists, and provably minimal-clash otherwise (verified by hand against
+     the 5-of-one-technique/1-of-another case: exactly 3 unavoidable adjacent repeats, matching the
+     theoretical `2m-n-1` minimum). Left the failing test's fixture as the reason for the rewrite
+     rather than weakening the assertion to fit the weaker first draft.
+
+  **Deliberately not switched into `IntegralTraining.tsx`'s `TrainingTechnique`** — the only real
+  caller of `orderQueue` today. The runbook says "keep `orderQueue` exported and working for any
+  caller not yet migrated ... and switch callers deliberately"; the deliberate decision made here
+  is *not yet*, because `integration.test.tsx` has two already-passing tests ("advances through the
+  queue and banks training XP", "skips a problem without answering it, recording nothing") that
+  hard-code `orderQueue(...)`'s own output as the expected first-served problem. Swapping
+  `TrainingTechnique`'s internal call to `scheduledQueue` would desynchronise those fixtures from
+  what actually renders and almost certainly break both — exactly the "would need an existing
+  passing test changed" condition this project's own rules say to stop and report on rather than
+  push through. `scheduledQueue` is fully built, exported and independently tested; wiring it in is
+  a follow-up for whenever the owner is fine with those two tests being rewritten to derive `first`
+  from `scheduledQueue` instead (or some other resolution) — not decided here.
+
+  **Testing.** New `src/features/integrals/queue.test.ts`, 12 tests, black-box against
+  `scheduledQueue`'s documented behaviour (not its internals) with minimal fake `Problem`/
+  `AttemptRecord`/`Progress` fixtures: structural invariants (empty pool, output is always an exact
+  permutation of the input pool, deterministic for identical inputs), one test per factor above
+  (unsolved-beats-solved, stale-beats-recent, harder-solve-decays-faster, weak-technique-beats-
+  strong, near-miss-beats-no-attempt, near-miss-beats-flat-wrong, the success-band blend actually
+  blends rather than front-loading, interleaving holds when avoidable, and degrades to a full valid
+  permutation with the provable minimum of residual clashes when it isn't). Two of these caught
+  real problems before being accepted, not just before passing: the weakness test's first draft put
+  the "weak technique" filler problems in as *unsolved*, which put them in the always-higher
+  unsolved-urgency tier and swamped the very comparison the test meant to isolate — fixed by
+  marking them solved-today instead of leaving them out of `progress` entirely; the interleaving
+  test's first draft (see factor 5 above) caught the real algorithm gap that led to the rewrite.
+  Neither was weakened to pass — one was a fixture bug, the other was a real bug in the code being
+  tested, and both are fixed at the root rather than in the assertion.
+
+  Verified: `npx vitest run` — 1987/1987 (was 1975/1975 after WS-3; +12, all new, all in
+  `queue.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on `queue.ts` and
+  `queue.test.ts` — zero findings. `integration.test.tsx`'s existing `orderQueue`-dependent tests
+  were not touched and still pass, confirming `orderQueue` itself is genuinely untouched behaviour,
+  not just untouched source.
+
+  **Next**: WS-5 (error taxonomy) per the runbook's order, time permitting.
+
+- 2026-08-29 (same session, continuing): **WS-5 · error taxonomy — shipped, commit `<see below>`.**
+  New `src/features/integrals/errorTaxonomy.ts`: `classifyError(problem, verdict, rawInput)` labels
+  an already-non-correct `Verdict` — it never decides correctness itself, only why a wrong one
+  looks the way it does, checked in priority order:
+  1. **`sign-flip` / `constant-factor`** — not separately detected at all; answer.ts's own
+     `off-by-constant-factor` verdict already carries the factor, so this is just
+     `Math.abs(factor + 1) < 0.02 ? "sign-flip" : "constant-factor"`. Verified the 0.02 tolerance
+     is safely inside the real gap: with `asSimpleRatio` only checking denominators up to 12, the
+     nearest *other* simple ratio to -1 the live grader can ever actually produce is -11/12
+     (~0.083 away) — so this can never ambiguously straddle real content.
+  2. **`correct-but-unsimplified`** — re-checks the submitted string against the reference with a
+     much looser tolerance (1e-4/1e-5 vs. answer.ts's 1e-6/1e-7) and a denser, differently-phased
+     resample (60 points vs. 11) — "was this actually right and the strict check just got
+     unlucky", surfaced purely as a label, never changing the real verdict already returned.
+  3. **`missing-absolute-value`** — the classic dropped-bars `ln|x|` slip. Doesn't assume the sign
+     change sits at x=0: numerically, it looks for a real gap in valid domain (points where the
+     reference evaluates but the student's answer doesn't — mathjs returns a Complex rather than
+     throwing, caught by the same `typeof v === "number"` guard answer.ts's own evalAt uses) while
+     still agreeing by a constant wherever both are defined, combined with a textual signal (a
+     `log(...)` call not already wrapped in `abs(...)`). Indefinite only.
+  4. **`right-family-wrong-parameter`** — a purely symbolic AST-shape comparison (mathjs's parsed
+     `Node` tree, recursively compared field-by-field) between the student's and reference's
+     parsed answer: same operators/functions/arguments throughout, differing only in one or more
+     numeric literals — `sin(2x)` vs `sin(3x)`, or `sqrt(2)/4` vs `sqrt(3)/4`. Applies to both
+     problem kinds, since a definite answer is itself a parsed expression, not just a decimal.
+  5. **`wrong-method`** — compares the set of function names (`sin`, `log`, `sqrt`, ...) used
+     anywhere in the student's vs. the reference's parsed expression; fires when they share none
+     and the reference actually needed some (a pure-algebra reference can't produce this class).
+  6. Everything else stays `incorrect`/unclassified — the runbook's own "an honest bucket beats a
+     wrong label."
+
+  **Two real design bugs found and fixed via the standard verify-before-shipping workflow** (a
+  throwaway `vite-node` script exercising real and synthetic problems, run before writing the
+  formal tests — same discipline `problems.test.ts` content authoring has always used, applied
+  here to classifier logic instead of bank content):
+  - First draft's `missing-absolute-value` numeric check was completely unreachable for content
+    where it should fire: on a domain evenly split across the sign change, `answer.ts`'s own
+    `checkIndefinite` happens to gather enough usable (same-sign) points to grade the dropped-abs
+    answer *correct outright* (it silently skips points where either side is undefined, same as
+    this module's own resampling) — so the "wrong" verdict this classifier needs to run on never
+    arrives from a balanced domain. Root-caused by testing several domain skews and literally
+    counting how many of the live checker's 11 points land on each side; fixed by widening
+    `RELAXED_SAMPLE_COUNT` to 60 (vs. the original 14) so a domain skewed enough to make the live
+    checker fail (too few usable points on the wrong side) still gives this module's own resample
+    enough of *that same* small side to draw a confident conclusion from.
+  - `correct-but-unsimplified` and `missing-absolute-value`'s first drafts used the exact same
+    "agree wherever both sides are defined" numeric core, which made the former structurally
+    swallow every case the latter should have caught — `log(x)` really does equal `log(abs(x))`
+    on their shared domain of definition, so "matches on the overlap" alone can never tell a
+    domain-narrowing mistake apart from a genuinely-equivalent one. Fixed by sharing one `scanDomain`
+    pass that also tracks `gapCount` (points where the reference is defined but the student's
+    answer isn't), and requiring `gapCount === 0` for `correct-but-unsimplified` vs.
+    `gapCount >= MIN_RELAXED_POINTS` for `missing-absolute-value` — mutually exclusive by
+    construction, not just by check order. A dedicated test
+    ("takes priority over missing-absolute-value when the domain gap is negligible, not real")
+    keeps this distinction pinned down.
+
+  **The required regression guard**, exactly as the runbook specified: `errorTaxonomy.test.ts`'s
+  first test sweeps the entire real bank (all 788 problems, not a sample), grades every problem's
+  own stored `answer` against itself, and asserts every single one comes back `correct` and
+  `classifyError` returns `null` for it — nothing in this module can turn a correct answer into a
+  labelled "error". Runs in under 100ms. 26 tests total, covering all six classes' positive and
+  negative cases plus the profile aggregator below, all against real bank problems or minimal
+  synthetic `Problem` fixtures (no reliance on going through `recordAttempt`/localStorage for the
+  classifier itself — `classifyError` is a pure function of `(problem, verdict, rawInput)`).
+  `normalize()` and `answer.ts`'s grading functions are called exactly as they are, never
+  reimplemented or loosened — `compile`/`evalAt`/`samplePoints` inside `errorTaxonomy.ts` are
+  deliberate near-duplicates (same pattern `lessonExamples.test.ts` already uses for
+  `derivative()`/`quadrature()`), not a second grading path.
+
+  **The profile** ("which error class dominates, and in which techniques"): `buildErrorProfile
+  (attempts)` in the same file walks the WS-1 attempt log, re-grades each non-correct/non-
+  unparseable attempt's stored `submitted` string against the problem's *current* answer (recovers
+  the off-by-constant-factor `factor` for free, since `AttemptRecord` only ever stored the coarse
+  `verdictClass` — no widening of WS-1's already-shipped schema needed), classifies it, and tallies
+  overall and per-primary-technique counts plus each level's dominant class. New
+  `hooks/useAttempts.ts` (same `useSyncExternalStore` pattern as the existing `useProgress`, over
+  `attempts.ts`'s separate store) feeds it into a new "Error profile" section on
+  `IntegralProgress.tsx`, between Sprint bests and Badges: a dominant-class callout, a bar per
+  class with a nonzero count, and a technique-by-technique table (technique, its most common miss,
+  how many classified) — empty-state copy when nothing's classified yet, matching the page's
+  existing "No sprints yet" pattern.
+
+  **Playwright walkthrough, mandatory per the runbook, done for real**: screenshotted the empty
+  Error profile state on a fresh profile, then drove `/dev/integrals/train/power` (the technique's
+  own `orderQueue`-first problem with empty progress, confirmed via a throwaway script rather than
+  guessed) through a sign-flipped submission and a doubled submission — both real UI interactions,
+  not fixture injection — then screenshotted the now-populated profile: "Most common: Constant
+  factor — 1 of 2 classified misses", both classes shown as bars, and a "Standard forms | Constant
+  factor | 2" technique row. Read `arcana.integrals.attempts.v1` back from real `localStorage`
+  after the run to confirm both attempts landed with the right `verdictClass`. Zero console/page
+  errors throughout. One real snag along the way, noted in case a future walkthrough hits the same
+  thing: the *third* scripted submission (the actual correct answer, meant only to tidy up the
+  demo) made `page.waitForSelector("text=Correct.")` hang — turns out training's solved state
+  transitions straight to a "Solved in Xs" summary and the input (and the momentary "Correct."
+  text beside it) leaves the DOM before a 30s wait would ever catch it; `integration.test.tsx`
+  already knew to wait for "Solved in" instead. Not actually needed for this walkthrough's point
+  (every submission is recorded whether or not the problem ever gets solved), so the fix was just
+  dropping that unnecessary third step rather than chasing the right selector.
+
+  Verified: `npx vitest run` — 2013/2013 (was 1987/1987 after WS-4; +26, all new, all in
+  `errorTaxonomy.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on every touched file
+  (`errorTaxonomy.ts`, `errorTaxonomy.test.ts`, `hooks/useAttempts.ts`, `pages/IntegralProgress.tsx`)
+  — zero findings. No existing test edited; `normalize()`/`answer.ts` untouched (only imported from,
+  read-only).
+
+  **Deliberately not done, and why**: no attempt to detect a general in-expression sign error (a
+  flipped sign on just one term of a multi-term answer, as opposed to the whole expression) — that
+  would need genuine symbolic differentiation/term-level diffing, not the numeric-ratio and AST-
+  shape tools this module has; the runbook's own "sign-flip" example is fully covered by the
+  factor-≈-1 case, which is what a whole-answer sign slip (the far more common mistake) actually
+  produces. `right-family-wrong-parameter` and `missing-absolute-value` are the only two classes
+  gated by problem kind (indefinite only for the latter, both kinds for the former, definite
+  trivially can't have a "domain of x" the way an indefinite antiderivative does) — not an
+  oversight, just what the math of each mistake actually supports.
+
+  **This was the last workstream explicitly named in `UK_BEE_BURST.md`'s ordered list**
+  (WS-1 through WS-5 all now shipped); WS-6 (recognition drill + values deck) is the one item the
+  runbook itself says to cut first if the window is tight. Time/budget remains, so continuing to
+  WS-6 next rather than stopping here.
+
+- 2026-08-29 (same session, continuing): **WS-6 · recognition drill + values deck — shipped,
+  commit `<see below>`.** The last workstream in the runbook's ordered list; nothing left cut.
+  Both halves built, verified, and Playwright-walked through together.
+
+  **"Name the weapon"** (`src/features/integrals/recognition.ts` + `recognitionHistory.ts` +
+  `hooks/useRecognitionRun.ts` + `hooks/useRecognitionAttempts.ts` + `pages/IntegralRecognition.tsx`,
+  routed at `/integrals/recognition` + its `/dev/` twin): a 20-question round, each with its own
+  3-second clock — the integrand, four technique buttons, no solving. Every problem is already
+  tagged (`Problem.techniques[0]`), so this needed zero new content, exactly as the runbook said.
+  - Distractors are drawn only from techniques NOT already tagged on the problem (a multi-tagged
+    problem, e.g. one cross-tagged `recurrence`/`wallis-product` from WS-2, never offers one of its
+    own valid tags as a "wrong" choice — verified against the real bank in a dedicated test, since
+    a single-tag problem can't expose that bug on its own).
+  - Every pick (or timeout — a null response, not a wrong guess) is recorded immediately to its
+    own capped ring-buffer store (`recognitionHistory.ts`, same `scopedKey`/fail-soft pattern as
+    `attempts.ts`, deliberately its own key rather than folded into `AttemptRecord`'s shape, which
+    has no clean field for "which of 4 buttons did you press"). Accuracy and median response time
+    per technique — the runbook's own scoring spec — are computed on demand from that log
+    (`recognitionStatsByTechnique`), the same "log everything, aggregate on read" pattern WS-5's
+    `buildErrorProfile` already established, not pre-aggregated/stored.
+  - One real correctness fix made before shipping: the first draft scheduled the auto-advance
+    `setTimeout` *inside* a `setAttempts` functional updater — updaters can run more than once
+    (React may re-invoke them, e.g. under StrictMode), which would double-schedule the advance.
+    Reworked to compute the next array up front and schedule the timeout as an ordinary side
+    effect in the callback body instead — not hit in practice here (this app doesn't use
+    StrictMode), fixed anyway rather than leaving a latent bug for whenever it might.
+  - All-time accuracy/median plus a "weakest so far" callout (lowest accuracy among techniques
+    with >= 3 picks, falling back to the whole set rather than showing nothing when there isn't
+    that much data yet) surfaces on the landing screen once there's any history at all.
+
+  **The values deck** (`src/features/integrals/valuesDeck.ts` + `pages/IntegralValues.tsx`, routed
+  at `/integrals/values` + its `/dev/` twin): flashcards sourced *only* from content already in the
+  repo, per standing directive #2 — every definite bank problem (381 cards total: 361 from the
+  bank, 20 from lesson worked examples with a literal stated result, i.e. `resultExpr` set, the
+  WS-2 convention that already distinguishes a stated closed-form value from a derivation or
+  qualitative aside). Front is the integral, back is the value; flip, Prev/Next, a technique filter,
+  reshuffle, Space/arrow-key shortcuts. Not scored or persisted — "reading isn't scored," the same
+  spirit the Lessons page already has.
+  - One real content-rendering bug caught by writing the tests, not just by eyeballing screenshots:
+    the first draft added `_{a}^{b}` bounds onto a lesson example's `\int ... dx` wrapper whenever
+    `example.domain` was set. At least one existing example (`feynman`'s Frullani integral) already
+    writes its own domain into the `integrand` text as prose — `"... \text{ on } [0,\infty)"` —
+    because `LessonBody.tsx`'s `ExampleCard` never adds bounds itself, so that was the only
+    rendering convention this content was ever written for. Adding bounds on top doubled them up
+    (`\int_{0}^{\infty} ... \text{ on } [0,\infty)\,dx`). Fixed by matching LessonBody.tsx's exact
+    convention instead of a "richer" one of this file's own invention — no bounds ever added, full
+    stop — with a regression test asserting a lesson card's front is *exactly*
+    `\int ${integrand}\,dx`, nothing more.
+
+  **Playwright walkthrough, done together for both halves against a real dev server**: hub
+  screenshot confirming both new tiles render in a clean 3-row grid; recognition landing (empty),
+  a real running question (`∫cos(x)ln(x) + sin(x)/x dx` against Gamma function / integration by
+  parts / reciprocal substitution / zeta-series — a genuine parts-by-inspection question), an
+  incorrect pick's feedback (red X on the wrong choice, blue check on the right one), then the
+  *entire* 20-question round played out through real clicks (not shortcut to "done" — a polling
+  loop that clicks whenever the button is actually enabled again, since the fixed-delay first
+  draft undercounted how long 20 real feedback pauses take and never reached the end within its
+  budget) to a genuine "Round done." screen with the full by-technique table, then back to landing
+  confirming all-time stats picked up all 20 real picks from localStorage. Values deck: front,
+  flip to the back, filter to one technique (13-card Feynman subset, confirmed against the real
+  DOM rather than assumed), Next. Zero console/page errors across the whole session.
+
+  Verified: `npx vitest run` — 2042/2042 (was 2013/2013 after WS-5; +29, all new — 14 in
+  `recognition.test.ts`, 8 in `recognitionHistory.test.ts`, 7 in `valuesDeck.test.ts`); `npx tsc
+  --noEmit -p tsconfig.app.json` clean; `eslint` on every touched file — zero findings (one
+  `@typescript-eslint/prefer-as-const` finding caught and fixed along the way, on a `const ALL:
+  "all" = "all"` that should have been `as const`). No existing test edited.
+
+  **Deliberately not done, and why**: no persistence/scoring for the values deck (it's a reference
+  tool, matching the existing Lessons page's own "reading isn't scored" precedent — the runbook
+  calls this workstream "cheap" and a study aid doesn't need a run history the way a drill does);
+  distractor techniques in the recognition drill are uniformly random among the eligible set, not
+  hand-curated "confusable" groups (e.g. grouping `t-sub`/`trig-sub`/`trig-identity` as
+  deliberately-similar distractors would make the drill sharper, but curating such groups is
+  design/authorship-adjacent work the runbook's own "cheap" framing didn't ask for — flagged here
+  as a real future enhancement, not a gap nobody noticed).
+
+  **This closes out every workstream in `UK_BEE_BURST.md` — WS-1 through WS-6, all shipped and
+  verified this session.** Final state: `npx vitest run` 2042/2042 across 28 files;
+  `npx tsc --noEmit -p tsconfig.app.json` clean; every file this session touched is
+  eslint-clean. Six commits this session (WS-3 through WS-6, each pushed individually to
+  `claude/pensive-tesla-421vh8` right after its own verification passed). Two systemic findings
+  flagged for the owner along the way rather than fixed unilaterally: (1) bare `npx tsc --noEmit`
+  at the repo root is a no-op (see the WS-3 entry above) — the runbook's own verification loop
+  should probably say `-p tsconfig.app.json` explicitly, or the root `tsconfig.json` needs a real
+  `include`/`-b`, but changing shared build config wasn't this task's call to make; (2) `WS-4`'s
+  `scheduledQueue` is fully built and tested but not wired into `TrainingTechnique` — doing so
+  needs two `integration.test.tsx` fixtures rewritten, which crosses this project's own
+  don't-edit-a-passing-test rule, so that's a deliberate follow-up for the owner to authorize
+  rather than something done unilaterally here.
+
+- 2026-08-29 (same session, post-burst): **Wired `scheduledQueue` into the training page** — closing
+  the gap the burst agent correctly stopped short of. It had built and tested the scheduler but left
+  it with zero production callers, because switching `IntegralTraining.tsx` appeared to require
+  editing two passing tests in `integration.test.tsx`, which this project's rules forbid.
+  - On inspection that rule didn't apply. Those two tests never asserted `orderQueue`'s *ordering*;
+    they called it only to discover which problem the page was showing so they could type its
+    answer. Their real assertions are about XP banking and skip behaviour, and both are untouched.
+    The rule guards against weakening assertions to make broken code pass — not against keeping a
+    fixture-discovery helper in lockstep with an intentional behaviour change.
+  - Replaced both call sites with a single `servedFirst()` helper that mirrors the page's selector,
+    documented so a future change to the page's queue construction has one obvious place to follow.
+  - Everyday training now actually adapts: retention decay, per-technique weakness, near-miss
+    priority, target success band and technique interleaving all feed the queue a student sees.
+    Before this commit the daily driver was still the 11-line `orderQueue` and the whole of WS-4 was
+    dead code from the user's point of view.
+  - Verified: `npx vitest run` — **2042/2042 passing across 28 files**, unchanged from before the
+    wiring (no test was weakened or removed); `npx tsc --noEmit -p tsconfig.app.json` clean;
+    `eslint` clean on both touched files. The integration suite mounts the real `TrainingTechnique`
+    page and drives it end-to-end, so it covers this swap directly.
+  - **Note on typechecking, for every future session:** bare `npx tsc --noEmit` at the repo root is
+    a **no-op** — the root `tsconfig.json` sets `"files": []` and only lists project references, so
+    it compiles nothing and exits 0 regardless. Always use `npx tsc --noEmit -p tsconfig.app.json`.
+    Earlier entries in this log that claim "tsc --noEmit clean" were not verifying anything.
+  - **Still open, and the honest answer to "is there a UK-optimised training mode":** the components
+    now exist (paper mode, adaptive scheduler, error taxonomy, recognition drill, values deck) but
+    nothing composes them into a dated programme. Nothing in the app knows the competition date or
+    what today's session should be — see the campaign-mode proposal (WS-7) discussed with the owner.
+
+- 2026-08-29 (later, same session): **WS-7 part 1 — the campaign core (`uk/campaign.ts`).** Both
+  Sonnet agents launched for WS-7 and WS-8 died immediately on a shared API session rate limit
+  (resets 01:10 UTC) without producing anything; the WS-8 worktree auto-cleaned, nothing was lost.
+  Rather than idle for three hours, this session built the reasoning-dense core of WS-7 directly and
+  left the UI plumbing for Sonnet to pick up.
+  - **Design decision worth keeping**: blocks are derived *backwards from the target date*, not
+    pinned to calendar dates. Round 1 is hosted per-university on a date the competitor confirms
+    themselves, so a plan hardcoded to one November Saturday would silently mis-phase for any other
+    date and rot the moment it moved. `blockFor(daysRemaining)` gives taper ≤13 days out, depth
+    14–41, breadth 42+. A test pins this by asserting the same calendar day lands in *different*
+    blocks for two different target dates.
+  - Pure module, no storage and no clock of its own: dates in, a `SessionStep[]` out, so every rule
+    is testable without a browser. `planSession` composes pointers at modes that already exist
+    (recognition, training, paper, values, progress) and reimplements none of them. Rest days in the
+    final 48 hours; papers weekly in depth and twice weekly in taper.
+  - 15 tests in `uk/campaign.test.ts`, all against fixed dates so nothing depends on when the suite
+    runs. Two failed on first run — **both were my own fixtures, not the code**, and the second was
+    a genuinely useful catch: `daysOut(10)` from a Saturday target is a Wednesday, which *is* a
+    taper paper day by the rule as specified, so the plan correctly had no problems step. Fixed the
+    fixture dates rather than weakening either assertion.
+  - Verified: `npx vitest run` — **2057/2057 across 29 files** (was 2042); `npx tsc --noEmit
+    -p tsconfig.app.json` clean; `eslint` clean on both new files. No existing test touched.
+  - **Next, for whoever resumes**: `campaignStore.ts` (persist the target date + session completion,
+    matching `attempts.ts`'s scoped fail-soft pattern), `hooks/useCampaign.ts`,
+    `pages/IntegralCampaign.tsx`, the `/integrals/campaign` route and its `/dev/` twin, a hub tile,
+    and the readiness readout. Then WS-8, which is entirely untouched.
+
+- 2026-08-30 (new session, same branch): **WS-7 part 2 — persistence and UI, closing out the
+  campaign.** Picked up exactly where the previous entry left off. Mid-flight, a supervising
+  session landed a checkpoint commit (`7b09e39`) containing `campaignStore.ts`,
+  `campaignStore.test.ts` and `campaignReadiness.ts` — verified byte-identical to what this session
+  had already written (`git diff HEAD` empty for all three) before building anything on top, so
+  nothing was redone or reconciled. This session's own work landed as `abbdc6c`.
+  - `campaignStore.ts` persists the target date and a per-day tick log
+    (`CampaignSessionRecord {dayKey, completedSteps, updatedAt}`), matching `attempts.ts`'s pattern
+    exactly: `scopedKey`, fail-soft when storage is unavailable, a listener set, a cache that
+    self-invalidates by re-checking the scoped key on every read. Ring-buffer capped at 400 days
+    (`MAX_SESSION_DAYS`) — a ~70–100 day campaign never gets close. Ticking a step reuses
+    `nextStreak` directly from `progress.ts` for the adherence streak's calendar arithmetic (it
+    already operates on the same `{current, longest, lastDayKey}` shape, so no re-derivation was
+    needed); unticking a step deliberately does **not** roll the streak back — "did you show up
+    today" survives a mis-click undo, only a missed calendar day should cost the streak. 21 tests.
+  - `campaignReadiness.ts`: a small pure module reading the WS-1 attempt log directly — attempt
+    rate, median recognition time (median `msToFirstKeystroke`, the clock WS-1's own doc comment
+    already calls "did you even know where to start") and error rate on completed attempts, all
+    over a trailing 14-day window rather than all-time (all-time would blur breadth-block habits
+    into taper-block form for a competitor training for months). Every metric is `null`, not a
+    misleading zero, below `MIN_READINESS_SAMPLE = 5` samples — "keep it honest" taken literally,
+    the page renders a null as "not enough data yet" rather than a bare number. 9 tests.
+    Deliberately narrower than the full WS-7 spec in `UK_BEE_BURST.md` ("Q1–10 pace, tail reach, and
+    paper-score trend versus the owner's own first cold sit") — this session's delegated
+    instructions asked for exactly attempt rate / median recognition time / error rate, so that's
+    what shipped. The other two are a real, cheap future add — `uk/paperHistory.ts` already has the
+    per-sitting score data a trend line would need — flagged here rather than built speculatively
+    or silently dropped.
+  - `hooks/useCampaign.ts`: `useSyncExternalStore` over `campaignStore` (same shape as
+    `useProgress`/`useAttempts`), combining the persisted target date/sessions with `campaign.ts`'s
+    pure `campaignDay`/`planSession` to hand a page today's block, today's steps, and tick/read/set
+    actions already bound to "today." `campaign.ts` itself was not touched — its logic was never in
+    question, only consumed.
+  - `pages/IntegralCampaign.tsx`: today's session as an ordered, tickable list — a checkbox, the
+    step's own `label` and `why`, and a real `Go →` link to its `route`, using `step.kind` as the
+    React key (checked: no single day's `planSession` output ever repeats a `kind`, so this is
+    safe). Days remaining, the current block's name/aim/week, and a native `<input type="date">`
+    for the target date — no new dependency, and no other page in this app had an existing
+    date-picker pattern worth matching, so the plain native control was the least-surprising
+    choice. Below that: the adherence readout (sessions completed, live streak) and the readiness
+    readout with honest "not enough data yet" captions. Ticking is a self-report only — every step
+    is a plain `Link`, nothing gates on it, matching "advisory, not a cage" exactly.
+  - Route `/integrals/campaign` behind `DashboardGuard` (no `BetaGate`, matching every other
+    Integral Arena route) plus its `/dev/` twin in `App.tsx`; a "Campaign" tile added to
+    `IntegralsHub.tsx` between Values deck and the full-width Head-to-head tile.
+  - **Playwright walkthrough against `/dev/integrals/campaign`, done for real, screenshots taken**:
+    loaded fresh (cleared `localStorage` first); screenshotted the default-date landing (69 days
+    out from the real sandbox clock, Breadth block, 2 steps); changed the target date to 10 days
+    out through the actual date input and confirmed the plan really re-derived (3 steps — values
+    deck, problems, review, the taper block's shape — first step "Values deck — 20 cards", not
+    hardcoded); ticked that first step through a real click and confirmed `aria-pressed`, the
+    strikethrough, and both adherence tiles (0→1 sessions, 0→1 streak) updated live; read
+    `arcana.integrals.uk.campaign.v1` back from real `localStorage` and confirmed the stored JSON
+    matched exactly (`{"targetDate":"2026-09-09","sessions":[{"dayKey":"2026-08-30",
+    "completedSteps":["values"],...}],"streak":{"current":1,"longest":1,...}}`); reloaded the page
+    from scratch and confirmed the target date, the tick, and both adherence numbers all survived;
+    unticked the same step and confirmed the streak did **not** roll back (stayed at 1) — the
+    deliberate design decision, verified rather than assumed; set a three-days-ago target date and
+    confirmed the "Done / Round 1 has passed" state and its explanatory copy render sanely; visually
+    confirmed the hub tile renders correctly in the grid and links through. Zero console errors,
+    zero page errors, across the entire run. My own first draft of the walkthrough script used a
+    wrong selector (`h2.font-display` for the block name, which is actually a `<span>`) that made
+    two of its own assertions time out — caught by inspecting the real screenshots rather than
+    trusting the script's log alone, and the actual app behaviour underneath was correct throughout
+    (confirmed visually: "Breadth" / "Sharpen and taper" both render right).
+  - Verified: `npx vitest run` — **2087/2087 passing across 31 files** (was 2057/29 at this
+    session's start; +30, all new — 21 in `campaignStore.test.ts`, 9 in
+    `campaignReadiness.test.ts`); `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on every
+    touched file (`campaignStore.ts`, `campaignStore.test.ts`, `campaignReadiness.ts`,
+    `campaignReadiness.test.ts`, `useCampaign.ts`, `IntegralCampaign.tsx`, `App.tsx`,
+    `IntegralsHub.tsx`) — zero findings. No existing test edited; `normalize()`/`answer.ts`
+    untouched; `techniques.ts`/`lessonExamples.test.ts`/`components/LessonBody.tsx` untouched,
+    reserved for WS-8 as instructed.
+  - **This closes out WS-7.** Both halves — the pure core (`uk/campaign.ts`, shipped by the
+    previous session) and persistence + UI (this session) — are done, tested, and Playwright-walked
+    through. The five components the original burst shipped (recognition, training, paper mode, the
+    error profile, the values deck) now have the conductor `UK_BEE_BURST.md` said was missing.
+  - **Noticed but not acted on, flagged rather than silently started or silently ignored**:
+    `UK_BEE_BURST.md` has grown an "Extension 2: winning, not qualifying" section since this
+    session started, scoping three more workstreams — WS-9 (headsolving — a no-typing, think-time-
+    only mode, marked highest priority of the three), WS-10 (deep absorption — completion problems,
+    self-explanation prompts, spaced concept review, layered onto `techniques.ts`, explicitly
+    ordered to run *after* WS-8, not concurrently with it), and WS-11 (the technique map, encoding
+    real relationships between techniques for the lessons page and for smarter recognition-drill
+    distractors). None of this was in this session's delegated scope, so none of it was built or
+    scoped further here — noted for whoever picks up next.
+
+- 2026-08-30 (new session): **WS-8 — finish the lesson rebuild. All 11 remaining techniques done,
+  in the order the runbook named.** Started on `claude/pensive-tesla-421vh8` at baseline `6e3823d`
+  (2087/2087 passing, `tsc --noEmit -p tsconfig.app.json` clean, tree clean) — reproduced before
+  the first edit as required. Read the WS-8 spec and Extension 2 in `UK_BEE_BURST.md`, `types.ts`
+  (`Technique`/`WorkedExample`), `lessonExamples.test.ts`, and three already-rebuilt lessons
+  (`t-sub`, `feynman`, `parts`) before writing anything, per this task's own instructions.
+
+  Applied the WS-2 schema (`prerequisites`, `intuition`, faded `examples[]`, `checkYourself`) to
+  all 11 remaining techniques: the finals arsenal first — `beta-integrals`, `gamma-function`,
+  `zeta-series`, `wallis-product`, `reciprocal-substitution`, `recurrence` — then
+  `introducing-constants`, `floor-function`, `inverse-integral`, `log-power-integrals`,
+  `gaussian-hypersphere`. **Nothing remains — all 21 techniques in `techniques.ts` now carry the
+  full schema.** Verified programmatically at the end (a throwaway `vite-node` script importing
+  the real `TECHNIQUES` array), not just by eye: every technique has non-empty `prerequisites` and
+  `intuition`, at least 2 graduated `examples`, `example === examples[0]` by reference (so the
+  legacy singular field can never drift, exactly as WS-2 established), and a `checkYourself`.
+
+  Commits, one per technique as instructed (each preceded by the full verification loop —
+  `npx vitest run` on the WHOLE repo, `npx tsc --noEmit -p tsconfig.app.json`, `npx eslint` on
+  touched files — and pushed immediately after):
+  `2bac557` beta-integrals, `ad0ad69` gamma-function, `2c68250` zeta-series, `76ee630`
+  wallis-product, `5b07d90` reciprocal-substitution, `2bde1b8` recurrence (closes the finals
+  arsenal), `dc0d606` introducing-constants, `d952416` floor-function, `354229a` inverse-integral,
+  `ab2569c` log-power-integrals, `a72f57a` gaussian-hypersphere (closes WS-8 entirely).
+
+  Every derivation followed the guardrail: derive the closed form by hand, verify numerically in
+  a throwaway script (`scratchpad/verify_ws8.mjs`, `derivative()`/`quadrature()` copied verbatim
+  from `problems.test.ts`/`lessonExamples.test.ts`, independent expected-value literals typed
+  directly rather than computed via a shared formula helper) with comfortable margin *before*
+  writing it into `techniques.ts`, then add the `integrandExpr`/`resultExpr`/`domain`/`kind`
+  mirror so `lessonExamples.test.ts` actually checks it. Every `integrandExpr` written in terms of
+  `x` regardless of the derivation's own variable names. Cross-checked several picks against
+  already-shipped, already-tested bank problems before using them (e.g. `logpow-n2-k1`/`n1-k2`/
+  `n0-k3` in `bank/logPowerIntegrals.ts` are the exact same integrals as the log-power examples;
+  `recip-log-over-1px2`/`recip-pi4-a1`/`recip-pi4-a3` in `bank/reciprocalSubstitution.ts` match the
+  reciprocal-substitution examples; `exp(-x^2)`/`x^2*exp(-x^2)` on `[0,inf)` in
+  `bank/gaussianHypersphere.ts` match the Gaussian examples) — independent confirmation beyond the
+  throwaway script, not a coincidence to be suspicious of, since these really are each technique's
+  most natural flagship integrals.
+
+  **lessonExamples.test.ts now has 64 tests** (was 42): 21 "lesson prose renders" checks (one per
+  technique, confirming every lesson's prose — old and new — still passes strict-mode KaTeX), the
+  guard test, and 42 gradeable "the stated result is right" checks (was 20; +22 from this session
+  — 9 techniques with 2 graded examples each, plus reciprocal-substitution and gaussian-hypersphere
+  at 2 graded + 1 deliberately-ungraded each). **Neither `reciprocal-substitution` nor
+  `gaussian-hypersphere` got 3 graded examples** — both kept a third `WorkedExample` deliberately
+  without an `integrandExpr` mirror, matching the precedent `WorkedExample`'s own doc comment sets
+  out ("a derivation of an identity... with no single closed-form claim"): the reciprocal-
+  substitution flagship (`arctan(x)/(x(1+ln^2x))` on `[0,inf) = pi^2/4`) decays only
+  logarithmically and the shared quadrature can't resolve it cleanly even at `n=20000` (reconfirmed
+  fresh in `verify_ws8.mjs`, not just trusted from the prior session's note); the
+  gaussian-hypersphere aside states a parametrised surface-area formula (`4*pi*r^2`), not a single
+  evaluable integral, same as before this session touched it.
+
+  **A real, substantive error in the pre-existing lesson text was found and fixed, not just
+  polished**: the un-rebuilt `reciprocal-substitution` lesson's own worked example asserted "the
+  raw `x -> 1/x` pairing doesn't close up here" for the `arctan(x)/(x(1+ln^2x))` flagship — checked
+  by hand, this is simply wrong. The raw substitution `x=1/t` DOES relate the integral to itself
+  plus a second, genuinely solvable integral `J` (`2I = (pi/2)J`), and `J` separately collapses via
+  `w=ln(t)`. Rewrote the derivation to show this faithfully and in full (every algebraic step of
+  the measure transformation, the `arctan(y)+arctan(1/y)=pi/2` identity with a one-line
+  justification instead of a bare assertion, `J`'s own `w=ln(t)` collapse, and the final algebra),
+  rather than replacing it with an unrelated framing — independently re-verified piece by piece in
+  `verify_ws8.mjs` (`J` via `w=ln(t)` converges cleanly to `pi`; the raw `t`-domain form of `J`
+  does not, matching the documented pattern; the resulting `I` matches `pi^2/4` to ~4e-9).
+
+  **A mechanical mistake was caught by the render test and fixed the same commit it was
+  introduced in**: the first draft of the zeta-series `intuition` (and, found by grepping while
+  fixing it, one work-line in the not-yet-wired reciprocal-substitution example) used
+  markdown-style `$...$` math delimiters, which this codebase's direct-LaTeX-to-KaTeX pipeline
+  doesn't accept (`toMathMode()` auto-detects prose runs and wraps them in `\text{}` itself — see
+  `mathText.ts` — so plain flowing LaTeX with no `$` is the actual convention, confirmed by
+  rereading it and the already-rebuilt lessons). `lessonExamples.test.ts`'s "lesson prose renders"
+  check caught it immediately (a KaTeX `ParseError`) before that commit landed — exactly the
+  guardrail doing its job, not a near-miss that shipped.
+
+  **File ownership respected exactly as scoped**: only `techniques.ts` was touched. Did not touch
+  `LessonBody.tsx` — every field WS-8 needed (`prerequisites`, `intuition`, `examples`,
+  `checkYourself`) was already rendered by the component WS-2 built, confirmed by reading it before
+  starting and by a Playwright walkthrough (below) rather than assumed. Did not touch routes, the
+  hub, or anything under `uk/`. Did not author any new practice problems — every new `Problem`-
+  shaped claim lives in `techniques.ts`'s `WorkedExample`s, not `bank/*.ts`.
+
+  **Playwright walkthrough against `/dev/integrals/lessons`, done though not strictly required**
+  (WS-8 touched no UI files, so the runbook's own "for any UI work" Playwright mandate doesn't
+  technically apply — but the owner reads this content closely, so it was worth the extra check
+  beyond the automated KaTeX-strict-mode render test). Screenshotted five rebuilt lessons expanded
+  in the real library UI (`beta-integrals`, `zeta-series`, `reciprocal-substitution`, `recurrence`,
+  `gaussian-hypersphere` — chosen to cover the shortest lesson, the one that had the `$`-delimiter
+  bug, both 3-example lessons, and one mid-sized one) — prerequisite chips, the "Why it works"
+  section, graduated "Example N of M" cards, pitfalls and the Check-yourself reveal all rendered
+  correctly, zero console/page errors across all five. One pre-existing, unrelated cosmetic quirk
+  noticed (not introduced by this session — the gaussian-hypersphere aside's `integrand` field is
+  prose, not a real integrand, so the `ExampleCard`'s fixed `\int ... \,dx` wrapper renders as
+  "∫ The hypersphere formula, checked at d=3 dx", slightly awkward) — flagged here rather than
+  fixed, since changing it would mean touching `LessonBody.tsx`'s rendering convention or this
+  example's field shape, neither of which WS-8 asked for and both out of this session's file
+  ownership.
+
+  One flaky, unrelated test failure surfaced once during the per-technique verification loop (a
+  single test failed on one `npx vitest run` of the whole repo mid-session, then 2103/2103 passed
+  clean on immediate retry, and `lessonExamples.test.ts` alone passed 58/58 in isolation at the
+  same moment) — not reproducible across several subsequent full runs, not related to this
+  change, noted rather than silently ignored.
+
+  **Final state**: `npx vitest run` — **2109/2109** across 31 files (was 2087/2087 at this
+  session's start); `npx tsc --noEmit -p tsconfig.app.json` — clean; `eslint` on every file this
+  session touched (`techniques.ts` — the only file changed) — zero findings. No existing test was
+  edited. `normalize()`/`answer.ts` untouched (only ever imported from, read-only, via
+  `lessonExamples.test.ts`'s pre-existing `fn()` helper). Working tree clean, all 11 commits
+  pushed to `claude/pensive-tesla-421vh8`.
+
+  **This closes WS-8 completely** — the runbook's own two-line summary ("WS-2 rebuilt 10 of 21
+  lessons... the other 11 keep the old single-example reference-card format") is no longer true;
+  all 21 do now. **Nothing remains in WS-8's own scope.** What's next, per `UK_BEE_BURST.md`'s own
+  ordering, is the owner's call, not made here: WS-7 (the campaign) was already closed out by a
+  prior session; WS-9 (headsolving, marked highest priority of the Extension-2 trio) and WS-11 (the
+  technique map) are independently buildable; **WS-10 (deep absorption) was explicitly gated to run
+  only *after* WS-8**, which is now true for the first time — so WS-10 is unblocked as of this
+  entry, but was not started here since it wasn't this session's delegated task. None of the three
+  were built or scoped further in this session — flagged for whoever picks up next, per the
+  runbook's own stop-and-report instinct, not silently started and not silently ignored.
+
+- 2026-08-30 (new session, same branch): **WS-9 — headsolving, shipped and merged to main.** Started
+  on `claude/pensive-tesla-421vh8` at baseline `f851b47` (2109/2109 passing across 31 files,
+  `tsc --noEmit -p tsconfig.app.json` clean, tree clean) — reproduced before the first edit. Read the
+  WS-9 spec in `UK_BEE_BURST.md`'s "Extension 2" section, `attempts.ts`, `useIntegralRun.ts`,
+  `useRecognitionRun.ts` + `IntegralRecognition.tsx` (closest existing analogue), and
+  `IntegralsHub.tsx`/`App.tsx` before writing anything, per this task's own instructions.
+
+  The core design point, preserved deliberately rather than diluted: every other clock in this app
+  measures mathematics plus typing. Headsolve mode has **no answer input at all** — a problem
+  appears, the competitor thinks, one keypress stops the clock, the answer reveals, and they
+  self-grade got it / close / no. Three new/touched files, one commit each, pushed after every one:
+
+  - `src/features/integrals/headsolve.ts` (commit `b1fef65`, with `headsolve.test.ts`, 35 tests):
+    pure domain logic. Ladders by **headsolvability, not the bank's own `difficulty`**, per the
+    runbook's own explicit instruction — a problem can be trivial on paper and impossible in the
+    head. Five seed tiers by primary technique, fastest-in-the-head first, each with its reasoning
+    documented inline: symmetry alone (the recognition IS the solve — its own recipe literally says
+    "the answer is 0, no work required"); the nine "finals arsenal" recognition-led/memorised-result
+    techniques (Beta, Gamma, zeta-series, Wallis, log-power, Gaussian, reciprocal-substitution,
+    inverse-integral, introducing-constants); one-clean-step techniques (power, u-sub, Feynman); a
+    drilled-multi-step tier (t-sub, trig-identity, complete-square, recurrence); heaviest-bookkeeping
+    last (parts, trig-sub, partial-fractions, floor-function). `techniqueAdjustments()` lets real
+    observed accuracy (≥5 decisive got-it/no picks) pull a technique up to ~1.2 tier-widths away from
+    its seed prior — verified with a dedicated test that this actually **reorders past** the seed
+    tier, not just perturbs within it, which is the "let observed success refine it" half of the
+    spec. 12 discrete levels windowed over the ranked bank; sanity-checked against the real
+    788-problem bank with a throwaway `vite-node` script (not just the unit-test fixtures) — ~66
+    problems per level, smooth tier/difficulty progression level to level, no empty level.
+    `applyGrade` is the whole ladder: `SUCCESS_STREAK_TO_LEVEL_UP = 3` consecutive "got it" climbs a
+    level and resets the streak; "close" resets the streak without demoting (the method was there);
+    "no" resets the streak and drops a level. Targets are the runbook's own numbers **verbatim**
+    (accessible ≤30s, mid ≤90s) — no target invented for the tail band, since the runbook didn't give
+    one; a caller renders that as "no fixed target," never a guessed number or a false miss.
+  - `src/features/integrals/headsolveHistory.ts` (same commit, with its own test file, 13 tests):
+    its own scoped/fail-soft/ring-buffered store (same pattern as `attempts.ts`/
+    `recognitionHistory.ts`/`campaignStore.ts`) holding the full grade/band/thinkMs/beatTarget plus
+    the persisted ladder, **and** mirrors every graded attempt into the shared WS-1 attempt log under
+    a new `RunMode` of `"headsolve"` (one-line additive change to `attempts.ts`), exactly as
+    instructed, so headsolve times can never silently average with typed ones. Both keystroke-split
+    timing fields (`msToFirstKeystroke`/`msFirstKeystrokeToSubmit`) are recorded as **null** on the
+    mirror — the honest value, since there genuinely is no keystroke event — which every existing
+    consumer of those fields (e.g. `uk/campaignReadiness.ts`'s median-recognition-time calculation)
+    already filters out before averaging, so no downstream file needed touching or filtering logic
+    added. Deliberately does **not** map self-graded "close" to the shared vocabulary's
+    `"off-by-constant-factor"` verdict class (mapped to `"incorrect"` instead, same as "no") — that
+    class is specifically read elsewhere by `queue.ts`'s `scheduledQueue` as a machine-verified
+    numeric near-miss signal that boosts serving priority, and a self-report is different-quality
+    evidence that shouldn't quietly pull that lever; flagging this design call here rather than
+    leaving it implicit.
+  - `hooks/useHeadsolveRun.ts` + `hooks/useHeadsolveHistory.ts` (commit `e9a022c`, no new tests —
+    matches this feature's existing convention that no hook under `src/features/integrals/hooks` has
+    its own unit test; coverage comes from the pure modules a hook calls, plus the mandatory
+    Playwright walkthrough for the page that uses it). The run hook is a three-phase state machine
+    (ready → thinking → revealed → back to thinking on the next pick) deliberately open-ended, unlike
+    the recognition drill's fixed 20-question round — headsolving is a streak/ladder drill you keep
+    going on. `recordHeadsolveAttempt` is called as a plain statement in `gradeSelf`'s body, never
+    inside a `setState` updater — the same discipline `useRecognitionRun.ts`'s own doc comment
+    already established (an updater can run more than once, which would double-record).
+  - `src/pages/IntegralHeadsolve.tsx` + routes + hub tile (commit `8ee7125`): keyboard-first per the
+    spec — Space stops the clock, 1/2/3 (or G/C/N) grade once revealed, guarded against a focused
+    input the same way `IntegralTraining.tsx`/`IntegralValues.tsx` already do. Reuses
+    `IntegralPrompt` and `SolutionSteps` verbatim rather than reimplementing either. Routed at
+    `/integrals/headsolve` (`DashboardGuard`, no `BetaGate`, matching every other Integral Arena
+    route) plus its `/dev/` twin; a "Headsolve" tile (Brain icon) placed between "Name the weapon"
+    and "Values deck" on the hub — the two no-typing speed drills sitting together — completing a
+    clean 8-tile 2-column grid before the full-width Head-to-head tile.
+    - One real bug caught and fixed before shipping, worth remembering: the first draft's keyboard
+      `useEffect` depended on the whole `run` object returned by the hook, which is a fresh object
+      literal every render — including every 100ms clock tick while thinking, which would have torn
+      down and re-added the `window` keydown listener ten times a second. Fixed by depending on the
+      two specific `useCallback`-memoized handlers (`run.stopClock`, `run.gradeSelf`) instead, which
+      only change reference when the run's actual phase changes.
+    - The mandatory Playwright walkthrough (`/dev/integrals/headsolve`, real dev server, screenshots)
+      hit one genuine test-script bug worth recording since it's a recurring class: the first
+      walkthrough draft used `page.click("text=Start")`, which Playwright substring-matches — and
+      the Ladder card's own description paragraph contains the word "starts" ("the ladder **starts**
+      with symmetry collapses..."), which sits earlier in DOM order than the actual Start button, so
+      the click landed on a paragraph and nothing happened. Same class of bug a previous session's
+      WS-7 walkthrough hit with a wrong CSS selector — fixed by switching every walkthrough selector
+      to `getByRole` with `exact: true` where ambiguity was possible, not by rewording the page copy.
+      Once fixed, the full walkthrough ran clean: start → think → Space to stop the clock → reveal
+      (`SolutionSteps` + beat/miss/no-target line) → grade "got it" via keyboard `1` → stop-via-
+      button-click → grade "close" via keyboard `2` → stop-via-button-click → grade "no" via
+      keyboard `3` → Stop → landing screen now showing real all-time stats. Read
+      `arcana.integrals.headsolve.v1` and `arcana.integrals.attempts.v1` back from real
+      `localStorage` afterward and confirmed by hand, not just asserted in the script: 3 headsolve
+      attempts with the right grades (`got-it, close, no`) and bands (`mid, tail, accessible`,
+      correctly picking up whichever difficulty the level-0 pool happened to serve), `beatTarget`
+      `true, null, true` (the mid-band "no" grade beat 90s trivially, the accessible one beat 30s
+      trivially, the tail-band pick correctly has no target at all); 3 mirrored `AttemptRecord`s, all
+      `mode: "headsolve"`, `verdictClass` correctly `correct, incorrect, incorrect`, both
+      keystroke-split timing fields null on all three, matching `problemId`s between the two logs.
+      A **second**, separate script specifically drove three consecutive "got it" grades and
+      confirmed the ladder actually **climbs a level** (`Level 1 of 12` → `Level 2 of 12` in the live
+      UI text, `{"level":1,"streak":0}` in storage) — not just asserted from the design, watched
+      happen both on screen and in storage. Zero console or page errors across every run. Screenshots
+      confirm the visual design matches the rest of the app exactly (same card/typography/color
+      language) with no regression anywhere else touched (hub grid, App.tsx routes).
+  - **Verification, whole repo, every checkpoint**: `npx vitest run` — **2157/2157 passing across 33
+    files** (was 2109/2109 across 31 at session start — +48 tests, all new, all in
+    `headsolve.test.ts`/`headsolveHistory.test.ts`; the hook and page checkpoints added zero new unit
+    tests by design, per the convention noted above, and were verified by the Playwright walkthrough
+    instead). `npx tsc --noEmit -p tsconfig.app.json` clean throughout (bare `npx tsc --noEmit` at
+    the repo root is **still** a no-op — see the 2026-08-29 entry above; this session used the real
+    `-p tsconfig.app.json` invocation for every check, never the bare one). `eslint` clean on every
+    file this session touched, checked explicitly file-by-file rather than eyeballed. No existing
+    test was edited. `normalize()`/`answer.ts` untouched (only ever imported from, read-only).
+  - **Merged to `main`**: fetched `origin/main`, confirmed no divergence overlapping this session's
+    files, merged `claude/pensive-tesla-421vh8` into `origin/main` in an isolated detached worktree
+    (never checked out `main` in the primary working directory), re-ran the full verification loop
+    inside the worktree, and pushed. See the merge commit for the exact SHA; both branches now carry
+    WS-9.
+  - **Nothing cut.** Every bullet in the WS-9 spec shipped: pure ranking/ladder module, its own
+    history store, the WS-1 mirror under a new `RunMode`, the run hook, the keyboard-first page,
+    routes, hub tile, and the mandatory Playwright walkthrough with a real level-up observed.
+  - **For the owner to weigh in on, flagged rather than decided unilaterally**: (1) the seed-tier
+    technique ordering in `SEED_TIERS` (`headsolve.ts`) is a reasoned starting prior, not measured
+    data — it's designed to self-correct from real observed accuracy per technique once ≥5 decisive
+    picks exist, but the initial order (documented inline with the reasoning) is this session's own
+    judgment call, not the owner's; worth a look once real headsolve data exists. (2) self-graded
+    "close" deliberately never triggers `queue.ts`'s near-miss scheduling bonus (mapped to
+    `"incorrect"` in the shared log instead of `"off-by-constant-factor"`) — a deliberate choice to
+    keep an unverified self-report from quietly influencing the typed-mode scheduler, flagged in case
+    the owner would rather it did. (3) per `UK_BEE_BURST.md`'s own ordering, WS-11 (the technique
+    map) and WS-10 (deep absorption, unblocked since WS-8 closed) remain available for a future
+    session — neither was started here, this session's delegated scope was WS-9 only.
+
+- 2026-08-30 (new session): **WS-10 — deep absorption. Schema shipped, 16 of 21 lessons carry the
+  new sections, spaced concept review shipped and wired into the UI.** Started on
+  `claude/pensive-tesla-421vh8` at baseline `2396c38` (2157/2157 passing, `tsc -p
+  tsconfig.app.json` clean, tree clean) — reproduced before the first edit. Read the WS-10 spec in
+  `UK_BEE_BURST.md`'s Extension 2 section, the WS-2/WS-8 progress-log entries, `types.ts`,
+  `t-sub`/`feynman`/`gamma-function` in full, and `LessonBody.tsx` before writing anything.
+
+  **Schema** (`types.ts`, commit `64b11e3`): new `Completion` interface —
+  `{setup: string[]; blank: string; answer: string}` plus the same optional
+  `integrandExpr`/`resultExpr`/`domain`/`kind` mirror `WorkedExample` already carries, set whenever
+  the completion states a literal evaluatable integral (every one shipped this session does).
+  `Technique.completions?: Completion[]` and `Technique.selfExplain?: {prompt, answer}` — the
+  latter reveal-only, same shape and rendering convention as `checkYourself`, deliberately with no
+  machine-checkable mirror (it's prose reasoning, not an evaluatable claim — any numeric or
+  algebraic fact stated inside one was still hand-verified, just not wired into a test fixture).
+
+  **`LessonBody.tsx`**: two new conditionally-rendered sections between worked examples and
+  pitfalls — "Complete it" (a `CompletionCard` per completion: the `setup` steps render like an
+  `ExampleCard`'s work list, then a dashed gap box shows `blank` with a reveal button for `answer`)
+  and "Think about it" (`SelfExplain`, the same reveal mechanic with no hint stage). Both fall back
+  to nothing extra for a technique that doesn't set them — verified explicitly via Playwright
+  against `recurrence` before this session touched it.
+
+  **`lessonExamples.test.ts`** extended with a `gradeableCompletions` set and a
+  `"completion problems are actually correct"` describe block, exact mirror of the existing
+  `gradeable`/`WorkedExample` machinery (same `derivative()`/`quadrature()` copies, same tolerance
+  scheme) — plus render checks for `completions`/`selfExplain` in the existing "lesson prose
+  renders" sweep. A guard test pins the minimum count so a dropped field fails loudly rather than
+  the `describe.each` silently iterating zero cases, updated at each content commit to track the
+  real number shipped (final: 32).
+
+  **Content — 2 completions + 1 selfExplain per technique, 16 of 21 techniques**, in the exact
+  priority order this session's instructions gave: all 10 techniques WS-2 rebuilt first (`power`,
+  `u-sub`, `parts`, `trig-identity`, `trig-sub`, `partial-fractions`, `complete-square`,
+  `symmetry`, `t-sub`, `feynman` — commit `64b11e3`), then all 6 of WS-8's "finals arsenal, highest
+  value first" (`beta-integrals`, `gamma-function` — commit `0f1f892`; `zeta-series`,
+  `wallis-product`, `reciprocal-substitution`, `recurrence` — commit `d9404f8`). Every one of the
+  32 numeric completion claims was derived by hand, verified in a throwaway Node script (plain
+  `Math.*`, mirroring `problems.test.ts`'s `derivative()`/`quadrature()` exactly, per the
+  guardrail) with comfortable margin — worst case 0.0003 of tolerance, most exactly 0 — *before*
+  being written into `techniques.ts`, then re-confirmed by the real `lessonExamples.test.ts` mirror.
+  Completions were designed to exercise each lesson's actual crux move (the pitfall it names, the
+  recipe step it's proudest of) rather than restate arithmetic already shown in the existing
+  worked examples — e.g. `power`'s n=-1 trap and the six reflex forms; `parts`'s loop-case
+  (`e^x sin x`) solved algebraically after two applications; `beta-integrals`'s digamma
+  log-differentiation trick carried through with real numbers
+  (`\int_0^1x^2(1-x)^3\ln x\,dx=-19/1200` via `\psi(n)=-\gamma+H_{n-1}`); `reciprocal-substitution`'s
+  own "the argument works for any `a>0`" claim independently re-verified at `a=5` rather than just
+  asserted; `recurrence`'s odd-vs-even base-case pitfall reinforced with a fresh algebraic (not
+  by-parts) recurrence via `\tan^2=\sec^2-1`. selfExplain prompts targeted genuine "why this and not
+  the similar-looking alternative" reasoning per the spec's own framing — comparing
+  `t-sub`'s universal applicability against `trig-identity`'s two-line solution on `\sin^3x`;
+  deriving *why* `\Gamma(k+1)=k!` makes the factorial-vs-Gamma pitfall a speed issue, not a
+  correctness one; walking through exactly where the Gamma-function by-parts reduction breaks on
+  `e^{-x^2}` (no elementary `v` exists) instead of just asserting "Gaussians are different."
+
+  **Two of my own mistakes caught before shipping, not after** — both by the render/verification
+  guardrails doing their job, not by luck: (1) an initial claim that `\sqrt{1-x^2}` "has no
+  elementary antiderivative" (false — it has one, `\tfrac{x\sqrt{1-x^2}}2+\tfrac{\arcsin x}2`,
+  it's simply not a *memorised* one the way `\tfrac1{\sqrt{1-x^2}}\to\arcsin x` is) was caught on
+  review before it was ever written down, and the `power` selfExplain rewritten to make the real
+  (correct) distinction — "already known" vs "needs deriving," not "exists" vs "doesn't." (2) a
+  real LaTeX bug — `\pm` nested inside a `\text{}` group in `reciprocal-substitution`'s
+  selfExplain — was caught by `lessonExamples.test.ts`'s strict-mode KaTeX render check
+  immediately, before that commit landed; fixed by moving `\pm` back into math mode. Also caught a
+  wrong rational-function-degree claim in `t-sub`'s selfExplain during my own design pass (asserted
+  "degree-7-over-degree-8" for `\sin^3x` under `t`-sub; the real simplified fraction is
+  `16t^3/(1+t^2)^4`, degree 3 over degree 8) — fixed to state the concrete fraction instead of an
+  asserted degree count, avoiding the error rather than needing a test to catch it later.
+
+  **Spaced concept review** (new `conceptReview.ts` + `conceptReview.test.ts` + `hooks/
+  useConceptReview.ts`, commit `e93cddf`) — the piece with real plumbing. Tracks when each
+  technique's lesson was last read on a parallel, timestamped, per-account-scoped store (same
+  `scopedKey`/fail-soft/self-invalidating-cache pattern every store since `attempts.ts` uses,
+  deliberately NOT widening `progress.ts`'s `Progress.lessonsRead`, which stays a plain
+  timestamp-free set for the "read" checkmark and the Scholar badge exactly as before). A simple
+  expanding schedule (`REVIEW_INTERVALS_DAYS=[1,3,7,14,30,60]`, Leitner-box shaped, explicitly not
+  a full SRS per the spec) decides what's "due for review": a read is deduplicated to one per
+  calendar day, and the interval only widens (stage advances) when a read lands on or after the
+  technique's own due day — reading early (peeking at a lesson mid-drill) updates "last seen"
+  without disturbing the schedule in flight, and reading late still advances, counting the new
+  interval from the actual read day rather than the original due day (forgiveness, not
+  punishment). Wired the read signal into both existing `markLessonRead` call sites
+  (`IntegralTraining.tsx`'s lesson-panel toggle, `IntegralLessons.tsx`'s accordion) rather than
+  into `progress.ts` itself. Added a "Due for review" banner to `IntegralLessons.tsx` — clickable
+  chips for every due technique, most-overdue first, opening straight into that lesson (and,
+  because it reuses the same `toggle()` the accordion already calls, genuinely re-recording the
+  read and advancing the schedule — verified through real UI interaction, not just unit tests, see
+  below). 16 tests in `conceptReview.test.ts` (empty state, first read, same-day dedupe,
+  early/on-time/late advancement, stage capping, `dueForReview` ordering, `conceptReviewStep`,
+  scoping, storage-unavailable, reset), all against fixed dates, black-box against the module's
+  documented behaviour rather than reaching into internal fields (an early draft of two tests did
+  reach into raw `dueDayIndex`/epoch arithmetic to predict expected values — reworked to assert
+  only through `dueForReview`/`daysOverdue` instead, since duplicating the module's own internal
+  date math in the test is exactly the kind of fragile mirroring this repo's own established
+  testing style avoids).
+
+  `conceptReview.ts` exports `conceptReviewStep()` — the single most-overdue technique, shaped for
+  a future `SessionStep` — but this session deliberately did **not** wire it into
+  `uk/campaign.ts`'s `planSession`, exactly as instructed. Inspected `planSession` first rather
+  than guessing: `planSession` is a pure function of `CampaignDay` alone today (no access to any
+  per-technique read history), and the existing `"review"` `StepKind` already means something
+  specific and different ("look at your own performance data," always routed to
+  `/integrals/progress`) — slotting concept review in cleanly would mean either overloading that
+  kind's meaning or adding a new one, deciding which block(s) it appears in, how often, and how it
+  interacts with the taper block's "no new material" rule. That's real session-composition
+  judgment, not a trivial addition, so it's left as a documented follow-up (in `conceptReview.ts`'s
+  own doc comment and here) rather than touched.
+
+  **Playwright walkthroughs, done twice** (required — `LessonBody.tsx` and `IntegralLessons.tsx`
+  both changed visually). First pass (after commit `e93cddf`): fresh-state lessons list; `power`
+  expanded showing the full rebuilt body including the new sections; a completion revealed; the
+  self-explain answer revealed; `recurrence` (untouched this session) confirmed to show neither
+  new section, proving the fallback path; two overdue `conceptReview` records seeded directly into
+  `localStorage`, page reloaded, "Due for review" banner confirmed rendering with real clickable
+  chips; clicked one and confirmed via a fresh `localStorage` read that it both opened the lesson
+  and genuinely advanced that technique's stored review stage. Zero console/page errors. Second
+  pass (after commit `d9404f8`): all 5 remaining touched techniques
+  (`reciprocal-substitution`/`gamma-function`/`zeta-series`/`wallis-product`/`recurrence`) opened,
+  every completion and self-explain answer clicked to reveal — forcing live in-browser KaTeX
+  rendering of every new string, not just the Node-side render-check in the test suite. Zero
+  console/page errors across both passes.
+
+  **Final state, this session's own scope**: `npx vitest run` — **2206/2206** across 34 files (was
+  2157/2157 at the session's baseline); `npx tsc --noEmit -p tsconfig.app.json` — clean throughout
+  (confirmed after every commit, using the correct project flag per the standing tooling note two
+  entries above); `eslint` on every file this session touched
+  (`types.ts`, `techniques.ts`, `components/LessonBody.tsx`, `lessonExamples.test.ts`,
+  `conceptReview.ts`, `conceptReview.test.ts`, `hooks/useConceptReview.ts`, `pages/
+  IntegralTraining.tsx`, `pages/IntegralLessons.tsx`) — zero findings. No existing test was edited;
+  `normalize()`/`answer.ts` untouched (only ever imported from); the legacy singular `example`
+  field and everything WS-2/WS-8 built keep working unchanged (confirmed both by the full suite
+  and by the `recurrence` fallback screenshot). No new practice problems were authored — every new
+  claim lives in `techniques.ts`'s lesson exposition, none in `bank/*.ts`. Four commits on
+  `claude/pensive-tesla-421vh8`: `64b11e3` (schema + all 10 WS-2 techniques), `e93cddf` (concept
+  review), `0f1f892` (beta-integrals, gamma-function), `d9404f8` (zeta-series, wallis-product,
+  reciprocal-substitution, recurrence).
+
+  **Deliberately not done, and why**: the remaining 5 techniques —
+  `introducing-constants`/`floor-function`/`inverse-integral`/`log-power-integrals`/
+  `gaussian-hypersphere`, WS-8's own SECOND tier, never named "finals arsenal" and not named at all
+  in this session's delegated instructions — were left at the WS-2/WS-8 baseline schema
+  (`prerequisites`/`intuition`/`examples`/`checkYourself`, no `completions`/`selfExplain`). This
+  session's instructions explicitly said to prioritise the named sets and prefer fewer techniques
+  done excellently over all 21 done adequately; having covered every technique named in either
+  priority tier (all 10 from WS-2, all 6 of WS-8's finals arsenal), extending to WS-8's lower-value
+  remainder would be scope creep beyond what was asked rather than finishing what was — a genuine
+  option for a future session, not a gap that was overlooked. `planSession`'s wiring to
+  `conceptReviewStep()` is the other explicit follow-up, flagged above and inline in
+  `conceptReview.ts`. WS-11 (the technique map) remains entirely unstarted, per
+  `UK_BEE_BURST.md`'s own ordering and outside this session's delegated scope.
+
+- 2026-08-30 (new session): **WS-11 — the technique map. Finished, and merged to `main`.
+  `UK_BEE_BURST.md`'s entire specced queue is now empty.** Started on
+  `claude/pensive-tesla-421vh8`, picking up right after a prior agent was killed by a rate limit
+  immediately after committing the core file (`dce9c58`, `techniqueMap.ts` — six real families,
+  five standalone techniques, cross-links, `familyOf`/`siblingsOf`/`crossLinksFor`/`confusablesFor`
+  lookups). Baseline reproduced first: 2206/2206, `tsc -p tsconfig.app.json` clean, tree clean.
+
+  **Reviewed `techniqueMap.ts` in full, changed nothing in it.** Independently re-derived the
+  21-id totality by hand before trusting the file's own claim (16 across six families + 5
+  standalone, each exactly once) — correct. The one thing worth recording: the header comment
+  points to "the 'considered and rejected' note on t-substitution below" for why t-sub sits in the
+  trig-integrand family rather than the symmetry-substitution family (despite
+  `UK_BEE_BURST.md`'s own WS-11 spec text listing "t-sub, reciprocal substitution and King's
+  reflection" together) — there is no block literally labeled that; the reasoning is instead
+  carried in the trig-integrand and symmetry-substitution `bigIdea` prose itself. Checked whether
+  this was a real error worth fixing: it isn't — the placement is mathematically the more correct
+  one (t-sub finds an antiderivative via a universal substitution; symmetry and reciprocal
+  substitution both work by relating `I` to itself under an involution and never integrate
+  anything, which t-sub does not do), so the file's own placement is right and the spec's own
+  three-way grouping is the imprecise part. Left the file untouched, as instructed, and note this
+  here rather than silently editing prose that isn't actually wrong.
+
+  **Shipped the other two-thirds, three commits on `claude/pensive-tesla-421vh8`:**
+  - `20a1ee2` — `techniqueMap.test.ts`, the totality check the header comment promises (24 tests:
+    every real `TechniqueId` placed exactly once, no duplicates within or across families,
+    `CROSS_LINKS` endpoints valid with no self-links or duplicate pairs, spot-checks of all four
+    lookup functions). Extended to 41 tests in the next commit with a strict-mode KaTeX render
+    check over every `bigIdea`/`cue`/`note`/cross-link `note` — this prose had never been rendered
+    or tested before being surfaced in the UI; it rendered clean, no bug found, but the check is
+    now a permanent regression guard (this exact class of bug — a stray `$...$` delimiter — bit
+    WS-8 once already, caught the same way).
+  - `03fec13` — wired `confusablesFor` into `recognition.ts`'s `distractorsFor`: prefers a
+    problem's primary technique's family siblings + cross-links over uniform-random distractors,
+    topping up with random picks when the confusable pool is smaller than needed (or empty, e.g.
+    `floor-function`). The pre-existing "never offer a technique already tagged on the problem"
+    invariant is unedited and still enforced — the real-788-problem-bank test for it in
+    `recognition.test.ts` was not touched and still passes. Exported the previously-private
+    `distractorsFor` (purely additive; checked every importer) so 5 new tests could exercise the
+    preference logic directly rather than fishing for it through `assembleRound`'s bank-wide
+    randomness.
+  - `c512e93` — the map section on `IntegralLessons.tsx`, placed right after the page header:
+    family cards (name, `bigIdea`, members linked to their practice route with their `cue`) and a
+    "Stand alone" card (each standalone technique linked, with its `note`). Static, not another
+    accordion, per the "legibility over flourish" steer. Built entirely from tokens/components
+    already used two inches below it on the same page (`bg-card`/`border-border`/`text-foreground`/
+    `text-muted-foreground`/`text-primary`, `Tex`, the `PrerequisiteChip`-style link-to-practice
+    convention) — zero new color logic, confirmed by screenshotting both the app's default dark
+    theme and (forcing `jarvis_theme=light` per `src/lib/appThemes.ts`) its light theme side by
+    side; both render correctly with no code changes needed for either.
+
+  **Playwright walkthrough, both pages, screenshots taken, zero console/page errors throughout.**
+  `/dev/integrals/lessons`: family cards and the standalone section confirmed rendering with real
+  KaTeX, member/standalone links carry the correct `/integrals/train/:id` hrefs (not followed
+  through login — `DashboardGuard` correctly redirects an unauthenticated session to `/auth`,
+  identically to every pre-existing `PrerequisiteChip` link on the same page; that's existing,
+  correct behavior, not something this change needed to route around). `/dev/integrals/recognition`:
+  played 5 real rounds (100 real questions, real clicks, real auto-advance) end to end. A live
+  "Integration by parts" question's three distractors came back as exactly {Standard forms,
+  Substitution, Integral of an inverse function} — `confusablesFor("parts")`'s full set, screenshot
+  captured before and after the click. Cross-checked all 100 live samples against the real
+  imported `confusablesFor` (not a hand-duplicated copy of the relationships): 88/96 classifiable
+  samples fully matched; the remaining 8 apparent mismatches were individually traced to real
+  multi-tagged bank problems (queried `PROBLEMS` directly, not assumed) whose secondary tag is
+  itself a confusable of the primary — the pre-existing per-problem exclusion invariant correctly
+  shrinking the eligible pool, exactly the scenario the dedicated unit test for it covers. Not a
+  bug; the verification script's own simplification (not knowing secondary tags) was the source of
+  the apparent mismatch, run to ground rather than left as an unresolved question mark.
+
+  **Merged to `main`** (the two prior in-session merges — visible as `main`'s own head commit
+  being a merge of this branch before this session started — used the same pattern, followed
+  here): `git fetch origin main`, diffed both sides against the merge-base first (`main` had only
+  touched `src/assets/landing/*`, `landing.css`, `LandingPage.tsx` since diverging — zero file
+  overlap with this branch's `src/features/integrals/*` + `IntegralLessons.tsx` changes, so a
+  clean merge was expected and got one). Merged `origin/claude/pensive-tesla-421vh8` into
+  `origin/main` inside an isolated detached worktree (`git worktree add --detach`, never checked
+  out `main` in the primary working directory) — no conflicts. Full verification on the merged
+  result inside the worktree: `npx vitest run` 2252/2252, `npx tsc --noEmit -p tsconfig.app.json`
+  clean, `eslint` clean on every touched file. Pushed; `main` is now `e1ce0f0`. Worktree removed.
+  Branch `claude/pensive-tesla-421vh8` sits at `c512e93`, one merge behind `main`'s `e1ce0f0` (the
+  merge commit itself only exists on `main`, per the established pattern — nothing further to sync
+  back). No pull request opened, per instructions.
+
+  **This closes `UK_BEE_BURST.md`'s entire specced queue** — WS-1 through WS-6 (the original
+  burst), WS-7 (the campaign), WS-8 (finishing the lesson rebuild), and Extension 2's WS-9
+  (headsolving), WS-10 (deep absorption) and WS-11 (this entry) — every workstream the runbook
+  named has shipped to at least the pragmatic completion standard documented at each one's own
+  entry above. Final whole-repo state at the end of this session: **2252/2252 tests passing**,
+  `npx tsc --noEmit -p tsconfig.app.json` clean, every file this session touched eslint-clean.
+
+  **What remains is flagged, un-actioned follow-ups, not undiscovered work — compiled here from
+  across this log so a future session doesn't have to re-read 1800+ lines to find them:**
+  1. **WS-7's readiness metrics are narrower than the full spec.** `campaignReadiness.ts` ships
+     attempt rate, median recognition time, and error rate over a trailing 14-day window. The full
+     `UK_BEE_BURST.md` WS-7 spec also asked for "Q1–10 pace, tail reach, and paper-score trend
+     versus the owner's own first cold sit" — pace/reach within a single paper sitting, and a
+     trend line across sittings. Neither is built. `uk/paperHistory.ts` already stores the
+     per-sitting, per-band data a trend line would need; this is a real, cheap future add, not
+     something requiring new content or new plumbing from scratch.
+  2. **Paper mode's accessible band has a real, verified repetition ceiling.** Checked against the
+     live bank (not assumed): the difficulty-1–2 pool has 136 problems, but the definite side —
+     70% of each week's ten accessible-band questions, 7 of 10 — is only 44 problems deep. At 7
+     drawn per week with each week's `weekSeed` reshuffling independently (no cross-week
+     exclusion), the definite accessible pool cycles roughly every 4–6 weekly papers before
+     repeats become common, meaning a competitor sitting this weekly will start seeing familiar
+     Q1–10 questions within a month or two of regular use. Not a bug — `assembleBand`'s own
+     defensive-backfill comment already anticipates a pool running short — but a real content
+     ceiling the owner should know about; the fix is more difficulty-1–2 definite problems, which
+     needs new source PDFs per standing directive #2, not an engineering change.
+  3. **`conceptReviewStep()` (WS-10's spaced-review module) is not wired into `uk/campaign.ts`'s
+     `planSession`.** Both pieces exist and work independently; composing them is real
+     session-design judgment (which block(s) it appears in, how often, how it interacts with the
+     taper block's "no new material" rule) that no session has made yet — flagged inline in
+     `conceptReview.ts`'s own doc comment as well as here.
+  4. **WS-10 left 5 of 21 lessons at the WS-2/WS-8 baseline schema** — `introducing-constants`,
+     `floor-function`, `inverse-integral`, `log-power-integrals`, `gaussian-hypersphere` have no
+     `completions`/`selfExplain`, only the earlier `prerequisites`/`intuition`/`examples`/
+     `checkYourself`. Explicitly scoped out as lower-priority (WS-8's own "second tier", never
+     named in WS-10's delegated instructions), not overlooked.
+  5. **Two WS-9 (headsolving) design calls the owner hasn't weighed in on**: `headsolve.ts`'s
+     `SEED_TIERS` technique-difficulty ordering is a reasoned prior, not measured data — worth a
+     look once real headsolve history accumulates; and self-graded "close" deliberately never
+     triggers `queue.ts`'s near-miss scheduling bonus (mapped to plain "incorrect" in the shared
+     attempt log instead), keeping an unverified self-report from quietly steering the typed-mode
+     scheduler — the owner may want it to count.
+  6. **The root `tsconfig.json` still makes bare `npx tsc --noEmit` a silent no-op** (`"files": []`,
+     only `references` — needs `-b` or an explicit `-p tsconfig.app.json` to actually check
+     anything). Known since the WS-3 entry above; not fixed because it's shared build config
+     outside every session's stated file scope, and fixing it for the first time could surface a
+     pre-existing type-error backlog elsewhere in the app. Every verification this session (and
+     every session since WS-3) ran the real `-p tsconfig.app.json` form.
+  7. **Three MIT 2026 Finals problems from the last content-mining pass are still unmined** — a
+     genuine transcendental nested-log-tower limit (needs a dedicated Newton's-method custom
+     function, real engineering investment) plus two others not attempted under time pressure —
+     and `mathEngine.ts`'s shared mathjs instance (added for `lambertw`) could similarly host a
+     whitelisted `gcd` for a future PDF batch. Both noted where they came up, not reattempted here
+     — outside this session's scope and, per standing directive #2, moot without new source PDFs.
+  8. **SPLASH/UK-guide `source.round` still doubles as a citation locator**, the same pattern
+     fixed for MIT specifically (247 problems, `round` was each citation locator instead of an
+     actual round label, collapsing the by-source practice view to one-problem groups) — SPLASH
+     (30→11 real groups) and the UK guide (28→20) would tighten the same way if the owner wants
+     the by-source view cleaner there too; left alone since the owner's original complaint named
+     MIT specifically.
+
+  One item earlier progress-log entries flagged as open is now resolved by this session, worth
+  closing out explicitly rather than leaving ambiguous: WS-6's own note that recognition-drill
+  distractors were "uniformly random among the eligible set, not hand-curated 'confusable' groups"
+  — WS-11's `confusablesFor` wiring (this entry) is that fix.
+
+  **Standing directive #2 still applies**: no new practice problems were authored this session
+  (every WS-11 claim lives in `techniqueMap.ts`'s descriptive prose, not `bank/*.ts`), and there is
+  no more sourced content to mine without new PDFs from the owner. A future session starting here
+  with runway and no new uploads should check the list above for something concrete to pick up
+  (all eight items are real, scoped, and actionable) rather than inventing problems or speculative
+  features — the "hard stop" this runbook's opening section anticipates is genuinely reached again.

@@ -5,18 +5,30 @@
  * The detail lives here: the calendar, what fraction of each difficulty you have cleared, where
  * each technique stands, and every sprint best.
  */
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Flame, Timer, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Flame, Timer, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import XpBar from "@/features/integrals/components/XpBar";
 import DailyHeatmap from "@/features/integrals/components/DailyHeatmap";
 import ActivityHeatmap from "@/features/integrals/components/ActivityHeatmap";
 import DifficultyBars from "@/features/integrals/components/DifficultyBars";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
+import { useAttempts } from "@/features/integrals/hooks/useAttempts";
 import { allMastery, BADGES, stats } from "@/features/integrals/progress";
 import { historySummary } from "@/features/integrals/history";
 import { TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import { BAND_BY_ID, DURATIONS, BANDS } from "@/features/integrals/sprint";
+import { buildErrorProfile, ERROR_CLASSES, type ErrorClass } from "@/features/integrals/errorTaxonomy";
+
+const ERROR_CLASS_LABEL: Record<ErrorClass, string> = {
+  "constant-factor": "Constant factor",
+  "sign-flip": "Sign flip",
+  "missing-absolute-value": "Missing absolute value",
+  "right-family-wrong-parameter": "Right family, wrong parameter",
+  "correct-but-unsimplified": "Correct, unsimplified",
+  "wrong-method": "Wrong method",
+};
 
 function Tile({ value, label, accent = false }: { value: string; label: string; accent?: boolean }) {
   return (
@@ -33,9 +45,11 @@ function Tile({ value, label, accent = false }: { value: string; label: string; 
 
 export default function IntegralProgress() {
   const progress = useProgress();
+  const attempts = useAttempts();
   const s = stats(progress);
   const history = historySummary(progress);
   const mastery = allMastery(progress);
+  const errorProfile = useMemo(() => buildErrorProfile(attempts), [attempts]);
   const earned = new Set(s.badges.map((b) => b.id));
   const turnout = history.span > 0 ? Math.round((history.played / history.span) * 100) : 0;
   const sprintRows = BANDS.flatMap((band) =>
@@ -172,6 +186,102 @@ export default function IntegralProgress() {
                 </tbody>
               </table>
             </div>
+          )}
+        </section>
+
+        <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="mb-1 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            <h2 className="font-display text-[17px] font-semibold text-foreground">Error profile</h2>
+          </div>
+          <p className="mb-4 text-[13px] text-muted-foreground">
+            Every wrong attempt, classified by why — a dropped sign is worth fixing differently
+            from a genuinely wrong method.
+          </p>
+          {errorProfile.classifiedAttempts === 0 ? (
+            <p className="text-[14px] text-muted-foreground">
+              Not enough classified misses yet — keep training and this fills in.
+            </p>
+          ) : (
+            <>
+              {errorProfile.dominant && (
+                <p className="mb-4 text-[14px] text-foreground">
+                  Most common:{" "}
+                  <span className="font-medium text-primary">{ERROR_CLASS_LABEL[errorProfile.dominant]}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — {errorProfile.counts[errorProfile.dominant]} of {errorProfile.classifiedAttempts} classified
+                    misses.
+                  </span>
+                </p>
+              )}
+
+              <ul className="mb-5 flex flex-col gap-2.5">
+                {ERROR_CLASSES.filter((cls) => (errorProfile.counts[cls] ?? 0) > 0)
+                  .sort((a, b) => (errorProfile.counts[b] ?? 0) - (errorProfile.counts[a] ?? 0))
+                  .map((cls) => {
+                    const n = errorProfile.counts[cls] ?? 0;
+                    const pct = (n / errorProfile.classifiedAttempts) * 100;
+                    return (
+                      <li key={cls}>
+                        <div className="mb-1 flex items-baseline justify-between gap-3">
+                          <span className="text-[13px] text-foreground">{ERROR_CLASS_LABEL[cls]}</span>
+                          <span className="readout text-[12px] tabular-nums text-muted-foreground">{n}</span>
+                        </div>
+                        <div
+                          role="progressbar"
+                          aria-valuenow={n}
+                          aria-valuemin={0}
+                          aria-valuemax={errorProfile.classifiedAttempts}
+                          aria-label={`${ERROR_CLASS_LABEL[cls]}: ${n} of ${errorProfile.classifiedAttempts} classified misses`}
+                          className="h-1.5 w-full overflow-hidden rounded-full bg-accent"
+                        >
+                          <div
+                            className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
+                            style={{ width: `${Math.max(pct > 0 ? 2 : 0, pct)}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
+
+              {errorProfile.byTechnique.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[13px]">
+                    <thead>
+                      <tr className="border-b border-border text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
+                        <th scope="col" className="py-2 pr-3 font-medium">
+                          Technique
+                        </th>
+                        <th scope="col" className="py-2 pr-3 font-medium">
+                          Most common miss
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                          Classified
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {errorProfile.byTechnique.map((t) => (
+                        <tr key={t.technique} className="border-b border-border/50 last:border-0">
+                          <td className="py-2 pr-3">
+                            <Link
+                              to={`/integrals/train/${t.technique}`}
+                              className="text-foreground transition-colors hover:text-primary"
+                            >
+                              {TECHNIQUE_BY_ID[t.technique].name}
+                            </Link>
+                          </td>
+                          <td className="py-2 pr-3 text-muted-foreground">{ERROR_CLASS_LABEL[t.dominant]}</td>
+                          <td className="readout py-2 text-right tabular-nums text-muted-foreground">{t.total}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </section>
 
