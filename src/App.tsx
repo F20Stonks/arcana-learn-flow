@@ -23,6 +23,7 @@ import ReviewCalendarPage from "./pages/ReviewCalendarPage";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import DrillsHub from "./pages/DrillsHub";
+import QuantHub from "./pages/QuantHub";
 import IntegralsHub from "./pages/IntegralsHub";
 import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
@@ -127,6 +128,10 @@ function AppRoutes() {
       <Route path="/leaderboards" element={<DashboardGuard><LeaderboardsPage /></DashboardGuard>} />
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
+      {/* UK Quant (src/features/quant) — a separate, curated lesson-first curriculum for quant-
+          interview prep. Not part of the general Drills catalog: no nav link, reachable only by
+          direct URL. Reuses the Drills practice engine read-only via focus-tagged practice links. */}
+      <Route path="/quant" element={<DashboardGuard><QuantHub /></DashboardGuard>} />
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
           training room. Self-contained: its own grader, problem bank and progression. Also live for
           every signup: no BetaGate. */}
@@ -201,6 +206,10 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/values" element={<IntegralValues />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/campaign" element={<IntegralCampaign />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/headsolve" element={<IntegralHeadsolve />} />}
+      {/* Same unguarded-twin pattern as the /dev/integrals/* block above, for drills and UK Quant. */}
+      {import.meta.env.DEV && <Route path="/dev/drills" element={<DrillsHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/drills/:drillKey" element={<DrillPlay />} />}
+      {import.meta.env.DEV && <Route path="/dev/quant" element={<QuantHub />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

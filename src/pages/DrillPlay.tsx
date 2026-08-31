@@ -104,7 +104,9 @@ export default function DrillPlay() {
     );
   }
 
-  const config = mode === "custom" ? { operators: customOperators, max: customMax } : undefined;
+  const focusTag = params.get("focus");
+  const config =
+    mode === "custom" ? { operators: customOperators, max: customMax } : focusTag ? { focusTag } : undefined;
 
   return (
     <AppShell>
