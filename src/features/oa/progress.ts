@@ -4,7 +4,7 @@
  * nothing here leaves the browser.
  */
 import { useSyncExternalStore } from "react";
-import type { Assessment, RunResult } from "./types";
+import type { Assessment, Attempt, QuestionKind, RunResult } from "./types";
 
 const STORAGE_KEY = "arcana.oa.progress.v1";
 
@@ -17,13 +17,27 @@ export interface AttemptRecord {
   lastAt: string;
 }
 
+/** A running tally per question kind, across every paper and drill ever sat. */
+export interface KindRecord {
+  seen: number;
+  correct: number;
+  /** Total milliseconds spent, so the arena can say what is slow as well as what is wrong. */
+  ms: number;
+}
+
 export interface OaProgress {
   version: 1;
   attempts: Record<string, AttemptRecord>;
+  /**
+   * Per question kind rather than per assessment: "you are losing marks on sequences" is the
+   * finding a candidate can act on, and it is invisible from a per-paper score because every
+   * paper mixes kinds.
+   */
+  kinds: Partial<Record<QuestionKind, KindRecord>>;
 }
 
 export function emptyOaProgress(): OaProgress {
-  return { version: 1, attempts: {} };
+  return { version: 1, attempts: {}, kinds: {} };
 }
 
 export function assessmentKey(assessment: Assessment): string {
@@ -67,6 +81,21 @@ export function resetOaProgress() {
   write(emptyOaProgress());
 }
 
+/** Fold a batch of attempts into the per-kind tallies. Shared by papers and drills. */
+function tally(kinds: OaProgress["kinds"], attempts: readonly Attempt[]): OaProgress["kinds"] {
+  const next = { ...kinds };
+  for (const a of attempts) {
+    const kind = a.question.kind;
+    const existing = next[kind] ?? { seen: 0, correct: 0, ms: 0 };
+    next[kind] = {
+      seen: existing.seen + 1,
+      correct: existing.correct + (a.correct ? 1 : 0),
+      ms: existing.ms + a.ms,
+    };
+  }
+  return next;
+}
+
 export function recordSitting(result: RunResult) {
   const key = assessmentKey(result.assessment);
   const current = read();
@@ -83,7 +112,45 @@ export function recordSitting(result: RunResult) {
         lastAt: new Date().toISOString(),
       },
     },
+    kinds: tally(current.kinds, result.sections.flatMap((s) => s.attempts)),
   });
+}
+
+/** A drill has no assessment behind it, so it only moves the per-kind tallies. */
+export function recordDrill(attempts: readonly Attempt[]) {
+  const current = read();
+  write({ ...current, kinds: tally(current.kinds, attempts) });
+}
+
+export interface KindStanding {
+  kind: QuestionKind;
+  seen: number;
+  correct: number;
+  accuracy: number;
+  /** Mean seconds per question. */
+  pace: number;
+}
+
+/** Where you stand on each kind you have actually seen, worst accuracy first. */
+export function kindStandings(progress: OaProgress): KindStanding[] {
+  return Object.entries(progress.kinds ?? {})
+    .filter(([, r]) => r && r.seen > 0)
+    .map(([kind, r]) => ({
+      kind: kind as QuestionKind,
+      seen: r!.seen,
+      correct: r!.correct,
+      accuracy: r!.correct / r!.seen,
+      pace: r!.ms / r!.seen / 1000,
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy || b.seen - a.seen);
+}
+
+/**
+ * What to drill next. Needs a real sample behind it — telling someone their weakest kind on the
+ * strength of three questions is noise dressed as advice.
+ */
+export function weakestKind(progress: OaProgress, minimumSeen = 10): KindStanding | undefined {
+  return kindStandings(progress).find((s) => s.seen >= minimumSeen && s.accuracy < 0.9);
 }
 
 export function bestFor(progress: OaProgress, assessment: Assessment): AttemptRecord | undefined {

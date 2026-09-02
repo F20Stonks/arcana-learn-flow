@@ -7,11 +7,12 @@
  * from their score.
  */
 import { Link } from "react-router-dom";
-import { Building2, Clock, Info, ListChecks } from "lucide-react";
+import { Building2, Clock, Dumbbell, Info, ListChecks, Target } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { FIDELITY_NOTE, FIRMS } from "@/features/oa/firms";
 import { assessmentShape } from "@/features/oa/generate";
-import { bestFor, sittingsCount, useOaProgress } from "@/features/oa/progress";
+import { bestFor, kindStandings, sittingsCount, useOaProgress, weakestKind } from "@/features/oa/progress";
+import { KIND_BY_ID } from "@/features/oa/drill";
 
 function minutes(seconds: number): string {
   return seconds < 60 ? `${seconds}s` : `${Math.round(seconds / 60)} min`;
@@ -31,6 +32,8 @@ export function FidelityNote({ className = "" }: { className?: string }) {
 export default function OAHub() {
   const progress = useOaProgress();
   const counts = sittingsCount(progress);
+  const standings = kindStandings(progress);
+  const weakest = weakestKind(progress);
   const totalAssessments = FIRMS.reduce((n, f) => n + f.assessments.length, 0);
 
   return (
@@ -56,6 +59,78 @@ export default function OAHub() {
             <span className="readout tabular-nums">{counts.total}</span> sittings in total.
           </p>
         )}
+
+        <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold text-foreground">
+                <Dumbbell className="h-4 w-4 text-primary" /> Drills
+              </h2>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+                One question type on repeat, marked in front of you instead of at the end. Losing
+                the arithmetic section of an eighty-question paper should not mean sitting eighty
+                questions again to work on it.
+              </p>
+            </div>
+            <Link
+              to="/oa/drill"
+              className="shrink-0 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Drill →
+            </Link>
+          </div>
+
+          {weakest && (
+            <Link
+              to={`/oa/drill?kind=${weakest.kind}&level=3&count=20`}
+              className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3 text-[13px] transition-colors hover:border-primary/50"
+            >
+              <Target className="h-4 w-4 shrink-0 text-primary" />
+              <span className="text-foreground">
+                Weakest so far: {KIND_BY_ID[weakest.kind].name.toLowerCase()} at{" "}
+                <span className="readout tabular-nums">{Math.round(weakest.accuracy * 100)}%</span>{" "}
+                over {weakest.seen} questions.
+              </span>
+            </Link>
+          )}
+
+          {standings.length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2.5 border-t border-border pt-4">
+              {standings.map((s) => (
+                <li key={s.kind}>
+                  <div className="mb-1 flex items-baseline justify-between gap-3 text-[13px]">
+                    <Link
+                      to={`/oa/drill?kind=${s.kind}&level=3&count=20`}
+                      className="text-foreground transition-colors hover:text-primary"
+                    >
+                      {KIND_BY_ID[s.kind].name}
+                    </Link>
+                    <span className="readout text-[12px] tabular-nums text-muted-foreground">
+                      {s.correct}/{s.seen} · {s.pace.toFixed(1)}s
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-valuenow={s.correct}
+                    aria-valuemin={0}
+                    aria-valuemax={s.seen}
+                    aria-label={`${KIND_BY_ID[s.kind].name}: ${s.correct} of ${s.seen} correct`}
+                    className="h-1.5 w-full overflow-hidden rounded-full bg-accent"
+                  >
+                    <div
+                      className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
+                      style={{ width: `${s.accuracy * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <h2 className="reveal mb-3 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+          The firms
+        </h2>
 
         <div className="reveal flex flex-col gap-3">
           {FIRMS.map((firm) => {
