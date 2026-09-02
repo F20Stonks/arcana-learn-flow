@@ -340,3 +340,32 @@ data collection rather than engineering); **personality scoring** (deliberately 
 is no defensible key, so the format is replicated and the debrief explains why no score is shown);
 **Five Rings** (format not publicly reported in enough detail to replicate — it is in the catalog
 as a stub pending a candidate report).
+
+---
+
+## Progress log
+
+- **2026-09-02** — P0 through P3 plus P5 shipped on `claude/quant-firm-assessments-353dbg`.
+  **Ten firms, fifteen modules playable** at `/assessments`: the six speed batteries (Optiver,
+  Jane Street, Flow Traders — multiple choice, Akuna, All Options, IMC), three sequences papers
+  (Optiver NumberLogic, Flow Traders, Akuna), four probability screens (Citadel, DRW, SIG,
+  G-Research) and the market-making game (Jane Street, Optiver). 1223 tests passing, lint and
+  build clean.
+
+  Built as four parallel worktree agents against a hand-built P0 spine. What that cost, recorded
+  because it should inform the next batch: agents died on session rate limits three times, losing
+  two full runs; the sequences module was recovered from an agent's uncommitted worktree rather
+  than re-run. Every merge needed review — the merges surfaced six real bugs no agent could have
+  caught from inside its own worktree (choice ids recorded instead of labels; `abandon()`
+  discarding the live section; option formatting leaking the answer; "exactly 1 heads"; three
+  firms promising back-navigation the engine refused; `custom` modules not rendering at all).
+
+  **Not built:** the cognitive/reaction game suites (P6, archetype I), data-sufficiency and chart
+  reading (D), options and market intuition (F), the G-Research long-form written variant (J),
+  the coding module (K — still recommended as link-out), estimation/Fermi (H — needs a sourced
+  fact bank), and the personality format (L). SIG's options and game-theory content was
+  deliberately left out of its probability screen because it could not be verified to the same
+  standard as the rest; it is noted in `firms/sig.ts`'s `sourceNote` rather than silently dropped.
+
+  **Next:** archetypes D and F are the cheapest remaining wins (both self-verifying by
+  construction), then the P6 cognitive suite, which is the largest single block left.
