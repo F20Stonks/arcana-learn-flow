@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkDefinite, checkIndefinite, describeFactor, normalize } from "./answer";
+import { checkDefinite, checkIndefinite, describeFactor, normalize, readAnswer } from "./answer";
 
 const D: [number, number] = [0.4, 2.2];
 
@@ -184,5 +184,32 @@ describe("describeFactor", () => {
     expect(describeFactor(0.5)).toBe("1/2");
     expect(describeFactor(2)).toBe("2");
     expect(describeFactor(-1 / 3)).toBe("-1/3");
+  });
+});
+
+describe("reading what has been typed so far", () => {
+  const state = (s: string) => readAnswer(s).state;
+
+  it("previews anything that parses", () => {
+    const reading = readAnswer("x^3/3");
+    expect(reading.state).toBe("ok");
+    expect(reading.state === "ok" && reading.latex).toContain("frac");
+  });
+
+  it("says nothing at all about an empty box", () => {
+    expect(state("")).toBe("empty");
+    expect(state("   ")).toBe("empty");
+  });
+
+  it("waits on an expression that is only half typed", () => {
+    expect(state("x^")).toBe("incomplete");
+    expect(state("sin(x")).toBe("incomplete");
+    expect(state("x^2 +")).toBe("incomplete");
+  });
+
+  it("admits when more typing will not help", () => {
+    // The old preview showed "…still reading that" for these, forever.
+    expect(state("x^^2")).toBe("unreadable");
+    expect(state("x^2)")).toBe("unreadable");
   });
 });
