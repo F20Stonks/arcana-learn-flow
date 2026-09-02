@@ -266,6 +266,14 @@ function Review({
 }) {
   const pct = Math.round(result.score * 100);
   const mark = result.assessment.reportedPassMark;
+  const everything = useMemo(
+    () => result.sections.flatMap((s) => s.attempts.map((a) => [s.section.id, a] as const)),
+    [result],
+  );
+  const wrong = useMemo(() => everything.filter(([, a]) => !a.correct), [everything]);
+  // Eighty questions with their working is not a list anyone reads. What you got wrong is.
+  const [showAll, setShowAll] = useState(false);
+  const shown = showAll ? everything : wrong;
 
   return (
     <div className="reveal flex flex-col gap-5">
@@ -352,15 +360,35 @@ function Review({
       )}
 
       <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <h2 className="font-display text-[16px] font-semibold text-foreground">Every question</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="font-display text-[16px] font-semibold text-foreground">
+            {showAll ? "Every question" : "What you missed"}
+          </h2>
+          {wrong.length !== everything.length && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="rounded-lg border border-border px-3 py-1 text-[12px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              {showAll
+                ? `Just the ${wrong.length} you missed`
+                : `Show all ${everything.length} answered`}
+            </button>
+          )}
+        </div>
         <p className="mb-4 mt-1 text-[13px] text-muted-foreground">
           The score tells you that you were slow. This tells you what to do about it.
         </p>
+        {shown.length === 0 ? (
+          <p className="text-[14px] text-muted-foreground">
+            {everything.length === 0
+              ? "Nothing was answered, so there is nothing to go back over."
+              : "Nothing missed — every question you reached, you got."}
+          </p>
+        ) : (
         <ol className="flex flex-col gap-4">
-          {result.sections.flatMap((s) =>
-            s.attempts.map((attempt, i) => (
+          {shown.map(([sectionId, attempt], i) => (
               <li
-                key={`${s.section.id}-${i}`}
+                key={`${sectionId}-${i}`}
                 className="border-t border-border/60 pt-4 first:border-0 first:pt-0"
               >
                 <div className="flex items-start gap-3">
@@ -403,9 +431,9 @@ function Review({
                   </div>
                 </div>
               </li>
-            )),
-          )}
+          ))}
         </ol>
+        )}
       </section>
 
       <div className="flex flex-wrap gap-3">

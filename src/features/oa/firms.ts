@@ -701,6 +701,27 @@ export function findAssessment(firmId: string, assessmentId: string): Assessment
 }
 
 /**
+ * Every question kind a firm's assessments draw on.
+ *
+ * The question a candidate actually arrives with is not "what does Optiver ask" but "I am strong
+ * on options — who tests that", and it cannot be answered by reading twenty-four firm pages.
+ */
+export function kindsFor(firm: Firm): QuestionKind[] {
+  const kinds = new Set<QuestionKind>();
+  for (const a of firm.assessments) for (const s of a.sections) kinds.add(s.kind);
+  return [...kinds];
+}
+
+/** The firms whose assessments include every one of these kinds. Empty means all of them. */
+export function firmsTesting(kinds: readonly QuestionKind[], pool: readonly Firm[] = FIRMS): Firm[] {
+  if (kinds.length === 0) return [...pool];
+  return pool.filter((f) => {
+    const has = new Set(kindsFor(f));
+    return kinds.every((k) => has.has(k));
+  });
+}
+
+/**
  * The standing disclaimer. Shown on the hub, on every firm page and before every run — not once in
  * a footer, because a candidate who thinks they are sitting the real thing will draw the wrong
  * conclusion from their score.

@@ -6,13 +6,15 @@
  * footer: a candidate who thinks they are sitting the real thing will draw the wrong conclusion
  * from their score.
  */
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Clock, Dumbbell, Info, ListChecks, Target } from "lucide-react";
 import AppShell from "@/components/AppShell";
-import { FIDELITY_NOTE, FIRMS } from "@/features/oa/firms";
+import { FIDELITY_NOTE, FIRMS, firmsTesting, kindsFor } from "@/features/oa/firms";
 import { assessmentShape } from "@/features/oa/generate";
 import { bestFor, kindStandings, sittingsCount, useOaProgress, weakestKind } from "@/features/oa/progress";
-import { KIND_BY_ID } from "@/features/oa/drill";
+import { KINDS, KIND_BY_ID } from "@/features/oa/drill";
+import type { QuestionKind } from "@/features/oa/types";
 
 function minutes(seconds: number): string {
   return seconds < 60 ? `${seconds}s` : `${Math.round(seconds / 60)} min`;
@@ -34,6 +36,8 @@ export default function OAHub() {
   const counts = sittingsCount(progress);
   const standings = kindStandings(progress);
   const weakest = weakestKind(progress);
+  const [filter, setFilter] = useState<QuestionKind[]>([]);
+  const shown = useMemo(() => firmsTesting(filter), [filter]);
   const totalAssessments = FIRMS.reduce((n, f) => n + f.assessments.length, 0);
 
   return (
@@ -128,12 +132,58 @@ export default function OAHub() {
           )}
         </section>
 
-        <h2 className="reveal mb-3 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-          The firms
-        </h2>
+        <section className="reveal mb-5">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+              The firms
+            </h2>
+            <span className="text-[12px] text-muted-foreground">
+              {filter.length === 0 ? (
+                "Filter by what they test"
+              ) : (
+                <>
+                  <span className="readout tabular-nums text-foreground">{shown.length}</span> of{" "}
+                  {FIRMS.length} test all of these ·{" "}
+                  <button
+                    onClick={() => setFilter([])}
+                    className="underline underline-offset-2 transition-colors hover:text-foreground"
+                  >
+                    clear
+                  </button>
+                </>
+              )}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {KINDS.map((k) => {
+              const on = filter.includes(k.kind);
+              return (
+                <button
+                  key={k.kind}
+                  onClick={() =>
+                    setFilter((f) => (on ? f.filter((x) => x !== k.kind) : [...f, k.kind]))
+                  }
+                  aria-pressed={on}
+                  className={`rounded-full border px-3 py-1.5 text-[13px] transition-colors ${
+                    on
+                      ? "border-primary/60 bg-primary/[0.1] text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                  }`}
+                >
+                  {k.name}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="reveal flex flex-col gap-3">
-          {FIRMS.map((firm) => {
+          {shown.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-border px-5 py-6 text-center text-[14px] text-muted-foreground">
+              No firm here tests all of those together. Drop one and try again.
+            </p>
+          )}
+          {shown.map((firm) => {
             const sat = firm.assessments.filter((a) => bestFor(progress, a)).length;
             return (
               <Link
@@ -151,6 +201,9 @@ export default function OAHub() {
                   </span>
                 </div>
                 <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{firm.blurb}</p>
+                <p className="mt-2.5 text-[12px] text-muted-foreground/80">
+                  Tests: {kindsFor(firm).map((k) => KIND_BY_ID[k].name.toLowerCase()).join(", ")}
+                </p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {firm.assessments.map((a) => {
                     const shape = assessmentShape(a);

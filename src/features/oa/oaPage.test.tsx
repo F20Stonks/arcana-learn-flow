@@ -125,7 +125,7 @@ describe("sitting a paper", () => {
     expect(screen.getByRole("timer")).toBeInTheDocument();
 
     tick(481_000);
-    expect(screen.getByText("Every question")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /What you missed/ })).toBeInTheDocument();
   });
 
   it("records the sitting and shows the working for every question answered", () => {
@@ -150,8 +150,10 @@ describe("sitting a paper", () => {
     expect(best.total).toBe(80);
     expect(best.sittings).toBe(1);
 
-    // The review is the half that changes the next sitting.
-    expect(screen.getByText("Every question")).toBeInTheDocument();
+    // The review is the half that changes the next sitting. It leads with the misses — eighty
+    // questions with their working is not a list anyone reads.
+    expect(screen.getByRole("heading", { name: /What you missed/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Show all 3 answered/ }));
     expect(screen.getAllByText(/you said/).length).toBe(3);
   });
 
@@ -192,7 +194,7 @@ describe("sitting a paper", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /End paper/ }));
     fireEvent.click(screen.getByRole("button", { name: /^Yes$/ }));
-    expect(screen.getByText("Every question")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /What you missed/ })).toBeInTheDocument();
   });
 
   it("walks a multi-section paper section by section", () => {
@@ -250,5 +252,73 @@ describe("the section clock", () => {
     expect(screen.getByText(/section 2\/3/)).toBeInTheDocument();
     // And the new section got its own full clock, not the remainder of the old one.
     expect(screen.getByRole("timer").textContent).not.toBe("0:00");
+  });
+});
+
+describe("the review, on a long paper", () => {
+  it("leads with the misses and keeps the full list one click away", () => {
+    const assessment = findAssessment("optiver", "80-in-8")!;
+    const paper = buildRun(assessment, SEED);
+    at("/oa/optiver/80-in-8", <OARun />, "/oa/:firmId/:assessmentId");
+    fireEvent.click(screen.getByRole("button", { name: /^Start/ }));
+
+    // Two right, two wrong.
+    for (let i = 0; i < 4; i++) {
+      const q = paper[0][i];
+      if (q.answer.type !== "numeric") continue;
+      fireEvent.change(screen.getByLabelText(/Your answer/i), {
+        target: { value: i < 2 ? String(q.answer.value) : "-99999" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    }
+    tick(481_000);
+
+    expect(screen.getByRole("heading", { name: /What you missed/ })).toBeInTheDocument();
+    expect(screen.getAllByText(/you said/).length).toBe(2);
+
+    fireEvent.click(screen.getByRole("button", { name: /Show all 4 answered/ }));
+    expect(screen.getByRole("heading", { name: /Every question/ })).toBeInTheDocument();
+    expect(screen.getAllByText(/you said/).length).toBe(4);
+  });
+
+  it("says so plainly when there is nothing to go back over", () => {
+    at("/oa/optiver/80-in-8", <OARun />, "/oa/:firmId/:assessmentId");
+    fireEvent.click(screen.getByRole("button", { name: /^Start/ }));
+    tick(481_000);
+    expect(screen.getByText(/nothing to go back over/i)).toBeInTheDocument();
+  });
+});
+
+describe("finding the right firm", () => {
+  it("filters the list to firms that test what you pick", () => {
+    at("/oa", <OAHub />, "/oa");
+    const optiver = () => screen.queryByRole("link", { name: /Optiver/ });
+    expect(optiver()).toBeInTheDocument();
+
+    // Optiver's reconstructed assessments have no options section; Akuna's do.
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+    expect(optiver()).toBeNull();
+    expect(screen.getByRole("link", { name: /Akuna/ })).toBeInTheDocument();
+  });
+
+  it("intersects the filters rather than unioning them", () => {
+    at("/oa", <OAHub />, "/oa");
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+    const afterOne = screen.getAllByRole("link", { name: /Sit|^[A-Z]/ }).length;
+    fireEvent.click(screen.getByRole("button", { name: "Grid scanning" }));
+    // Asking for both narrows; it never widens.
+    expect(screen.getAllByRole("link").length).toBeLessThanOrEqual(afterOne);
+  });
+
+  it("says so rather than showing an empty page when nothing matches", () => {
+    at("/oa", <OAHub />, "/oa");
+    fireEvent.click(screen.getByRole("button", { name: "Grid scanning" }));
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+    expect(screen.getByText(/No firm here tests all of those together/)).toBeInTheDocument();
+  });
+
+  it("names what each firm tests on its card", () => {
+    at("/oa", <OAHub />, "/oa");
+    expect(screen.getAllByText(/^Tests: /).length).toBe(FIRMS.length);
   });
 });
