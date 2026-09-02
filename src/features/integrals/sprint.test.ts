@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { BANDS, BAND_BY_ID, buildQueue, configKey, describeConfig, SKIP_PENALTY, sprintRate, sprintScore } from "./sprint";
+import { BANDS, BAND_BY_ID, buildQueue, configKey, describeConfig, rememberSetup, SKIP_PENALTY, sprintRate, sprintScore, storedSetup } from "./sprint";
 import { PROBLEMS } from "./problems";
 import { getProgress, recordSprint, resetProgress, sprintBest, totalSprints } from "./progress";
 
@@ -112,5 +112,25 @@ describe("labels", () => {
   it("keys and describes a configuration unambiguously", () => {
     expect(configKey({ band: "brutal", seconds: 300 })).toBe("brutal-300");
     expect(describeConfig({ band: "brutal", seconds: 300 })).toBe("Brutal · 5 min");
+  });
+});
+
+describe("remembering the setup", () => {
+  it("falls back to the default before anything is stored", () => {
+    window.localStorage.clear();
+    expect(storedSetup()).toEqual({ band: "mixed", seconds: 180 });
+  });
+
+  it("brings back the last setup rather than making you re-pick both", () => {
+    rememberSetup({ band: "brutal", seconds: 300 });
+    expect(storedSetup()).toEqual({ band: "brutal", seconds: 300 });
+  });
+
+  it("ignores a stored value that is no longer a real band or clock", () => {
+    window.localStorage.setItem(
+      "arcana.integrals.sprint-setup",
+      JSON.stringify({ band: "impossible", seconds: 12345 }),
+    );
+    expect(storedSetup()).toEqual({ band: "mixed", seconds: 180 });
   });
 });

@@ -5,7 +5,7 @@
  * is the thing you play twice in a row; this is. Pick a band and a clock, and the only question is
  * how many you land.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Check, Eye, Play, RotateCcw, SkipForward, Square, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
@@ -23,7 +23,9 @@ import {
   BAND_BY_ID,
   DURATIONS,
   describeConfig,
+  rememberSetup,
   sprintRate,
+  storedSetup,
   SKIP_PENALTY,
   type BandId,
   type Duration,
@@ -36,8 +38,8 @@ function durationLabel(seconds: Duration): string {
 }
 
 export default function IntegralSprint() {
-  const [band, setBand] = useState<BandId>("mixed");
-  const [seconds, setSeconds] = useState<Duration>(180);
+  const [band, setBand] = useState<BandId>(() => storedSetup().band);
+  const [seconds, setSeconds] = useState<Duration>(() => storedSetup().seconds);
   const config = useMemo(() => ({ band, seconds }), [band, seconds]);
   const run = useSprintRun(config);
   const progress = useProgress();
@@ -45,6 +47,23 @@ export default function IntegralSprint() {
 
   const fraction = run.remaining / config.seconds;
   const urgent = run.remaining <= 10 && run.status === "running";
+  const running = run.status === "running";
+
+  useEffect(() => rememberSetup({ band, seconds }), [band, seconds]);
+
+  // Solves bank as they happen, but the run's score and its personal best only exist at the end,
+  // so a reload halfway through throws away the run itself.
+  useEffect(() => {
+    if (!running) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [running]);
+
+  // The visible clock is `aria-live="off"` — announcing every second would be unusable. These are
+  // the moments that actually change what you do, and they are all a sighted player gets from
+  // watching the bar drain.
+  const mark = running ? [60, 30, 10].find((t) => run.remaining === t) : undefined;
 
   return (
     <AppShell>
@@ -149,6 +168,9 @@ export default function IntegralSprint() {
                   {run.solved.length} solved · {run.liveScore} pts
                 </span>
               </div>
+              <p className="sr-only" role="status" aria-live="polite">
+                {mark ? `${mark} seconds left.` : ""}
+              </p>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent">
                 <div
                   className={`h-full rounded-full transition-[width] duration-200 ${urgent ? "bg-destructive" : "bg-primary"}`}

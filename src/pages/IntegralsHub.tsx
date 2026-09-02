@@ -97,6 +97,12 @@ export default function IntegralsHub() {
             </div>
             {!record && <p className="sr-only">Today's integral is hidden until you start the run.</p>}
 
+            <p className="mb-4 flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground">
+              <Users className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              Everyone gets the same integral, so the scores mean something. One attempt, ranked by
+              score and then by time — which is what stops it becoming a retry contest.
+            </p>
+
             <div className="flex items-center justify-between text-[13px]">
               {record ? (
                 record.solved ? (
@@ -144,22 +150,6 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Sprint →
-            </span>
-          </Link>
-
-          <Link
-            to="/integrals/daily"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:col-span-2"
-          >
-            <Users className="h-4 w-4 text-primary" />
-            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Head to head</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Everyone gets the same integral, so the scores mean something. Solve today's and you take
-              a place on its board — ranked by score, then by time. One attempt per puzzle, which is
-              what stops it becoming a retry contest.
-            </p>
-            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
-              {record ? "See the board →" : "Play today's →"}
             </span>
           </Link>
         </section>

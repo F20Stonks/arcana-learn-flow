@@ -11,7 +11,7 @@ import {
   techniqueMastery,
 } from "./progress";
 import { PROBLEMS } from "./problems";
-import { levelForXp, levelState, scoreAttempt, xpForLevel } from "./scoring";
+import { levelForXp, levelState, nextHintCost, scoreAttempt, xpForLevel } from "./scoring";
 
 const solveFacts = (problemId: string, over: Partial<Parameters<typeof recordTrainingSolve>[0]> = {}) => ({
   problemId,
@@ -186,5 +186,35 @@ describe("levels", () => {
     expect(s.progress).toBeGreaterThan(0);
     expect(s.progress).toBeLessThan(1);
     expect(s.rank).toBeTruthy();
+  });
+});
+
+describe("what the next hint costs", () => {
+  it("charges 20% until the penalty caps out", () => {
+    expect(nextHintCost(0)).toBeCloseTo(0.2);
+    expect(nextHintCost(1)).toBeCloseTo(0.2);
+    expect(nextHintCost(2)).toBeCloseTo(0.2);
+  });
+
+  it("charges nothing past the cap, which the button used to price at 20%", () => {
+    expect(nextHintCost(3)).toBeCloseTo(0);
+    expect(nextHintCost(9)).toBeCloseTo(0);
+  });
+
+  it("agrees with what scoreAttempt actually deducts", () => {
+    const at = (hintsUsed: number) =>
+      scoreAttempt({
+        difficulty: 3,
+        seconds: 0,
+        hintsUsed,
+        wrongAttempts: 0,
+        streak: 0,
+        mode: "daily",
+        repeat: false,
+      });
+    for (const used of [0, 1, 2, 3, 4]) {
+      const charged = at(used).hintPenalty - at(used + 1).hintPenalty;
+      expect(charged).toBeCloseTo(at(0).base * nextHintCost(used), 0);
+    }
   });
 });
