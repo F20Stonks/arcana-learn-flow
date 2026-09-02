@@ -33,3 +33,8 @@ vite.config.ts.timestamp-*.mjs
 
 # Local Supabase CLI cache marker — regenerated per-machine, never meant to be shared.
 supabase/.temp/
+
+# Transient git worktrees for background agents. Each is a full checkout of this repo, so
+# committing them would nest the whole tree inside itself once per running agent. Scoped to
+# worktrees/ rather than all of .claude/ so genuine project config there stays trackable.
+.claude/worktrees/
