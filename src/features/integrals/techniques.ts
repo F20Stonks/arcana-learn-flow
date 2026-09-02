@@ -1165,6 +1165,7 @@ export const TECHNIQUES: Technique[] = [
       "Differentiating under the integral sign needs the integrand to stay well-behaved as a varies — this isn't the tool for an integrand with a singularity that moves with a.",
       "Pin the constant of integration using a value of a where the integral is obviously trivial, not by guessing.",
       "The parameter has to actually recover the original problem at some specific value — check that before differentiating anything.",
+      "If the bounds themselves depend on the parameter — I(t) = \\int_{a(t)}^{b(t)} f(x,t)\\,dx — differentiating the integrand alone drops two terms. The general rule is \\frac{d}{dt}I(t) = \\int_{a(t)}^{b(t)} \\frac{\\partial f}{\\partial t}\\,dx + f(b(t),t)\\,b'(t) - f(a(t),t)\\,a'(t): the integrand's own derivative, plus how fast each moving boundary is sweeping up (or shedding) area at the value f takes there. Fixed bounds are the special case a'=b'=0, which is why it drops out of the version above.",
     ],
     checkYourself: {
       prompt: "\\frac{x-1}{\\ln x} \\text{ on } [0,1]",

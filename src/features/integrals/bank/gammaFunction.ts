@@ -336,4 +336,27 @@ export const GammaFunction: Problem[] = [
       "\\frac15\\left(\\frac1{2025}\\right)^{-1/2}\\Gamma\\!\\left(\\frac12\\right) = \\frac15\\cdot45\\cdot\\sqrt\\pi = 9\\sqrt\\pi.",
     ],
   },
+  {
+    id: "gamma-prime-1-euler-mascheroni",
+    kind: "definite",
+    integrand: "e^{-x}\\ln x",
+    integrandExpr: "exp(-x)*log(x)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "-0.5772156649015329",
+    answerLatex: "-\\gamma",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["gamma-function"],
+    source: { name: "original" },
+    hints: [
+      "This is \\Gamma'(1) — differentiate \\Gamma(s)=\\int_0^\\infty x^{s-1}e^{-x}\\,dx with respect to s under the integral sign, which brings down a factor of \\ln x, then set s=1.",
+      "\\Gamma'(1) is, by definition, -\\gamma, the Euler-Mascheroni constant.",
+    ],
+    steps: [
+      "\\frac{\\partial}{\\partial s}x^{s-1}e^{-x} = x^{s-1}\\ln x\\,e^{-x}, so \\Gamma'(s) = \\int_0^\\infty x^{s-1}\\ln x\\,e^{-x}\\,dx.",
+      "At s=1: \\Gamma'(1) = \\int_0^\\infty e^{-x}\\ln x\\,dx.",
+      "\\Gamma'(1) = -\\gamma \\approx -0.5772156649 by definition of the Euler-Mascheroni constant.",
+    ],
+  },
 ];

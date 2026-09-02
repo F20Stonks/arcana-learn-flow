@@ -311,4 +311,27 @@ export const ZetaSeries: Problem[] = [
       "-\\operatorname{Li}_2\\!\\left(\\tfrac12\\right) = -\\left(\\frac{\\pi^2}{12}-\\frac{\\ln^22}2\\right) = \\frac{\\ln^22}2-\\frac{\\pi^2}{12}.",
     ],
   },
+  {
+    id: "catalan-arctan-over-x",
+    kind: "definite",
+    integrand: "\\frac{\\arctan x}{x}",
+    integrandExpr: "atan(x)/x",
+    lower: "0",
+    upper: "1",
+    answer: "0.915965594177219",
+    answerLatex: "G",
+    domain: [0, 1],
+    difficulty: 5,
+    techniques: ["zeta-series"],
+    source: { name: "original" },
+    hints: [
+      "\\frac{\\arctan x}{x} = \\sum_{n=0}^\\infty \\frac{(-1)^n x^{2n}}{2n+1} (divide the arctan series by x).",
+      "Integrate term by term over [0,1]: \\int_0^1 x^{2n}\\,dx = \\frac{1}{2n+1}.",
+    ],
+    steps: [
+      "Termwise integration gives \\sum_{n=0}^\\infty \\frac{(-1)^n}{(2n+1)^2}.",
+      "That sum is, by definition, Catalan's constant G — it has no known closed form in \\pi, unlike the even-\\zeta sums above.",
+      "G \\approx 0.9159655942.",
+    ],
+  },
 ];
