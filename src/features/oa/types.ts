@@ -54,6 +54,14 @@ export interface Section {
   level: number;
   /** One line on what this section is testing, shown before it starts. */
   brief: string;
+  /**
+   * A wrong answer costs a mark; an unanswered one costs nothing. Optiver, Akuna, Flow Traders and
+   * All Options all mark their speed papers this way, and it is the single most important thing
+   * they teach: under a penalty, guessing is negative expected value, so leaving a question blank
+   * is a real strategy rather than giving up. Scoring these sections on plain accuracy would train
+   * exactly the wrong habit and produce a number that cannot be compared to the reported bar.
+   */
+  negativeMarking?: boolean;
 }
 
 export interface Assessment {
@@ -107,7 +115,16 @@ export interface RunResult {
   sections: SectionResult[];
   correct: number;
   total: number;
-  /** Fraction of the maximum. */
+  /**
+   * Marks earned, floored at zero. Equals `correct` on an ordinary paper; on a penalty-marked one
+   * it is correct minus wrong, which is the number that can actually be read against the reported
+   * bar. Kept alongside `correct` rather than replacing it, because "how many did I get right" and
+   * "what did I score" are different questions and a candidate wants both.
+   */
+  marks: number;
+  /** True when any section on this paper penalises wrong answers — changes how marks read. */
+  penalised: boolean;
+  /** Fraction of the maximum, computed from marks. */
   score: number;
   passed?: boolean;
   seconds: number;

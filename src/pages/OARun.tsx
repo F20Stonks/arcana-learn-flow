@@ -288,10 +288,12 @@ function Review({
         <div className="flex flex-wrap items-end gap-x-10 gap-y-5">
           <div>
             <div className="readout text-[40px] font-bold leading-none tabular-nums text-primary">
-              {result.correct}
+              {result.penalised ? result.marks : result.correct}
               <span className="text-[22px] text-muted-foreground">/{result.total}</span>
             </div>
-            <div className="mt-1.5 text-[12px] text-muted-foreground">correct</div>
+            <div className="mt-1.5 text-[12px] text-muted-foreground">
+              {result.penalised ? `marks — ${result.correct} right, ${result.total - result.correct} dropped` : "correct"}
+            </div>
           </div>
           <div>
             <div className="readout text-[22px] font-semibold tabular-nums text-foreground">{pct}%</div>
@@ -314,7 +316,7 @@ function Review({
             ) : (
               <span>
                 Candidates commonly report {Math.round(mark * 100)}% as the bar — that is{" "}
-                {Math.ceil(mark * result.total) - result.correct} more.
+                {Math.ceil(mark * result.total) - result.marks} more.
               </span>
             )}{" "}
             It is a reported figure, not a published one, and it moves. Treat it as a target.

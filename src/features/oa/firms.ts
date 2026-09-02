@@ -36,6 +36,19 @@ function sec(
   return { id: `s${++counter}`, name, kind, count, seconds, level, brief };
 }
 
+/**
+ * Marks a section +1 / −1 rather than +1 / 0.
+ *
+ * Applied only where candidate accounts consistently and specifically report a penalty, and
+ * nothing already in this file says otherwise. It changes how the section should be *played*,
+ * not just scored: with a penalty, guessing a question you cannot do is negative expected value,
+ * so a blank is a decision rather than a failure. Marking those sections on plain accuracy would
+ * train the opposite habit and give a score that cannot be read against the reported bar.
+ */
+function penalised(section: Section): Section {
+  return { ...section, negativeMarking: true };
+}
+
 interface Draft {
   id: string;
   name: string;
@@ -237,13 +250,14 @@ export const FIRMS: Firm[] = [
         sections: [
           sec("options", "Options", 15, 900, 3, "Payoffs, parity, spreads, breakevens — the things you should have cold."),
           sec("probability", "Probability", 10, 600, 3, "Discrete probability, exact answers."),
-          sec("arithmetic", "Mental maths", 25, 240, 3, "Speed section. Ten seconds a question."),
+          penalised(sec("arithmetic", "Mental maths", 25, 240, 3, "Speed section. Ten seconds a question.")),
         ],
         rules: [
           "Akuna's assessment is the options-heaviest of the well-known screens.",
           "Knowing put-call parity cold is worth more here than raw arithmetic speed.",
+          "The speed section marks +1 for a correct answer and −1 for a wrong one; a blank scores nothing, so a question you cannot do is better left alone than guessed.",
         ],
-        sourcing: "Reconstructed from candidate accounts of Akuna's quantitative OA. Section weights are representative.",
+        sourcing: "Reconstructed from candidate accounts of Akuna's quantitative OA. Section weights are representative. The +1/−1 marking on the speed section is consistently reported; if you sit it and it is not marked that way, that line is the one to correct.",
       },
     ],
   ),
@@ -337,11 +351,15 @@ export const FIRMS: Firm[] = [
         name: "Numerical assessment",
         format: "Mental arithmetic and sequences under a tight clock.",
         sections: [
-          sec("arithmetic", "Mental arithmetic", 50, 480, 3, "Under ten seconds a question."),
+          penalised(sec("arithmetic", "Mental arithmetic", 50, 480, 3, "Under ten seconds a question.")),
           sec("sequence", "Sequences", 10, 360, 3, "Pattern recognition."),
         ],
-        rules: ["No calculator.", "Flow's screen is closer to Optiver's than to a reasoning test."],
-        sourcing: "Reconstructed from candidate accounts of Flow Traders' numerical screen.",
+        rules: [
+          "No calculator.",
+          "Flow's screen is closer to Optiver's than to a reasoning test.",
+          "The speed section marks +1 for a correct answer and −1 for a wrong one; a blank scores nothing, so a question you cannot do is better left alone than guessed.",
+        ],
+        sourcing: "Reconstructed from candidate accounts of Flow Traders' numerical screen. The +1/−1 marking on the speed section is consistently reported; if you sit it and it is not marked that way, that line is the one to correct.",
       },
     ],
   ),

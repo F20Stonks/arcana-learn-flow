@@ -178,12 +178,25 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
 
     const correct = sections.reduce((n, s) => n + s.correct, 0);
     const total = assessment.sections.reduce((n, s) => n + s.count, 0);
-    const score = total > 0 ? correct / total : 0;
+
+    // Marks, not accuracy. On a penalty-marked section a wrong answer costs a mark and a blank
+    // costs nothing, so the fraction below has to be built from marks earned rather than from the
+    // proportion answered correctly — otherwise a candidate who guessed every question scores the
+    // same here as one who left the ones they could not do, which is the opposite of the lesson.
+    // Floored at zero: no firm publishes a negative headline score.
+    const marks = sections.reduce((n, s) => {
+      const answered = s.attempts.filter((a) => a.given !== null).length;
+      const wrong = answered - s.correct;
+      return n + (s.section.negativeMarking ? s.correct - wrong : s.correct);
+    }, 0);
+    const score = total > 0 ? Math.max(0, marks) / total : 0;
     setResult({
       assessment,
       sections,
       correct,
       total,
+      marks: Math.max(0, marks),
+      penalised: assessment.sections.some((s) => s.negativeMarking),
       score,
       passed:
         assessment.reportedPassMark === undefined ? undefined : score >= assessment.reportedPassMark,
