@@ -68,6 +68,22 @@ describe("firm specs", () => {
             if (!module.allowSkip) expect(text).toMatch(/cannot skip|no skipping/);
           });
 
+          it("only promises back-navigation it actually allows", () => {
+            // The instruction screen is a promise. Telling a candidate they may "come back to it"
+            // while the engine refuses teaches them to bank questions they can never return to —
+            // which costs more marks than not offering the skip at all.
+            const text = module.rules.join(" ").toLowerCase();
+            const promisesReturn = /come back to it|return to it|go back to it later/.test(text);
+            if (promisesReturn) {
+              expect(module.allowBack, "rules promise coming back but allowBack is false").toBe(true);
+            }
+            if (!module.allowBack) {
+              expect(text, "a module without back-navigation must not imply it").not.toMatch(
+                /come back to it(?!,? but)/,
+              );
+            }
+          });
+
           it("generates valid items across a whole paper", () => {
             const rng = seededRng(4242);
             const items = Array.from({ length: module.itemCount }, (_, index) =>

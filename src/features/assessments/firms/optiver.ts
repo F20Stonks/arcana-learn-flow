@@ -7,6 +7,7 @@
  */
 import type { FirmSpec } from "../types";
 import { arithmeticModule, OPTIVER_PROFILE } from "../modules/arithmetic";
+import { sequencesModule } from "../modules/sequences";
 
 export const optiver: FirmSpec = {
   id: "optiver",
@@ -29,6 +30,18 @@ export const optiver: FirmSpec = {
       allowSkip: false,
       // ~60% is the figure candidate reports converge on for a competitive score.
       passMark: 48,
+    }),
+    sequencesModule({
+      id: "numberlogic",
+      name: "NumberLogic",
+      blurb: "Twenty-six number sequences, ramping in difficulty, in twenty-five minutes.",
+      itemCount: 26,
+      durationS: 1500,
+      negativeMarking: false,
+      allowSkip: true,
+      allowBack: true,
+      // No reliable published bar for the sequences papers, so none is invented.
+      passMark: null,
     }),
   ],
 };

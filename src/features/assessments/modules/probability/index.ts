@@ -59,10 +59,14 @@ export function probabilityModule(args: ProbabilityModuleArgs): ModuleSpec {
       ? `${args.itemCount} questions in ${Math.round(durationS / 60)} minutes.`
       : `${args.itemCount} questions, ${Math.round((perItemMs as number) / 1000)} seconds each.`;
 
+  // The instruction screen is a promise the engine has to keep. Getting these two the wrong way
+  // round told a DRW/SIG/G-Research candidate they could come back to a skipped question when
+  // allowBack was false — which teaches them to bank questions they can never return to, and costs
+  // more marks than not offering the skip at all.
   const skipRule = args.allowSkip
     ? args.allowBack
-      ? "You may skip a question and answer the section's questions in any order."
-      : "You may skip a question and come back to it later."
+      ? "You may skip a question and come back to it later — the section can be answered in any order."
+      : "You may skip a question, but you cannot go back to it."
     : "You cannot skip a question, and you cannot go back to one you have already answered.";
 
   return {

@@ -6,6 +6,7 @@
  */
 import type { FirmSpec } from "../types";
 import { arithmeticModule, AKUNA_PROFILE } from "../modules/arithmetic";
+import { sequencesModule } from "../modules/sequences";
 
 export const akuna: FirmSpec = {
   id: "akuna",
@@ -29,6 +30,18 @@ export const akuna: FirmSpec = {
       allowSkip: false,
       // ~85-90% is the figure candidate reports converge on for a competitive score.
       passMark: 70,
+    }),
+    sequencesModule({
+      id: "sequences",
+      name: "Sequences",
+      blurb: "Thirty sequences in sixteen minutes — the tightest sequences clock anyone sets.",
+      itemCount: 30,
+      durationS: 960,
+      negativeMarking: false,
+      allowSkip: true,
+      allowBack: true,
+      // No reliable published bar for the sequences papers, so none is invented.
+      passMark: null,
     }),
   ],
 };

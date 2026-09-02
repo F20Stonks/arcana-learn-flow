@@ -6,6 +6,7 @@
  */
 import type { FirmSpec } from "../types";
 import { arithmeticModule, FLOW_TRADERS_PROFILE } from "../modules/arithmetic";
+import { sequencesModule } from "../modules/sequences";
 
 export const flowTraders: FirmSpec = {
   id: "flow-traders",
@@ -40,6 +41,18 @@ export const flowTraders: FirmSpec = {
       // this module's 60-item length: 60 * 0.6 = 36. Revisit if a raw Flow Traders score on this
       // exact 60-item/+1-−1/four-option shape ever surfaces.
       passMark: 36,
+    }),
+    sequencesModule({
+      id: "sequences",
+      name: "Sequences",
+      blurb: "Twenty-five number sequences in twenty-six minutes.",
+      itemCount: 25,
+      durationS: 1560,
+      negativeMarking: false,
+      allowSkip: true,
+      allowBack: true,
+      // No reliable published bar for the sequences papers, so none is invented.
+      passMark: null,
     }),
   ],
 };
