@@ -11,6 +11,11 @@ import { generateArithmetic } from "./generators/arithmetic";
 import { generateSequence } from "./generators/sequence";
 import { generateProbability } from "./generators/probability";
 import { generateExpectedValue } from "./generators/expectedValue";
+import { generateMarketMaking } from "./generators/marketMaking";
+import { generateOptions } from "./generators/options";
+import { generateEstimation } from "./generators/estimation";
+import { generateLogic } from "./generators/logic";
+import { generateZap } from "./generators/zap";
 
 type Generator = (rng: Rng, level: number, id: string) => Question;
 
@@ -19,18 +24,12 @@ const GENERATORS: Record<QuestionKind, Generator> = {
   sequence: generateSequence,
   probability: generateProbability,
   "expected-value": generateExpectedValue,
-  // Filled in by the firm-distinctive generators; registered here so a section can never name a
-  // kind that does not exist.
-  "market-making": generateArithmetic,
-  options: generateArithmetic,
-  estimation: generateArithmetic,
-  logic: generateArithmetic,
-  zap: generateArithmetic,
+  "market-making": generateMarketMaking,
+  options: generateOptions,
+  estimation: generateEstimation,
+  logic: generateLogic,
+  zap: generateZap,
 };
-
-export function registerGenerator(kind: QuestionKind, generator: Generator) {
-  GENERATORS[kind] = generator;
-}
 
 export function generateQuestion(kind: QuestionKind, rng: Rng, level: number, id: string): Question {
   return GENERATORS[kind](rng, level, id);
