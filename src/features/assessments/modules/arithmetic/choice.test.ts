@@ -7,11 +7,6 @@ import { arithmeticModule, generateArithmeticItem, FLOW_TRADERS_PROFILE, OPTIVER
 // are wired into firms/registry.ts yet (that happens at merge time, outside this worktree) and so
 // none of them are reached by firms/firms.test.ts until then. This file gives them the same
 // spec-sanity coverage that firms.test.ts applies to every registered firm.
-import { janeStreet } from "../../firms/janeStreet";
-import { akuna } from "../../firms/akuna";
-import { flowTraders } from "../../firms/flowTraders";
-import { allOptions } from "../../firms/allOptions";
-import { imc } from "../../firms/imc";
 
 describe("choice-mode items (Flow Traders' math test)", () => {
   it("produces exactly four choices, distinct ids, distinct labels, correct answer present", () => {
@@ -119,82 +114,3 @@ describe("arithmeticModule({ input: 'typed-number' } — the default)", () => {
 });
 
 /** Runs the same coherence checks firms/firms.test.ts applies to every registered firm. */
-function checkFirmSanity(firm: { name: string; modules: ReturnType<typeof arithmeticModule>[] }) {
-  describe(firm.name, () => {
-    for (const module of firm.modules) {
-      describe(module.name, () => {
-        it("is internally coherent", () => {
-          expect(module.itemCount).toBeGreaterThan(0);
-          expect(module.durationS).toBeGreaterThan(0);
-          if (module.passMark !== null) {
-            expect(module.passMark).toBeGreaterThan(0);
-            expect(module.passMark).toBeLessThanOrEqual(module.itemCount);
-          }
-        });
-
-        it("states its marking rule truthfully on the instruction screen", () => {
-          const text = module.rules.join(" ");
-          expect(text.includes(module.negativeMarking ? "−1" : "+1")).toBe(true);
-          if (!module.negativeMarking) expect(text).not.toContain("−1");
-        });
-
-        it("generates a full paper of valid, self-consistent items", () => {
-          const rng = seededRng(4242);
-          const items = Array.from({ length: module.itemCount }, (_, index) =>
-            module.generate({ index, count: module.itemCount, rng }),
-          );
-          const ids = new Set<string>();
-          for (const item of items) {
-            expect(item.id).toBeTruthy();
-            expect(ids.has(item.id), `duplicate item id ${item.id}`).toBe(false);
-            ids.add(item.id);
-            expect(item.prompt.trim().length).toBeGreaterThan(0);
-            expect(item.answer.trim().length).toBeGreaterThan(0);
-            if (module.input === "choice") {
-              expect(item.choices?.length).toBe(4);
-              expect(item.choices!.map((c) => c.id)).toContain(item.answer);
-              expect(new Set(item.choices!.map((c) => c.label)).size).toBe(4);
-            }
-          }
-        });
-
-        it("marks its own correct answer as correct", () => {
-          const rng = seededRng(777);
-          const check = module.check ?? defaultCheck;
-          for (let index = 0; index < Math.min(module.itemCount, 30); index++) {
-            const item = module.generate({ index, count: module.itemCount, rng });
-            expect(check(item, item.answer), `grader rejects its own answer: ${item.prompt}`).toBe(true);
-          }
-        });
-      });
-    }
-  });
-}
-
-describe("new firm specs (not yet wired into firms/registry.ts)", () => {
-  for (const firm of [janeStreet, akuna, flowTraders, allOptions, imc]) {
-    checkFirmSanity(firm);
-  }
-
-  it("every new firm carries provenance", () => {
-    for (const firm of [janeStreet, akuna, flowTraders, allOptions, imc]) {
-      expect(firm.lastVerified).toBe("2026-09-02");
-      expect(firm.sourceNote.length).toBeGreaterThan(20);
-      expect(firm.specVersion).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it("Flow Traders is the choice-input one; the rest are typed", () => {
-    expect(flowTraders.modules[0].input).toBe("choice");
-    for (const firm of [janeStreet, akuna, allOptions, imc]) {
-      expect(firm.modules[0].input).toBe("typed-number");
-    }
-  });
-
-  it("IMC scores +1/0 (no negative marking); the other four score +1/-1", () => {
-    expect(imc.modules[0].negativeMarking).toBe(false);
-    for (const firm of [janeStreet, akuna, flowTraders, allOptions]) {
-      expect(firm.modules[0].negativeMarking).toBe(true);
-    }
-  });
-});

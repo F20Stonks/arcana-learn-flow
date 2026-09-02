@@ -53,19 +53,28 @@ describe("firm specs", () => {
 
           it("states its marking rule truthfully on the instruction screen", () => {
             const text = module.rules.join(" ");
-            expect(
-              text.includes(module.negativeMarking ? "−1" : "+1"),
-              "the rules must name the marking the engine applies",
-            ).toBe(true);
-            if (!module.negativeMarking) {
-              expect(text, "a +1/0 module must not promise a penalty").not.toContain("−1");
+
+            if (module.negativeMarking) {
+              expect(text, "a module that penalises wrong answers must say so").toContain("−1");
+            } else {
+              expect(text, "a module without a penalty must not threaten one").not.toContain("−1");
+            }
+
+            // Multi-question modules are marked by counting answers, so they owe the candidate the
+            // per-question rule. A single-session module (market making) is scored on its own
+            // P&L-style scorecard, and forcing "+1" language onto it would be the lie this test
+            // exists to prevent.
+            if (module.itemCount > 1) {
+              expect(text, "a per-question module must name what a question is worth").toContain("+1");
             }
           });
 
           it("states its skip rule truthfully", () => {
             const text = module.rules.join(" ").toLowerCase();
             expect(text).toContain("skip");
-            if (!module.allowSkip) expect(text).toMatch(/cannot skip|no skipping/);
+            // "nothing to skip" is as clear as "cannot skip" — a single-session module has no
+            // questions to skip past, and phrasing it as a prohibition would be odd.
+            if (!module.allowSkip) expect(text).toMatch(/cannot skip|no skipping|nothing to skip/);
           });
 
           it("only promises back-navigation it actually allows", () => {

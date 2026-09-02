@@ -7,6 +7,9 @@
  */
 import type { FirmSpec } from "../types";
 import { arithmeticModule, JANE_STREET_PROFILE } from "../modules/arithmetic";
+import { marketMakingModule } from "../modules/marketMaking";
+import { COIN_FAIR } from "../modules/marketMaking/contracts";
+import { DEFAULT_BOT_CONFIG } from "../modules/marketMaking/bot";
 
 export const janeStreet: FirmSpec = {
   id: "jane-street",
@@ -31,6 +34,20 @@ export const janeStreet: FirmSpec = {
       allowSkip: false,
       // Candidate reports converge on roughly three-quarters as a competitive raw score.
       passMark: 45,
+    }),
+    marketMakingModule({
+      id: "market-making",
+      name: "Market Making",
+      blurb: "Quote a two-sided market on the coin-settled contract, against a live counterparty.",
+      contract: COIN_FAIR,
+      bot: DEFAULT_BOT_CONFIG,
+      durationS: 600,
+      // An interview round, not part of the online screen — said out loud so the battery does not
+      // misrepresent what a candidate actually sits at the OA stage.
+      extraRules: [
+        "This is an interview round rather than part of the online assessment.",
+        "Jane Street's published version of this game: the contract settles at 100 on heads and 0 on tails, so fair value starts at 50.",
+      ],
     }),
   ],
 };

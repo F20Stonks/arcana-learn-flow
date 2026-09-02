@@ -8,6 +8,9 @@
 import type { FirmSpec } from "../types";
 import { arithmeticModule, OPTIVER_PROFILE } from "../modules/arithmetic";
 import { sequencesModule } from "../modules/sequences";
+import { marketMakingModule } from "../modules/marketMaking";
+import { DICE_SUM_3 } from "../modules/marketMaking/contracts";
+import { DEFAULT_BOT_CONFIG } from "../modules/marketMaking/bot";
 
 export const optiver: FirmSpec = {
   id: "optiver",
@@ -42,6 +45,20 @@ export const optiver: FirmSpec = {
       allowBack: true,
       // No reliable published bar for the sequences papers, so none is invented.
       passMark: null,
+    }),
+    marketMakingModule({
+      id: "market-making",
+      name: "Trading Game",
+      blurb: "Quote a two-sided market on a dice-sum contract as information is revealed.",
+      contract: DICE_SUM_3,
+      bot: DEFAULT_BOT_CONFIG,
+      durationS: 600,
+      // An interview round, not part of the online screen — said out loud so the battery does not
+      // misrepresent what a candidate actually sits at the OA stage.
+      extraRules: [
+        "This is an interview round rather than part of the online assessment.",
+        "Optiver runs its trading game with a human counterparty; this replicates the mechanics against a simulated one.",
+      ],
     }),
   ],
 };
