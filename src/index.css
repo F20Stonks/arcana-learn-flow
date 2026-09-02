@@ -788,3 +788,98 @@ button:active {
     transform: none;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   UKUIB course path (src/features/integrals/ukuib, src/pages/Ukuib*).
+
+   The course is the one surface in this app that has to feel like a game, so it
+   gets a small vocabulary of its own on top of the shared glass/glow utilities:
+   a node that reads as a physical object, a ring that shows crowns at a glance,
+   and a unit banner with a slow sheen. Everything resolves through --primary and
+   --xp-gold, so it re-themes with the rest of the app rather than hardcoding a
+   single palette.
+   ──────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* A path node: a glass puck with a soft inner highlight, so it reads as a raised
+     object rather than a flat circle. */
+  .ukuib-node {
+    background:
+      radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--foreground) 10%, transparent), transparent 60%),
+      color-mix(in oklab, var(--card) 92%, var(--foreground));
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--foreground) 14%, transparent),
+      inset 0 -2px 6px -2px color-mix(in oklab, var(--background) 90%, transparent),
+      0 8px 20px -12px color-mix(in oklab, var(--background) 100%, transparent);
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .ukuib-node-open:hover {
+    transform: translateY(-2px);
+  }
+  /* The next node to play. A held glow rather than a bounce — the eye should be drawn,
+     not nagged. */
+  .ukuib-node-next {
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--foreground) 18%, transparent),
+      0 0 0 1px color-mix(in oklab, var(--primary) 55%, transparent),
+      0 0 28px -4px color-mix(in oklab, var(--primary) 60%, transparent),
+      0 10px 28px -14px color-mix(in oklab, var(--background) 100%, transparent);
+  }
+  /* Finished: the ring goes gold and the glow follows it. */
+  .ukuib-node-done {
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--foreground) 16%, transparent),
+      0 0 0 1px color-mix(in oklab, var(--xp-gold) 50%, transparent),
+      0 0 22px -6px color-mix(in oklab, var(--xp-gold) 45%, transparent);
+  }
+  /* Unit banner: a wide, low gradient with a slow diagonal sheen crossing it. */
+  .ukuib-banner {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        100deg,
+        color-mix(in oklab, var(--primary) 16%, transparent),
+        color-mix(in oklab, var(--primary) 5%, transparent) 45%,
+        transparent 75%
+      ),
+      color-mix(in oklab, var(--card) 88%, var(--foreground));
+    border: 1px solid color-mix(in oklab, var(--primary) 26%, transparent);
+    box-shadow:
+      0 0 34px -18px color-mix(in oklab, var(--primary) 80%, transparent),
+      inset 0 1px 0 0 color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+  .ukuib-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 18%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--foreground) 9%, transparent),
+      transparent
+    );
+    transform: translateX(-140%);
+    animation: sheen 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation-delay: 1.5s;
+    pointer-events: none;
+  }
+  /* The connector between two nodes. Drawn as a border rather than an element so it
+     never intercepts a click meant for a node. */
+  .ukuib-link {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--foreground) 16%, transparent),
+      color-mix(in oklab, var(--foreground) 6%, transparent)
+    );
+  }
+  .ukuib-link-done {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--xp-gold) 55%, transparent),
+      color-mix(in oklab, var(--primary) 40%, transparent)
+    );
+  }
+}

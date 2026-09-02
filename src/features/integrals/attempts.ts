@@ -21,7 +21,7 @@ const STORAGE_KEY = "arcana.integrals.attempts.v1";
  *  filled by an account that's been running a long time. */
 export const MAX_ATTEMPTS = 5000;
 
-export type RunMode = "training" | "daily" | "sprint" | "paper" | "headsolve";
+export type RunMode = "training" | "daily" | "sprint" | "paper" | "headsolve" | "ukuib";
 
 /** The coarse class a submission landed in — mirrors Verdict["status"] exactly, so a consumer can
  *  always resolve a stored attempt back against the live Verdict type. */
