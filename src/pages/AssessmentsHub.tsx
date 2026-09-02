@@ -3,17 +3,21 @@
  *
  * Timed replications of the online assessments quant trading firms actually set. See
  * docs/quant-assessment-arena-scope.md for the format research behind each spec.
+ *
+ * A standalone section by the project owner's decision: it sits in Cortexed but shares none of its
+ * machinery — no AppShell, no nav entry, no XP, no concepts, no drill tables. See
+ * src/features/assessments/README.md for what that rules out and why.
  */
 import { useNavigate } from "react-router-dom";
 import { Clock, Play, Timer } from "lucide-react";
-import AppShell from "@/components/AppShell";
+import ArenaShell from "@/features/assessments/components/ArenaShell";
 import { FIRM_LIST, batteryMinutes } from "@/features/assessments/firms/registry";
 
 export default function AssessmentsHub() {
   const navigate = useNavigate();
 
   return (
-    <AppShell>
+    <ArenaShell>
       <main className="relative mx-auto max-w-4xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <header className="reveal mb-8">
           <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground sm:text-[32px]">
@@ -91,6 +95,6 @@ export default function AssessmentsHub() {
           any firm named on this page.
         </p>
       </main>
-    </AppShell>
+    </ArenaShell>
   );
 }

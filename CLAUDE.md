@@ -210,3 +210,31 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   `log-power-integrals` (free), then the rest of "Planned new techniques" in order, then the
   `source` field + filters, then the answer-builder UI. A future session/loop iteration should
   add its own dated entry here each time it commits, noting what shipped and what's next.
+
+---
+
+# Second active task: Quant OA Arena (branch `claude/quant-firm-assessments-353dbg`)
+
+Everything above this line is the Integral Arena runbook and is scoped to `src/features/integrals`.
+It stays true on its own branch. This section records a second, separate task.
+
+**The integrals-only scope lock above does not apply to this branch.** The project owner asked for
+a new feature replicating the online assessments quant trading firms set (Optiver's 80 in 8, the
+Flow Traders math test, Citadel's probability screen, and so on). It lives in
+`src/features/assessments`, `src/pages/AssessmentsHub.tsx`, `src/pages/AssessmentRun.tsx`, its own
+`oa_*` Supabase tables, and its routes in `src/App.tsx`.
+
+- Scope and format research: `docs/quant-assessment-arena-scope.md`
+- Feature rules and architecture: `src/features/assessments/README.md`
+
+**Standing constraint from the owner: it is a standalone section built without regard to or
+integration with the rest of Cortexed.** No `AppShell`, no nav entry, no XP, no concepts, no shared
+drill tables. Do not "helpfully" wire it into the main app. The README lists what that rules out.
+
+**The sourcing rule inverts here.** Integrals require sourced, never-invented problems because they
+come from real competition papers. Assessment questions must be the opposite: every item is
+generated or originally authored, never transcribed, because real assessment banks are NDA-covered.
+
+Do not touch `src/features/integrals` from this branch — it belongs to the task above, on
+`claude/seed-lessons-clarify-bubrj3`. There is one known pre-existing type error in
+`src/features/integrals/hooks/useSprintRun.ts`; leave it there.

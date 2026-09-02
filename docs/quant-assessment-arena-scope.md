@@ -313,9 +313,12 @@ P0–P4 covers every firm whose OA is a timed math/probability screen, which is 
 
 ## 6. Decisions that need the owner
 
-1. **Where does this live?** A new top-level `/assessments` section inside Cortexed, or a separate
-   product? The audience — university finalists applying to trading firms — is a different one from
-   the A-level/STEP students the app currently serves.
+1. ~~**Where does this live?**~~ **DECIDED (2026-09-02, project owner):** inside Cortexed, at
+   `/assessments`, as a **standalone section built without regard to or integration with the rest
+   of the app** — its own shell rather than `AppShell`, no sidebar entry, no XP, no concepts, no
+   shared drill tables, `ProtectedRoute` rather than `DashboardGuard`. See
+   `src/features/assessments/README.md` for the full list of what that rules out, and treat it as a
+   standing constraint rather than a stage to grow out of.
 2. **Firm naming.** Real names used descriptively ("Optiver-style"), which is the whole value
    proposition and the industry norm, versus generic labels. Recommendation: real names, no logos or
    brand colours, explicit non-affiliation disclaimer.

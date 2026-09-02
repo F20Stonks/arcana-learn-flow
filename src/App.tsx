@@ -109,11 +109,16 @@ function AppRoutes() {
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
       {/* Quant OA Arena (src/features/assessments) — timed replications of the online assessments
-          quant trading firms set. The run routes deliberately sit outside AppShell: a real
-          assessment has no sidebar, no nav and no XP counter, and dropping them is most of what
-          makes the replication land. See docs/quant-assessment-arena-scope.md. */}
-      <Route path="/assessments" element={<DashboardGuard><AssessmentsHub /></DashboardGuard>} />
-      <Route path="/assessments/:firmId/:moduleId" element={<DashboardGuard><AssessmentRun /></DashboardGuard>} />
+          quant trading firms set. A standalone section by the project owner's decision: it lives in
+          Cortexed but shares none of its machinery — its own shell rather than AppShell, no sidebar
+          entry, no XP, no concepts, its own oa_* tables. See src/features/assessments/README.md.
+
+          ProtectedRoute, not DashboardGuard, for the same reason /question-bank uses it: this
+          section is not part of the study funnel, so gating it on waitlist approval and a completed
+          onboarding would couple it to exactly the flow it is meant to stand apart from. A session
+          is all it needs. */}
+      <Route path="/assessments" element={<ProtectedRoute><AssessmentsHub /></ProtectedRoute>} />
+      <Route path="/assessments/:firmId/:moduleId" element={<ProtectedRoute><AssessmentRun /></ProtectedRoute>} />
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
           training room. Self-contained: its own grader, problem bank and progression. */}
       <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
