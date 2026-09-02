@@ -6,7 +6,7 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { BarChart3, Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
+import { BarChart3, Building2, Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
@@ -188,6 +188,22 @@ export default function IntegralsHub() {
             ))}
           </div>
         </section>
+
+        <Link
+          to="/oa"
+          className="reveal group mb-6 block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+        >
+          <Building2 className="h-4 w-4 text-primary" />
+          <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">OA Arena</h2>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+            The other clock you will be sitting under: reconstructions of trading firms' online
+            assessments — Optiver's eighty questions in eight minutes, SIG's sequences, Akuna's
+            options paper — built to the shape the real screens are reported to have.
+          </p>
+          <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+            Sit one →
+          </span>
+        </Link>
 
         <Link
           to="/integrals/progress"

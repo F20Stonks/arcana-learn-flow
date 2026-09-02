@@ -53,6 +53,11 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
   const questionStartedAt = useRef(0);
   const runStartedAt = useRef(0);
   const finished = useRef(false);
+  // The clock's own copy of where we are. React state does not update until the next render, and
+  // the interval below can fire many times before one happens — a backgrounded tab coalesces
+  // timers, and a test advancing a fake clock runs every pending tick in one go. Reading the
+  // section from state there advanced the paper once per tick instead of once per expiry.
+  const currentSection = useRef(0);
 
   const section = assessment.sections[sectionIndex];
   const questions = paper[sectionIndex] ?? [];
@@ -67,6 +72,8 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
     setRemaining(assessment.sections[0]?.seconds ?? 0);
     setResult(null);
     finished.current = false;
+    currentSection.current = 0;
+    sectionEndsAt.current = 0;
   }, [assessment]);
 
   useEffect(() => reset(), [reset, seed]);
@@ -81,26 +88,32 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
     setRemaining(assessment.sections[0]?.seconds ?? 0);
     setResult(null);
     finished.current = false;
+    currentSection.current = 0;
     sectionEndsAt.current = now + (assessment.sections[0]?.seconds ?? 0) * 1000;
     questionStartedAt.current = now;
     runStartedAt.current = now;
   }, [assessment]);
 
-  /** Move to the next section, or end the run when there isn't one. */
+  /**
+   * Move to the next section, or end the run when there isn't one.
+   *
+   * The new deadline is written to the ref *synchronously*, before any re-render, so a second call
+   * arriving in the same batch sees a section with time left and does nothing.
+   */
   const nextSection = useCallback(() => {
-    setSectionIndex((i) => {
-      const next = i + 1;
-      if (next >= assessment.sections.length) {
-        setStatus("done");
-        return i;
-      }
-      sectionEndsAt.current = Date.now() + assessment.sections[next].seconds * 1000;
-      questionStartedAt.current = Date.now();
-      setQuestionIndex(0);
-      setInput("");
-      setRemaining(assessment.sections[next].seconds);
-      return next;
-    });
+    const next = currentSection.current + 1;
+    if (next >= assessment.sections.length) {
+      sectionEndsAt.current = Number.POSITIVE_INFINITY;
+      setStatus("done");
+      return;
+    }
+    currentSection.current = next;
+    sectionEndsAt.current = Date.now() + assessment.sections[next].seconds * 1000;
+    questionStartedAt.current = Date.now();
+    setSectionIndex(next);
+    setQuestionIndex(0);
+    setInput("");
+    setRemaining(assessment.sections[next].seconds);
   }, [assessment.sections]);
 
   // The section clock. Runs on its own; it does not wait for you to answer anything.
@@ -124,14 +137,15 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
         correct: isCorrect(question.answer, given),
         ms: Date.now() - questionStartedAt.current,
       };
-      setAttempts((all) => all.map((list, i) => (i === sectionIndex ? [...list, attempt] : list)));
+      const at = currentSection.current;
+      setAttempts((all) => all.map((list, i) => (i === at ? [...list, attempt] : list)));
       setInput("");
       questionStartedAt.current = Date.now();
 
       if (questionIndex + 1 >= questions.length) nextSection();
       else setQuestionIndex((i) => i + 1);
     },
-    [status, question, sectionIndex, questionIndex, questions.length, nextSection],
+    [status, question, questionIndex, questions.length, nextSection],
   );
 
   const submit = useCallback(() => {
@@ -142,6 +156,7 @@ export function useAssessmentRun(assessment: Assessment, seed: number): Assessme
   const skip = useCallback(() => record(null), [record]);
 
   const end = useCallback(() => {
+    sectionEndsAt.current = Number.POSITIVE_INFINITY;
     setStatus((s) => (s === "running" ? "done" : s));
   }, []);
 

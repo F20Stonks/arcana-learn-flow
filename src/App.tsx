@@ -28,6 +28,9 @@ import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
+import OAHub from "./pages/OAHub";
+import OAFirm from "./pages/OAFirm";
+import OARun from "./pages/OARun";
 import DrillPlay from "./pages/DrillPlay";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
@@ -114,6 +117,13 @@ function AppRoutes() {
       <Route path="/integrals/progress" element={<DashboardGuard><IntegralProgress /></DashboardGuard>} />
       <Route path="/integrals/train" element={<DashboardGuard><IntegralTraining /></DashboardGuard>} />
       <Route path="/integrals/train/:techniqueId" element={<DashboardGuard><TrainingTechnique /></DashboardGuard>} />
+
+      {/* OA Arena (src/features/oa) — format reconstructions of trading firms' online
+          assessments. Self-contained like the Integral Arena: no backend, nothing leaves the
+          browser, and every question is generated and graded locally. */}
+      <Route path="/oa" element={<DashboardGuard><OAHub /></DashboardGuard>} />
+      <Route path="/oa/:firmId" element={<DashboardGuard><OAFirm /></DashboardGuard>} />
+      <Route path="/oa/:firmId/:assessmentId" element={<DashboardGuard><OARun /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><ReferenceQuestions /></ProtectedRoute>} />
@@ -152,6 +162,9 @@ function AppRoutes() {
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/:techniqueId" element={<TrainingTechnique />} />
       )}
+      {import.meta.env.DEV && <Route path="/dev/oa" element={<OAHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa/:firmId" element={<OAFirm />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa/:firmId/:assessmentId" element={<OARun />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
