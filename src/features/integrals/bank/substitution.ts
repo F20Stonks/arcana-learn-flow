@@ -624,6 +624,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "hmmt-cos-minus-sin-over-sin-double-plus-two",
+    source: { name: "HMMT Integration Bee", round: "Practice Pt1" },
     kind: "indefinite",
     integrand: "\\frac{\\cos x-\\sin x}{\\sin2x+2}",
     integrandExpr: "(cos(x)-sin(x))/(sin(2*x)+2)",

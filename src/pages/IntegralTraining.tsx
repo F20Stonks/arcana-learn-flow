@@ -8,7 +8,7 @@
  * lesson opens on arrival: a disclosure nobody opens is a lesson nobody reads.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -33,6 +33,15 @@ import {
   techniqueMastery,
 } from "@/features/integrals/progress";
 import { orderQueue } from "@/features/integrals/queue";
+import PracticeBuilder from "@/features/integrals/components/PracticeBuilder";
+import {
+  applyFilter,
+  describeFilter,
+  EMPTY_FILTER,
+  filterKey,
+  isEmptyFilter,
+  parseFilter,
+} from "@/features/integrals/filters";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import { DIFFICULTY_LABEL, PROBLEMS, problemsForTechnique } from "@/features/integrals/problems";
 import type { TechniqueId } from "@/features/integrals/types";
@@ -63,6 +72,12 @@ export default function IntegralTraining() {
             you got to.
           </p>
         </header>
+
+        <PracticeBuilder />
+
+        <h2 className="reveal mb-3 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+          Or take one technique
+        </h2>
 
         <div className="reveal grid gap-3 sm:grid-cols-2">
           {TECHNIQUES.map((t) => {
@@ -123,14 +138,24 @@ export default function IntegralTraining() {
 
 export function TrainingTechnique() {
   const { techniqueId = "" } = useParams();
+  const [params] = useSearchParams();
   const progress = useProgress();
   const mixed = techniqueId === MIXED;
   const technique = mixed ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
 
+  // Mixed practice is where a built session lands: same screen, pool narrowed by the URL. A single
+  // technique ignores the query — its own name is already the filter.
+  const filter = useMemo(() => (mixed ? parseFilter(params) : EMPTY_FILTER), [mixed, params]);
   const pool = useMemo(
-    () => (mixed ? PROBLEMS : problemsForTechnique(techniqueId as TechniqueId)),
-    [mixed, techniqueId],
+    () =>
+      mixed
+        ? applyFilter(PROBLEMS, filter)
+        : problemsForTechnique(techniqueId as TechniqueId),
+    [mixed, filter, techniqueId],
   );
+  // Two different filters are two different queues, so they bookmark separately — otherwise a
+  // custom session would resume onto a problem that is not in it.
+  const queueKey = mixed ? filterKey(filter) : techniqueId;
   // Deliberately seeded from progress once, on mount: re-sorting as you solve would move the queue
   // out from under you.
   const [queue] = useState(() => orderQueue(pool, progress));
@@ -138,7 +163,7 @@ export function TrainingTechnique() {
   // order is re-derived from progress on every visit and an index would drift onto a different
   // problem between sessions.
   const [index, setIndex] = useState(() => {
-    const at = queue.findIndex((p) => p.id === lastPlace(progress, techniqueId));
+    const at = queue.findIndex((p) => p.id === lastPlace(progress, queueKey));
     return at === -1 ? 0 : at;
   });
   // The lesson leads, which only works if it is open. A technique you have already read collapses
@@ -156,10 +181,11 @@ export function TrainingTechnique() {
   );
 
   useEffect(() => {
-    if (problem) markPlace(techniqueId, problem.id);
-  }, [techniqueId, problem]);
+    if (problem) markPlace(queueKey, problem.id);
+  }, [queueKey, problem]);
 
   if (!mixed && !technique) return <Navigate to="/integrals/train" replace />;
+  // A filter that matches nothing has no queue to show; the builder is where it can be widened.
   if (!problem) return <Navigate to="/integrals/train" replace />;
 
   // Read means read: recorded when the lesson is put away, not the instant it appears on screen.
@@ -198,7 +224,8 @@ export function TrainingTechnique() {
           <div className="reveal rounded-2xl border border-border bg-card p-6 sm:p-8">
             <PartyPopper className="h-5 w-5 text-primary" />
             <h1 className="mt-3 font-display text-[24px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-              End of the {technique ? technique.name.toLowerCase() : "mixed"} queue
+              End of the {technique ? technique.name.toLowerCase() : isEmptyFilter(filter) ? "mixed" : "session"}{" "}
+              queue
             </h1>
             <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
               {remaining === 0
@@ -246,10 +273,15 @@ export function TrainingTechnique() {
 
         <header className="reveal mb-6">
           <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-            {technique ? technique.name : "Mixed practice"}
+            {technique ? technique.name : isEmptyFilter(filter) ? "Mixed practice" : "Your session"}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            {technique ? technique.tagline : "Every problem in the bank, technique unannounced."} ·{" "}
+            {technique
+              ? technique.tagline
+              : isEmptyFilter(filter)
+                ? "Every problem in the bank, technique unannounced."
+                : describeFilter(filter, queue.length)}{" "}
+            ·{" "}
             <span className="readout tabular-nums">
               {index + 1}/{queue.length}
             </span>{" "}

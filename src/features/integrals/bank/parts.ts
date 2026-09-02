@@ -642,6 +642,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt-x-tan-sec-squared",
+    source: { name: "HMMT Integration Bee", round: "Practice Pt1" },
     kind: "definite",
     integrand: "x\\tan x\\sec^2 x",
     integrandExpr: "x*tan(x)*sec(x)^2",
@@ -665,6 +666,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt-cubic-plus-6x-cosx",
+    source: { name: "HMMT Integration Bee", round: "Practice Pt1" },
     kind: "definite",
     integrand: "(x^3+6x)\\cos x",
     integrandExpr: "(x^3+6*x)*cos(x)",
@@ -688,6 +690,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt2-x-ln-one-plus-x-def",
+    source: { name: "HMMT Integration Bee", round: "Practice Pt2" },
     kind: "definite",
     integrand: "x\\ln(x+1)",
     integrandExpr: "x*log(x+1)",

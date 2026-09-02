@@ -33,6 +33,21 @@ export type Difficulty = 1 | 2 | 3 | 4 | 5;
  */
 export type ProblemKind = "indefinite" | "definite";
 
+/**
+ * Where a problem came from.
+ *
+ * Two students want two different things from this bank: one is drilling a technique, the other
+ * wants to sit a real competition's set as it was actually posed. The second is only possible if
+ * every problem remembers its paper.
+ */
+export interface ProblemSource {
+  /** The competition, book or course the problem is a transcription of. */
+  name: string;
+  year?: number;
+  /** Round, section or paper within that year, when the source distinguishes them. */
+  round?: string;
+}
+
 export interface Problem {
   id: string;
   kind: ProblemKind;
@@ -61,6 +76,12 @@ export interface Problem {
   difficulty: Difficulty;
   /** Primary technique first: that's the one training mode files it under. */
   techniques: TechniqueId[];
+  /**
+   * Absent where the provenance genuinely isn't recorded — the bulk of the bank was mined from
+   * four PDFs without keeping a per-problem note of which. Those group under "Unattributed"
+   * rather than being invented a source; see `sourceOf`.
+   */
+  source?: ProblemSource;
   /** Progressive: hint 0 nudges, the last one all but hands it over. */
   hints: string[];
   /** The worked solution, revealed after a solve or a give-up. Each line is LaTeX-in-prose. */

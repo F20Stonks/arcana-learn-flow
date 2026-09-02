@@ -232,6 +232,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-putnam-log",
+    source: { name: "Putnam" },
     kind: "definite",
     integrand: "\\frac{\\ln(1+x)}{1+x^2}",
     integrandExpr: "log(1+x)/(1+x^2)",

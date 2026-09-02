@@ -360,6 +360,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-hmmt-cubic-plus-quadratic-plus-linear",
+    source: { name: "HMMT Integration Bee", round: "Practice Pt1" },
     kind: "indefinite",
     integrand: "\\frac{x^2-1}{x^3+x^2+x}",
     integrandExpr: "(x^2-1)/(x^3+x^2+x)",

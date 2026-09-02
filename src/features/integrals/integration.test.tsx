@@ -134,10 +134,46 @@ describe("the hub", () => {
     expect(screen.getByText(/Solved for \d+ points/)).toBeInTheDocument();
   });
 
-  it("lists every technique", () => {
+  it("lists every technique as its own way in", () => {
     at("/integrals/train", <IntegralTraining />, "/integrals/train");
-    expect(screen.getByText("Integration by parts")).toBeInTheDocument();
+    // The name also appears as a builder chip, so pin this to the card that opens the technique.
+    expect(screen.getByRole("link", { name: /Integration by parts/ })).toHaveAttribute(
+      "href",
+      "/integrals/train/parts",
+    );
     expect(screen.getByText("Mixed practice")).toBeInTheDocument();
+  });
+
+  it("builds a session out of any slice of the bank, as a shareable link", () => {
+    at("/integrals/train", <IntegralTraining />, "/integrals/train");
+    const start = () => screen.getByRole("link", { name: /^Start/ });
+    const all = Number(/^(\d+) problems/.exec(screen.getByText(/problems —/).textContent!)![1]);
+    expect(start()).toHaveAttribute("href", "/integrals/train/mixed");
+
+    // Two techniques at once — the thing a single-technique queue could never do.
+    fireEvent.click(screen.getByRole("button", { name: "Integration by parts" }));
+    fireEvent.click(screen.getByRole("button", { name: "Trigonometric substitution" }));
+    fireEvent.click(screen.getByRole("button", { name: "Brutal" }));
+
+    const href = start().getAttribute("href")!;
+    expect(href).toContain("techniques=parts%2Ctrig-sub");
+    expect(href).toContain("levels=5");
+    const narrowed = Number(/^(\d+) problems/.exec(screen.getByText(/problems —/).textContent!)![1]);
+    expect(narrowed).toBeLessThan(all);
+    expect(narrowed).toBeGreaterThan(0);
+  });
+
+  it("runs the filtered queue rather than the whole bank", () => {
+    at(
+      "/integrals/train/mixed?techniques=parts&levels=1,2",
+      <TrainingTechnique />,
+      "/integrals/train/:techniqueId",
+    );
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Your session");
+    const shown = Number(/\d+\/(\d+)/.exec(screen.getByText(/\d+\/\d+ solved/).textContent!)![1]);
+    expect(shown).toBe(
+      problemsForTechnique("parts").filter((p) => p.difficulty <= 2).length,
+    );
   });
 });
 
