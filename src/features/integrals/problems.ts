@@ -13,7 +13,7 @@
  * integrand and the answer. That is why the log problems live on the positive reals and the tan/sec
  * problems stop short of pi/2.
  */
-import type { Difficulty, Problem, TechniqueId } from "./types";
+import type { Difficulty, Problem, ProblemSource, TechniqueId } from "./types";
 import { StandardForms } from "./bank/standardForms";
 import { Substitution } from "./bank/substitution";
 import { Parts } from "./bank/parts";
@@ -29,6 +29,12 @@ import { InverseIntegral } from "./bank/inverseIntegral";
 import { FloorFunction } from "./bank/floorFunction";
 import { BetaIntegrals } from "./bank/betaIntegrals";
 import { IntroducingConstants } from "./bank/introducingConstants";
+import { LogPowerIntegrals } from "./bank/logPowerIntegrals";
+import { ReciprocalSubstitution } from "./bank/reciprocalSubstitution";
+import { GammaFunction } from "./bank/gammaFunction";
+import { ZetaSeries } from "./bank/zetaSeries";
+import { WallisProduct } from "./bank/wallisProduct";
+import { GaussianHypersphere } from "./bank/gaussianHypersphere";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -46,6 +52,12 @@ export const PROBLEMS: Problem[] = [
   ...FloorFunction,
   ...BetaIntegrals,
   ...IntroducingConstants,
+  ...LogPowerIntegrals,
+  ...ReciprocalSubstitution,
+  ...GammaFunction,
+  ...ZetaSeries,
+  ...WallisProduct,
+  ...GaussianHypersphere,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
@@ -61,8 +73,37 @@ export function problemsForTechnique(id: TechniqueId): Problem[] {
   return PROBLEMS.filter((p) => p.techniques.includes(id)).sort((a, b) => a.difficulty - b.difficulty);
 }
 
+/** Union across an arbitrary subset of techniques — the multi-select "custom mix" pool. */
+export function problemsForTechniques(ids: TechniqueId[]): Problem[] {
+  const set = new Set(ids);
+  return PROBLEMS.filter((p) => p.techniques.some((t) => set.has(t))).sort(
+    (a, b) => a.difficulty - b.difficulty,
+  );
+}
+
 export function problemsByDifficulty(d: Difficulty): Problem[] {
   return PROBLEMS.filter((p) => p.difficulty === d);
+}
+
+/** Stable identity for a source — two problems are "the same source" iff this string matches. */
+export function sourceKey(s: ProblemSource): string {
+  return `${s.name}::${s.year ?? ""}::${s.round ?? ""}`;
+}
+
+/** Every distinct source in the bank, in first-seen order — "original" included as one bucket among the rest. */
+export const SOURCES: ProblemSource[] = (() => {
+  const seen = new Map<string, ProblemSource>();
+  for (const p of PROBLEMS) {
+    const key = sourceKey(p.source);
+    if (!seen.has(key)) seen.set(key, p.source);
+  }
+  return [...seen.values()];
+})();
+
+/** A specific competition/document's problems, worked as that source's own uncurated set. */
+export function problemsForSource(s: ProblemSource): Problem[] {
+  const key = sourceKey(s);
+  return PROBLEMS.filter((p) => sourceKey(p.source) === key);
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

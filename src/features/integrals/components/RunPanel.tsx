@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { CornerDownLeft, Flag, Timer } from "lucide-react";
+import { ArrowRight, CornerDownLeft, Flag, Timer } from "lucide-react";
 import AnswerInput from "./AnswerInput";
 import ConfirmButton from "./ConfirmButton";
 import HintLadder from "./HintLadder";
@@ -28,6 +28,10 @@ interface Props {
   onAdvance?: () => void;
   /** What Enter does, named on screen — a shortcut nobody knows about is not a shortcut. */
   advanceLabel?: string;
+  /** Training only: move straight to the next problem without answering or seeing the solution —
+   *  no XP, no penalty, nothing recorded. Omitted entirely on the daily, where one attempt per
+   *  puzzle is the whole point. */
+  onSkip?: () => void;
 }
 
 /** The play surface, shared by the daily and by training so they can never drift apart. */
@@ -39,6 +43,7 @@ export default function RunPanel({
   confirmGiveUp = false,
   onAdvance,
   advanceLabel = "next",
+  onSkip,
 }: Props) {
   const over = run.status !== "running";
   const par = PAR_SECONDS[problem.difficulty];
@@ -96,8 +101,10 @@ export default function RunPanel({
           />
           <VerdictLine verdict={run.verdict} />
           <HintLadder hints={problem.hints} used={run.hintsUsed} onReveal={run.revealHint} />
-          {confirmGiveUp ? (
-            <span className="self-start">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {/* Revealing costs the daily its one scored attempt, so there it asks first. In
+                training it costs nothing, so it does not. */}
+            {confirmGiveUp ? (
               <ConfirmButton
                 onConfirm={run.giveUp}
                 confirmLabel="That ends today's attempt for good."
@@ -105,15 +112,23 @@ export default function RunPanel({
               >
                 Show me the solution
               </ConfirmButton>
-            </span>
-          ) : (
-            <button
-              onClick={run.giveUp}
-              className="flex items-center gap-1.5 self-start py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
-            >
-              <Flag className="h-3.5 w-3.5" /> Show me the solution
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={run.giveUp}
+                className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+              >
+                <Flag className="h-3.5 w-3.5" /> Show me the solution
+              </button>
+            )}
+            {onSkip && (
+              <button
+                onClick={onSkip}
+                className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+              >
+                Skip <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </>
       )}
 

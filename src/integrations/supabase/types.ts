@@ -275,6 +275,45 @@ export type Database = {
           },
         ]
       }
+      integral_daily_results: {
+        Row: {
+          created_at: string
+          hints_used: number
+          id: string
+          problem_id: string
+          puzzle_number: number
+          score: number
+          seconds: number
+          solved: boolean
+          user_id: string
+          wrong_attempts: number
+        }
+        Insert: {
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_id: string
+          puzzle_number: number
+          score?: number
+          seconds: number
+          solved: boolean
+          user_id: string
+          wrong_attempts?: number
+        }
+        Update: {
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_id?: string
+          puzzle_number?: number
+          score?: number
+          seconds?: number
+          solved?: boolean
+          user_id?: string
+          wrong_attempts?: number
+        }
+        Relationships: []
+      }
       learning_tracks: {
         Row: {
           archived_at: string | null
@@ -1632,6 +1671,39 @@ export type Database = {
       }
     }
     Views: {
+      drill_leaderboard: {
+        Row: {
+          accuracy: number | null
+          avatar_url: string | null
+          best_score: number | null
+          display_name: string | null
+          drill_key: string | null
+          last_played: string | null
+          mode: string | null
+          problems_correct: number | null
+          problems_seen: number | null
+          rank: number | null
+          runs: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      drill_leaderboard_overall: {
+        Row: {
+          accuracy: number | null
+          avatar_url: string | null
+          display_name: string | null
+          games_played: number | null
+          last_played: string | null
+          problems_correct: number | null
+          problems_seen: number | null
+          rank: number | null
+          runs: number | null
+          user_id: string | null
+          xp: number | null
+        }
+        Relationships: []
+      }
       drill_weak_spots: {
         Row: {
           accuracy: number | null
@@ -1642,6 +1714,44 @@ export type Database = {
           last_seen: string | null
           problem_tag: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      integral_arena_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          avg_seconds: number | null
+          best_score: number | null
+          days_played: number | null
+          days_solved: number | null
+          display_name: string | null
+          rank: number | null
+          total_score: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      integral_daily_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          hints_used: number | null
+          puzzle_number: number | null
+          rank: number | null
+          score: number | null
+          seconds: number | null
+          user_id: string | null
+          wrong_attempts: number | null
+        }
+        Relationships: []
+      }
+      integral_daily_turnout: {
+        Row: {
+          average_score: number | null
+          players: number | null
+          puzzle_number: number | null
+          solvers: number | null
+          top_score: number | null
         }
         Relationships: []
       }
@@ -1675,7 +1785,15 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      integral_current_puzzle_number: { Args: never; Returns: number }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
+      leaderboard_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+        }[]
+      }
       match_resource_chunks: {
         Args: {
           p_book?: string
@@ -1718,6 +1836,16 @@ export type Database = {
           score: number
           section: string
         }[]
+      }
+      record_drill_run: {
+        Args: {
+          p_attempts: Json
+          p_config: Json
+          p_drill_key: string
+          p_duration_s: number
+          p_mode: string
+        }
+        Returns: Json
       }
       reference_question_classified: {
         Args: never

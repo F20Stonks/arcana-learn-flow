@@ -74,7 +74,7 @@ export function useDrillRun({ def, userId, mode, durationS, config }: UseDrillRu
     attemptsRef.current = [];
     setStreak(0);
     setResult(null);
-    let startLevel = 0;
+    const startLevel = 0;
     if (mode === "weak-spot" && userId) {
       const spots = await fetchWeakSpots(userId, def.key);
       biasTagsRef.current = spots.map((s) => s.problem_tag);

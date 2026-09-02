@@ -9,10 +9,15 @@ export async function requireUser(req: Request): Promise<string | null> {
   if (!token) return null;
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!SUPABASE_URL || !ANON_KEY) return null;
+  // SUPABASE_ANON_KEY is not always present in the function env (newer projects ship
+  // SUPABASE_PUBLISHABLE_KEY instead); fall back so token validation never silently 401s.
+  const KEY =
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !KEY) return null;
 
-  const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
+  const client = createClient(SUPABASE_URL, KEY, { auth: { persistSession: false } });
   try {
     const { data, error } = await client.auth.getUser(token);
     if (error || !data?.user) return null;

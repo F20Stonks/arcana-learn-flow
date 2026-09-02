@@ -102,13 +102,24 @@ export function describeConfig(config: SprintConfig): string {
 /**
  * The run's queue. Long enough that nobody reaches the end — a sprint that runs out of problems
  * would silently cap the score and make two runs incomparable.
+ *
+ * Already-solved problems are pushed to the back rather than dropped outright: a sprint still
+ * needs to be "long enough that nobody reaches the end" even for a player who has cleared most of
+ * a band, and a repeat is a much smaller ask than running out of problems mid-run.
  */
-export function buildQueue(config: SprintConfig, seed: number): Problem[] {
+export function buildQueue(
+  config: SprintConfig,
+  seed: number,
+  solvedIds: ReadonlySet<string> = new Set(),
+): Problem[] {
   const band = BAND_BY_ID[config.band];
   const pool = PROBLEMS.filter((p) => band.difficulties.includes(p.difficulty)).sort((a, b) =>
     a.id.localeCompare(b.id),
   );
-  return shuffled(pool, seed);
+  const shuffledPool = shuffled(pool, seed);
+  const unsolved = shuffledPool.filter((p) => !solvedIds.has(p.id));
+  const solved = shuffledPool.filter((p) => solvedIds.has(p.id));
+  return [...unsolved, ...solved];
 }
 
 const SOLVE_POINTS: Record<Difficulty, number> = { 1: 10, 2: 20, 3: 35, 4: 55, 5: 80 };

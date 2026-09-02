@@ -1,3 +1,4 @@
+import { Delete } from "lucide-react";
 import type { Problem } from "../types";
 
 export interface Token {
@@ -85,6 +86,8 @@ function tokensFor(problem: Problem | undefined): Group[] {
 interface Props {
   problem?: Problem;
   onInsert: (token: Token) => void;
+  /** Building an answer by clicking is no use if fixing a slip means reaching for the keyboard. */
+  onBackspace?: () => void;
 }
 
 /**
@@ -98,7 +101,7 @@ interface Props {
  * `onMouseDown` is where the press is cancelled, not `onClick`: the input must not lose focus, or
  * the caret position the insertion depends on is gone before the handler runs.
  */
-export default function SymbolPalette({ problem, onInsert }: Props) {
+export default function SymbolPalette({ problem, onInsert, onBackspace }: Props) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-3">
       {tokensFor(problem).map((group) => (
@@ -107,6 +110,18 @@ export default function SymbolPalette({ problem, onInsert }: Props) {
             {group.name}
           </div>
           <div className="flex flex-wrap gap-1.5">
+            {onBackspace && group.name === "Build" && (
+              <button
+                type="button"
+                title="Delete"
+                aria-label="Delete the character before the cursor"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onBackspace}
+                className="order-last ml-auto flex items-center rounded-lg border border-border bg-background px-2.5 py-2 text-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+              >
+                <Delete className="h-4 w-4" />
+              </button>
+            )}
             {group.tokens.map((token) => (
               <button
                 key={token.label}

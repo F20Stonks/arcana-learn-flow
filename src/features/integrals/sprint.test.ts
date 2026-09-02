@@ -47,6 +47,23 @@ describe("bands", () => {
     const pool = PROBLEMS.filter((p) => BAND_BY_ID.mixed.difficulties.includes(p.difficulty));
     expect(buildQueue(config, 3)).toHaveLength(pool.length);
   });
+
+  it("pushes already-solved problems to the back instead of dropping them", () => {
+    const full = buildQueue(config, 3);
+    const solvedIds = new Set(full.slice(0, 5).map((p) => p.id));
+    const requeued = buildQueue(config, 3, solvedIds);
+
+    // Same pool, nothing lost.
+    expect(requeued.map((p) => p.id).sort()).toEqual(full.map((p) => p.id).sort());
+    // But every solved problem now trails every unsolved one.
+    const firstSolvedIndex = requeued.findIndex((p) => solvedIds.has(p.id));
+    const lastUnsolvedIndex = requeued.map((p) => !solvedIds.has(p.id)).lastIndexOf(true);
+    expect(firstSolvedIndex).toBeGreaterThan(lastUnsolvedIndex);
+  });
+
+  it("with no solves at all, orders identically to the unfiltered queue", () => {
+    expect(buildQueue(config, 3, new Set())).toEqual(buildQueue(config, 3));
+  });
 });
 
 describe("scoring", () => {

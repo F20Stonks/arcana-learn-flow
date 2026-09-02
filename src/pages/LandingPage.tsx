@@ -5,6 +5,8 @@ import VectorField from "@/components/landing/VectorField";
 import TrackDemo from "@/components/landing/TrackDemo";
 import SessionChat from "@/components/landing/SessionChat";
 import SceneDemo from "@/components/landing/SceneDemo";
+import integralArenaShot from "@/assets/landing/integral-arena.png";
+import zetamacShot from "@/assets/landing/zetamac-drill.png";
 import "@/components/landing/landing.css";
 
 /**
@@ -30,7 +32,7 @@ const FAILURE_MODES = [
     ),
   },
   {
-    no: "“I memorised it — then it fell apart in the exam.”",
+    no: "“I memorised it, then it fell apart in the exam.”",
     yes: (
       <>
         Nothing counts as learned until you've <b>explained the why</b>,
@@ -42,7 +44,7 @@ const FAILURE_MODES = [
     no: "“I knew it in October. By the exam it was gone.”",
     yes: (
       <>
-        Every idea returns on a <b>schedule timed to memory</b> — automatically,
+        Every idea returns on a <b>schedule timed to memory</b>, automatically,
         before it fades.
       </>
     ),
@@ -51,29 +53,29 @@ const FAILURE_MODES = [
 
 const CAPABILITIES = [
   {
-    index: "01 — Visualize",
+    index: "01 · Visualize",
     title: "See it, don't just read it",
     body: (
       <>
-        Live, interactive scenes render <b>on demand</b> — rotate a field,
+        Live, interactive scenes render <b>on demand</b>: rotate a field,
         watch a proof unfold, drag a parameter and see the curve move.
         Generated for the exact idea you're on. Try one below.
       </>
     ),
   },
   {
-    index: "02 — Adapt",
+    index: "02 · Adapt",
     title: "Ask anything, mid-explanation",
     body: (
       <>
         Stuck? Cortexed <b>rebuilds the explanation</b> around exactly where
-        you are — a different angle, more context, a simpler case — instead
-        of repeating itself louder.
+        you are, with a different angle, more context, or a simpler case,
+        instead of repeating itself louder.
       </>
     ),
   },
   {
-    index: "03 — Sequence",
+    index: "03 · Sequence",
     title: "Never taught out of order",
     body: (
       <>
@@ -84,13 +86,13 @@ const CAPABILITIES = [
     ),
   },
   {
-    index: "04 — Automate",
+    index: "04 · Automate",
     title: "Runs without you",
     body: (
       <>
         Active recall is scheduled and delivered automatically, timed to
-        memory. You never decide what to review, or when —{" "}
-        <b>log in, engage, leave</b>.
+        memory. You never decide what to review, or when.{" "}
+        <b>Log in, engage, leave.</b>
       </>
     ),
   },
@@ -146,12 +148,12 @@ export default function LandingPage() {
               </HeroReveal>
               <HeroReveal delay={0.09}>
                 <h1>
-                  Understand any maths or physics — <i>from first principles.</i>
+                  Understand any maths or physics, <i>from first principles.</i>
                 </h1>
               </HeroReveal>
               <HeroReveal delay={0.18}>
                 <p className="lede">
-                  Name the goal. Cortexed builds the <b>complete path</b> —{" "}
+                  Name the goal. Cortexed builds the <b>complete path</b>:{" "}
                   <b>one idea per session</b>, readiness checked before each,
                   every result taught from the <b>why</b>.
                 </p>
@@ -175,11 +177,71 @@ export default function LandingPage() {
             </motion.div>
           </header>
 
+          {/* FREE TOOLS — Integral Arena and the drill arcade are both live for every signup,
+              no waitlist or approval step, unlike the rest of the app. Leads right off the hero
+              since these are the two things a visitor can actually try before signing up for
+              anything else. */}
+          <section className="tools" id="tools">
+            <Reveal>
+              <div className="sec-eyebrow">Try it free, right now</div>
+              <h2>Two tools live the moment you sign up.</h2>
+              <p className="teach-lede">
+                No waitlist, no approval step. Integral Arena and the drill arcade are
+                open to every account from the first minute.
+              </p>
+            </Reveal>
+            <div className="tool-grid">
+              <Reveal delay={0.08}>
+                <div className="tool-card">
+                  <div className="tool-shot">
+                    <img src={integralArenaShot} alt="A daily integral in Integral Arena: a five-star “brutal” trig integral, rendered in full LaTeX, with the type-or-build answer input below it." loading="lazy" />
+                  </div>
+                  <h3>Integral Arena</h3>
+                  <p>
+                    A free integration-bee trainer. A new <b>daily integral</b> for
+                    everyone, technique-by-technique training rooms with full worked
+                    lessons, and <b>788 problems</b> sourced from real competitions
+                    like MIT and HMMT.
+                  </p>
+                  <ul className="tool-stats">
+                    <li>788 sourced problems</li>
+                    <li>21 named techniques</li>
+                    <li>Daily streak &amp; leaderboard</li>
+                  </ul>
+                  <Link to="/auth?mode=signup" className="tool-cta">
+                    Try Integral Arena →
+                  </Link>
+                </div>
+              </Reveal>
+              <Reveal delay={0.16}>
+                <div className="tool-card">
+                  <div className="tool-shot">
+                    <img src={zetamacShot} alt="A live Zetamac++ sprint: a six-answer streak, a countdown timer, and a fresh arithmetic problem waiting for input." loading="lazy" />
+                  </div>
+                  <h3>Zetamac++ &amp; the drill arcade</h3>
+                  <p>
+                    A souped-up Zetamac: mixed arithmetic sprints with{" "}
+                    <b>adaptive difficulty</b> and weak-spot targeting, plus eight more
+                    timed drills across number theory, algebra, and topology.
+                  </p>
+                  <ul className="tool-stats">
+                    <li>9 drills</li>
+                    <li>Classic, adaptive &amp; weak-spot modes</li>
+                    <li>Global leaderboard</li>
+                  </ul>
+                  <Link to="/auth?mode=signup" className="tool-cta">
+                    Try the drills →
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
           {/* WHY IT WORKS */}
           <section id="why">
             <Reveal>
               <div className="sec-eyebrow">Why it works</div>
-              <h2>Every way learning fails — engineered out.</h2>
+              <h2>Every way learning fails, engineered out.</h2>
             </Reveal>
             <div className="modes">
               {FAILURE_MODES.map((m, i) => (
@@ -230,9 +292,9 @@ export default function LandingPage() {
               <div className="sec-eyebrow">The scene engine</div>
               <h2>Anything it can teach, it can show you.</h2>
               <p className="teach-lede">
-                No video library — an engine. When seeing it is what makes it
+                No video library: an engine. When seeing it is what makes it
                 click, Cortexed builds a live, interactive scene for the exact
-                idea in front of you — not found, <b>built</b>. This is the
+                idea in front of you. Not found. <b>Built.</b> This is the
                 skater from the conversation above, as physics.{" "}
                 <b>Pull the mass inward.</b>
               </p>
@@ -256,7 +318,7 @@ export default function LandingPage() {
           </section>
 
           <footer>
-            <div>Cortexed — an instrument for mathematical &amp; physical understanding.</div>
+            <div>Cortexed: an instrument for mathematical &amp; physical understanding.</div>
             <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>
               © {new Date().getFullYear()} Pranit Singh Chhabra ·{" "}
               <Link to="/pricing">Pricing</Link> ·{" "}

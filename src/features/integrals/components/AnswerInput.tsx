@@ -84,6 +84,20 @@ export default function AnswerInput({
     pendingCaret.current = start + token.insert.length - (token.back ?? 0);
   };
 
+  /** Delete the selection, or the character before the caret. */
+  const backspace = () => {
+    const el = ref.current;
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? value.length;
+    if (start !== end) {
+      onChange(value.slice(0, start) + value.slice(end));
+      pendingCaret.current = start;
+    } else if (start > 0) {
+      onChange(value.slice(0, start - 1) + value.slice(start));
+      pendingCaret.current = start - 1;
+    }
+  };
+
   // Rewriting the value sends the caret to the end, so it has to be put back — after the DOM has
   // the new text but before the frame is painted, or the caret visibly jumps.
   useLayoutEffect(() => {
@@ -102,6 +116,8 @@ export default function AnswerInput({
       <label htmlFor={id} className="sr-only">
         Your answer to the integral
       </label>
+
+
       <div className="relative">
         <input
           ref={ref}
@@ -172,7 +188,7 @@ export default function AnswerInput({
 
       {paletteOpen && (
         <div id={`${id}-palette`}>
-          <SymbolPalette problem={problem} onInsert={insert} />
+          <SymbolPalette problem={problem} onInsert={insert} onBackspace={backspace} />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gradeAnswer } from "../answer";
+import { recordAttempt } from "../attempts";
 import { getProgress, hasSolved, recordSprint, recordTrainingSolve } from "../progress";
 import { buildQueue, solvePoints, sprintScore, type SprintConfig, type SprintResult } from "../sprint";
 import { scoreAttempt } from "../scoring";
@@ -63,6 +64,11 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   const endsAt = useRef(0);
   const problemStartedAt = useRef(0);
   const recorded = useRef(false);
+  /** Set on the first keystroke of the current problem — null until then; reset every problem.
+   *  `wrongAttempts` state above is the whole-sprint tally the result screen shows; this is the
+   *  per-problem count the attempt log wants, kept separately so the existing display is untouched. */
+  const firstKeystrokeAt = useRef<number | null>(null);
+  const problemWrongAttempts = useRef(0);
 
   const reset = useCallback(() => {
     setStatus("ready");
@@ -84,7 +90,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   useEffect(() => reset(), [reset, config.band]);
 
   const start = useCallback(() => {
-    setQueue(buildQueue(config, Date.now()));
+    const solvedIds = new Set(Object.keys(getProgress().solves));
+    setQueue(buildQueue(config, Date.now(), solvedIds));
     setIndex(0);
     setSolved([]);
     setSkipped(0);
@@ -97,6 +104,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     recorded.current = false;
     endsAt.current = Date.now() + config.seconds * 1000;
     problemStartedAt.current = Date.now();
+    firstKeystrokeAt.current = null;
+    problemWrongAttempts.current = 0;
     setRemaining(config.seconds);
     setStatus("running");
   }, [config]);
@@ -135,6 +144,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     setInput("");
     setVerdict(null);
     problemStartedAt.current = Date.now();
+    firstKeystrokeAt.current = null;
+    problemWrongAttempts.current = 0;
   }, []);
 
   const problem = status === "running" ? (queue[index] ?? null) : null;
@@ -142,9 +153,25 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   const submit = useCallback(() => {
     if (status !== "running" || !problem || !input.trim()) return;
     const graded = gradeAnswer(problem, input);
+    const now = Date.now();
+    recordAttempt({
+      problemId: problem.id,
+      mode: "sprint",
+      verdictClass: graded.status,
+      submitted: input,
+      hintsOpen: 0, // sprint has no hint ladder
+      wrongAttemptsSoFar: problemWrongAttempts.current,
+      msToFirstKeystroke:
+        firstKeystrokeAt.current !== null ? firstKeystrokeAt.current - problemStartedAt.current : null,
+      msFirstKeystrokeToSubmit:
+        firstKeystrokeAt.current !== null ? now - firstKeystrokeAt.current : null,
+    });
     if (graded.status !== "correct") {
       setVerdict(graded);
-      if (graded.status !== "unparseable") setWrongAttempts((n) => n + 1);
+      if (graded.status !== "unparseable") {
+        setWrongAttempts((n) => n + 1);
+        problemWrongAttempts.current += 1;
+      }
       return;
     }
 
@@ -186,6 +213,7 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   }, []);
 
   const onInput = useCallback((v: string) => {
+    if (firstKeystrokeAt.current === null) firstKeystrokeAt.current = Date.now();
     setInput(v);
     setVerdict(null);
   }, []);

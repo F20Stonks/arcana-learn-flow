@@ -6,7 +6,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthPage() {
-  const { session, profile, loading, signIn, signUp } = useAuth();
+  const { session, loading, signIn, signUp } = useAuth();
   const [params] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(params.get("mode") === "signup");
   const [email, setEmail] = useState("");
@@ -17,12 +17,8 @@ export default function AuthPage() {
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   
-  if (session && profile) {
-    if (profile.waitlist_status !== "approved") return <Navigate to="/waitlist" replace />;
-    return <Navigate to={profile.onboarding_complete ? "/dashboard" : "/onboarding"} replace />;
-  }
-  if (session && !profile) {
-    return <Navigate to="/onboarding" replace />;
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

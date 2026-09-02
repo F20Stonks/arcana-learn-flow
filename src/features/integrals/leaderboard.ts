@@ -15,6 +15,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { scopedKey } from "./progress";
 
 /**
  * The generated Supabase types are produced from the deployed schema, which does not yet contain
@@ -191,7 +192,7 @@ const SUBMITTED_KEY = "arcana.integrals.submitted.v1";
  */
 export function submittedPuzzles(): number[] {
   try {
-    const raw = globalThis.localStorage?.getItem(SUBMITTED_KEY);
+    const raw = globalThis.localStorage?.getItem(scopedKey(SUBMITTED_KEY));
     const parsed = raw ? (JSON.parse(raw) as unknown) : [];
     return Array.isArray(parsed) ? parsed.filter((n): n is number => typeof n === "number") : [];
   } catch {
@@ -202,7 +203,7 @@ export function submittedPuzzles(): number[] {
 export function rememberSubmitted(puzzleNumber: number) {
   try {
     const next = [...new Set([...submittedPuzzles(), puzzleNumber])].slice(-90);
-    globalThis.localStorage?.setItem(SUBMITTED_KEY, JSON.stringify(next));
+    globalThis.localStorage?.setItem(scopedKey(SUBMITTED_KEY), JSON.stringify(next));
   } catch {
     // Storage unavailable — the unique constraint still stops a duplicate landing.
   }
