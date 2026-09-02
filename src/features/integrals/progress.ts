@@ -48,6 +48,12 @@ export interface Progress {
   badges: Record<string, string>;
   lessonsRead: TechniqueId[];
   sprints: Record<string, SprintBest>;
+  /**
+   * Where you were last working, per practice queue — keyed by technique id (or "mixed"), valued
+   * by problem id. Training used to restart at the top of the queue on every visit, so anyone
+   * working through a long technique re-ground the same first problems every session.
+   */
+  bookmarks: Record<string, string>;
 }
 
 export function emptyProgress(): Progress {
@@ -60,6 +66,7 @@ export function emptyProgress(): Progress {
     badges: {},
     lessonsRead: [],
     sprints: {},
+    bookmarks: {},
   };
 }
 
@@ -238,6 +245,18 @@ export function markLessonRead(id: TechniqueId) {
     p.badges = { ...p.badges, ...earnedBadges(p) };
     return p;
   });
+}
+
+/** Remember where a practice queue got to. Keyed by technique id, or "mixed". */
+export function markPlace(queueKey: string, problemId: string) {
+  update((p) => {
+    p.bookmarks = { ...p.bookmarks, [queueKey]: problemId };
+    return p;
+  });
+}
+
+export function lastPlace(p: Progress, queueKey: string): string | undefined {
+  return p.bookmarks?.[queueKey];
 }
 
 export function hasSolved(p: Progress, problemId: string): boolean {

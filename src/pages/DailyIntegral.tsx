@@ -74,6 +74,7 @@ export default function DailyIntegral() {
           <RunPanel
             problem={problem}
             run={run}
+            confirmGiveUp
             footer={
               <DailyResult
                 problem={problem}

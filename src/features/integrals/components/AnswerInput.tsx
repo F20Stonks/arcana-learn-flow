@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import { CornerDownLeft } from "lucide-react";
 import Tex from "./Tex";
 import { previewLatex } from "../answer";
-import type { Verdict } from "../types";
+import type { Problem, Verdict } from "../types";
 
 interface Props {
   value: string;
@@ -10,7 +10,15 @@ interface Props {
   onSubmit: () => void;
   verdict: Verdict | null;
   disabled?: boolean;
+  /** The problem being answered — sets the placeholder, and what a definite answer must look like. */
+  problem?: Problem;
   placeholder?: string;
+}
+
+/** A definite integral wants a number; an indefinite one wants a function of x. */
+function placeholderFor(problem: Problem | undefined): string {
+  if (problem?.kind === "definite") return "a number, e.g. pi/4";
+  return "your answer, e.g. x^3/3 + C";
 }
 
 /**
@@ -24,7 +32,8 @@ export default function AnswerInput({
   onSubmit,
   verdict,
   disabled = false,
-  placeholder = "your answer, e.g. x^3/3 + C",
+  problem,
+  placeholder,
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const id = useId();
@@ -51,7 +60,7 @@ export default function AnswerInput({
           onKeyDown={(e) => {
             if (e.key === "Enter") onSubmit();
           }}
-          placeholder={placeholder}
+          placeholder={placeholder ?? placeholderFor(problem)}
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}

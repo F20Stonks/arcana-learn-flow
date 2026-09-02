@@ -187,9 +187,7 @@ export default function IntegralSprint() {
               onChange={run.setInput}
               onSubmit={run.submit}
               verdict={run.verdict}
-              placeholder={
-                run.problem.kind === "definite" ? "a number, e.g. pi/4" : "your answer, e.g. x^3/3"
-              }
+              problem={run.problem}
             />
             <VerdictLine verdict={run.verdict} />
 

@@ -15,7 +15,7 @@ import { integralLatex } from "@/features/integrals/latex";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { dailyNumber, dailyProblem, WEEKDAY_NAMES } from "@/features/integrals/daily";
 import { allMastery, BADGES, stats, todaysDaily } from "@/features/integrals/progress";
-import { TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
+import { TECHNIQUE_BY_ID, TECHNIQUES } from "@/features/integrals/techniques";
 import { DIFFICULTY_LABEL } from "@/features/integrals/problems";
 
 function Stat({ value, label }: { value: string; label: string }) {
@@ -124,8 +124,8 @@ export default function IntegralsHub() {
             <Dumbbell className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Training</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Eight techniques, each with a lesson on when to reach for it and a practice queue that
-              starts with what you haven't cracked yet.
+              {TECHNIQUES.length} techniques, each with a lesson on when to reach for it and a
+              practice queue that starts with what you haven't cracked yet.
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Train →

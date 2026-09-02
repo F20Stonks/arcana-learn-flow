@@ -18,7 +18,7 @@ import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import IntegralTraining, { TrainingTechnique } from "@/pages/IntegralTraining";
 import { dailyProblem } from "./daily";
-import { getProgress, resetProgress } from "./progress";
+import { getProgress, markLessonRead, resetProgress } from "./progress";
 import { orderQueue } from "./queue";
 import { problemsForTechnique } from "./problems";
 
@@ -142,13 +142,50 @@ describe("the hub", () => {
 });
 
 describe("training", () => {
-  it("opens the lesson and records that it was read", async () => {
+  it("leads with the lesson when it has never been read, and records it once put away", async () => {
     at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
     expect(getProgress().lessonsRead).toEqual([]);
+    // Open on arrival — the whole design is lesson before drill.
+    expect(screen.getByText("When to reach for it")).toBeInTheDocument();
 
+    // Read means read: it is banked when the student closes it, not when it appears on screen.
     fireEvent.click(screen.getByRole("button", { name: /The lesson/i }));
-    await waitFor(() => expect(screen.getByText("When to reach for it")).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("When to reach for it")).toBeNull());
     expect(getProgress().lessonsRead).toContain("parts");
+  });
+
+  it("keeps an already-read lesson out of the way", () => {
+    markLessonRead("parts");
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    expect(screen.queryByText("When to reach for it")).toBeNull();
+    expect(screen.getByRole("button", { name: /The lesson/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("resumes a queue where it was left rather than restarting at the top", async () => {
+    const { unmount } = at(
+      "/integrals/train/parts",
+      <TrainingTechnique />,
+      "/integrals/train/:techniqueId",
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Skip ahead/ }));
+    await waitFor(() => expect(screen.getByText(/2\/\d+/)).toBeInTheDocument());
+    unmount();
+
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    expect(screen.getByText(/2\/\d+/)).toBeInTheDocument();
+  });
+
+  it("ends the queue instead of silently wrapping to the start", async () => {
+    // A one-problem queue is the end of the queue on the very first Next.
+    at("/integrals/train/floor-function", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    const total = Number(/\d+\/(\d+)/.exec(screen.getByText(/\d+\/\d+ solved/).textContent!)![1]);
+    for (let i = 0; i < total; i++) {
+      fireEvent.click(screen.getByRole("button", { name: /Skip ahead/ }));
+    }
+    await waitFor(() => expect(screen.getByText(/End of the/)).toBeInTheDocument());
   });
 
   it("advances through the queue and banks training XP", async () => {
