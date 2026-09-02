@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FIRM_LIST } from "../../firms/registry";
 import { seededRng, shuffle } from "../../engine/rng";
 import { defaultCheck } from "../../engine/check";
 import { generateChoiceItem } from "./choiceBuilder";
@@ -598,6 +599,32 @@ describe("variance template", () => {
         return sum;
       });
       expect(Math.abs(variance - result.correct)).toBeLessThan(varianceTolerance(variance, trials));
+    }
+  });
+});
+
+describe("option formatting", () => {
+  /**
+   * Formatting each option independently leaks the answer: a variance item whose other options are
+   * exact fractions renders an irrational standard-deviation distractor as "5.123", and a candidate
+   * who has done no arithmetic can see which option is not like the others. Every option in a set
+   * must share one shape.
+   */
+  it("never mixes fractions and decimals within one option set", () => {
+    for (const firm of FIRM_LIST) {
+      for (const module of firm.modules.filter((m) => m.kind === "probability")) {
+        const rng = seededRng(31337);
+        for (let index = 0; index < module.itemCount; index++) {
+          const item = module.generate({ index, count: module.itemCount, rng });
+          const labels = item.choices!.map((c) => c.label);
+          const fractions = labels.filter((l) => l.includes("/")).length;
+          const decimals = labels.filter((l) => l.includes(".")).length;
+          expect(
+            fractions === 0 || decimals === 0,
+            `mixed option formats in "${item.prompt}": ${labels.join(", ")}`,
+          ).toBe(true);
+        }
+      }
     }
   });
 });

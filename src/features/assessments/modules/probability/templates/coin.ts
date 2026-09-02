@@ -54,10 +54,12 @@ export const coinExactKHeads: ProbTemplate = {
 
     return {
       tag: "prob_coin_exact_k_heads",
-      prompt: `A fair coin is flipped ${n} times. What is the probability of exactly ${k} heads?`,
+      // "exactly 1 heads" reads as a bug to a candidate and undermines confidence in the rest of
+      // the paper, so k=1 gets the singular.
+      prompt: `A fair coin is flipped ${n} times. What is the probability of exactly ${k} ${k === 1 ? "head" : "heads"}?`,
       correct,
       isProbability: true,
-      explanation: `P(exactly ${k} heads) = C(${n}, ${k}) / 2^${n} = ${choose(n, k)}/${total}.`,
+      explanation: `P(exactly ${k} ${k === 1 ? "head" : "heads"}) = C(${n}, ${k}) / 2^${n} = ${choose(n, k)}/${total}.`,
       distractors: [
         // Forgot the combinatorial count — used the probability of one specific sequence.
         { value: 1 / total, reasoning: "forgot the combinatorial factor — used the probability of a single specific sequence" },

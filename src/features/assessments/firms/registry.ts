@@ -5,8 +5,9 @@
  * a firm that is not listed here does not exist, which is easier to reason about than a directory
  * scan and keeps the bundle honest.
  *
- * Listed in the order they appear on the hub — the speed batteries first, since those are the
- * screens most candidates meet first and the ones this feature replicates most exactly.
+ * Listed in the order they appear on the hub: the speed batteries first, since those are the
+ * screens most candidates meet first and the ones this feature replicates most exactly, then the
+ * longer probability screens.
  */
 import type { FirmSpec, ModuleSpec } from "../types";
 import { optiver } from "./optiver";
@@ -15,6 +16,10 @@ import { flowTraders } from "./flowTraders";
 import { akuna } from "./akuna";
 import { allOptions } from "./allOptions";
 import { imc } from "./imc";
+import { citadel } from "./citadel";
+import { drw } from "./drw";
+import { sig } from "./sig";
+import { gResearch } from "./gResearch";
 
 export const FIRM_REGISTRY: Record<string, FirmSpec> = {
   [optiver.id]: optiver,
@@ -23,6 +28,10 @@ export const FIRM_REGISTRY: Record<string, FirmSpec> = {
   [akuna.id]: akuna,
   [allOptions.id]: allOptions,
   [imc.id]: imc,
+  [citadel.id]: citadel,
+  [drw.id]: drw,
+  [sig.id]: sig,
+  [gResearch.id]: gResearch,
 };
 
 export const FIRM_LIST = Object.values(FIRM_REGISTRY);

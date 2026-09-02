@@ -11,7 +11,7 @@
  */
 import type { AssessmentItem } from "../../types";
 import { shuffle } from "../../engine/rng";
-import { formatValue, nearlyEqual } from "./format";
+import { formatValueSet, nearlyEqual } from "./format";
 
 export interface Distractor {
   value: number;
@@ -41,16 +41,14 @@ function buildChoiceItem(rng: () => number, id: string, result: TemplateResult, 
     );
   }
 
+  // Numeric de-duplication only. Label distinctness is checked after formatting, because the whole
+  // option set is formatted together (see formatValueSet) and a per-value check here would be
+  // asking about labels this item may never actually show.
   const seenValues: number[] = [result.correct];
   const usable: Distractor[] = [];
   for (const d of result.distractors) {
     if (result.isProbability && (d.value < -1e-9 || d.value > 1 + 1e-9)) continue;
     if (seenValues.some((v) => nearlyEqual(v, d.value))) continue;
-    // Also require visually-distinct labels, since two numerically-close-but-unequal values can
-    // still round to the same displayed text.
-    const label = formatValue(d.value);
-    if (usable.some((u) => formatValue(u.value) === label)) continue;
-    if (formatValue(result.correct) === label) continue;
     seenValues.push(d.value);
     usable.push(d);
   }
@@ -62,16 +60,24 @@ function buildChoiceItem(rng: () => number, id: string, result: TemplateResult, 
     );
   }
 
-  const chosenDistractors = shuffle(usable, rng).slice(0, needed);
   const pool = shuffle(
     [
-      ...chosenDistractors.map((d) => ({ label: formatValue(d.value), correct: false, reasoning: d.reasoning })),
-      { label: formatValue(result.correct), correct: true, reasoning: "" },
+      ...shuffle(usable, rng).slice(0, needed).map((d) => ({ value: d.value, correct: false, reasoning: d.reasoning })),
+      { value: result.correct, correct: true, reasoning: "" },
     ],
     rng,
   );
 
-  const choices = pool.map((c, i) => ({ id: LETTERS[i], label: c.label }));
+  const labels = formatValueSet(pool.map((c) => c.value));
+  // Two numerically distinct values can still round to the same displayed text — at which point the
+  // item has two identical options and is unanswerable. Reject it and let the caller redraw.
+  if (new Set(labels).size !== labels.length) {
+    throw new InsufficientDistractorsError(
+      `template "${result.tag}" rendered duplicate option labels (${labels.join(", ")}) for prompt: ${result.prompt}`,
+    );
+  }
+
+  const choices = pool.map((_, i) => ({ id: LETTERS[i], label: labels[i] }));
   const correctIndex = pool.findIndex((c) => c.correct);
   const wrongApproaches = pool.filter((c) => !c.correct).map((c) => c.reasoning);
 

@@ -70,6 +70,20 @@ export function formatValue(raw: number): string {
   return String(p);
 }
 
+/**
+ * Formats a whole option set to ONE consistent shape.
+ *
+ * Formatting each option independently leaks the answer. A variance item whose options are
+ * 105/4, 945/4, 273/2 and an irrational standard-deviation distractor renders that last one as
+ * "5.123" — and a candidate who has done no arithmetic at all can see which option is not like the
+ * others. Whenever any value in the set needs a decimal, every value in the set gets one.
+ */
+export function formatValueSet(values: number[]): string[] {
+  const allExact = values.every((v) => !formatValue(v).includes("."));
+  if (allExact) return values.map(formatValue);
+  return values.map((v) => String(Number(v.toPrecision(4))));
+}
+
 /** Numeric equality for de-duplicating distractors, independent of display formatting. */
 export function nearlyEqual(a: number, b: number, tol = 1e-7): boolean {
   return Math.abs(a - b) <= tol * Math.max(1, Math.abs(a), Math.abs(b));
