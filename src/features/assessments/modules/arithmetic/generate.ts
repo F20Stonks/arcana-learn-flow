@@ -5,27 +5,18 @@
  * `3.4 + 12.7` in floating point is 16.099999999999998, and an assessment that marks a correct
  * "16.1" wrong is the single worst thing this feature could do.
  */
-import type { AssessmentItem } from "../../types";
-import { pick, randInt, weightedPick } from "../../engine/rng";
+import type { AssessmentItem, ItemInputKind } from "../../types";
+import { pick, randInt, shuffle, weightedPick } from "../../engine/rng";
 import type { ArithmeticOp, ArithmeticProfile } from "./profiles";
-
-function gcd(a: number, b: number): number {
-  return b === 0 ? Math.abs(a) : gcd(b, a % b);
-}
-
-/** Formats a value held as an integer scaled by 10^places, without touching floating point. */
-function fromScaled(scaled: number, places: number): string {
-  const sign = scaled < 0 ? "-" : "";
-  const digits = String(Math.abs(scaled)).padStart(places + 1, "0");
-  const whole = digits.slice(0, digits.length - places);
-  const frac = digits.slice(digits.length - places).replace(/0+$/, "");
-  return frac ? `${sign}${whole}.${frac}` : `${sign}${whole}`;
-}
+import { fromScaled, gcd } from "./format";
+import { generateDistractors, type DistractorInput } from "./distractors";
 
 interface Built {
   prompt: string;
   answer: string;
   tag: ArithmeticOp;
+  /** Feeds the distractor generator for choice-mode items; ignored in typed mode. */
+  distractorInput: DistractorInput;
 }
 
 function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile): Built {
@@ -33,25 +24,25 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
     case "add": {
       const a = randInt(12, 899, rng);
       const b = randInt(12, 899, rng);
-      return { prompt: `${a} + ${b}`, answer: String(a + b), tag: op };
+      return { prompt: `${a} + ${b}`, answer: String(a + b), tag: op, distractorInput: { op: "add", a, b } };
     }
 
     case "sub": {
       const a = randInt(20, 950, rng);
       const b = profile.allowNegative ? randInt(20, 950, rng) : randInt(11, a, rng);
-      return { prompt: `${a} − ${b}`, answer: String(a - b), tag: op };
+      return { prompt: `${a} − ${b}`, answer: String(a - b), tag: op, distractorInput: { op: "sub", a, b } };
     }
 
     case "mul_2x1": {
       const a = randInt(12, 99, rng);
       const b = randInt(3, 9, rng);
-      return { prompt: `${a} × ${b}`, answer: String(a * b), tag: op };
+      return { prompt: `${a} × ${b}`, answer: String(a * b), tag: op, distractorInput: { op: "mul", a, b } };
     }
 
     case "mul_2x2": {
       const a = randInt(12, 49, rng);
       const b = randInt(11, 39, rng);
-      return { prompt: `${a} × ${b}`, answer: String(a * b), tag: op };
+      return { prompt: `${a} × ${b}`, answer: String(a * b), tag: op, distractorInput: { op: "mul", a, b } };
     }
 
     case "div_exact": {
@@ -59,7 +50,12 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
       // never a remainder to guess at, which is how every one of these tests sets division.
       const divisor = randInt(3, 19, rng);
       const quotient = randInt(4, 60, rng);
-      return { prompt: `${divisor * quotient} ÷ ${divisor}`, answer: String(quotient), tag: op };
+      return {
+        prompt: `${divisor * quotient} ÷ ${divisor}`,
+        answer: String(quotient),
+        tag: op,
+        distractorInput: { op: "div", divisor, quotient },
+      };
     }
 
     case "decimal_addsub": {
@@ -71,6 +67,7 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
         prompt: `${fromScaled(a, 1)} ${plus ? "+" : "−"} ${fromScaled(b, 1)}`,
         answer: fromScaled(result, 1),
         tag: op,
+        distractorInput: { op: "decimal_addsub", a, b, plus, places: 1 },
       };
     }
 
@@ -78,7 +75,12 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
       // One decimal factor against a whole number keeps the item a six-second item.
       const a = randInt(11, 95, rng);
       const b = randInt(2, 40, rng);
-      return { prompt: `${fromScaled(a, 1)} × ${b}`, answer: fromScaled(a * b, 1), tag: op };
+      return {
+        prompt: `${fromScaled(a, 1)} × ${b}`,
+        answer: fromScaled(a * b, 1),
+        tag: op,
+        distractorInput: { op: "decimal_mul", a, b, places: 1 },
+      };
     }
 
     case "fraction_addsub": {
@@ -98,6 +100,7 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
         // The checker parses "a/b" as well as its decimal value, so either form is accepted.
         answer: rd === 1 ? String(rn) : `${rn}/${rd}`,
         tag: op,
+        distractorInput: { op: "fraction_addsub", n1, d1, n2, d2, plus },
       };
     }
 
@@ -106,20 +109,39 @@ function build(op: ArithmeticOp, rng: () => number, profile: ArithmeticProfile):
       // Chosen so the answer is a whole number — a percentage item tests the shortcut, not
       // long division.
       const base = randInt(2, 40, rng) * 20;
-      return { prompt: `${percent}% of ${base}`, answer: String((percent * base) / 100), tag: op };
+      return {
+        prompt: `${percent}% of ${base}`,
+        answer: String((percent * base) / 100),
+        tag: op,
+        distractorInput: { op: "percent_of", percent, base },
+      };
     }
 
     case "missing_operand": {
       const a = randInt(3, 19, rng);
       const b = randInt(4, 40, rng);
-      if (rng() < 0.5) return { prompt: `${a} × ? = ${a * b}`, answer: String(b), tag: op };
-      return { prompt: `? + ${a} = ${a + b}`, answer: String(b), tag: op };
+      if (rng() < 0.5) {
+        return {
+          prompt: `${a} × ? = ${a * b}`,
+          answer: String(b),
+          tag: op,
+          distractorInput: { op: "missing_operand", a, b, kind: "mul" },
+        };
+      }
+      return {
+        prompt: `? + ${a} = ${a + b}`,
+        answer: String(b),
+        tag: op,
+        distractorInput: { op: "missing_operand", a, b, kind: "add" },
+      };
     }
   }
 }
 
 export interface ArithmeticConfig {
   profile: ArithmeticProfile;
+  /** Defaults to "typed-number". "choice" builds four options — Flow Traders' math test. */
+  input?: ItemInputKind;
 }
 
 export function generateArithmeticItem(
@@ -128,6 +150,19 @@ export function generateArithmeticItem(
   config: ArithmeticConfig,
 ): AssessmentItem {
   const op = weightedPick(config.profile.weights, rng);
-  const { prompt, answer, tag } = build(op, rng, config.profile);
-  return { id: `${config.profile.id}-${index}-${Math.floor(rng() * 1e9)}`, tag, prompt, answer };
+  const built = build(op, rng, config.profile);
+  const id = `${config.profile.id}-${index}-${Math.floor(rng() * 1e9)}`;
+
+  if (config.input === "choice") {
+    const distractors = generateDistractors(built.distractorInput, built.answer, rng);
+    // Shuffle the four *values* rather than assigning fixed ids to fixed slots, so which id ends
+    // up correct varies paper to paper — a choice test where the answer is always option "a" is
+    // not a choice test.
+    const values = shuffle([built.answer, ...distractors], rng);
+    const choices = values.map((label, i) => ({ id: `opt-${i}`, label }));
+    const answerId = choices[values.indexOf(built.answer)].id;
+    return { id, tag: built.tag, prompt: built.prompt, answer: answerId, choices };
+  }
+
+  return { id, tag: built.tag, prompt: built.prompt, answer: built.answer };
 }

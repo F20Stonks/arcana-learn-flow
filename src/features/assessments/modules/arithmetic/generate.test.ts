@@ -42,6 +42,16 @@ function evaluatePrompt(prompt: string): number {
 
 const PROFILES = Object.values(ARITHMETIC_PROFILES);
 
+describe("arithmetic profile catalog", () => {
+  // Guards against a profile silently dropping out of ARITHMETIC_PROFILES (and so out of every
+  // test below, which all iterate PROFILES) — one firm per profile: Optiver, Jane Street, Akuna,
+  // Flow Traders, All Options, IMC.
+  it("registers one profile per firm", () => {
+    expect(PROFILES.length).toBe(6);
+    expect(new Set(PROFILES.map((p) => p.id)).size).toBe(6);
+  });
+});
+
 describe("speed-arithmetic generator", () => {
   for (const profile of PROFILES) {
     describe(profile.id, () => {
