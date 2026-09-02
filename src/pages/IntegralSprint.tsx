@@ -7,12 +7,13 @@
  */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Play, RotateCcw, SkipForward, Trophy } from "lucide-react";
+import { ArrowLeft, Check, Eye, Play, RotateCcw, SkipForward, Square, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import AnswerInput from "@/features/integrals/components/AnswerInput";
 import VerdictLine from "@/features/integrals/components/VerdictLine";
 import IntegralPrompt from "@/features/integrals/components/IntegralPrompt";
+import ConfirmButton from "@/features/integrals/components/ConfirmButton";
 import { integralLatex } from "@/features/integrals/latex";
 import { useSprintRun } from "@/features/integrals/hooks/useSprintRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
@@ -28,6 +29,7 @@ import {
   type Duration,
 } from "@/features/integrals/sprint";
 import { DIFFICULTY_LABEL } from "@/features/integrals/problems";
+import { TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 
 function durationLabel(seconds: Duration): string {
   return seconds < 60 ? `${seconds}s` : `${seconds / 60} min`;
@@ -155,6 +157,29 @@ export default function IntegralSprint() {
               </div>
             </div>
 
+            {/* The only confirmation a correct answer gets. The queue advances the instant you
+                land one, so without this the screen just silently changes under you. Always
+                mounted, because a live region that appears with its text is a region screen
+                readers skip. */}
+            <div role="status" aria-live="polite" aria-label="Last solve" className="min-h-[30px]">
+              {run.landed && (
+                <div
+                  key={run.landed.nonce}
+                  className="reveal flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-primary/25 bg-primary/[0.06] px-3.5 py-2 text-[13px]"
+                >
+                  <span className="flex items-center gap-1.5 font-medium text-primary">
+                    <Check className="h-3.5 w-3.5" /> Landed
+                  </span>
+                  <span className="min-w-0 flex-1 overflow-x-auto text-foreground">
+                    <Tex>{integralLatex(run.landed.problem)}</Tex>
+                  </span>
+                  <span className="readout shrink-0 font-semibold tabular-nums text-primary">
+                    +{run.landed.points}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <IntegralPrompt problem={run.problem} />
 
             <AnswerInput
@@ -168,12 +193,21 @@ export default function IntegralSprint() {
             />
             <VerdictLine verdict={run.verdict} />
 
-            <button
-              onClick={run.skip}
-              className="flex items-center gap-1.5 self-start py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
-            >
-              <SkipForward className="h-3.5 w-3.5" /> Skip · −{SKIP_PENALTY}
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <button
+                onClick={run.skip}
+                className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground/70 transition-colors hover:text-foreground"
+              >
+                <SkipForward className="h-3.5 w-3.5" /> Skip · −{SKIP_PENALTY}
+              </button>
+              <ConfirmButton
+                onConfirm={run.end}
+                confirmLabel="Stop the clock?"
+                icon={<Square className="h-3.5 w-3.5" />}
+              >
+                End run
+              </ConfirmButton>
+            </div>
           </div>
         )}
 
@@ -245,6 +279,46 @@ export default function IntegralSprint() {
                       <span className="readout shrink-0 text-[12px] tabular-nums text-muted-foreground">
                         {DIFFICULTY_LABEL[p.difficulty]}
                       </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {run.result.missed.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+                <div className="mb-1 flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="font-display text-[16px] font-semibold text-foreground">
+                    What got away
+                  </h2>
+                </div>
+                <p className="mb-4 text-[13px] text-muted-foreground">
+                  Skipped, or still on screen when the clock stopped. Answers shown — a sprint you
+                  learn nothing from is just a typing test.
+                </p>
+                <ul className="flex flex-col gap-3.5">
+                  {run.result.missed.map((p, i) => (
+                    <li key={`${p.id}-${i}`} className="border-t border-border/60 pt-3.5 first:border-0 first:pt-0">
+                      <div className="flex items-start gap-3">
+                        <span className="min-w-0 flex-1 overflow-x-auto text-[14px] text-foreground">
+                          <Tex>{integralLatex(p)}</Tex>
+                        </span>
+                        <span className="readout shrink-0 text-[12px] tabular-nums text-muted-foreground">
+                          {DIFFICULTY_LABEL[p.difficulty]}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <span className="overflow-x-auto text-[14px] text-muted-foreground">
+                          = <Tex className="text-foreground">{p.answerLatex}</Tex>
+                        </span>
+                        <Link
+                          to={`/integrals/train/${p.techniques[0]}`}
+                          className="rounded-full border border-border px-2.5 py-0.5 text-[12px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                        >
+                          Drill {TECHNIQUE_BY_ID[p.techniques[0]]?.name ?? p.techniques[0]} →
+                        </Link>
+                      </div>
                     </li>
                   ))}
                 </ul>

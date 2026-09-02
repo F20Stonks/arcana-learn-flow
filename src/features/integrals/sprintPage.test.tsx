@@ -131,6 +131,53 @@ describe("running a sprint", () => {
     expect(sprintBest(getProgress(), { band: "mixed", seconds: 60 })?.runs).toBe(2);
   });
 
+  it("confirms a solve rather than silently swapping the problem", () => {
+    const queue = start();
+    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: queue[0].answer } });
+    fireEvent.click(screen.getByRole("button", { name: /check/i }));
+
+    // The queue advances the instant an answer lands, so this strip is the only sign it was right.
+    const live = screen.getByRole("status", { name: /last solve/i });
+    expect(live.textContent).toMatch(/Landed/);
+    expect(live.textContent).toMatch(/\+\d+/);
+  });
+
+  it("clears the solve confirmation on a skip, so it never credits the wrong problem", () => {
+    const queue = start();
+    fireEvent.change(screen.getByLabelText(/Your answer/i), { target: { value: queue[0].answer } });
+    fireEvent.click(screen.getByRole("button", { name: /check/i }));
+    const live = () => screen.getByRole("status", { name: /last solve/i });
+    expect(live().textContent).toMatch(/Landed/);
+
+    fireEvent.click(screen.getByRole("button", { name: /Skip/ }));
+    expect(live().textContent).not.toMatch(/Landed/);
+  });
+
+  it("shows what got away, with the answers", () => {
+    start();
+    fireEvent.click(screen.getByRole("button", { name: /Skip/ }));
+    tick(61_000);
+
+    expect(screen.getByText("What got away")).toBeInTheDocument();
+    // The skipped problem plus the one on screen when the clock stopped.
+    expect(screen.getAllByText(/Drill /).length).toBe(2);
+  });
+
+  it("ends a run early, but only on a confirmation", () => {
+    start(180);
+    fireEvent.click(screen.getByRole("button", { name: /End run/ }));
+    expect(screen.getByText(/Stop the clock\?/)).toBeInTheDocument();
+
+    // Backing out leaves the clock running.
+    fireEvent.click(screen.getByRole("button", { name: /Keep going/ }));
+    expect(screen.queryByText("Time.")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /End run/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Yes$/ }));
+    expect(screen.getByText("Time.")).toBeInTheDocument();
+    expect(sprintBest(getProgress(), { band: "mixed", seconds: 180 })?.runs).toBe(1);
+  });
+
   it("can be set up again after a run", () => {
     start();
     tick(61_000);

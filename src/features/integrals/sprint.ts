@@ -83,6 +83,11 @@ export function buildQueue(config: SprintConfig, seed: number): Problem[] {
 
 const SOLVE_POINTS: Record<Difficulty, number> = { 1: 10, 2: 20, 3: 35, 4: 55, 5: 80 };
 
+/** What one solve pays. Exported so the run can tell you the moment you land it. */
+export function solvePoints(difficulty: Difficulty): number {
+  return SOLVE_POINTS[difficulty];
+}
+
 /** Skipping is allowed and costs a little — otherwise the best strategy is to skip until you get an easy one. */
 export const SKIP_PENALTY = 8;
 
@@ -90,6 +95,12 @@ export interface SprintResult {
   solved: Problem[];
   skipped: number;
   wrongAttempts: number;
+  /**
+   * The ones that got away — skipped, plus whatever was on screen when the clock stopped. The
+   * result screen shows them with their answers, because a sprint you learn nothing from is just
+   * a typing test.
+   */
+  missed: Problem[];
   score: number;
   config: SprintConfig;
 }

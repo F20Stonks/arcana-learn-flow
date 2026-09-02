@@ -66,8 +66,8 @@ describe("scoring", () => {
   });
 
   it("reports a rate that makes runs of different lengths comparable", () => {
-    const short = { solved: [at(3)], skipped: 0, wrongAttempts: 0, score: 70, config: { band: "mixed", seconds: 60 } as const };
-    const long = { solved: [at(3)], skipped: 0, wrongAttempts: 0, score: 70, config: { band: "mixed", seconds: 300 } as const };
+    const short = { solved: [at(3)], skipped: 0, wrongAttempts: 0, missed: [], score: 70, config: { band: "mixed", seconds: 60 } as const };
+    const long = { solved: [at(3)], skipped: 0, wrongAttempts: 0, missed: [], score: 70, config: { band: "mixed", seconds: 300 } as const };
     expect(sprintRate(short)).toBe(70);
     expect(sprintRate(long)).toBe(14);
   });
