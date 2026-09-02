@@ -1,0 +1,235 @@
+/**
+ * OA Arena — the hub.
+ *
+ * Every firm whose online assessment this app can reconstruct, with what each one actually asks.
+ * The fidelity note is on this page, on every firm page and before every run, not once in a
+ * footer: a candidate who thinks they are sitting the real thing will draw the wrong conclusion
+ * from their score.
+ */
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Building2, Clock, Dumbbell, Info, ListChecks, Target } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import { FIDELITY_NOTE, FIRMS, firmsTesting, kindsFor } from "@/features/oa/firms";
+import { assessmentShape } from "@/features/oa/generate";
+import { bestFor, kindStandings, sittingsCount, useOaProgress, weakestKind } from "@/features/oa/progress";
+import { KINDS, KIND_BY_ID } from "@/features/oa/drill";
+import type { QuestionKind } from "@/features/oa/types";
+
+function minutes(seconds: number): string {
+  return seconds < 60 ? `${seconds}s` : `${Math.round(seconds / 60)} min`;
+}
+
+export function FidelityNote({ className = "" }: { className?: string }) {
+  return (
+    <p
+      className={`flex items-start gap-2.5 rounded-xl border border-border bg-accent/30 px-4 py-3 text-[13px] leading-relaxed text-muted-foreground ${className}`}
+    >
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70" />
+      <span>{FIDELITY_NOTE}</span>
+    </p>
+  );
+}
+
+export default function OAHub() {
+  const progress = useOaProgress();
+  const counts = sittingsCount(progress);
+  const standings = kindStandings(progress);
+  const weakest = weakestKind(progress);
+  const [filter, setFilter] = useState<QuestionKind[]>([]);
+  const shown = useMemo(() => firmsTesting(filter), [filter]);
+  const totalAssessments = FIRMS.reduce((n, f) => n + f.assessments.length, 0);
+
+  return (
+    <AppShell>
+      <main className="relative mx-auto max-w-4xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+        <header className="reveal mb-6">
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground sm:text-[32px]">
+            OA Arena
+          </h1>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">
+            {totalAssessments} assessments across {FIRMS.length} trading firms, each built to the
+            shape the real screen is reported to have — the question types, the counts, the clock,
+            and the rule that you cannot go back.
+          </p>
+        </header>
+
+        <FidelityNote className="reveal mb-6" />
+
+        {counts.assessments > 0 && (
+          <p className="reveal mb-6 text-[13px] text-muted-foreground">
+            <span className="readout tabular-nums text-foreground">{counts.assessments}</span> of{" "}
+            <span className="readout tabular-nums">{totalAssessments}</span> assessments sat,{" "}
+            <span className="readout tabular-nums">{counts.total}</span> sittings in total.
+          </p>
+        )}
+
+        <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold text-foreground">
+                <Dumbbell className="h-4 w-4 text-primary" /> Drills
+              </h2>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+                One question type on repeat, marked in front of you instead of at the end. Losing
+                the arithmetic section of an eighty-question paper should not mean sitting eighty
+                questions again to work on it.
+              </p>
+            </div>
+            <Link
+              to="/oa/drill"
+              className="shrink-0 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Drill →
+            </Link>
+          </div>
+
+          {weakest && (
+            <Link
+              to={`/oa/drill?kind=${weakest.kind}&level=3&count=20`}
+              className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3 text-[13px] transition-colors hover:border-primary/50"
+            >
+              <Target className="h-4 w-4 shrink-0 text-primary" />
+              <span className="text-foreground">
+                Weakest so far: {KIND_BY_ID[weakest.kind].name.toLowerCase()} at{" "}
+                <span className="readout tabular-nums">{Math.round(weakest.accuracy * 100)}%</span>{" "}
+                over {weakest.seen} questions.
+              </span>
+            </Link>
+          )}
+
+          {standings.length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2.5 border-t border-border pt-4">
+              {standings.map((s) => (
+                <li key={s.kind}>
+                  <div className="mb-1 flex items-baseline justify-between gap-3 text-[13px]">
+                    <Link
+                      to={`/oa/drill?kind=${s.kind}&level=3&count=20`}
+                      className="text-foreground transition-colors hover:text-primary"
+                    >
+                      {KIND_BY_ID[s.kind].name}
+                    </Link>
+                    <span className="readout text-[12px] tabular-nums text-muted-foreground">
+                      {s.correct}/{s.seen} · {s.pace.toFixed(1)}s
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-valuenow={s.correct}
+                    aria-valuemin={0}
+                    aria-valuemax={s.seen}
+                    aria-label={`${KIND_BY_ID[s.kind].name}: ${s.correct} of ${s.seen} correct`}
+                    className="h-1.5 w-full overflow-hidden rounded-full bg-accent"
+                  >
+                    <div
+                      className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
+                      style={{ width: `${s.accuracy * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="reveal mb-5">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+              The firms
+            </h2>
+            <span className="text-[12px] text-muted-foreground">
+              {filter.length === 0 ? (
+                "Filter by what they test"
+              ) : (
+                <>
+                  <span className="readout tabular-nums text-foreground">{shown.length}</span> of{" "}
+                  {FIRMS.length} test all of these ·{" "}
+                  <button
+                    onClick={() => setFilter([])}
+                    className="underline underline-offset-2 transition-colors hover:text-foreground"
+                  >
+                    clear
+                  </button>
+                </>
+              )}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {KINDS.map((k) => {
+              const on = filter.includes(k.kind);
+              return (
+                <button
+                  key={k.kind}
+                  onClick={() =>
+                    setFilter((f) => (on ? f.filter((x) => x !== k.kind) : [...f, k.kind]))
+                  }
+                  aria-pressed={on}
+                  className={`rounded-full border px-3 py-1.5 text-[13px] transition-colors ${
+                    on
+                      ? "border-primary/60 bg-primary/[0.1] text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                  }`}
+                >
+                  {k.name}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="reveal flex flex-col gap-3">
+          {shown.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-border px-5 py-6 text-center text-[14px] text-muted-foreground">
+              No firm here tests all of those together. Drop one and try again.
+            </p>
+          )}
+          {shown.map((firm) => {
+            const sat = firm.assessments.filter((a) => bestFor(progress, a)).length;
+            return (
+              <Link
+                key={firm.id}
+                to={`/oa/${firm.id}`}
+                className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold text-foreground">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    {firm.name}
+                  </h2>
+                  <span className="readout text-[12px] tabular-nums text-muted-foreground">
+                    {sat}/{firm.assessments.length} sat
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{firm.blurb}</p>
+                <p className="mt-2.5 text-[12px] text-muted-foreground/80">
+                  Tests: {kindsFor(firm).map((k) => KIND_BY_ID[k].name.toLowerCase()).join(", ")}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {firm.assessments.map((a) => {
+                    const shape = assessmentShape(a);
+                    return (
+                      <li
+                        key={a.id}
+                        className="flex items-center gap-2 rounded-full border border-border px-3 py-1 text-[12px] text-muted-foreground"
+                      >
+                        <span className="text-foreground">{a.name}</span>
+                        <span className="readout flex items-center gap-1 tabular-nums">
+                          <ListChecks className="h-3 w-3" />
+                          {shape.questions}
+                        </span>
+                        <span className="readout flex items-center gap-1 tabular-nums">
+                          <Clock className="h-3 w-3" />
+                          {minutes(shape.seconds)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Link>
+            );
+          })}
+        </div>
+      </main>
+    </AppShell>
+  );
+}

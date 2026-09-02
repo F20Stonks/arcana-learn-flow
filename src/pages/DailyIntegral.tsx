@@ -88,7 +88,9 @@ export default function DailyIntegral() {
             <LeaderboardPanel board={board} puzzleNumber={puzzleNumber} />
           </div>
         ) : run.status === "running" ? (
-          <RunPanel problem={run.problem} run={run} />
+          // Revealing spends the day's one scored attempt on this slot and cannot be undone, so
+          // it asks before it does.
+          <RunPanel problem={run.problem} run={run} confirmGiveUp />
         ) : (
           <div className="flex flex-col gap-5">
             <IntegralPrompt problem={run.problem} />

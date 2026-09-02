@@ -2,7 +2,7 @@
  * The training curriculum.
  *
  * Students rarely fail an integral because they can't execute a substitution. They fail because
- * they don't know which of eight things to reach for. So every technique here leads with
+ * they don't know which technique to reach for. So every technique here leads with
  * `whenToUse` — the recognition cue — and only then gives the recipe.
  */
 import type { Technique, TechniqueId, WorkedExample } from "./types";

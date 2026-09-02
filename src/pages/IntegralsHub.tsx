@@ -8,6 +8,7 @@
 import { Link } from "react-router-dom";
 import {
   BarChart3,
+  Building2,
   BookOpen,
   Brain,
   CalendarDays,
@@ -212,6 +213,22 @@ export default function IntegralsHub() {
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Sit the paper →
+            </span>
+          </Link>
+
+          <Link
+            to="/oa"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Building2 className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">OA Arena</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The other clock you will sit under: reconstructions of trading firms' online
+              assessments — Optiver's eighty questions in eight minutes, SIG's sequences, Akuna's
+              options paper — built to the shape the real screens are reported to have.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Sit one →
             </span>
           </Link>
 

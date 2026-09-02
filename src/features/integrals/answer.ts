@@ -498,6 +498,49 @@ export function previewLatex(raw: string): string | null {
   }
 }
 
+/**
+ * How the answer box reads what has been typed so far.
+ *
+ * The preview used to be a `string | null`, and every null rendered as "…still reading that" —
+ * which is true of `x^` mid-keystroke and a lie about `x^^2`, where nothing further the student
+ * types will help. Telling those apart is the difference between a box that is thinking and a box
+ * that is stuck, and this game's whole promise is that a right answer is never misread.
+ */
+export type Reading =
+  | { state: "empty" }
+  | { state: "ok"; latex: string }
+  /** Mid-token: a trailing operator or an unclosed bracket. More typing will fix it. */
+  | { state: "incomplete" }
+  /** Complete-looking and still unreadable. More typing will not fix it. */
+  | { state: "unreadable" };
+
+/**
+ * Whether the expression is still obviously mid-flight, rather than finished and wrong.
+ *
+ * An unclosed bracket is mid-flight; a stray closing one is a mistake, and more typing on the end
+ * will not undo it. Only the first is worth waiting on.
+ */
+function looksUnfinished(s: string): boolean {
+  if (/[+\-*/^(,]\s*$/.test(s)) return true;
+  let depth = 0;
+  for (const c of s) {
+    if (c === "(") depth++;
+    else if (c === ")" && --depth < 0) return false;
+  }
+  return depth > 0;
+}
+
+export function readAnswer(raw: string): Reading {
+  if (!raw.trim()) return { state: "empty" };
+  const normalized = normalize(raw);
+  if (!normalized) return { state: "empty" };
+  try {
+    return { state: "ok", latex: parse(normalized).toTex({ parenthesis: "auto", implicit: "hide" }) };
+  } catch {
+    return looksUnfinished(normalized) ? { state: "incomplete" } : { state: "unreadable" };
+  }
+}
+
 /** k as a small rational, or null when it isn't one. */
 function asSimpleRatio(k: number): { num: number; den: number } | null {
   for (let den = 1; den <= 12; den++) {

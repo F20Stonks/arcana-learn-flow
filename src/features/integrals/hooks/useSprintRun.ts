@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gradeAnswer } from "../answer";
 import { recordAttempt } from "../attempts";
 import { getProgress, hasSolved, recordSprint, recordTrainingSolve } from "../progress";
-import { buildQueue, sprintScore, type SprintConfig, type SprintResult } from "../sprint";
+import { buildQueue, solvePoints, sprintScore, type SprintConfig, type SprintResult } from "../sprint";
 import { scoreAttempt } from "../scoring";
 import type { Problem, Verdict } from "../types";
 
@@ -19,13 +19,26 @@ export interface SprintApi {
   wrongAttempts: number;
   liveScore: number;
   result: SprintResult | null;
-  /** Set on the frame a problem is solved, so the UI can flash. Cleared on the next problem. */
-  justSolved: Problem | null;
+  /**
+   * The problem just landed, and what it paid. Stays on screen until the next solve or skip:
+   * the queue advances the instant an answer is right, so without this the only sign that a
+   * correct answer *was* correct is the problem quietly changing.
+   */
+  landed: Landed | null;
   setInput: (v: string) => void;
   submit: () => void;
   skip: () => void;
   start: () => void;
+  /** Ends the run now, keeping everything banked so far. */
+  end: () => void;
   reset: () => void;
+}
+
+export interface Landed {
+  problem: Problem;
+  points: number;
+  /** Bumped per solve so a repeat of the same problem still restarts the flash animation. */
+  nonce: number;
 }
 
 /**
@@ -44,7 +57,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
   const [skipped, setSkipped] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [remaining, setRemaining] = useState<number>(config.seconds);
-  const [justSolved, setJustSolved] = useState<Problem | null>(null);
+  const [landed, setLanded] = useState<Landed | null>(null);
+  const [missed, setMissed] = useState<Problem[]>([]);
   const [result, setResult] = useState<SprintResult | null>(null);
 
   const endsAt = useRef(0);
@@ -66,7 +80,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     setSkipped(0);
     setWrongAttempts(0);
     setRemaining(config.seconds);
-    setJustSolved(null);
+    setLanded(null);
+    setMissed([]);
     setResult(null);
     recorded.current = false;
   }, [config.seconds]);
@@ -83,6 +98,8 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     setWrongAttempts(0);
     setInput("");
     setVerdict(null);
+    setLanded(null);
+    setMissed([]);
     setResult(null);
     recorded.current = false;
     endsAt.current = Date.now() + config.seconds * 1000;
@@ -104,20 +121,23 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     return () => window.clearInterval(id);
   }, [status]);
 
-  // Freeze the result once, on the transition into "done".
+  // Freeze the result once, on the transition into "done". The problem still on screen when the
+  // clock stopped counts as missed too — it is exactly the one the player most wants to see.
   useEffect(() => {
     if (status !== "done" || recorded.current) return;
     recorded.current = true;
+    const inFlight = queue[index];
     const finished: SprintResult = {
       solved,
       skipped,
       wrongAttempts,
+      missed: inFlight && !missed.includes(inFlight) ? [...missed, inFlight] : missed,
       score: sprintScore(solved, skipped),
       config,
     };
     setResult(finished);
     recordSprint(config, { score: finished.score, solved: solved.length });
-  }, [status, solved, skipped, wrongAttempts, config]);
+  }, [status, solved, skipped, wrongAttempts, missed, queue, index, config]);
 
   const advance = useCallback(() => {
     setIndex((i) => i + 1);
@@ -176,16 +196,21 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     });
 
     setSolved((list) => [...list, problem]);
-    setJustSolved(problem);
+    setLanded((prev) => ({ problem, points: solvePoints(problem.difficulty), nonce: (prev?.nonce ?? 0) + 1 }));
     advance();
   }, [status, problem, input, advance]);
 
   const skip = useCallback(() => {
     if (status !== "running" || !problem) return;
     setSkipped((n) => n + 1);
-    setJustSolved(null);
+    setMissed((list) => [...list, problem]);
+    setLanded(null);
     advance();
   }, [status, problem, advance]);
+
+  const end = useCallback(() => {
+    setStatus((s) => (s === "running" ? "done" : s));
+  }, []);
 
   const onInput = useCallback((v: string) => {
     if (firstKeystrokeAt.current === null) firstKeystrokeAt.current = Date.now();
@@ -204,11 +229,12 @@ export function useSprintRun(config: SprintConfig): SprintApi {
     wrongAttempts,
     liveScore: sprintScore(solved, skipped),
     result,
-    justSolved,
+    landed,
     setInput: onInput,
     submit,
     skip,
     start,
+    end,
     reset,
   };
 }

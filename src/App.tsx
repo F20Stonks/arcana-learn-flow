@@ -30,6 +30,10 @@ import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralLessons from "./pages/IntegralLessons";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
+import OAHub from "./pages/OAHub";
+import OAFirm from "./pages/OAFirm";
+import OARun from "./pages/OARun";
+import OADrill from "./pages/OADrill";
 import IntegralPaper from "./pages/IntegralPaper";
 import IntegralRecognition from "./pages/IntegralRecognition";
 import IntegralValues from "./pages/IntegralValues";
@@ -156,6 +160,14 @@ function AppRoutes() {
       <Route path="/integrals/campaign" element={<DashboardGuard><IntegralCampaign /></DashboardGuard>} />
       {/* Headsolve — think time only, no answer input. See UK_BEE_BURST.md Extension 2, WS-9. */}
       <Route path="/integrals/headsolve" element={<DashboardGuard><IntegralHeadsolve /></DashboardGuard>} />
+
+      {/* OA Arena (src/features/oa) — format reconstructions of trading firms' online
+          assessments. Self-contained like the Integral Arena: no backend, nothing leaves the
+          browser, and every question is generated and graded locally. */}
+      <Route path="/oa" element={<DashboardGuard><OAHub /></DashboardGuard>} />
+      <Route path="/oa/drill" element={<DashboardGuard><OADrill /></DashboardGuard>} />
+      <Route path="/oa/:firmId" element={<DashboardGuard><OAFirm /></DashboardGuard>} />
+      <Route path="/oa/:firmId/:assessmentId" element={<DashboardGuard><OARun /></DashboardGuard>} />
       {/* Pilot viewer for the reference-question corpus — real auth, real data, deliberately not linked
           from any nav yet (direct URL only) until the UX is approved. */}
       <Route path="/reference-questions" element={<ProtectedRoute><BetaGate feature="Reference questions"><ReferenceQuestions /></BetaGate></ProtectedRoute>} />
@@ -210,6 +222,10 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/drills" element={<DrillsHub />} />}
       {import.meta.env.DEV && <Route path="/dev/drills/:drillKey" element={<DrillPlay />} />}
       {import.meta.env.DEV && <Route path="/dev/quant" element={<QuantHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa" element={<OAHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa/drill" element={<OADrill />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa/:firmId" element={<OAFirm />} />}
+      {import.meta.env.DEV && <Route path="/dev/oa/:firmId/:assessmentId" element={<OARun />} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

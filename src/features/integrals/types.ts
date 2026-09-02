@@ -51,6 +51,21 @@ export interface ProblemSource {
  */
 export type ProblemKind = "indefinite" | "definite";
 
+/**
+ * Where a problem came from.
+ *
+ * Two students want two different things from this bank: one is drilling a technique, the other
+ * wants to sit a real competition's set as it was actually posed. The second is only possible if
+ * every problem remembers its paper.
+ */
+export interface ProblemSource {
+  /** The competition, book or course the problem is a transcription of. */
+  name: string;
+  year?: number;
+  /** Round, section or paper within that year, when the source distinguishes them. */
+  round?: string;
+}
+
 export interface Problem {
   id: string;
   kind: ProblemKind;

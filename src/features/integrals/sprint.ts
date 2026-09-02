@@ -60,6 +60,36 @@ export interface SprintConfig {
   seconds: Duration;
 }
 
+const SETUP_KEY = "arcana.integrals.sprint-setup";
+
+/**
+ * The last setup used. Anyone who runs Brutal · 5 min runs it again; making them re-pick both
+ * every visit is a toll on the one mode you are meant to play twice in a row.
+ */
+export function storedSetup(): SprintConfig {
+  const fallback: SprintConfig = { band: "mixed", seconds: 180 };
+  try {
+    const raw = globalThis.localStorage?.getItem(SETUP_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<SprintConfig>;
+    const band = BANDS.some((b) => b.id === parsed.band) ? (parsed.band as BandId) : fallback.band;
+    const seconds = DURATIONS.includes(parsed.seconds as Duration)
+      ? (parsed.seconds as Duration)
+      : fallback.seconds;
+    return { band, seconds };
+  } catch {
+    return fallback;
+  }
+}
+
+export function rememberSetup(config: SprintConfig) {
+  try {
+    globalThis.localStorage?.setItem(SETUP_KEY, JSON.stringify(config));
+  } catch {
+    // No storage, no memory — the sprint still runs.
+  }
+}
+
 /** One key per configuration, so a 60-second warm-up best never competes with a 5-minute brutal. */
 export function configKey(config: SprintConfig): string {
   return `${config.band}-${config.seconds}`;
@@ -94,6 +124,11 @@ export function buildQueue(
 
 const SOLVE_POINTS: Record<Difficulty, number> = { 1: 10, 2: 20, 3: 35, 4: 55, 5: 80 };
 
+/** What one solve pays. Exported so the run can tell you the moment you land it. */
+export function solvePoints(difficulty: Difficulty): number {
+  return SOLVE_POINTS[difficulty];
+}
+
 /** Skipping is allowed and costs a little — otherwise the best strategy is to skip until you get an easy one. */
 export const SKIP_PENALTY = 8;
 
@@ -101,6 +136,12 @@ export interface SprintResult {
   solved: Problem[];
   skipped: number;
   wrongAttempts: number;
+  /**
+   * The ones that got away — skipped, plus whatever was on screen when the clock stopped. The
+   * result screen shows them with their answers, because a sprint you learn nothing from is just
+   * a typing test.
+   */
+  missed: Problem[];
   score: number;
   config: SprintConfig;
 }

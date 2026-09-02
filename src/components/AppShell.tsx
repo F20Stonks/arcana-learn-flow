@@ -35,6 +35,7 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Building2,
   X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -99,6 +100,7 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       items: [
         { label: "Drills", icon: Zap, to: "/drills" },
         { label: "Integrals", icon: Sigma, to: "/integrals" },
+        { label: "Firm OAs", icon: Building2, to: "/oa" },
         { label: "Question bank", icon: Library, to: "/question-bank", soon: true },
         { label: "Resources", icon: BookOpen, to: "/resource-bank", soon: true },
         { label: "Analytics", icon: BarChart3, to: "/analytics", soon: true },

@@ -18,7 +18,7 @@ import DailyIntegral from "@/pages/DailyIntegral";
 import IntegralsHub from "@/pages/IntegralsHub";
 import IntegralTraining, { TrainingTechnique } from "@/pages/IntegralTraining";
 import { dailyProblem, dailyProblems } from "./daily";
-import { getProgress, resetProgress } from "./progress";
+import { getProgress, markLessonRead, resetProgress } from "./progress";
 import { scheduledQueue } from "./queue";
 import { getAttempts } from "./attempts";
 import { problemsForTechnique } from "./problems";
@@ -161,21 +161,65 @@ describe("the hub", () => {
     expect(screen.getByText(/Solved for \d+ points/)).toBeInTheDocument();
   });
 
-  it("lists every technique", () => {
-    at("/integrals/train", <IntegralTraining />, "/integrals/train");
-    expect(screen.getByText("Integration by parts")).toBeInTheDocument();
+  it("lists every technique as its own way in", () => {
+    const { container } = at("/integrals/train", <IntegralTraining />, "/integrals/train");
+    expect(container.querySelector('a[href="/integrals/train/parts"]')).toBeTruthy();
     expect(screen.getByText("Mixed practice")).toBeInTheDocument();
   });
+
+
 });
 
 describe("training", () => {
-  it("opens the lesson and records that it was read", async () => {
+  it("leads with the lesson when it has never been read, and records it once put away", async () => {
     at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
     expect(getProgress().lessonsRead).toEqual([]);
+    // Open on arrival — the whole design is lesson before drill.
+    expect(screen.getByText("When to reach for it")).toBeInTheDocument();
 
+    // Read means read: it is banked when the student closes it, not when it appears on screen.
     fireEvent.click(screen.getByRole("button", { name: /The lesson/i }));
-    await waitFor(() => expect(screen.getByText("When to reach for it")).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("When to reach for it")).toBeNull());
     expect(getProgress().lessonsRead).toContain("parts");
+  });
+
+  it("keeps an already-read lesson out of the way", () => {
+    markLessonRead("parts");
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    expect(screen.queryByText("When to reach for it")).toBeNull();
+    expect(screen.getByRole("button", { name: /The lesson/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("resumes a queue where it was left rather than restarting at the top", async () => {
+    const { unmount } = at(
+      "/integrals/train/parts",
+      <TrainingTechnique />,
+      "/integrals/train/:techniqueId",
+    );
+    const first = screen.getByRole("heading", { level: 1 }).textContent;
+    fireEvent.click(screen.getByRole("button", { name: /^Skip$/ }));
+    const second = document.body.textContent;
+    unmount();
+
+    // Coming back lands on the problem it was left on, not the top of the queue.
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(first);
+    expect(second).toBeTruthy();
+  });
+
+  it("ends the queue instead of silently wrapping to the start", async () => {
+    at("/integrals/train/floor-function", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    const total = Number(/\d+\/(\d+)/.exec(screen.getByText(/\d+\/\d+ solved/).textContent!)![1]);
+    // Walking off the end used to wrap silently back to the first problem, with no sign of it.
+    for (let i = 0; i < total + 1; i++) {
+      const skip = screen.queryByRole("button", { name: /^Skip$/ });
+      if (!skip) break;
+      fireEvent.click(skip);
+    }
+    await waitFor(() => expect(screen.getByText(/End of the/)).toBeInTheDocument());
   });
 
   it("advances through the queue and banks training XP", async () => {

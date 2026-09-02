@@ -8,7 +8,18 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Layers, Shuffle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Layers,
+  PartyPopper,
+  RotateCcw,
+  Shuffle,
+  Target,
+} from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import RunPanel from "@/features/integrals/components/RunPanel";
@@ -16,7 +27,13 @@ import LessonBody from "@/features/integrals/components/LessonBody";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { recordConceptRead } from "@/features/integrals/conceptReview";
-import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
+import {
+  hasSolved,
+  lastPlace,
+  markLessonRead,
+  markPlace,
+  techniqueMastery,
+} from "@/features/integrals/progress";
 import { scheduledQueue } from "@/features/integrals/queue";
 import { getAttempts } from "@/features/integrals/attempts";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
@@ -71,9 +88,10 @@ export default function IntegralTraining() {
             Training
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
-            No clock pressure that matters, no streak at stake. Read the technique, then work through
-            its problems — the queue puts what you haven't solved first. Counters below count solved
-            problems only.{" "}
+            No streak on the line, and you can retry anything as often as you like — though the
+            clock still shapes the XP, so par is worth beating. Read the technique, then work
+            through its problems: the queue puts what you haven't solved first, remembers where you
+            got to, and counts solved problems only.{" "}
             <Link to="/integrals/lessons" className="text-foreground underline underline-offset-2">
               Read the lessons on their own
             </Link>
@@ -252,19 +270,52 @@ export function TrainingTechnique() {
     return problemsForTechnique(techniqueId as TechniqueId);
   }, [isSource, source, mixed, custom, customIds, techniqueId]);
 
+  // Two different selections are two different queues, so they resume separately — otherwise a
+  // custom session would pick up on a problem that is not in it.
+  const queueKey = custom
+    ? `custom:${customIds.join(",")}`
+    : isSource
+      ? `source:${sourceKeyParam}`
+      : techniqueId;
+
   // Deliberately seeded once, on mount: re-sorting as you solve would move the queue out from
   // under you. `scheduledQueue` (not the older `orderQueue`) is what makes a 70-day training block
   // adaptive rather than a walk through the bank in difficulty order — it reads the attempt log for
   // retention decay, per-technique weakness, near-miss priority and a target success band, then
   // interleaves so consecutive problems don't share a technique.
   const [queue] = useState(() => scheduledQueue(pool, progress, getAttempts()));
-  const [index, setIndex] = useState(0);
-  const [lessonOpen, setLessonOpen] = useState(false);
+  // Pick up where this queue was left. Stored as a problem id rather than an index, because the
+  // schedule is re-derived from the attempt log on every visit and an index would drift onto a
+  // different problem between sessions.
+  const [index, setIndex] = useState(() => {
+    const at = queue.findIndex((p) => p.id === lastPlace(progress, queueKey));
+    return at === -1 ? 0 : at;
+  });
+  // The lesson leads, which only works if it is open. A technique already read folds away.
+  const [lessonOpen, setLessonOpen] = useState(() =>
+    technique ? !progress.lessonsRead.includes(technique.id) : false,
+  );
+  const [finished, setFinished] = useState(false);
 
   const problem = queue[index];
   const run = useIntegralRun(problem ?? PROBLEMS[0]);
+  const solvedHere = useMemo(
+    () => queue.filter((p) => hasSolved(progress, p.id)).length,
+    [queue, progress],
+  );
 
-  const next = () => setIndex((i) => (i + 1) % queue.length);
+  useEffect(() => {
+    if (problem) markPlace(queueKey, problem.id);
+  }, [queueKey, problem]);
+
+  const last = index >= queue.length - 1;
+  // Reaching the end is a place you have got to, not a silent wrap back to the first problem.
+  const next = () => (last ? setFinished(true) : setIndex((i) => i + 1));
+  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const unsolvedAfter = () => {
+    const after = queue.findIndex((p, i) => i > index && !hasSolved(progress, p.id));
+    return after !== -1 ? after : queue.findIndex((p) => !hasSolved(progress, p.id));
+  };
 
   // After a correct answer the input is gone and the Next button is the only action. Let a quick
   // Enter press advance the queue without reaching for the mouse.
@@ -277,7 +328,7 @@ export function TrainingTechnique() {
       const active = document.activeElement;
       if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
       e.preventDefault();
-      setIndex((i) => (i + 1) % queue.length);
+      setIndex((i) => (i + 1 >= queue.length ? i : i + 1));
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -288,12 +339,67 @@ export function TrainingTechnique() {
   if (!problem) return <Navigate to="/integrals/train" replace />;
 
   const openLesson = () => {
-    setLessonOpen((v) => !v);
-    if (!lessonOpen && technique) {
+    if (lessonOpen && technique) {
       markLessonRead(technique.id);
       recordConceptRead(technique.id);
     }
+    setLessonOpen((v) => !v);
   };
+
+  if (finished) {
+    const remaining = queue.length - solvedHere;
+    return (
+      <AppShell>
+        <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+          <Link
+            to="/integrals/train"
+            className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> All techniques
+          </Link>
+          <div className="reveal rounded-2xl border border-border bg-card p-6 sm:p-8">
+            <PartyPopper className="h-5 w-5 text-primary" />
+            <h1 className="mt-3 font-display text-[24px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
+              End of the {technique ? technique.name.toLowerCase() : "practice"} queue
+            </h1>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
+              {remaining === 0
+                ? `Every one of the ${queue.length} problems here is beaten. Nothing left to take from this queue.`
+                : `${solvedHere} of ${queue.length} solved — ${remaining} still standing.`}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {remaining > 0 && (
+                <button
+                  onClick={() => {
+                    setFinished(false);
+                    setIndex(Math.max(0, unsolvedAfter()));
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[14px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <Target className="h-4 w-4" /> Back to the unsolved
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setFinished(false);
+                  setIndex(0);
+                }}
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-[14px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                <RotateCcw className="h-4 w-4" /> Start again from the top
+              </button>
+              <Link
+                to="/integrals/train"
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-[14px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                Another technique
+              </Link>
+            </div>
+          </div>
+        </main>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -393,6 +499,31 @@ export function TrainingTechnique() {
             </div>
           }
         />
+
+        {/* Landing on a problem you are not ready for used to mean the only way on was to solve it
+            or reveal it — and there was no way back to the one you had just read the solution to. */}
+        <nav className="reveal mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <button
+            onClick={prev}
+            disabled={index === 0}
+            className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Previous
+          </button>
+          <button
+            onClick={() => {
+              const i = unsolvedAfter();
+              if (i !== -1) setIndex(i);
+            }}
+            disabled={unsolvedAfter() === -1}
+            className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            <Target className="h-3.5 w-3.5" /> Next unsolved
+          </button>
+          <span className="readout text-[12px] tabular-nums text-muted-foreground">
+            {solvedHere}/{queue.length} solved
+          </span>
+        </nav>
       </main>
     </AppShell>
   );

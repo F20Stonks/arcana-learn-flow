@@ -127,16 +127,25 @@ describe("the run", () => {
 });
 
 describe("training", () => {
-  it("marks the lesson disclosure as expandable", async () => {
+  it("marks the lesson disclosure as collapsible, and starts it open when unread", async () => {
     at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
     const toggle = screen.getByRole("button", { name: /The lesson/i });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    // The lesson leads. A disclosure nobody opens is a lesson nobody reads.
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(toggle);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /The lesson/i })).toHaveAttribute(
         "aria-expanded",
-        "true",
+        "false",
       ),
     );
+  });
+
+  it("keeps the queue reachable by keyboard from either end", () => {
+    at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");
+    // On the first problem there is nothing behind you, and the control says so rather than
+    // silently doing nothing.
+    expect(screen.getByRole("button", { name: /Previous/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Skip$/ })).toBeEnabled();
   });
 });

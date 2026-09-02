@@ -35,6 +35,25 @@ export const PAR_SECONDS: Record<Difficulty, number> = { 1: 30, 2: 60, 3: 120, 4
 /** Exported so the history view can grade a day against what that day was worth. */
 export const BASE_POINTS: Record<Difficulty, number> = { 1: 40, 2: 80, 3: 150, 4: 260, 5: 420 };
 
+/** Hints cost 20% of base each, and never more than 60% in total. */
+const HINT_RATE = 0.2;
+const HINT_CAP = 0.6;
+
+function hintFraction(hintsUsed: number): number {
+  return Math.min(HINT_CAP, HINT_RATE * hintsUsed);
+}
+
+/**
+ * What the *next* hint actually costs, given how many have already been taken.
+ *
+ * The button used to read "−20%" for every hint on the ladder, including the fourth and later,
+ * which are free — the penalty is capped by then. Stating a price that is not charged is the same
+ * class of mistake as charging one that was not stated.
+ */
+export function nextHintCost(hintsUsed: number): number {
+  return hintFraction(hintsUsed + 1) - hintFraction(hintsUsed);
+}
+
 export function scoreAttempt(a: AttemptFacts): ScoreBreakdown {
   const base = BASE_POINTS[a.difficulty];
   const par = PAR_SECONDS[a.difficulty];
@@ -43,8 +62,8 @@ export function scoreAttempt(a: AttemptFacts): ScoreBreakdown {
   const speedRatio = Math.max(0, Math.min(1, (2 * par - a.seconds) / (2 * par)));
   const speedBonus = Math.round(base * 0.5 * speedRatio);
 
-  // Hints are meant to be usable, not free: 20% each, but never more than 60% of the base.
-  const hintPenalty = -Math.round(base * Math.min(0.6, 0.2 * a.hintsUsed));
+  // Hints are meant to be usable, not free — but the cost stops climbing at the cap.
+  const hintPenalty = -Math.round(base * hintFraction(a.hintsUsed));
   const attemptPenalty = -Math.round(base * Math.min(0.3, 0.1 * a.wrongAttempts));
 
   const streakMultiplier = a.mode === "daily" ? 1 + 0.05 * Math.min(10, a.streak) : 1;
