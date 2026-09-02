@@ -46,7 +46,14 @@ export default function AssessmentsHub() {
                 {firm.modules.map((module) => (
                   <li key={module.id} className="flex flex-wrap items-center gap-3 py-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-medium text-foreground">{module.name}</p>
+                      <p className="flex items-center gap-2 text-[15px] font-medium text-foreground">
+                        {module.name}
+                        {module.interviewRound && (
+                          <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                            Interview round
+                          </span>
+                        )}
+                      </p>
                       <p className="truncate text-[13px] text-muted-foreground">{module.blurb}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3 font-mono text-[12px] tabular-nums text-muted-foreground">
@@ -75,7 +82,7 @@ export default function AssessmentsHub() {
                 <p className="font-mono text-[11px] text-muted-foreground">
                   Format verified {firm.lastVerified}
                 </p>
-                {firm.modules.length > 1 && (
+                {firm.modules.filter((m) => !m.interviewRound).length > 1 && (
                   <button
                     onClick={() => navigate(`/assessments/${firm.id}/run`)}
                     className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[14px] font-medium text-primary-foreground transition-opacity hover:opacity-90"

@@ -42,7 +42,9 @@ export const optiver: FirmSpec = {
       durationS: 1500,
       negativeMarking: false,
       allowSkip: true,
-      allowBack: true,
+      // Candidate reports establish that sequences questions can be left unanswered; none
+      // establishes that you can navigate back to one. Claim only what is reported.
+      allowBack: false,
       // No reliable published bar for the sequences papers, so none is invented.
       passMark: null,
     }),

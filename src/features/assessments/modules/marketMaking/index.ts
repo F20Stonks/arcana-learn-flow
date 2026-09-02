@@ -102,6 +102,7 @@ export function marketMakingModule(args: MarketMakingModuleArgs): ModuleSpec {
     allowSkip: false,
     allowBack: false,
     calculator: true,
+    interviewRound: true,
     passMark: args.passMark ?? null,
     generate: ({ rng }: GenerateArgs): AssessmentItem => {
       // A single stored seed, not a live rng closure, so the item survives serialization and a

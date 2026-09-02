@@ -51,7 +51,12 @@ function buildSection(module: ModuleSpec, seed: number): AssessmentItem[] {
 
 export function useAssessmentRun({ firm, onlyModuleId, seed }: UseAssessmentRunArgs) {
   const modules = useMemo(
-    () => (onlyModuleId ? firm.modules.filter((m) => m.id === onlyModuleId) : firm.modules),
+    () =>
+      onlyModuleId
+        ? firm.modules.filter((m) => m.id === onlyModuleId)
+        // A full battery is the online assessment, so interview rounds are left out of it. They
+        // stay individually sittable via their own route.
+        : firm.modules.filter((m) => !m.interviewRound),
     [firm, onlyModuleId],
   );
 

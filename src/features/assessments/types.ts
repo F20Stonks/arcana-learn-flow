@@ -98,6 +98,13 @@ export interface ModuleSpec {
   allowBack: boolean;
   /** Whether the real test permits one. Displayed on the instruction screen; not enforceable. */
   calculator: boolean;
+  /**
+   * True for a round that belongs to the firm's interview process rather than its online
+   * assessment — the market-making game, which every firm running it runs live, not as a screen.
+   * Still sittable on its own; excluded from "sit the full battery", because a battery claiming to
+   * be the OA must contain only what a candidate actually sits at the OA stage.
+   */
+  interviewRound?: boolean;
   /** Raw score candidate reports call competitive. null when nothing reliable is published. */
   passMark: number | null;
   generate: (args: GenerateArgs) => AssessmentItem;
