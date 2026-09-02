@@ -440,6 +440,148 @@ export type Database = {
           },
         ]
       }
+      oa_items: {
+        Row: {
+          correct: boolean
+          created_at: string
+          expected: string
+          firm_id: string
+          given: string
+          id: string
+          latency_ms: number | null
+          module_id: string
+          problem_tag: string
+          prompt: string
+          section_id: string
+          user_id: string
+        }
+        Insert: {
+          correct: boolean
+          created_at?: string
+          expected?: string
+          firm_id: string
+          given?: string
+          id?: string
+          latency_ms?: number | null
+          module_id: string
+          problem_tag: string
+          prompt: string
+          section_id: string
+          user_id: string
+        }
+        Update: {
+          correct?: boolean
+          created_at?: string
+          expected?: string
+          firm_id?: string
+          given?: string
+          id?: string
+          latency_ms?: number | null
+          module_id?: string
+          problem_tag?: string
+          prompt?: string
+          section_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "oa_section_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oa_runs: {
+        Row: {
+          abandoned: boolean
+          created_at: string
+          finished_at: string | null
+          firm_id: string
+          id: string
+          spec_version: number
+          started_at: string
+          tab_blur_count: number
+          user_id: string
+        }
+        Insert: {
+          abandoned?: boolean
+          created_at?: string
+          finished_at?: string | null
+          firm_id: string
+          id?: string
+          spec_version?: number
+          started_at?: string
+          tab_blur_count?: number
+          user_id: string
+        }
+        Update: {
+          abandoned?: boolean
+          created_at?: string
+          finished_at?: string | null
+          firm_id?: string
+          id?: string
+          spec_version?: number
+          started_at?: string
+          tab_blur_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      oa_section_results: {
+        Row: {
+          created_at: string
+          duration_s: number
+          id: string
+          items_correct: number
+          items_seen: number
+          items_skipped: number
+          items_wrong: number
+          module_id: string
+          pass_mark: number | null
+          raw_score: number
+          run_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_s?: number
+          id?: string
+          items_correct?: number
+          items_seen?: number
+          items_skipped?: number
+          items_wrong?: number
+          module_id: string
+          pass_mark?: number | null
+          raw_score?: number
+          run_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_s?: number
+          id?: string
+          items_correct?: number
+          items_seen?: number
+          items_skipped?: number
+          items_wrong?: number
+          module_id?: string
+          pass_mark?: number | null
+          raw_score?: number
+          run_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oa_section_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "oa_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       past_papers: {
         Row: {
           board: string
@@ -1640,6 +1782,20 @@ export type Database = {
           correct_count: number | null
           drill_key: string | null
           last_seen: string | null
+          problem_tag: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      oa_weak_spots: {
+        Row: {
+          accuracy: number | null
+          attempts: number | null
+          avg_latency_ms: number | null
+          correct_count: number | null
+          firm_id: string | null
+          last_seen: string | null
+          module_id: string | null
           problem_tag: string | null
           user_id: string | null
         }

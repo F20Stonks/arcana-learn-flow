@@ -29,6 +29,8 @@ import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralSprint from "./pages/IntegralSprint";
 import IntegralProgress from "./pages/IntegralProgress";
 import DrillPlay from "./pages/DrillPlay";
+import AssessmentsHub from "./pages/AssessmentsHub";
+import AssessmentRun from "./pages/AssessmentRun";
 import NotFound from "./pages/NotFound";
 import DevScenes from "./pages/DevScenes";
 // Lazy so pdf.js (~1.2 MB of engine, plus its worker) is fetched when someone actually opens a
@@ -106,6 +108,12 @@ function AppRoutes() {
       {/* Timed practice games sharing one drill engine (src/features/drills) — Zetamac++ first. */}
       <Route path="/drills" element={<DashboardGuard><DrillsHub /></DashboardGuard>} />
       <Route path="/drills/:drillKey" element={<DashboardGuard><DrillPlay /></DashboardGuard>} />
+      {/* Quant OA Arena (src/features/assessments) — timed replications of the online assessments
+          quant trading firms set. The run routes deliberately sit outside AppShell: a real
+          assessment has no sidebar, no nav and no XP counter, and dropping them is most of what
+          makes the replication land. See docs/quant-assessment-arena-scope.md. */}
+      <Route path="/assessments" element={<DashboardGuard><AssessmentsHub /></DashboardGuard>} />
+      <Route path="/assessments/:firmId/:moduleId" element={<DashboardGuard><AssessmentRun /></DashboardGuard>} />
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
           training room. Self-contained: its own grader, problem bank and progression. */}
       <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
@@ -144,6 +152,8 @@ function AppRoutes() {
           and a finished onboarding — none of which a local dev run has. These unguarded twins exist
           so the pages can be opened and screenshotted while working on them. DEV only: the whole
           block is dead code Vite strips from a production bundle. */}
+      {import.meta.env.DEV && <Route path="/dev/assessments" element={<AssessmentsHub />} />}
+      {import.meta.env.DEV && <Route path="/dev/assessments/:firmId/:moduleId" element={<AssessmentRun />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals" element={<IntegralsHub />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/daily" element={<DailyIntegral />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/sprint" element={<IntegralSprint />} />}
