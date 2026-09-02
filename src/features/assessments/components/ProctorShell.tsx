@@ -29,21 +29,16 @@ export default function ProctorShell({ firm, onlyModuleId, onExit }: Props) {
   const run = useAssessmentRun({ firm, onlyModuleId });
   const [confirmingExit, setConfirmingExit] = useState(false);
 
-  // Written once, when the battery seals. Abandoned runs are still real data — the sections
-  // already sat happened — so they are saved and flagged rather than dropped.
+  // Written once, when the battery seals. Abandoned runs are still real data — the sections already
+  // sat happened, and so did the questions answered in the one walked out of — so they are saved
+  // and flagged rather than dropped. Nothing here awaits the write: a candidate who has just spent
+  // eight minutes on a test sees their debrief whether or not Supabase answered.
   useEffect(() => {
     if (run.status !== "finished" || !run.result || !user) return;
-    let cancelled = false;
-    const abandoned = run.result.sections.length < run.modules.length;
-    saveRun(user.id, run.result, abandoned).catch(() => {
-      /* saveRun already warns; the debrief must render either way. */
+    saveRun(user.id, run.result, run.abandoned).catch(() => {
+      /* saveRun already warns; the debrief renders either way. */
     });
-    return () => {
-      cancelled = true;
-      void cancelled;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run.status, run.result, user]);
+  }, [run.status, run.result, run.abandoned, user]);
 
   if (run.status === "instructions") {
     if (!run.module) return null;

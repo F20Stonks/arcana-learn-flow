@@ -4,12 +4,25 @@
  * Explicit imports rather than a glob, matching DRILL_REGISTRY in src/features/drills/registry.ts:
  * a firm that is not listed here does not exist, which is easier to reason about than a directory
  * scan and keeps the bundle honest.
+ *
+ * Listed in the order they appear on the hub — the speed batteries first, since those are the
+ * screens most candidates meet first and the ones this feature replicates most exactly.
  */
 import type { FirmSpec, ModuleSpec } from "../types";
 import { optiver } from "./optiver";
+import { janeStreet } from "./janeStreet";
+import { flowTraders } from "./flowTraders";
+import { akuna } from "./akuna";
+import { allOptions } from "./allOptions";
+import { imc } from "./imc";
 
 export const FIRM_REGISTRY: Record<string, FirmSpec> = {
-  optiver,
+  [optiver.id]: optiver,
+  [janeStreet.id]: janeStreet,
+  [flowTraders.id]: flowTraders,
+  [akuna.id]: akuna,
+  [allOptions.id]: allOptions,
+  [imc.id]: imc,
 };
 
 export const FIRM_LIST = Object.values(FIRM_REGISTRY);

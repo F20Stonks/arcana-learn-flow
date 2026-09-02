@@ -137,8 +137,8 @@ export const FLOW_TRADERS_PROFILE: ArithmeticProfile = {
 /**
  * All Options. Candidate reports don't distinguish its arithmetic mix from Optiver's own 80-in-8,
  * so this mirrors OPTIVER_PROFILE's weights value-for-value rather than guessing a difference that
- * isn't reported. It gets its own id anyway, so the source-filter work in CLAUDE.md's standing
- * directive 5(b) can offer "All Options" as its own set even though the mix underneath is the same.
+ * isn't reported. It keeps its own id anyway, so the firm stays a first-class entry a candidate can
+ * pick and score against separately even though the mix underneath is the same.
  */
 export const ALL_OPTIONS_PROFILE: ArithmeticProfile = {
   id: "all-options-math-test",

@@ -65,6 +65,7 @@ export function useAssessmentRun({ firm, onlyModuleId, seed }: UseAssessmentRunA
   const [timeLeftMs, setTimeLeftMs] = useState(0);
   const [itemTimeLeftMs, setItemTimeLeftMs] = useState<number | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [abandoned, setAbandoned] = useState(false);
 
   const sectionsRef = useRef<SectionResult[]>([]);
   const answersRef = useRef<Record<number, Answer>>({});
@@ -80,17 +81,25 @@ export function useAssessmentRun({ firm, onlyModuleId, seed }: UseAssessmentRunA
 
   const module: ModuleSpec | undefined = modules[sectionIndex];
 
-  /** Unanswered items — reached or not — are recorded as skipped and score zero. */
+  /**
+   * Unanswered items — reached or not — are recorded as skipped and score zero.
+   *
+   * Choice items are graded on the choice *id* but recorded as the *label*. On a multiple-choice
+   * paper `answer` is an opaque id like "opt-2", and a debrief that told a candidate they answered
+   * "opt-1" where "opt-3" was wanted would be useless — as would the same strings sitting in
+   * oa_items. Grading happens first, on the id; only the record keeps what the human actually saw.
+   */
   const collectResults = useCallback((mod: ModuleSpec, list: AssessmentItem[]): ItemResult[] =>
     list.map((item, index) => {
       const answer = answersRef.current[index];
       const check = mod.check ?? defaultCheck;
+      const shown = (value: string) => item.choices?.find((c) => c.id === value)?.label ?? value;
       return {
         itemId: item.id,
         tag: item.tag,
         prompt: item.prompt,
-        given: answer?.given ?? "",
-        expected: item.answer,
+        given: answer ? shown(answer.given) : "",
+        expected: shown(item.answer),
         correct: answer ? check(item, answer.given) : false,
         skipped: !answer,
         latencyMs: answer?.latencyMs ?? 0,
@@ -233,11 +242,25 @@ export function useAssessmentRun({ firm, onlyModuleId, seed }: UseAssessmentRunA
     setStatus("instructions");
   }, []);
 
-  /** Abandoning mid-run still produces a result — the sections already sat are real. */
+  /**
+   * Abandoning mid-run still produces a result — the sections already sat are real, and so are the
+   * questions answered in the one being abandoned. That live section has to be sealed here: the
+   * exit dialog promises a debrief for the questions already answered, and finishing without
+   * scoring the section in progress would silently drop every one of them.
+   */
   const abandon = useCallback(() => {
     clearInterval(intervalRef.current);
+    const mod = modules[sectionIndex];
+    if (status === "running" && mod) {
+      const durationS = Math.round((Date.now() - sectionStartRef.current) / 1000);
+      sectionsRef.current = [
+        ...sectionsRef.current,
+        scoreSection(mod, collectResults(mod, itemsRef.current), durationS),
+      ];
+    }
+    setAbandoned(true);
     setStatus("finished");
-  }, []);
+  }, [status, modules, sectionIndex, collectResults]);
 
   // Tab-switching is tracked because G-Research tracks it; surfacing the count in the debrief is
   // part of replicating the experience rather than a policing mechanism.
@@ -264,6 +287,8 @@ export function useAssessmentRun({ firm, onlyModuleId, seed }: UseAssessmentRunA
     timeLeftMs,
     itemTimeLeftMs,
     result,
+    /** True when the candidate walked out rather than running the clock down. */
+    abandoned,
     seed: runSeed,
     /** Answered so far in this section — shown as "12 / 80", never as a score. */
     answeredCount: Object.keys(answers).length,
