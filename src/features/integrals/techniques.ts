@@ -1099,6 +1099,7 @@ export const TECHNIQUES: Technique[] = [
       "Odd integrand on [-a, a]: the answer is 0, no work required.",
       "Even integrand on [-a, a]: use 2\\int_0^a.",
       "King's rule: \\int_0^a f(x)\\,dx = \\int_0^a f(a-x)\\,dx. Add the two and watch the integrand collapse.",
+      "The general reflection, for bounds that don't start at 0: \\int_a^b f(x)\\,dx = \\int_a^b f(a+b-x)\\,dx. Same move, same proof (substitute u=a+b-x, which maps the interval onto itself and flips the bounds against the minus sign from du) — the a=0 case is just the one you meet first. Reach for it whenever the interval is \\left[a,b\\right] rather than \\left[0,a\\right]: reflecting about the MIDPOINT \\tfrac{a+b}2 is what makes the two copies add to something symmetric.",
       "On [0, \\pi], \\sin(\\pi - x) = \\sin x while \\cos(\\pi-x) = -\\cos x — that asymmetry is what the trick exploits.",
     ],
     example: SYMMETRY_EXAMPLES[0],
@@ -1113,6 +1114,19 @@ export const TECHNIQUES: Technique[] = [
       hint: "Apply king's rule with a=\\pi (using \\sin(\\pi-x)=\\sin x and \\cos(\\pi-x)=-\\cos x), add the two versions of the integral, then finish the leftover \\pi\\int f(x)\\,dx with u=\\cos x.",
     },
     completions: [
+      {
+        setup: [
+          "I=\\int_2^4\\frac{\\ln x}{\\ln x+\\ln(6-x)}\\,dx. The interval doesn't start at 0, so the a=0 form of King's rule doesn't apply directly — use the general reflection about the midpoint, x\\mapsto a+b-x=6-x, which maps \\left[2,4\\right] onto itself.",
+          "That gives a second expression for the SAME number: I=\\int_2^4\\frac{\\ln(6-x)}{\\ln(6-x)+\\ln x}\\,dx. Neither is any easier alone — the denominators are identical, and neither numerator has an elementary antiderivative.",
+        ],
+        blank: "Add the two expressions for I and finish. What is 2I, and hence I?",
+        answer:
+          "Adding them puts both fractions over the common denominator \\ln x+\\ln(6-x), and the numerators sum to exactly that denominator: 2I=\\int_2^4\\frac{\\ln x+\\ln(6-x)}{\\ln x+\\ln(6-x)}\\,dx=\\int_2^41\\,dx=2. So I=1 — with no antiderivative of the original integrand ever written down.",
+        integrandExpr: "log(x)/(log(x)+log(6-x))",
+        resultExpr: "1",
+        domain: [2, 4],
+        kind: "definite",
+      },
       {
         setup: [
           "\\int_{-3}^3\\frac{x^5}{x^4+1}\\,dx — check parity: f(-x)=\\frac{(-x)^5}{(-x)^4+1}=\\frac{-x^5}{x^4+1}=-f(x) — the integrand is odd (an odd power on top, an even one on the bottom, and odd/even is odd).",
