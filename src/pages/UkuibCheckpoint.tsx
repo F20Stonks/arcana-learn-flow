@@ -186,6 +186,7 @@ export default function UkuibCheckpoint() {
             verdict={verdict}
             disabled={verdict !== null}
             problem={problem}
+            hideSubmit
           />
           {verdict && (
             <p className="text-[13.5px] text-muted-foreground">
