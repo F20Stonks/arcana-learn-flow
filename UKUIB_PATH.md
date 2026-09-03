@@ -339,3 +339,35 @@ into `techniques.ts` / `problems.ts` / `types.ts` happens in WS-E, by one writer
     `ALL_IDS.length` count guard in `techniqueMap.test.ts` from 21 to 27. That count guard is
     *designed* to fail when the curriculum grows; updating it is the intended maintenance, not a
     weakened assertion.
+
+- 2026-09-03 (continued): **All six syllabus lessons wired in** (commit `cbee34a`) via a new
+  `LESSON_ONLY_TECHNIQUES` list — teachable, deliberately outside the drill curriculum `TECHNIQUES`
+  until each has a real practice pool (forcing them in now would mean either invented problems,
+  which standing directive #2 forbids, or weakening the "every technique has 5+ problems" invariant
+  `problems.test.ts` depends on). `lessonExamples.test.ts`/`mathText.test.ts` now sweep the union
+  (`ALL_LESSONS`), so unrendered LaTeX in an unpractised lesson still fails loudly.
+  - **Direct product feedback acted on** (commit `843d9ce`): the `recognise` ("which technique
+    cracks this?") exercise was cut from every lesson shape — guessing a label before solving
+    anything teaches guessing, not integration. Slots redistributed into `complete`/`solve`. The
+    exercise type and its grader stay in `exercises.ts` (the standalone "Name the weapon" drill
+    still uses the same distractor logic), only the lesson `SHAPES` stopped asking for it.
+    Re-verified end to end against the real dev server after the change: full lesson completes
+    correctly under the new shape, zero console errors.
+  - **All five mining agents hit a shared session rate limit** (resets 3:20pm UTC) mid-run. Two had
+    already written real, verified content to disk before being killed — `round1_2022.ts` (18
+    problems, with a careful cross-document duplicate map worked out across the four overlapping
+    2022 papers before mining) and `round3.ts` (42 problems from the 2024 Round 3 answer-key set).
+    **Independently re-verified all 60 myself** with `harness.local/extractbank.ts` +
+    `harness.local/verify.ts` before committing — never trusted an agent's own "all verified" report
+    without re-deriving it from the file on disk. All 60 pass with real margin; structural checks
+    (duplicate ids, missing steps/hints/source, definite problems without bounds, a `round` that
+    looks like a per-problem citation locator) all clean.
+  - Full suite: **2597/2597 passing across 48 files** (was 2487 at the start of this whole effort).
+  - **Next**: relaunch the mining agents once the rate limit clears (2021 Round 1, the remainder of
+    the 2022 family, 2023/2024 Round 1, and 2025/Qualifier/Virtual are all still unmined or
+    partially mined), then WS-E's remaining piece — `techniqueMap.ts` placement for the six new
+    technique ids and the `ALL_IDS.length` guard bump from 21 to 27 (deferred until the six either
+    get a real drill pool or a deliberate call is made on whether a lesson-only technique belongs in
+    that map at all — it's currently keyed to `TECHNIQUES`, not `ALL_LESSONS`, on purpose per its own
+    header comment, and widening that scope is a judgment call worth making deliberately rather than
+    as a side effect of an unrelated commit).
