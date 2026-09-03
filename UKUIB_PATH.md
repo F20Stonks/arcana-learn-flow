@@ -287,3 +287,45 @@ into `techniques.ts` / `problems.ts` / `types.ts` happens in WS-E, by one writer
   to text (`pymupdf`; poppler is not installed in this sandbox), ~464 numbered problems inventoried,
   and the 2024 R3 set identified as the only material carrying printed solutions. Baseline
   reproduced before any edit: 2487/2487 passing across 44 files.
+
+- 2026-09-03: **WS-A (curriculum engine) and WS-B (the UI section) are shipped.** Commits `6f78f19`
+  (engine, 72 tests), `34c603b` (path, skill page, lesson player, checkpoint, routes, nav entry),
+  `83f218b` (three bugs the browser walkthrough caught), `b6c7d53` (a numeric guard for the Leibniz
+  lesson). Plus `c6f9920` and the Euler reflection lesson inside `34c603b` — **four of the six
+  syllabus-gap lessons are written and verified**: `leibniz-rule`, `series-swap`, `named-series`,
+  `euler-reflection`. `sine-product` and `euler-mascheroni` are in flight.
+  - Every lesson's arithmetic is machine-checked before it ships. The integral claims go through
+    `harness.local/verify.ts`, which mirrors `problems.test.ts` exactly (same `normalize()`, same
+    five-point difference, same smoothstep quadrature, same tolerances) — 15 claims across the four
+    lessons, all passing with three orders of magnitude of margin. The Leibniz lesson's `d/dt`
+    claims cannot go through that harness by shape, so they get their own permanent test
+    (`lessons/leibnizRule.test.ts`) that finite-differences a numerically-integrated `F(t)`.
+  - **The browser walkthrough earned its place.** Driving one real lesson end to end in Chromium
+    found three things no unit test could: multiple-choice feedback colours that never rendered
+    (`.glass-card` sets the `border`/`background` shorthands, which beat any Tailwind
+    border-color/background-color utility; and Tailwind's arbitrary-value parser does not reliably
+    handle a nested `color-mix()` inside a shadow — both failures silent); two Check buttons on one
+    screen; and completion exercises that asked for a sub-step while grading the whole closed form.
+    All three fixed. Final run: lesson completed correctly, crown awarded, 22 XP banked, both solves
+    landing in the shared attempt log as mode `"ukuib"`, next skill unlocked, zero console or page
+    errors.
+  - **Tooling notes for whoever is next.** `harness.local/` is gitignored (`*.local`) and holds the
+    whole verification kit: `verify.ts` (the candidate gate), `render.ts` (strict-mode KaTeX sweep
+    over a lesson module), `extract.ts` (pull a lesson's checkable claims into a candidates file),
+    the two agent briefs, and `walk.mjs` (the Playwright walkthrough). The dev server needs
+    `--host 127.0.0.1` (the default `::` bind fails in this sandbox). In-page links point at the
+    guarded `/ukuib/*` routes, so a walkthrough must drive the `/dev/` twins directly and assert on
+    hrefs rather than clicking through. `npx tsc --noEmit` at the repo root is still a no-op — use
+    `-p tsconfig.app.json`.
+  - **One pre-existing flake worth knowing about, not caused by this work:**
+    `src/features/oa/oaPage.test.tsx > the hub > lists the firms…` times out at the default 5000ms
+    when the machine is loaded (it ran five mining agents concurrently). In isolation it passes in
+    2.5s — which is half the budget, so it is genuinely close to the line. Left alone: it is outside
+    this task's scope, and the honest fix is a longer timeout on that test, which is its owner's
+    call.
+  - **Next:** WS-C's last two lessons, WS-D (the content seed — agents are working the 2024 R3 set,
+    2021 Round 1 and the 2022 family now), then WS-E: aggregate `lessons/*` into `techniques.ts`,
+    the new banks into `problems.ts`, place all six new ids in `techniqueMap.ts`, and update the
+    `ALL_IDS.length` count guard in `techniqueMap.test.ts` from 21 to 27. That count guard is
+    *designed* to fail when the curriculum grows; updating it is the intended maintenance, not a
+    weakened assertion.
