@@ -6,6 +6,12 @@
  * `whenToUse` — the recognition cue — and only then gives the recipe.
  */
 import type { Technique, TechniqueId, WorkedExample } from "./types";
+import { LeibnizRule } from "./lessons/leibnizRule";
+import { SeriesSwap } from "./lessons/seriesSwap";
+import { NamedSeries } from "./lessons/namedSeries";
+import { EulerReflection } from "./lessons/eulerReflection";
+import { EulerMascheroni } from "./lessons/eulerMascheroni";
+import { SineProduct } from "./lessons/sineProduct";
 
 // ── graduated worked examples ─────────────────────────────────────────────────────────────────
 //
@@ -1777,8 +1783,37 @@ export const TECHNIQUES: Technique[] = [
   },
 ];
 
+/**
+ * The six lessons that complete the published UKUIB syllabus (see UKUIB_PATH.md §1), kept separate
+ * from TECHNIQUES on purpose.
+ *
+ * TECHNIQUES is the DRILL curriculum: every entry has a practice pool behind it, and a good deal of
+ * this feature depends on that — problems.test.ts requires at least five problems each, the
+ * recognition drill draws its distractors from it, headsolve ranks every one of them, progress.ts
+ * tracks mastery and a badge per entry. These six have no bank of their own yet, and forcing them
+ * into that list would mean either five invented problems apiece (which standing directive #2
+ * forbids) or weakening an invariant that is doing real work.
+ *
+ * A technique can be worth TEACHING before it has a pool to drill. That is exactly the situation
+ * here: the syllabus names all six, so the course must teach them, and the UKUIB course draws their
+ * practice from the closest existing pool until they have their own (see `Skill.practicePool` in
+ * ukuib/curriculum.ts). Promoting one is then a one-line move: delete it from here, add it to
+ * TECHNIQUES, and the ordinary training room picks it up.
+ */
+export const LESSON_ONLY_TECHNIQUES: Technique[] = [
+  LeibnizRule,
+  SeriesSwap,
+  NamedSeries,
+  EulerReflection,
+  EulerMascheroni,
+  SineProduct,
+];
+
+/** Every lesson this app can render, drillable or not. What a reader can read. */
+export const ALL_LESSONS: Technique[] = [...TECHNIQUES, ...LESSON_ONLY_TECHNIQUES];
+
 export const TECHNIQUE_BY_ID: Record<TechniqueId, Technique> = Object.fromEntries(
-  TECHNIQUES.map((t) => [t.id, t]),
+  ALL_LESSONS.map((t) => [t.id, t]),
 ) as Record<TechniqueId, Technique>;
 
 export function techniqueName(id: TechniqueId): string {

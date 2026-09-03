@@ -17,7 +17,7 @@ import katex from "katex";
 import { parse } from "./mathEngine";
 import { normalize } from "./answer";
 import { toMathMode } from "./mathText";
-import { TECHNIQUES } from "./techniques";
+import { ALL_LESSONS } from "./techniques";
 import type { Completion, WorkedExample } from "./types";
 
 // strict:"error" turns KaTeX's warnings (stray unicode, bad spacing) into failures too — identical
@@ -83,8 +83,10 @@ function quadrature(f: (x: number) => number | null, a: number, b: number, n = 4
   return (total / n) * (b - a);
 }
 
+// ALL_LESSONS, not TECHNIQUES: the six syllabus lessons that have no drill pool yet are still
+// lessons a student reads, and unrendered LaTeX in one is exactly as broken there as anywhere else.
 describe("lesson prose renders", () => {
-  it.each(TECHNIQUES.map((t) => [t.id, t] as const))("%s", (_id, t) => {
+  it.each(ALL_LESSONS.map((t) => [t.id, t] as const))("%s", (_id, t) => {
     expect(renders(t.whenToUse)).toBe(true);
     if (t.intuition) expect(renders(t.intuition)).toBe(true);
     if (t.prerequisites) for (const p of t.prerequisites) expect(renders(p)).toBe(true);
@@ -123,7 +125,7 @@ interface Gradeable {
   ex: WorkedExample & Required<Pick<WorkedExample, "integrandExpr" | "resultExpr" | "domain" | "kind">>;
 }
 
-const gradeable: Gradeable[] = TECHNIQUES.flatMap((t) =>
+const gradeable: Gradeable[] = ALL_LESSONS.flatMap((t) =>
   (t.examples ?? [t.example])
     .map((ex, i) => ({ label: `${t.id}#${i}`, ex }))
     .filter(
@@ -183,7 +185,7 @@ interface GradeableCompletion {
 // wrote (the exception would be a completion whose gap is a qualitative or algebraic-identity step
 // rather than a final closed form — none exist yet, so this set is expected to track completions.ts
 // one-to-one for now).
-const gradeableCompletions: GradeableCompletion[] = TECHNIQUES.flatMap((t) =>
+const gradeableCompletions: GradeableCompletion[] = ALL_LESSONS.flatMap((t) =>
   (t.completions ?? [])
     .map((c, i) => ({ label: `${t.id}#${i}`, c }))
     .filter(
