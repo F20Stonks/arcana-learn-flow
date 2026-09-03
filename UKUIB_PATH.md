@@ -85,6 +85,9 @@ All deterministic, all graded locally — **no model call at runtime**, per stan
    example stepped through one beat at a time. Not scored; "Got it" advances.
 2. **`recognise`** — "which technique cracks this?", four options. Reuses `recognition.ts`'s
    `distractorsFor`, which already prefers genuinely confusable siblings via `techniqueMap.ts`.
+   **Not used by any default lesson shape** (see the note below) — the type and grader stay in
+   `exercises.ts` for the recognition drill and any future shape that wants it, but lessons don't
+   ask for it.
 3. **`complete`** — a worked solution with the final move blanked out; the student supplies it.
    Reuses the `Completion` records added in WS-10 and grades with `answer.ts`.
 4. **`order`** — the beats of a method arrived shuffled; tap them into the right sequence. Built
@@ -98,14 +101,21 @@ All deterministic, all graded locally — **no model call at runtime**, per stan
 
 | Crown | Shape | Difficulty band |
 |---|---|---|
-| 0 → 1 | `teach`, 2× `recognise`, 2× `order`/`complete`, 2× `solve` | 1–2 |
-| 1 → 2 | 1× `recognise`, 2× `complete`, 4× `solve` | 2–3 |
-| 2 → 3 | 1× `value`, 5× `solve`, 1 interleaved review from an earlier skill | 3–4 |
-| 3 → 4 | 6× `solve`, 2 interleaved reviews | 4–5 |
+| 0 → 1 | `teach`, 1× `order`, 2× `complete`, 3× `solve` | 1–2 |
+| 1 → 2 | 2× `complete`, 5× `solve` | 2–3 |
+| 2 → 3 | 1× `value`, 1× `complete`, 5× `solve`, 1 interleaved review from an earlier skill | 3–4 |
+| 3 → 4 | 1× `value`, 6× `solve`, 2 interleaved reviews | 4–5 |
 | 4 → 5 ("legendary") | 8× `solve`, no hints, a clock | 4–5 |
 
 Scaffolding falls away as the crown rises — that progression *is* the pedagogy, and it's the thing
 a flat "pick a technique and grind" training room can't express.
+
+**Revised after real usage feedback**: the first cut of this table had 2× and then 1× `recognise`
+("which technique cracks this?") at the two lowest crowns. Feedback was direct — guessing a label
+before solving anything teaches guessing, not integration — so `recognise` was cut from every
+lesson shape and its slots redistributed into `complete`/`solve`, the two exercise types that
+actually make a student work the problem. See `lesson.ts`'s own comment on `SHAPES` for the same
+note in the code.
 
 ### Hearts — the one deliberately un-Duolingo decision
 

@@ -2,9 +2,19 @@
  * Lesson assembly — turning (skill, crown, seed) into the ~8 exercises a student actually sees.
  *
  * The shape of a lesson is a function of its crown level, and that progression IS the pedagogy:
- * crown 0 teaches, then checks recognition, then asks for the last step of a worked solution, then
- * asks for two whole ones. By crown 4 there is no tip card, no hint, and nothing but problems. A
- * flat "pick a technique and grind" room cannot express that, which is why this module exists.
+ * crown 0 teaches, then asks for the last step of a worked solution, then asks for whole ones. By
+ * crown 4 there is no tip card, no hint, and nothing but problems. A flat "pick a technique and
+ * grind" room cannot express that, which is why this module exists.
+ *
+ * `SHAPES` deliberately never uses the `recognise` exercise kind ("which technique cracks this?",
+ * a multiple-choice guess). It shipped in the first cut of this course and was cut after real
+ * feedback: asking a student to guess a label before they have solved anything teaches guessing,
+ * not integration — the thing this course exists to build is the ability to actually work the
+ * problem, which `complete` and `solve` test directly. The exercise TYPE and its grader stay in
+ * `exercises.ts` (recognition.ts's own "Name the weapon" drill still uses the same underlying
+ * distractor logic, and `gradeExercise` still handles it) — only the lesson SHAPES stopped asking
+ * for it. `LessonShape.recognise` stays in the type as a knob rather than being deleted, in case a
+ * future shape wants a small dose of it once a student has already solved several of a kind.
  *
  * Pure: no storage, no clock, no React. Seeded, so the same lesson can be replayed exactly — which
  * matters when a student fails a lesson and retries it, and matters more when a test wants to
@@ -42,8 +52,8 @@ export interface LessonShape {
 }
 
 export const SHAPES: LessonShape[] = [
-  { teach: true, recognise: 2, order: 1, complete: 1, value: 0, solve: 2, band: [1, 2], review: 0, hintsAllowed: true },
-  { teach: false, recognise: 1, order: 0, complete: 2, value: 0, solve: 4, band: [2, 3], review: 0, hintsAllowed: true },
+  { teach: true, recognise: 0, order: 1, complete: 2, value: 0, solve: 3, band: [1, 2], review: 0, hintsAllowed: true },
+  { teach: false, recognise: 0, order: 0, complete: 2, value: 0, solve: 5, band: [2, 3], review: 0, hintsAllowed: true },
   { teach: false, recognise: 0, order: 0, complete: 1, value: 1, solve: 5, band: [3, 4], review: 1, hintsAllowed: true },
   { teach: false, recognise: 0, order: 0, complete: 0, value: 1, solve: 6, band: [4, 5], review: 2, hintsAllowed: false },
   { teach: false, recognise: 0, order: 0, complete: 0, value: 0, solve: 8, band: [4, 5], review: 2, hintsAllowed: false },

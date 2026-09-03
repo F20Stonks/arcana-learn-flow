@@ -96,14 +96,14 @@ describe("assembly", () => {
     expect(plan.hearts).toBe(HEARTS_PER_LESSON);
   });
 
-  it("gives every recognise exercise four options containing the right one exactly once", () => {
-    const plan = planLesson(BASE, 3, ctx());
-    const recs = plan.exercises.filter((e) => e.kind === "recognise");
-    expect(recs.length).toBeGreaterThan(0);
-    for (const r of recs) {
-      const ex = r as Extract<Exercise, { kind: "recognise" }>;
-      expect(ex.options).toHaveLength(4);
-      expect(ex.options.filter((o) => o === ex.answer)).toHaveLength(1);
+  it("never ships a recognise exercise — cut after real feedback that guessing a label before solving anything teaches guessing, not integration", () => {
+    for (const skill of SKILLS) {
+      for (let crown = 0; crown < MAX_CROWN; crown++) {
+        const plan = planLesson(skill.id, 3, ctx({ [skill.id]: crown }));
+        expect(plan.exercises.some((e) => e.kind === "recognise"), `${skill.id} crown ${crown}`).toBe(
+          false,
+        );
+      }
     }
   });
 
