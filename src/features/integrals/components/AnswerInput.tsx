@@ -14,6 +14,12 @@ interface Props {
   /** The problem being answered — sets the placeholder, and which palette keys make sense. */
   problem?: Problem;
   placeholder?: string;
+  /**
+   * Drop the built-in Check button. For a surface that already owns a single primary action of its
+   * own — the UKUIB lesson player's footer, which has to double as "Continue" once an answer is in
+   * — two Check buttons on one screen is a worse affordance than one. Enter still submits.
+   */
+  hideSubmit?: boolean;
 }
 
 /** A definite integral wants a number; an indefinite one wants a function of x. */
@@ -50,6 +56,7 @@ export default function AnswerInput({
   disabled = false,
   problem,
   placeholder,
+  hideSubmit = false,
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const pendingCaret = useRef<number | null>(null);
@@ -134,17 +141,19 @@ export default function AnswerInput({
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          className={`w-full rounded-xl border-2 bg-card py-3.5 pl-4 pr-24 font-mono text-[17px] text-foreground outline-hidden transition-colors placeholder:text-muted-foreground/40 disabled:opacity-60 ${
-            bad ? "border-destructive/50" : "border-border focus:border-primary/60"
-          }`}
+          className={`w-full rounded-xl border-2 bg-card py-3.5 pl-4 font-mono text-[17px] text-foreground outline-hidden transition-colors placeholder:text-muted-foreground/40 disabled:opacity-60 ${
+            hideSubmit ? "pr-4" : "pr-24"
+          } ${bad ? "border-destructive/50" : "border-border focus:border-primary/60"}`}
         />
-        <button
-          onClick={onSubmit}
-          disabled={disabled || !value.trim()}
-          className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-30"
-        >
-          Check <CornerDownLeft className="h-3.5 w-3.5" />
-        </button>
+        {!hideSubmit && (
+          <button
+            onClick={onSubmit}
+            disabled={disabled || !value.trim()}
+            className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-30"
+          >
+            Check <CornerDownLeft className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       <div className="flex items-start justify-between gap-3">

@@ -61,7 +61,16 @@ function ProgressBar({ value, total }: { value: number; total: number }) {
   );
 }
 
-/** The tappable card shape every multiple-choice option uses. */
+/**
+ * The tappable card shape every multiple-choice option uses.
+ *
+ * The state colours are inline styles, not Tailwind classes, on purpose. Two things bite here:
+ * `.glass-card` sets the `border` and `background` SHORTHANDS, which beat any border-color /
+ * background-color utility whatever the class order; and Tailwind's arbitrary-value parser is
+ * unreliable for a nested `color-mix(...)` inside a shadow. Both failures are silent — the button
+ * renders, it just never turns green — and a student who cannot see which answer was right learns
+ * nothing from getting it wrong. Inline styles always win and are unambiguous.
+ */
 function OptionButton({
   selected,
   locked,
@@ -76,20 +85,33 @@ function OptionButton({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  const tone =
+  const style: React.CSSProperties =
     state === "right"
-      ? "border-[var(--success)] bg-[color-mix(in_oklab,var(--success)_14%,transparent)] text-foreground"
+      ? {
+          borderColor: "var(--success)",
+          background: "color-mix(in oklab, var(--success) 24%, var(--card))",
+          boxShadow: "0 0 26px -6px color-mix(in oklab, var(--success) 75%, transparent)",
+        }
       : state === "wrong"
-        ? "border-[var(--status-red)] bg-[color-mix(in_oklab,var(--status-red)_12%,transparent)] text-foreground"
+        ? {
+            borderColor: "var(--status-red)",
+            background: "color-mix(in oklab, var(--status-red) 22%, var(--card))",
+          }
         : selected
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border bg-card text-foreground hover:border-primary/45";
+          ? {
+              borderColor: "var(--primary)",
+              background: "color-mix(in oklab, var(--primary) 14%, var(--card))",
+              boxShadow: "0 0 20px -8px color-mix(in oklab, var(--primary) 85%, transparent)",
+            }
+          : { borderColor: "var(--border)", background: "var(--card)" };
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={locked}
-      className={`glass-card w-full rounded-2xl border px-4 py-4 text-left text-[15px] transition-all disabled:cursor-default ${tone}`}
+      style={style}
+      className="w-full rounded-2xl border-2 px-4 py-4 text-left text-[15px] text-foreground transition-all disabled:cursor-default"
     >
       {children}
     </button>
@@ -283,11 +305,11 @@ function OrderBody({
                 type="button"
                 disabled={answered}
                 onClick={() => setOrdering(ordering.filter((s) => s !== step))}
-                className={`glass-card flex w-full gap-3 rounded-xl border px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed transition-colors ${
+                className={`flex w-full gap-3 rounded-xl border bg-card px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed transition-colors ${
                   right
-                    ? "border-[var(--success)]"
+                    ? "border-[var(--success)] bg-[color-mix(in_oklab,var(--success)_12%,var(--card))]"
                     : wrong
-                      ? "border-[var(--status-red)]"
+                      ? "border-[var(--status-red)] bg-[color-mix(in_oklab,var(--status-red)_12%,var(--card))]"
                       : "border-border hover:border-primary/40"
                 }`}
               >
@@ -308,7 +330,7 @@ function OrderBody({
             type="button"
             disabled={answered}
             onClick={() => setOrdering([...ordering, step])}
-            className="glass-card glass-card-hover rounded-xl border border-border px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed text-foreground transition-colors"
+            className="rounded-xl border border-border bg-card px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed text-foreground transition-colors hover:border-primary/40"
           >
             <Tex>{step}</Tex>
           </button>
@@ -349,13 +371,20 @@ function CompleteBody({
           <Tex>{ex.blank}</Tex>
         </li>
       </ol>
+      {/* The authored `blank` was written for the lesson page, where it is answered by reading on.
+          Graded, the checker compares against the WHOLE closed form, so the ask has to say so —
+          otherwise a student answers the sub-question honestly and is marked wrong for it. */}
+      <p className="-mt-1 text-[13px] text-muted-foreground">
+        Enter the complete result, not just the missing piece.
+      </p>
       <AnswerInput
         value={input}
         onChange={setInput}
         onSubmit={onSubmit}
         verdict={verdict}
         disabled={answered}
-        placeholder="The closed form"
+        placeholder="The complete result"
+        hideSubmit
       />
       {answered && (
         <p className="text-[13.5px] text-muted-foreground">
@@ -397,6 +426,7 @@ function SolveBody({
         verdict={verdict}
         disabled={answered}
         problem={problem}
+        hideSubmit
       />
       {ex.hintsAllowed && hintsOpen < problem.hints.length && !answered && (
         <button
