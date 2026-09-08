@@ -13,7 +13,7 @@ import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import SolutionSteps from "@/features/integrals/components/SolutionSteps";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
-import { hasSolved } from "@/features/integrals/progress";
+import { hasSolved, setManuallySolved } from "@/features/integrals/progress";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import { DIFFICULTY_LABEL, PROBLEMS, SOURCES, formatSource, sourceKey } from "@/features/integrals/problems";
 import { integralLatex } from "@/features/integrals/latex";
