@@ -1,40 +1,51 @@
-## Goal
-Make the preview stop failing as a black/empty page by removing the common blank-screen failure modes and adding visible recovery states wherever the app can currently hang silently.
+# Integral Arena: cross-device progress, real competition, clearer scoring
 
-## What I verified
-- The app has a root `ErrorBoundary`, but it only catches React render errors after React mounts.
-- The current auth flow can still remain visually empty/spinner-only if session/profile loading or profile creation gets stuck.
-- The backend has a `handle_new_user()` profile function, but the project context shows no database triggers are installed, so new users are not guaranteed to get a profile automatically.
-- The dashboard does multiple nested data fetches before rendering; if one request stalls or returns unexpected data, the user can get a “nothing useful visible” state.
-- There are no captured browser console errors or failed network entries from the user's preview snapshot, so this needs a defensive frontend/backend hardening pass rather than chasing one visible stack trace.
+Three things: your progress follows you between devices, the competitive layer gets all-time boards and seasons, and the hub plus scoring get cleaned up so it's obvious what you're earning and why.
 
-## Plan
-1. **Make auth loading impossible to hang forever**
-   - Add a bounded auth/profile loading state with a timeout fallback.
-   - If profile fetch/create fails, synthesize a safe local profile shape so the app still renders instead of staying blank.
-   - Keep retry/refresh behavior available without blocking the whole UI.
+## 1. Progress that follows your account
 
-2. **Fix profile creation at the backend source**
-   - Add the missing new-user trigger for the existing `handle_new_user()` function.
-   - Add/verify minimal grants and profile policies needed for a signed-in user to read/create/update only their own profile.
-   - This makes Google/email signups reliably land in the app with a profile row.
+Today everything — solves, XP, streak, badges, sprint bests, lesson reads — lives only in the browser you played in. Sign in on your phone and you start from zero.
 
-3. **Make the dashboard render before optional data finishes**
-   - Replace the all-or-nothing dashboard loader with a visible shell immediately after auth is known.
-   - Load tracks, counts, hub stats, and next-action data independently with soft failure states.
-   - Remove unsafe assumptions like `user!.id` inside async code by early-return guards.
+- On sign-in, the app pulls your saved progress from your account and merges it with whatever is on that device (best-of on every number: highest XP, longest streak, fastest time per problem, union of solves and badges). Nothing is ever lost by logging in somewhere new.
+- After that, every solve saves up to your account in the background, with the local copy kept as an offline fallback so play never blocks on the network.
+- Same treatment for the newer stores: paper sittings, recognition drill history, headsolve ladder, campaign target date and ticks, and the attempt log (attempts capped to a recent window so it stays small).
+- If you're signed out or offline, everything works exactly as it does now and syncs the next time you're online.
 
-4. **Add a visible “app could not start” fallback outside React**
-   - Add a minimal startup fallback in the root HTML/container flow so even module-load or mount failures show a message instead of a black screen.
-   - Keep the existing React error boundary, but make it token-aligned and add a retry/sign-out action.
+## 2. Making it competitive
 
-5. **Contain risky child components**
-   - Wrap dashboard panels such as Hub, General Chat, Next Action, and Knowledge Map in small local boundaries so one broken feature cannot blank the whole page.
-   - Each failed panel shows a compact fallback while the rest of the app remains usable.
+Right now the only board is the daily.
 
-6. **Verify the actual preview paths**
-   - Check `/`, `/auth`, `/dashboard`, and `/onboarding` locally with a restored signed-in session when available.
-   - Confirm the rendered page is not blank, and that failures show visible fallbacks instead of black/empty screens.
+- **All-time rankings** — a leaderboard page with tabs: total problems solved, XP, current streak, sprint bests per configuration, and paper-mode best score. Each row shows your own position even when you're outside the top 50.
+- **Seasons** — a fixed season window (monthly). Season points come from solves, daily results, sprint and paper performance during that window only, so a newcomer can win a season. Past seasons stay browsable with their final top 3.
+- **Ranks** — six tiers (e.g. Bronze → Grandmaster) derived from season points, shown as a badge next to your name on every board and on the hub. A short "what you need for the next tier" line so it never feels arbitrary.
+- **Anti-forgery** — season points and all-time totals are recomputed on the server from your saved solves and daily results, the same way drill scoring was recently hardened. The client can't post its own totals.
 
-## Expected result
-Even if auth, profile creation, an edge function, or a dashboard data query fails, the user should always see either the app shell, a clear recovery panel, or a sign-in/retry path — never a silent black preview.
+## 3. Clear XP and scoring
+
+The main motivation complaint: it isn't clear how XP or score is earned.
+
+- A **"How scoring works"** panel, reachable from the hub and the progress page: XP per solve by difficulty, the no-hints bonus, streak multipliers, how sprint score and daily score are computed, and how season points differ from XP. Written in plain language with a worked example.
+- On every solve, an XP breakdown line instead of a bare number: "+12 XP — base 8, no hints +2, difficulty 4 +2".
+- On the hub, one honest headline: level, XP to next level, current streak, season rank — replacing the current spread of numbers.
+
+## 4. Hub and UI polish
+
+- Rebuild the hub around three groups instead of a flat wall of tiles: **Play today** (daily, campaign's next session), **Train** (training, headsolve, recognition, values deck, lessons), **Compete** (sprint, paper, leaderboards). Each tile gets one line of "what this is for" and a small progress or streak indicator where one exists.
+- One consistent card, heading, spacing and colour treatment shared across hub, progress, lessons, leaderboards — several pages drifted apart as modes were added.
+- Progress page tidy-up: the strongest signals (level, streak, solved-by-technique, season rank) first, error profile and detailed stats collapsed below.
+- Mobile pass on the hub, practice screen and leaderboards.
+
+## Order of work
+
+1. Cross-device progress sync (highest value, unblocks server-side boards).
+2. Server-computed all-time boards.
+3. Seasons and ranks.
+4. Scoring transparency (XP breakdown + explainer).
+5. Hub restructure and the shared visual pass.
+
+## Technical notes
+
+- The `integral_progress` table already exists (per-user JSON, correct row-level policies) and is currently unused — it becomes the sync target. New tables for season standings and cached all-time aggregates, plus a scheduled/edge recompute so ranking reads are cheap.
+- Sync lives behind the existing store modules (`progress.ts`, `attempts.ts`, `headsolveHistory.ts`, `uk/*`), which already share a scoped, fail-soft localStorage pattern — a remote adapter slots in under them rather than changing every caller.
+- Merge is last-write-wins per field with max() on monotonic values, so two devices played offline in parallel can't clobber each other.
+- No change to grading (`answer.ts`), the problem bank, or lesson content.
