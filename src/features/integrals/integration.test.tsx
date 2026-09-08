@@ -210,17 +210,26 @@ describe("training", () => {
     expect(second).toBeTruthy();
   });
 
-  it("ends the queue instead of silently wrapping to the start", async () => {
-    at("/integrals/train/floor-function", <TrainingTechnique />, "/integrals/train/:techniqueId");
-    const total = Number(/\d+\/(\d+)/.exec(screen.getByText(/\d+\/\d+ solved/).textContent!)![1]);
-    // Walking off the end used to wrap silently back to the first problem, with no sign of it.
-    for (let i = 0; i < total + 1; i++) {
-      const skip = screen.queryByRole("button", { name: /^Skip$/ });
-      if (!skip) break;
-      fireEvent.click(skip);
-    }
-    await waitFor(() => expect(screen.getByText(/End of the/)).toBeInTheDocument());
-  });
+  it(
+    "ends the queue instead of silently wrapping to the start",
+    async () => {
+      at("/integrals/train/floor-function", <TrainingTechnique />, "/integrals/train/:techniqueId");
+      const total = Number(/\d+\/(\d+)/.exec(screen.getByText(/\d+\/\d+ solved/).textContent!)![1]);
+      // Walking off the end used to wrap silently back to the first problem, with no sign of it.
+      for (let i = 0; i < total + 1; i++) {
+        const skip = screen.queryByRole("button", { name: /^Skip$/ });
+        if (!skip) break;
+        fireEvent.click(skip);
+      }
+      await waitFor(() => expect(screen.getByText(/End of the/)).toBeInTheDocument());
+    },
+    // floor-function's pool has grown well past what it was when this test was written (content
+    // seeding keeps adding to it) -- clicking Skip through the whole queue is real work per
+    // problem, not a fixed cost, so the default 5000ms margin has gotten too tight under load in
+    // the full suite. Widening the budget, not weakening the assertion: the loop still walks the
+    // real total and still asserts the real end-of-queue message.
+    15000,
+  );
 
   it("advances through the queue and banks training XP", async () => {
     at("/integrals/train/parts", <TrainingTechnique />, "/integrals/train/:techniqueId");

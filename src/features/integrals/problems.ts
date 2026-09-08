@@ -42,6 +42,7 @@ import { UkuibRound3 } from "./bank/ukuib/round3";
 import { UkuibGroupRound } from "./bank/ukuib/groupRound";
 import { UkuibGroupRound2023_2026 } from "./bank/ukuib/groupRound2023_2026";
 import { UkuibQualifier } from "./bank/ukuib/qualifier";
+import { UkuibCrossnumber } from "./bank/ukuib/crossnumber";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -72,6 +73,7 @@ export const PROBLEMS: Problem[] = [
   ...UkuibGroupRound,
   ...UkuibGroupRound2023_2026,
   ...UkuibQualifier,
+  ...UkuibCrossnumber,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
