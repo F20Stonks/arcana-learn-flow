@@ -504,3 +504,48 @@ into `techniques.ts` / `problems.ts` / `types.ts` happens in WS-E, by one writer
     so far will have at least one completed mining pass — the lessons (all 6 syllabus-gap
     techniques) and the course engine/UI were already done in earlier sessions, so this closes out
     the "seed all ~464 problems" task's first full pass.
+
+  - **All three landed. Every identified UKUIB document family now has a completed mining pass,
+    independently re-verified and wired into the live pool.**
+    - `groupRound2023_2026.ts` (18 problems, 2023-2026 Group Round) — clean run, no LaTeX/domain
+      bugs, zero duplicates. One kept MARGINAL (`ukuib24gr-p7`, ratio 0.605 at the shipping n=4000)
+      after confirming the derivation is airtight (a Fourier-series/Frullani argument) and that it
+      converges cleanly at higher n (0.062 @ 20000, 0.023 @ 80000) — a real value that just
+      converges slowly, not a wrong one. Committed `c77cd55`.
+    - `crossnumber.ts` (8 of ~85 read clues — the lowest yield of any family, expected: most clues
+      are grid arithmetic/cross-references/"solve for an unspecified f", not self-contained
+      integrals). One more LaTeX bug of the by-now-familiar class (`\frac{...}xdx` — unbraced frac
+      arg immediately followed by "dx" reads as one prose word to the auto-`\text{}` wrapper) found
+      by the real suite and fixed. Zero duplicates. Also surfaced a real, unrelated test-timing
+      issue: `floor-function`'s pool has grown to 28 problems across every mining session this
+      year, and `integration.test.tsx`'s "ends the queue" test (which clicks Skip through the whole
+      pool) was timing out at the default 5000ms under full-suite load — gave it an explicit 15s
+      budget rather than weakening the assertion, same precedent as WS-1's ring-buffer test.
+      Committed `5a2d77d`.
+    - `relayShuttle.ts` (36 problems, 2021 Shuttle + 2022-2025/26 Relay) — the agent was killed by
+      a rate limit right after finishing the file, before it could write a skip report; the file
+      itself was genuine and complete (36/36 pass, none marginal), so it shipped with a report
+      reconstructed from what survived rather than the agent's own account. Two duplicates found at
+      integration time (impossible for either mining agent to have caught alone): the Shuttle's own
+      chain-starting link was already in the bank as `feynman-log-squared` under `{name:
+      "original"}` (re-attributed to the real 2021 Shuttle source); a 2023 Relay problem exactly
+      repeated a 2022 Crossnumber problem mined by a sibling agent in the same parallel wave (kept
+      the earlier, dropped the newer). Committed `a28c4a8`.
+    - **Total UKUIB content now in the live pool: 259 problems** across 9 bank files
+      (round1_2021: 30, round1_2022: 40, round1_2023_2024: 39, round3: 39, groupRound: 11,
+      groupRound2023_2026: 18, qualifier: 40, crossnumber: 8, relayShuttle: 34), all reachable by
+      the UKUIB lesson engine and the ordinary technique/source practice filters, all independently
+      verified against the file actually on disk (never an agent's own report), zero cross-bank
+      duplicates, zero LaTeX render failures. Whole-repo suite: 3126/3126 passing, `tsc -p
+      tsconfig.app.json` clean.
+    - **What's genuinely still missing, not silently dropped**: every skip report in this
+      directory (gitignored, `harness.local/report-*.md`) documents specific unmined content with
+      real reasons — mostly OCR-garbled source text, un-gradable special functions (Catalan's
+      constant, Bessel functions), quadrature-resolution limits on verified-correct closed forms,
+      and a recurring "integral equation, solve for f" schema mismatch this bank's `Problem` shape
+      can't express. None of this is a good next target for another mining pass with the same
+      brief — it's the genuine hard residue after several honest attempts, not low-hanging fruit
+      left on the tree. The next content-volume lever, if the owner wants one, is re-attempting a
+      specific hard case with more runway (e.g. the Crossnumber "integral equation" pattern, which
+      recurred 6+ times and might warrant a deliberate schema extension) rather than a blind
+      re-mine of the same documents.
