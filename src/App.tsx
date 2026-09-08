@@ -24,6 +24,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import DrillsHub from "./pages/DrillsHub";
 import IntegralsHub from "./pages/IntegralsHub";
+import IntegralDatabase from "./pages/IntegralDatabase";
 import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralSprint from "./pages/IntegralSprint";
@@ -109,6 +110,7 @@ function AppRoutes() {
       {/* Integral Arena (src/features/integrals) — the daily integral plus a technique-by-technique
           training room. Self-contained: its own grader, problem bank and progression. */}
       <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
+      <Route path="/integrals/database" element={<DashboardGuard><IntegralDatabase /></DashboardGuard>} />
       <Route path="/integrals/daily" element={<DashboardGuard><DailyIntegral /></DashboardGuard>} />
       <Route path="/integrals/sprint" element={<DashboardGuard><IntegralSprint /></DashboardGuard>} />
       <Route path="/integrals/progress" element={<DashboardGuard><IntegralProgress /></DashboardGuard>} />
