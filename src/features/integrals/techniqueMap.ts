@@ -1,7 +1,7 @@
 /**
  * The technique map (WS-11, UK_BEE_BURST.md).
  *
- * Twenty-one techniques as a flat list is twenty-one things to memorise. As a structure it's a
+ * Twenty-seven techniques as a flat list is twenty-seven things to memorise. As a structure it's a
  * handful of real ideas with variations — and recognising which idea a problem wants, on sight, is
  * exactly what separates someone who *knows* the techniques from someone who *sees* the right one.
  *
@@ -15,7 +15,15 @@
  * on why — and, where a real but looser connection exists, CROSS_LINKS records it without claiming
  * sibling-strength kinship. Every TechniqueId is placed in exactly one of
  * TECHNIQUE_FAMILIES/STANDALONE_TECHNIQUES — see techniqueMap.test.ts's totality check, which fails
- * loudly if a 22nd technique is ever added here without being placed.
+ * loudly if a 28th technique is ever added here without being placed.
+ *
+ * Originally built against the 21 drillable TECHNIQUES; extended to cover all 27 real technique ids
+ * (the 21 plus the six syllabus-completion lessons in LESSON_ONLY_TECHNIQUES, none of which have a
+ * drill pool yet) once those six had real `intuition`/`prerequisites` prose to place them against
+ * honestly rather than guess at — see leibniz-rule joining the differentiate-under-integral family,
+ * and the new series-expansion family below, for the two genuine sibling-strength placements found;
+ * the other four (named-series, euler-reflection, euler-mascheroni, sine-product) are standalone
+ * with cross-links, per the same no-forced-family principle as everything else here.
  */
 import type { TechniqueId } from "./types";
 
@@ -162,6 +170,35 @@ export const TECHNIQUE_FAMILIES: TechniqueFamily[] = [
         id: "log-power-integrals",
         cue: "Specifically \\int_0^1x^n\\ln^kx\\,dx — don't invent a new parameter each time; reuse the SAME trivial integral J(a)=\\frac1{a+1} as a generating function and differentiate it k times.",
       },
+      {
+        id: "leibniz-rule",
+        cue: "The BOUNDS themselves are functions of the same letter you're differentiating with respect to — a(t), b(t), not fixed constants. Every other member of this family holds the bounds fixed and only the integrand moves; here two more terms appear, one per moving edge, and the fixed-bounds case is just this one with a'=b'=0.",
+      },
+    ],
+  },
+  // Series-swap's own lesson text names zeta-series as the specific instance it generalises
+  // ("Zeta-series integrals expands 1/(e^x∓1) as a geometric series... You have actually used this
+  // move twice already without the name attached to it") — the same general-technique-plus-its-
+  // own-repeated-special-case shape as feynman/log-power-integrals above, just for a different
+  // mechanism (expand as a series and integrate termwise, rather than differentiate a parameter).
+  // log-power-integrals ALSO has an alternate series-expansion route per series-swap's own text,
+  // but its canonical placement (grounded in log-power-integrals' own lesson, which frames itself
+  // via Feynman's trick) stays in differentiate-under-integral above — a technique is placed once,
+  // so that secondary connection is a CROSS_LINK below, not a second family membership.
+  {
+    id: "series-expansion",
+    name: "Expand as a series, integrate termwise",
+    bigIdea:
+      "An integrand with no elementary antiderivative at all can still be an infinite SUM of pieces that each integrate on sight — spot a Maclaurin expansion (geometric, exponential, logarithmic, binomial) hiding in the integrand, swap \\int\\sum for \\sum\\int, integrate the resulting general term, then recognise the sum you're left with. Zeta-series integrals is this exact move aimed at one specific, repeated shape (\\frac1{e^x\\mp1} times a power of x, expanded as a geometric series in e^{-x} and handed to the Gamma function term by term) rather than a fresh expansion chosen per problem — the same relationship log-power-integrals has to Feynman's trick, one family over.",
+    members: [
+      {
+        id: "series-swap",
+        cue: "No standard technique makes progress, but a Maclaurin series you already know — \\frac1{1-u}, e^u, \\ln(1+u), (1+u)^r — is visibly hiding inside the integrand.",
+      },
+      {
+        id: "zeta-series",
+        cue: "Specifically \\frac1{e^x\\mp1} multiplied by a power of x — don't hunt for a fresh expansion; it's always the same geometric series in e^{-x}, with each term handed to the Gamma function.",
+      },
     ],
   },
 ];
@@ -185,12 +222,29 @@ export const STANDALONE_TECHNIQUES: StandaloneTechnique[] = [
     note: "Derived FROM integration by parts plus a substitution, bundled into one reusable identity — its own lesson works through the derivation in full — but its trigger is unmistakably its own: a DEFINITE integral, f monotonic on the interval, and f^{-1} genuinely easier to integrate than f. See the cross-link to Integration by parts: both target the exact same integrands (\\ln x, \\arcsin x, \\arctan x), by different routes.",
   },
   {
-    id: "zeta-series",
-    note: "Its recognition cue — \\frac1{e^x\\mp1} multiplied by a power of x — is unmistakable on sight, and shares nothing with the reduction-formula family's own peel-a-factor mechanism: this is a geometric-series expansion in a different index entirely (the summation variable k, not the problem's own n), with each resulting term simply handed off to the Gamma function as a subroutine. See the cross-link to The Gamma function.",
-  },
-  {
     id: "gaussian-hypersphere",
     note: "Its base case, \\int_0^\\infty e^{-x^2}\\,dx=\\frac{\\sqrt\\pi}2, is not a by-parts reduction at all — it's a dimension-raising trick (square the integral, switch to polar coordinates) that none of the reduction-formula family needs for its own base cases, which are all elementary lookups. Higher powers of x times e^{-x^2} do then reduce by parts, two powers at a time, but the technique's defining, on-sight move is the squaring trick, not the reduction. See the cross-link to The Gamma function.",
+  },
+  // ── the six syllabus-completion lessons (UKUIB_PATH.md) — placed against their own actual
+  // prerequisites/intuition text in lessons/*.ts, on the same no-forced-family principle as above.
+  // zeta-series itself MOVED here from a standalone entry into the new series-expansion family
+  // below, once series-swap's own lesson text named it as the specific instance the general
+  // technique was built to describe — see that family's bigIdea for the citation.
+  {
+    id: "named-series",
+    note: "Genuinely two mechanisms sit inside one lesson, not one: three of its five sums (\\zeta(2), \\beta(2), \\beta(3)) fall out of the same geometric-series machinery as zeta-series and series-swap, but the two two-sided sums come from an unrelated place — the partial-fraction expansions of \\cot and \\csc, evaluated at z=i. A technique whose own content splits across two mechanisms doesn't have one recognition cue to give it family membership; its real cue is simply \"do you recognise this constant on sight,\" which is its own kind of skill. See the cross-link to Zeta-series integrals for the three it does share a mechanism with.",
+  },
+  {
+    id: "euler-reflection",
+    note: "Its own lesson derives it by combining two already-distinct techniques (substitute the workhorse integral into Beta-function form, then apply the Beta-to-Gamma identity) rather than by peeling a factor or introducing a parameter — no existing family's mechanism describes it. See the cross-links to The Gamma function and Beta function integrals, the two techniques it's built from.",
+  },
+  {
+    id: "euler-mascheroni",
+    note: "Not a technique with an on-sight integrand shape at all — its own lesson's recognition cue is closer to \"you differentiated Gamma at 1 (or log-differentiated a Beta integral) and a constant appeared,\" which presupposes The Gamma function or Beta function integrals rather than sitting beside them as a sibling trigger. See the cross-links to both.",
+  },
+  {
+    id: "sine-product",
+    note: "Derives two already-existing results — \\zeta(2)=\\frac{\\pi^2}6 and Wallis' product — by an entirely different mechanism from either (root-factorisation of \\sin(\\pi x), read off by matching Taylor coefficients or substituting a specific point) rather than sharing a recognition cue with the techniques that reach the same numbers their own way. See the cross-links to Zeta-series integrals and Wallis integrals.",
   },
 ];
 
@@ -230,6 +284,43 @@ export const CROSS_LINKS: CrossLink[] = [
     a: "beta-integrals",
     b: "feynman",
     note: "Beta integrals' own extension for a stray \\ln x factor differentiates the Beta identity under the integral sign with respect to a parameter \\varepsilon — exactly Feynman's core move, reused as an advanced finishing step rather than the primary recognition trigger for either technique.",
+  },
+  // ── the six syllabus-completion lessons' cross-links (see their STANDALONE_TECHNIQUES notes
+  // above for why each is a real but looser connection rather than family-sibling kinship).
+  {
+    a: "named-series",
+    b: "zeta-series",
+    note: "Three of the five named series (\\zeta(2)=\\frac{\\pi^2}6, \\beta(2)=G, \\beta(3)=\\frac{\\pi^3}{32}) come from exactly zeta-series' own geometric-series-and-integrate mechanism, just summed over odd denominators with an alternating sign — the other two (the two-sided sums) come from a different place entirely, the \\cot/\\csc partial-fraction expansions, which is why this is a cross-link and not a shared family.",
+  },
+  {
+    a: "euler-reflection",
+    b: "gamma-function",
+    note: "The identity IS a statement about \\Gamma: \\Gamma(s)\\Gamma(1-s)=\\frac\\pi{\\sin(\\pi s)}. Euler reflection's own worked example even re-derives \\Gamma(\\tfrac12)=\\sqrt\\pi as a special case at s=\\tfrac12, a fact the Gamma function's own lesson states without deriving.",
+  },
+  {
+    a: "euler-reflection",
+    b: "beta-integrals",
+    note: "The derivation route IS the Beta function: substitute t=\\frac x{1+x} in the workhorse integral \\int_0^\\infty\\frac{x^{s-1}}{1+x}\\,dx and it becomes exactly B(s,1-s), which the reflection formula then evaluates via \\Gamma. Beta function integrals is a genuine prerequisite, not a loose association.",
+  },
+  {
+    a: "euler-mascheroni",
+    b: "gamma-function",
+    note: "\\gamma appears as \\Gamma'(1) — differentiate the Gamma integral once with respect to its own exponent and \\gamma falls out as \\int_0^\\infty e^{-x}\\ln x\\,dx=-\\gamma, the same trick the Gamma function's own reduction uses aimed at a derivative instead of a value.",
+  },
+  {
+    a: "euler-mascheroni",
+    b: "beta-integrals",
+    note: "Beta function integrals' own log-differentiation extension produces the digamma function \\psi(n)=-\\gamma+H_{n-1}, so \\gamma is literally -\\psi(1) sitting inside a formula that lesson already uses — not a separate fact bolted on afterward.",
+  },
+  {
+    a: "sine-product",
+    b: "zeta-series",
+    note: "Both reach \\zeta(2)=\\frac{\\pi^2}6 — zeta-series by expanding a geometric series in e^{-x} and summing Gamma integrals, sine-product by matching the x^2 Taylor coefficient of a root-factorisation of \\sin(\\pi x). Same number, two structurally unrelated derivations, which is exactly what a cross-link records and a shared family would misrepresent.",
+  },
+  {
+    a: "sine-product",
+    b: "wallis-product",
+    note: "Sine product's own worked example derives Wallis' entire product in one line by substituting x=\\tfrac12 into the sine-product identity — a genuine alternate derivation of the same result, not merely a passing resemblance.",
   },
 ];
 
