@@ -441,3 +441,66 @@ into `techniques.ts` / `problems.ts` / `types.ts` happens in WS-E, by one writer
     committing. This is now the single largest remaining piece of the whole UKUIB task — the
     course engine, UI, and all six syllabus lessons are complete and verified; what's left is
     volume content.
+
+- 2026-09-08: Rate limits killed several mining waves mid-run over the following sessions, but the
+  incremental-write discipline held — every restart recovered real partial work rather than losing
+  it. This session picked up from three files sitting on disk from the most recent kill
+  (`round1_2022.ts` grown from 18→42 problems, plus two brand-new files `groupRound.ts` and
+  `qualifier.ts`), independently re-verified everything via `harness.local/extractbank.ts` +
+  `harness.local/verify.ts` (never trusting the agents' own now-unrecoverable reports, since they
+  died before filing them), and fixed 4 real bugs the harness's approximate mirror can't catch on
+  its own: 3 stray-`$`/unbraced-macro-arg LaTeX bugs (same class WS-8 hit in the main Arena) and
+  one `domain` narrowed to `[0.05,0.95]` on a problem whose real bounds are `[0,1]` — for a
+  *definite* problem `domain` **is** the actual integration range fed to quadrature, so narrowing
+  it silently changes the value being checked (∫₀.₀₅^0.95 1 dx = 0.9, not the real ∫₀¹ 1 dx = 1).
+  Added an explicit warning about this to `AGENT_BRIEF_MINING.md` so future mining agents don't
+  repeat it, and added the incremental-write instruction to the brief itself (it had only ever
+  been said verbally in each dispatch prompt, never written down for an agent to find on its own).
+  - **The bigger find**: all six `bank/ukuib/*.ts` files that existed before this session — every
+    problem mined across every prior wave — were exported but never *imported* anywhere. Nothing
+    in `problems.ts`'s `PROBLEMS` aggregation pulled them in, which means (a) `problems.test.ts`'s
+    numeric self-verification had never actually run on any of this content for real, only through
+    the harness's approximate mirror, and (b) the UKUIB lesson engine (`ukuib/lesson.ts` sources
+    its exercise pool from `PROBLEMS`/`problemsForTechnique`, both from `problems.ts`) could not
+    reach a single one of these problems — every mined UKUIB integral was pedagogically inert.
+    Wired all six files into `PROBLEMS`. Running the real suite for the first time surfaced 7 exact
+    cross-file duplicate integrals the harness's per-file mirror structurally cannot catch (it
+    never compares against the rest of the bank): 3 were genuine cross-competition coincidences
+    (MIT/UKUIB reusing the same classic integral) — kept the pre-existing, correctly-sourced entry
+    and dropped the UKUIB copy; 2 were the same UKUIB integral reused across different years of its
+    own competition — kept the earlier year; 2 were pre-existing `{name: "original"}` entries that
+    turned out to be the exact same integral as a real, dated UKUIB problem — re-attributed to the
+    more specific real source instead of keeping two copies, matching this repo's established
+    duplicate-handling convention throughout its whole history.
+  - Also fixed two documentation-accuracy issues while integrating: `groupRound.ts`'s header
+    claimed coverage of all 5 years 2021-2026, but the agent that wrote it was killed before
+    reaching 2023-2025 — only 2021+2022 (11 problems after dedup) are actually in the file; the
+    header now says so honestly instead of overclaiming, and flags the remaining 3 years for a
+    future mining pass. `qualifier.ts`'s header referenced a `harness.local/report-qualifier.md`
+    skip report that was never written (same kill-before-report-stage pattern) — replaced the
+    dangling reference with the real final counts (40 problems shipped across
+    Virtual-Integration-Competition/Qualifier-workshop/2025-26-Round-1 sources) and an honest note
+    that the ~35 unshipped candidates' specific skip reasons weren't separately recorded.
+  - Committed as `4dff6ff`, pushed. 2703/2703 passing in `src/features/integrals` (3006/3006 whole
+    repo), `tsc -p tsconfig.app.json` clean, eslint clean on every touched file.
+  - **Relaunched the three still-fully-unmined document families**, staggered as 3 concurrent
+    agents (not 7 — a batch of 7 launched together tripped a burst/concurrency limit twice earlier
+    in this task's history; 3 has been the largest batch size that's reliably succeeded):
+    `groupRound2023_2026.ts` (2023/2024/2025-26 Group Round — a head start exists in
+    `harness.local/gr-2023/2024/2025-candidates.json` from an earlier killed wave, agent briefed to
+    re-verify rather than trust those), `relayShuttle.ts` (2021 Shuttle + 2022-2025/26 Relay —
+    genuinely new chained-puzzle format, briefed to resolve each chain's handoff value in order
+    using `round3.ts`'s already-shipped "Chainlink" section as a worked precedent for turning a
+    chain into ordinary standalone `Problem` entries), `crossnumber.ts` (2021-2025/26 Crossnumber —
+    briefed that each clue is just a standalone integral once you ignore the grid/digit-placement
+    machinery entirely, and to skip the blank-grid-only files). All three still running as of this
+    entry.
+  - **Next**: when these land, independently re-verify (never trust an agent's own report — this
+    session's own 7-duplicate/4-LaTeX-bug find is exactly why), wire into `problems.ts`, run the
+    real suite, typecheck, lint, commit. If any of the three families needs a genuine engineering
+    investment this session doesn't have runway for (a chain that can't be resolved, a Crossnumber
+    clue that's irreducibly coupled to another), that will show up in each agent's own skip report
+    rather than being silently forced. Once all three land, every UKUIB source document identified
+    so far will have at least one completed mining pass — the lessons (all 6 syllabus-gap
+    techniques) and the course engine/UI were already done in earlier sessions, so this closes out
+    the "seed all ~464 problems" task's first full pass.
