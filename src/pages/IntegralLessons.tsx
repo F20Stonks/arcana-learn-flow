@@ -15,8 +15,20 @@ import { useConceptReview } from "@/features/integrals/hooks/useConceptReview";
 import { recordConceptRead } from "@/features/integrals/conceptReview";
 import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
 import { TECHNIQUE_BY_ID, TECHNIQUES, techniqueName } from "@/features/integrals/techniques";
+import { problemsForTechnique } from "@/features/integrals/problems";
 import { STANDALONE_TECHNIQUES, TECHNIQUE_FAMILIES } from "@/features/integrals/techniqueMap";
 import type { TechniqueId } from "@/features/integrals/types";
+
+/**
+ * Where a technique's own name links to. Most have a real drill pool and go to the ordinary
+ * training route; the syllabus-completion lessons (see UKUIB_PATH.md) don't have one yet, so
+ * linking there would silently bounce back to the technique picker (TrainingTechnique redirects
+ * away the moment its pool is empty) — a dead end with no explanation. Their real home today is
+ * the UKUIB skill page, which renders the exact same lesson without needing a bank behind it.
+ */
+function lessonLinkFor(id: TechniqueId): string {
+  return problemsForTechnique(id).length > 0 ? `/integrals/train/${id}` : `/ukuib/skill/${id}`;
+}
 
 /** One family's card in the technique map: its name, the shared idea underneath, then each member
  *  linked through to its own lesson with the recognition cue that tells it apart from its siblings. */
@@ -31,7 +43,7 @@ function FamilyCard({ family }: { family: (typeof TECHNIQUE_FAMILIES)[number] })
         {family.members.map((m) => (
           <li key={m.id} className="text-[13px] leading-relaxed text-foreground">
             <Link
-              to={`/integrals/train/${m.id}`}
+              to={lessonLinkFor(m.id)}
               className="font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:opacity-80"
             >
               {techniqueName(m.id)}
@@ -77,7 +89,7 @@ function TechniqueMapSection() {
           {STANDALONE_TECHNIQUES.map((s) => (
             <li key={s.id}>
               <Link
-                to={`/integrals/train/${s.id}`}
+                to={lessonLinkFor(s.id)}
                 className="text-[13px] font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:opacity-80"
               >
                 {techniqueName(s.id)}
