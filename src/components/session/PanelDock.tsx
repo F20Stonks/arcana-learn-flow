@@ -35,7 +35,9 @@ export default function PanelDock({ items, onRestore, bottom }: Props) {
           key={id}
           onClick={() => onRestore(id)}
           title={`Bring back ${label}`}
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
+          aria-label={`Restore ${label}`}
+          data-panel-restore={id}
+          className="flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Icon className="h-3.5 w-3.5 shrink-0 text-primary/70" />
           {label}
