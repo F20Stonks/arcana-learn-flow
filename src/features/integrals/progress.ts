@@ -352,6 +352,31 @@ export function hasSolved(p: Progress, problemId: string): boolean {
   return Boolean(p.solves[problemId]);
 }
 
+/**
+ * Self-reported completion from the problem database — "I did this one on paper."
+ * Counts toward solved totals and badges, but never toward XP or the streak: those are earned
+ * by actually answering in a run, and a checkbox must not be able to mint them.
+ */
+export function setManuallySolved(problemId: string, solved: boolean) {
+  update((p) => {
+    if (solved) {
+      if (!p.solves[problemId]) {
+        p.solves[problemId] = {
+          solvedAt: new Date().toISOString(),
+          solves: 1,
+          // A sentinel, not a time: nothing was actually timed, and it must never look fast.
+          bestSeconds: Number.MAX_SAFE_INTEGER,
+          everSolvedWithoutHints: false,
+        };
+      }
+    } else {
+      delete p.solves[problemId];
+    }
+    p.badges = { ...p.badges, ...earnedBadges(p) };
+    return p;
+  });
+}
+
 export function todaysDaily(p: Progress, date = new Date()): DailyRecord | undefined {
   return p.daily[dayKey(date)];
 }
