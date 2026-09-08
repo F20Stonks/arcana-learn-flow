@@ -108,7 +108,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
-    source: { name: "original" },
+    source: { name: "UK University Integration Bee", year: 2021, round: "Shuttle" },
     hints: [
       "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
       "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
