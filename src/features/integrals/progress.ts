@@ -364,7 +364,8 @@ export function setManuallySolved(problemId: string, solved: boolean) {
         p.solves[problemId] = {
           solvedAt: new Date().toISOString(),
           solves: 1,
-          bestSeconds: Infinity,
+          // A sentinel, not a time: nothing was actually timed, and it must never look fast.
+          bestSeconds: Number.MAX_SAFE_INTEGER,
           everSolvedWithoutHints: false,
         };
       }
