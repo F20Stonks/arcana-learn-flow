@@ -51,16 +51,35 @@ export function dailyDifficulty(date = new Date()): Difficulty {
   return WEEKDAY_DIFFICULTY[date.getDay()];
 }
 
-export function dailyProblem(date = new Date()): Problem {
+/** How many integrals make up one day's daily — the same 3 for everyone, same as the single one used to be. */
+export const DAILY_SLOTS = 3;
+
+/**
+ * The day's three problems, in order. Distinct from each other whenever the pool has at least
+ * `DAILY_SLOTS` entries at that difficulty (true for every difficulty in practice), and nobody
+ * repeats a problem until the pool cycles — the cursor just now advances by `DAILY_SLOTS` each
+ * week instead of by one.
+ */
+export function dailyProblems(date = new Date()): Problem[] {
   const pool = poolFor(dailyDifficulty(date));
-  if (pool.length === 0) return PROBLEMS[dayIndex(date) % PROBLEMS.length];
+  if (pool.length === 0) {
+    const base = dayIndex(date) * DAILY_SLOTS;
+    return Array.from({ length: DAILY_SLOTS }, (_, i) => PROBLEMS[(base + i) % PROBLEMS.length]);
+  }
 
   // Which occurrence of this weekday it is since the epoch — that indexes into the shuffled pool,
   // and rolling over to the next cycle reshuffles with a new seed.
   const occurrence = Math.floor(dayIndex(date) / 7);
-  const cycle = Math.floor(occurrence / pool.length);
-  const position = ((occurrence % pool.length) + pool.length) % pool.length;
-  return shuffled(pool, cycle * 7919 + date.getDay() * 104729 + 17)[position];
+  const span = Math.max(1, Math.floor(pool.length / DAILY_SLOTS));
+  const cycle = Math.floor(occurrence / span);
+  const startSlot = ((occurrence % span) + span) % span;
+  const deck = shuffled(pool, cycle * 7919 + date.getDay() * 104729 + 17);
+  return Array.from({ length: DAILY_SLOTS }, (_, i) => deck[(startSlot * DAILY_SLOTS + i) % pool.length]);
+}
+
+/** The first of the day's three, for anything that only ever needs a single representative problem. */
+export function dailyProblem(date = new Date()): Problem {
+  return dailyProblems(date)[0];
 }
 
 /** Seconds until the next daily unlocks — for the countdown on the result screen. */

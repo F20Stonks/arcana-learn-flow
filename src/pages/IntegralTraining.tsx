@@ -6,24 +6,72 @@
  * execute a substitution — they fail because they don't know which of eight things to reach for, so
  * every lesson leads with the recognition cue rather than the recipe.
  */
-import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Shuffle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Layers,
+  PartyPopper,
+  RotateCcw,
+  Shuffle,
+  Target,
+} from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import RunPanel from "@/features/integrals/components/RunPanel";
+import LessonBody from "@/features/integrals/components/LessonBody";
 import { useIntegralRun } from "@/features/integrals/hooks/useIntegralRun";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
-import { markLessonRead, techniqueMastery } from "@/features/integrals/progress";
-import { orderQueue } from "@/features/integrals/queue";
+import { recordConceptRead } from "@/features/integrals/conceptReview";
+import {
+  hasSolved,
+  lastPlace,
+  markLessonRead,
+  markPlace,
+  techniqueMastery,
+} from "@/features/integrals/progress";
+import { scheduledQueue } from "@/features/integrals/queue";
+import { getAttempts } from "@/features/integrals/attempts";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
-import { DIFFICULTY_LABEL, PROBLEMS, problemsForTechnique } from "@/features/integrals/problems";
-import type { TechniqueId } from "@/features/integrals/types";
+import {
+  DIFFICULTY_LABEL,
+  PROBLEMS,
+  problemsForSource,
+  problemsForTechnique,
+  problemsForTechniques,
+  SOURCES,
+  sourceKey,
+} from "@/features/integrals/problems";
+import type { Problem, ProblemSource, TechniqueId } from "@/features/integrals/types";
 
 const MIXED = "mixed";
+const CUSTOM = "custom";
+
+/** Competitions worth their own uncurated set — "original" is the app's own pedagogical examples,
+ * not a competition a student would want to drill "as it was set", so it's left off this list.
+ * Sorted by name then year (not first-seen order, which just reflects mining order) so a
+ * competition with several years — MIT's qualifying archive — lists chronologically. */
+const COMPETITION_SOURCES = SOURCES.filter((s) => s.name !== "original").sort(
+  (a, b) => a.name.localeCompare(b.name) || (a.year ?? 0) - (b.year ?? 0),
+);
 
 export default function IntegralTraining() {
   const progress = useProgress();
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customSelection, setCustomSelection] = useState<Set<TechniqueId>>(new Set());
+
+  const toggleCustom = (id: TechniqueId) => {
+    setCustomSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <AppShell>
@@ -40,8 +88,14 @@ export default function IntegralTraining() {
             Training
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
-            No clock pressure that matters, no streak at stake. Read the technique, then work through
-            its problems — the queue puts what you haven't solved first.
+            No streak on the line, and you can retry anything as often as you like — though the
+            clock still shapes the XP, so par is worth beating. Read the technique, then work
+            through its problems: the queue puts what you haven't solved first, remembers where you
+            got to, and counts solved problems only.{" "}
+            <Link to="/integrals/lessons" className="text-foreground underline underline-offset-2">
+              Read the lessons on their own
+            </Link>
+            .
           </p>
         </header>
 
@@ -60,7 +114,9 @@ export default function IntegralTraining() {
                     {m.solved}/{m.total}
                   </span>
                 </div>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{t.tagline}</p>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+                  <Tex>{t.tagline}</Tex>
+                </p>
                 <div
                   role="progressbar"
                   aria-valuenow={m.solved}
@@ -95,6 +151,92 @@ export default function IntegralTraining() {
             </p>
           </Link>
         </div>
+
+        <section className="reveal mt-8 overflow-hidden rounded-2xl border border-dashed border-border bg-card/40">
+          <button
+            onClick={() => setCustomOpen((v) => !v)}
+            aria-expanded={customOpen}
+            aria-controls="custom-mix-panel"
+            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+          >
+            <span className="flex items-center gap-2.5">
+              <Layers className="h-4 w-4 text-primary" />
+              <span className="font-display text-[16px] font-semibold text-foreground">Custom mix</span>
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${customOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {customOpen && (
+            <div id="custom-mix-panel" className="border-t border-border px-5 pb-5 pt-4">
+              <p className="text-[13px] text-muted-foreground">
+                Pick any subset of techniques to drill together — not just one at a time, not the whole
+                bank.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {TECHNIQUES.map((t) => (
+                  <label
+                    key={t.id}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-foreground transition-colors hover:border-primary/40"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={customSelection.has(t.id)}
+                      onChange={() => toggleCustom(t.id)}
+                      className="h-3.5 w-3.5 shrink-0 accent-primary"
+                    />
+                    {t.name}
+                  </label>
+                ))}
+              </div>
+              {customSelection.size > 0 ? (
+                <Link
+                  to={`/integrals/train/${CUSTOM}?techniques=${[...customSelection].join(",")}`}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  Start ({customSelection.size} selected) <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <p className="mt-4 text-[13px] text-muted-foreground">Select at least one technique.</p>
+              )}
+            </div>
+          )}
+        </section>
+
+        {COMPETITION_SOURCES.length > 0 && (
+          <section className="reveal mt-8">
+            <h2 className="font-display text-[17px] font-semibold text-foreground">By source</h2>
+            <p className="mt-1.5 text-[14px] text-muted-foreground">
+              Work one competition's set exactly as it was set — uncurated, not sorted into techniques.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {COMPETITION_SOURCES.map((s) => {
+                const count = problemsForSource(s).length;
+                return (
+                  <Link
+                    key={sourceKey(s)}
+                    to={`/integrals/train/source/${encodeURIComponent(sourceKey(s))}`}
+                    className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h3 className="font-display text-[16px] font-semibold text-foreground">
+                        {s.name}
+                        {s.year && <span className="text-muted-foreground"> · {s.year}</span>}
+                      </h3>
+                      <span className="readout text-[12px] tabular-nums text-muted-foreground">
+                        {count} problem{count === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {s.round && (
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{s.round}</p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
     </AppShell>
   );
@@ -103,33 +245,161 @@ export default function IntegralTraining() {
 // ── the practice screen ─────────────────────────────────────────────────────────────────────────
 
 export function TrainingTechnique() {
-  const { techniqueId = "" } = useParams();
+  const { techniqueId = "", sourceKey: sourceKeyParam } = useParams();
+  const [searchParams] = useSearchParams();
   const progress = useProgress();
-  const mixed = techniqueId === MIXED;
-  const technique = mixed ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
 
-  const pool = useMemo(
-    () => (mixed ? PROBLEMS : problemsForTechnique(techniqueId as TechniqueId)),
-    [mixed, techniqueId],
+  const isSource = sourceKeyParam !== undefined;
+  const source: ProblemSource | undefined = isSource
+    ? SOURCES.find((s) => sourceKey(s) === decodeURIComponent(sourceKeyParam))
+    : undefined;
+  const mixed = techniqueId === MIXED;
+  const custom = techniqueId === CUSTOM;
+  const technique = mixed || custom || isSource ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
+
+  const customIds = useMemo(() => {
+    if (!custom) return [];
+    const raw = searchParams.get("techniques") ?? "";
+    return raw.split(",").filter((id): id is TechniqueId => id in TECHNIQUE_BY_ID);
+  }, [custom, searchParams]);
+
+  const pool = useMemo(() => {
+    if (isSource) return source ? problemsForSource(source) : [];
+    if (mixed) return PROBLEMS;
+    if (custom) return problemsForTechniques(customIds);
+    return problemsForTechnique(techniqueId as TechniqueId);
+  }, [isSource, source, mixed, custom, customIds, techniqueId]);
+
+  // Two different selections are two different queues, so they resume separately — otherwise a
+  // custom session would pick up on a problem that is not in it.
+  const queueKey = custom
+    ? `custom:${customIds.join(",")}`
+    : isSource
+      ? `source:${sourceKeyParam}`
+      : techniqueId;
+
+  // Deliberately seeded once, on mount: re-sorting as you solve would move the queue out from
+  // under you. `scheduledQueue` (not the older `orderQueue`) is what makes a 70-day training block
+  // adaptive rather than a walk through the bank in difficulty order — it reads the attempt log for
+  // retention decay, per-technique weakness, near-miss priority and a target success band, then
+  // interleaves so consecutive problems don't share a technique.
+  const [queue] = useState(() => scheduledQueue(pool, progress, getAttempts()));
+  // Pick up where this queue was left. Stored as a problem id rather than an index, because the
+  // schedule is re-derived from the attempt log on every visit and an index would drift onto a
+  // different problem between sessions.
+  const [index, setIndex] = useState(() => {
+    const at = queue.findIndex((p) => p.id === lastPlace(progress, queueKey));
+    return at === -1 ? 0 : at;
+  });
+  // The lesson leads, which only works if it is open. A technique already read folds away.
+  const [lessonOpen, setLessonOpen] = useState(() =>
+    technique ? !progress.lessonsRead.includes(technique.id) : false,
   );
-  // Deliberately seeded from progress once, on mount: re-sorting as you solve would move the queue
-  // out from under you.
-  const [queue] = useState(() => orderQueue(pool, progress));
-  const [index, setIndex] = useState(0);
-  const [lessonOpen, setLessonOpen] = useState(false);
+  const [finished, setFinished] = useState(false);
 
   const problem = queue[index];
-  const run = useIntegralRun(problem ?? PROBLEMS[0], "training");
+  const run = useIntegralRun(problem ?? PROBLEMS[0]);
+  const solvedHere = useMemo(
+    () => queue.filter((p) => hasSolved(progress, p.id)).length,
+    [queue, progress],
+  );
 
-  if (!mixed && !technique) return <Navigate to="/integrals/train" replace />;
+  useEffect(() => {
+    if (problem) markPlace(queueKey, problem.id);
+  }, [queueKey, problem]);
+
+  const last = index >= queue.length - 1;
+  // Reaching the end is a place you have got to, not a silent wrap back to the first problem.
+  const next = () => (last ? setFinished(true) : setIndex((i) => i + 1));
+  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const unsolvedAfter = () => {
+    const after = queue.findIndex((p, i) => i > index && !hasSolved(progress, p.id));
+    return after !== -1 ? after : queue.findIndex((p) => !hasSolved(progress, p.id));
+  };
+
+  // After a correct answer the input is gone and the Next button is the only action. Let a quick
+  // Enter press advance the queue without reaching for the mouse.
+  // Every hook above the early returns below must run on every render regardless of which guard
+  // fires, so this stays here rather than moving down next to where it reads naturally.
+  useEffect(() => {
+    if (run.status !== "solved") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      setIndex((i) => (i + 1 >= queue.length ? i : i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [run.status, queue.length]);
+
+  if (!mixed && !custom && !isSource && !technique) return <Navigate to="/integrals/train" replace />;
+  if (isSource && !source) return <Navigate to="/integrals/train" replace />;
   if (!problem) return <Navigate to="/integrals/train" replace />;
 
   const openLesson = () => {
+    if (lessonOpen && technique) {
+      markLessonRead(technique.id);
+      recordConceptRead(technique.id);
+    }
     setLessonOpen((v) => !v);
-    if (!lessonOpen && technique) markLessonRead(technique.id);
   };
 
-  const next = () => setIndex((i) => (i + 1) % queue.length);
+  if (finished) {
+    const remaining = queue.length - solvedHere;
+    return (
+      <AppShell>
+        <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+          <Link
+            to="/integrals/train"
+            className="reveal mb-6 inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> All techniques
+          </Link>
+          <div className="reveal rounded-2xl border border-border bg-card p-6 sm:p-8">
+            <PartyPopper className="h-5 w-5 text-primary" />
+            <h1 className="mt-3 font-display text-[24px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
+              End of the {technique ? technique.name.toLowerCase() : "practice"} queue
+            </h1>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
+              {remaining === 0
+                ? `Every one of the ${queue.length} problems here is beaten. Nothing left to take from this queue.`
+                : `${solvedHere} of ${queue.length} solved — ${remaining} still standing.`}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {remaining > 0 && (
+                <button
+                  onClick={() => {
+                    setFinished(false);
+                    setIndex(Math.max(0, unsolvedAfter()));
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[14px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <Target className="h-4 w-4" /> Back to the unsolved
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setFinished(false);
+                  setIndex(0);
+                }}
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-[14px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                <RotateCcw className="h-4 w-4" /> Start again from the top
+              </button>
+              <Link
+                to="/integrals/train"
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-[14px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                Another technique
+              </Link>
+            </div>
+          </div>
+        </main>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -143,10 +413,25 @@ export function TrainingTechnique() {
 
         <header className="reveal mb-6">
           <h1 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-            {technique ? technique.name : "Mixed practice"}
+            {technique
+              ? technique.name
+              : custom
+                ? "Custom mix"
+                : source
+                  ? `${source.name}${source.year ? ` · ${source.year}` : ""}`
+                  : "Mixed practice"}
           </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            {technique ? technique.tagline : "Every problem in the bank, technique unannounced."} ·{" "}
+            <Tex>
+              {technique
+                ? technique.tagline
+                : custom
+                  ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
+                  : source
+                    ? "This competition's set, worked exactly as it was set."
+                    : "Every problem in the bank, technique unannounced."}
+            </Tex>{" "}
+            ·{" "}
             <span className="readout tabular-nums">
               {index + 1}/{queue.length}
             </span>{" "}
@@ -173,57 +458,7 @@ export function TrainingTechnique() {
 
             {lessonOpen && (
               <div id={`${technique.id}-lesson`} className="border-t border-border px-5 pb-5 pt-4">
-                <h3 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                  When to reach for it
-                </h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-foreground">
-                  <Tex>{technique.whenToUse}</Tex>
-                </p>
-
-                <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                  The recipe
-                </h3>
-                <ol className="mt-2 flex flex-col gap-2">
-                  {technique.recipe.map((r, i) => (
-                    <li key={i} className="flex gap-3 text-[14px] leading-relaxed text-foreground">
-                      <span className="readout mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-muted-foreground">
-                        {i + 1}
-                      </span>
-                      <Tex>{r}</Tex>
-                    </li>
-                  ))}
-                </ol>
-
-                <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Worked example
-                </h3>
-                <div className="mt-2 rounded-xl bg-accent/50 px-4 py-4">
-                  <div className="overflow-x-auto text-center">
-                    <Tex block className="text-foreground">{`\\int ${technique.example.integrand}\\,dx`}</Tex>
-                  </div>
-                  <ul className="mt-3 flex flex-col gap-2">
-                    {technique.example.work.map((w, i) => (
-                      <li key={i} className="text-[14px] leading-relaxed text-foreground">
-                        <Tex>{w}</Tex>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-3 border-t border-border/60 pt-3 text-center">
-                    <Tex className="text-foreground">{technique.example.result}</Tex>
-                  </div>
-                </div>
-
-                <h3 className="mt-5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Where it goes wrong
-                </h3>
-                <ul className="mt-2 flex flex-col gap-2">
-                  {technique.pitfalls.map((p, i) => (
-                    <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed text-foreground">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-muted-foreground" />
-                      <Tex>{p}</Tex>
-                    </li>
-                  ))}
-                </ul>
+                <LessonBody technique={technique} />
               </div>
             )}
           </section>
@@ -232,6 +467,7 @@ export function TrainingTechnique() {
         <RunPanel
           problem={problem}
           run={run}
+          onSkip={next}
           footer={
             <div className="reveal flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
               <span className="text-[14px] text-foreground">
@@ -263,6 +499,31 @@ export function TrainingTechnique() {
             </div>
           }
         />
+
+        {/* Landing on a problem you are not ready for used to mean the only way on was to solve it
+            or reveal it — and there was no way back to the one you had just read the solution to. */}
+        <nav className="reveal mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <button
+            onClick={prev}
+            disabled={index === 0}
+            className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Previous
+          </button>
+          <button
+            onClick={() => {
+              const i = unsolvedAfter();
+              if (i !== -1) setIndex(i);
+            }}
+            disabled={unsolvedAfter() === -1}
+            className="flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            <Target className="h-3.5 w-3.5" /> Next unsolved
+          </button>
+          <span className="readout text-[12px] tabular-nums text-muted-foreground">
+            {solvedHere}/{queue.length} solved
+          </span>
+        </nav>
       </main>
     </AppShell>
   );

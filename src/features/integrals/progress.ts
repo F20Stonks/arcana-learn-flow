@@ -15,6 +15,17 @@ import type { TechniqueId } from "./types";
 
 const STORAGE_KEY = "arcana.integrals.progress.v1";
 
+/**
+ * Whose progress is in memory. Local storage is per-browser, not per-account, so without this a
+ * second person signing in on the same machine inherits the first person's solved count.
+ */
+let scopeUserId: string | null = null;
+
+/** Namespaced storage key for any per-player local record (progress, submitted puzzles, …). */
+export function scopedKey(base: string): string {
+  return scopeUserId ? `${base}:${scopeUserId}` : base;
+}
+
 export interface SolveRecord {
   solvedAt: string;
   solves: number;
@@ -22,9 +33,12 @@ export interface SolveRecord {
   everSolvedWithoutHints: boolean;
 }
 
+/** One entry per problem in the day's set, in slot order (see `DAILY_SLOTS` in daily.ts). */
 export interface DailyRecord {
-  problemId: string;
+  problemIds: string[];
+  /** True only once every slot is solved — a day is "beaten" as a whole, not per-problem. */
   solved: boolean;
+  solvedCount: number;
   seconds: number;
   hintsUsed: number;
   wrongAttempts: number;
@@ -44,10 +58,20 @@ export interface Progress {
   xp: number;
   solves: Record<string, SolveRecord>;
   daily: Record<string, DailyRecord>;
+  /** Every correct submission, by calendar day, across daily/training/sprint alike — the raw
+   *  volume behind the activity heatmap. `solves` only keeps each problem's latest/best attempt,
+   *  so a day where you resolve the same problem twice would otherwise vanish from any count. */
+  solveDays: Record<string, number>;
   streak: { current: number; longest: number; lastDayKey: string | null };
   badges: Record<string, string>;
   lessonsRead: TechniqueId[];
   sprints: Record<string, SprintBest>;
+  /**
+   * Where you were last working, per practice queue — keyed by technique id (or "mixed"), valued
+   * by problem id. Training used to restart at the top of the queue on every visit, so anyone
+   * working through a long technique re-ground the same first problems every session.
+   */
+  bookmarks: Record<string, string>;
 }
 
 export function emptyProgress(): Progress {
@@ -56,10 +80,12 @@ export function emptyProgress(): Progress {
     xp: 0,
     solves: {},
     daily: {},
+    solveDays: {},
     streak: { current: 0, longest: 0, lastDayKey: null },
     badges: {},
     lessonsRead: [],
     sprints: {},
+    bookmarks: {},
   };
 }
 
@@ -69,21 +95,61 @@ export function emptyProgress(): Progress {
 let memory: Progress | null = null;
 const listeners = new Set<() => void>();
 
+/**
+ * Upgrades a stored `daily` record from before the day held `DAILY_SLOTS` problems (a single
+ * `problemId` string, no `solvedCount`) to the current shape. Without this, anyone who played the
+ * single-problem daily before this change crashes every page that reads `problemIds` — it's an
+ * array only going forward, but their stored JSON still has the old field.
+ */
+function migrateDailyRecord(raw: unknown): DailyRecord {
+  const r = raw as Partial<DailyRecord> & { problemId?: string };
+  if (Array.isArray(r.problemIds)) return r as DailyRecord;
+  const problemIds = r.problemId ? [r.problemId] : [];
+  return {
+    problemIds,
+    solved: r.solved ?? false,
+    solvedCount: r.solvedCount ?? (r.solved ? problemIds.length : 0),
+    seconds: r.seconds ?? 0,
+    hintsUsed: r.hintsUsed ?? 0,
+    wrongAttempts: r.wrongAttempts ?? 0,
+    score: r.score ?? 0,
+  };
+}
+
 function read(): Progress {
   if (memory) return memory;
   try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    memory = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
+    const raw = globalThis.localStorage?.getItem(scopedKey(STORAGE_KEY));
+    const parsed = raw ? { ...emptyProgress(), ...(JSON.parse(raw) as Progress) } : emptyProgress();
+    parsed.daily = Object.fromEntries(
+      Object.entries(parsed.daily).map(([key, record]) => [key, migrateDailyRecord(record)]),
+    );
+    memory = parsed;
   } catch {
     memory = emptyProgress();
   }
   return memory;
 }
 
+/**
+ * Point the store at a signed-in player (or at the signed-out scope with null).
+ *
+ * Called from the app root before anything renders, so a page never paints another account's
+ * numbers. Nothing is ever inherited: a brand-new account starts from an empty record, even on a
+ * browser where somebody else has been playing.
+ */
+export function setProgressScope(userId: string | null) {
+  const next = userId ?? null;
+  if (next === scopeUserId) return;
+  scopeUserId = next;
+  memory = null;
+  for (const l of listeners) l();
+}
+
 function write(next: Progress) {
   memory = next;
   try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+    globalThis.localStorage?.setItem(scopedKey(STORAGE_KEY), JSON.stringify(next));
   } catch {
     // Storage is unavailable — keep going in memory rather than losing the session.
   }
@@ -102,6 +168,14 @@ export function getProgress(): Progress {
 /** Tests and the settings screen. */
 export function resetProgress() {
   write(emptyProgress());
+}
+
+/**
+ * Swap in a whole record — the cloud sync layer's landing point after it merges this device's
+ * progress with the account's saved copy. Goes through `write`, so every subscriber repaints.
+ */
+export function replaceProgress(next: Progress) {
+  write(next);
 }
 
 function update(fn: (p: Progress) => Progress) {
@@ -158,26 +232,46 @@ export function recordTrainingSolve(facts: SolveFacts) {
   });
 }
 
-/** A daily attempt. Returns the facts a future leaderboard submission would carry. */
+/** One slot's outcome within a daily session — same shape as `SolveFacts`, plus whether it landed. */
+export interface DailySlotOutcome {
+  problemId: string;
+  solved: boolean;
+  seconds: number;
+  hintsUsed: number;
+  wrongAttempts: number;
+  score: number;
+}
+
+/**
+ * A finished daily session — every slot's outcome at once, since the day's record (and whether the
+ * streak extends) depends on all of them together. Per-slot solves still bank individually into
+ * `p.solves` and XP, exactly as a training solve would; this additionally writes the day's combined
+ * record and, only when every slot was solved, extends the streak.
+ */
 export function recordDaily(
-  facts: SolveFacts & { solved: boolean },
+  slots: DailySlotOutcome[],
   date = new Date(),
 ): DailyRecord & { dayKey: string; streak: number } {
   const key = dayKey(date);
   let out!: DailyRecord & { dayKey: string; streak: number };
   update((p) => {
-    if (facts.solved) {
-      applySolve(p, facts);
-      p.xp += facts.xp;
+    for (const slot of slots) {
+      if (!slot.solved) continue;
+      applySolve(p, { ...slot, xp: slot.score }, date);
+      p.xp += slot.score;
+    }
+    const allSolved = slots.length > 0 && slots.every((s) => s.solved);
+    if (allSolved) {
       p.streak = nextStreak({ ...p.streak, current: liveStreak(p, key) }, key);
     }
     const record: DailyRecord = {
-      problemId: facts.problemId,
-      solved: facts.solved,
-      seconds: facts.seconds,
-      hintsUsed: facts.hintsUsed,
-      wrongAttempts: facts.wrongAttempts,
-      score: facts.solved ? facts.score : 0,
+      problemIds: slots.map((s) => s.problemId),
+      solved: allSolved,
+      solvedCount: slots.filter((s) => s.solved).length,
+      seconds: slots.reduce((sum, s) => sum + s.seconds, 0),
+      hintsUsed: slots.reduce((sum, s) => sum + s.hintsUsed, 0),
+      wrongAttempts: slots.reduce((sum, s) => sum + s.wrongAttempts, 0),
+      score: slots.reduce((sum, s) => sum + s.score, 0),
     };
     p.daily[key] = record;
     p.badges = { ...p.badges, ...earnedBadges(p) };
@@ -187,7 +281,9 @@ export function recordDaily(
   return out;
 }
 
-function applySolve(p: Progress, facts: SolveFacts) {
+function applySolve(p: Progress, facts: SolveFacts, date = new Date()) {
+  const key = dayKey(date);
+  p.solveDays[key] = (p.solveDays[key] ?? 0) + 1;
   const prior = p.solves[facts.problemId];
   p.solves[facts.problemId] = {
     solvedAt: new Date().toISOString(),
@@ -240,6 +336,18 @@ export function markLessonRead(id: TechniqueId) {
   });
 }
 
+/** Remember where a practice queue got to. Keyed by technique id, or "mixed". */
+export function markPlace(queueKey: string, problemId: string) {
+  update((p) => {
+    p.bookmarks = { ...p.bookmarks, [queueKey]: problemId };
+    return p;
+  });
+}
+
+export function lastPlace(p: Progress, queueKey: string): string | undefined {
+  return p.bookmarks?.[queueKey];
+}
+
 export function hasSolved(p: Progress, problemId: string): boolean {
   return Boolean(p.solves[problemId]);
 }
@@ -255,7 +363,10 @@ export interface TechniqueMastery {
   solved: number;
   total: number;
   lessonRead: boolean;
-  /** 0–1 across both halves: reading the lesson is worth a fifth, solving the rest. */
+  /**
+   * 0–1, solved problems only. Reading a lesson deliberately counts for nothing here — a bar that
+   * moves before you have answered anything reads as progress you have not made.
+   */
   mastery: number;
 }
 
@@ -263,8 +374,8 @@ export function techniqueMastery(p: Progress, id: TechniqueId): TechniqueMastery
   const pool = PROBLEMS.filter((q) => q.techniques.includes(id));
   const solved = pool.filter((q) => hasSolved(p, q.id)).length;
   const lessonRead = p.lessonsRead.includes(id);
-  const solveShare = pool.length ? solved / pool.length : 0;
-  return { id, solved, total: pool.length, lessonRead, mastery: 0.2 * (lessonRead ? 1 : 0) + 0.8 * solveShare };
+  const mastery = pool.length ? solved / pool.length : 0;
+  return { id, solved, total: pool.length, lessonRead, mastery };
 }
 
 export function allMastery(p: Progress): TechniqueMastery[] {

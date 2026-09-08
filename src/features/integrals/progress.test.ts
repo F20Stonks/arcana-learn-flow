@@ -7,11 +7,15 @@ import {
   recordDaily,
   recordTrainingSolve,
   resetProgress,
+  scopedKey,
+  setProgressScope,
   stats,
   techniqueMastery,
 } from "./progress";
+import { heatLevel } from "./history";
 import { PROBLEMS } from "./problems";
-import { levelForXp, levelState, scoreAttempt, xpForLevel } from "./scoring";
+import { levelForXp, levelState, nextHintCost, scoreAttempt, xpForLevel } from "./scoring";
+import { dayKey } from "./daily";
 
 const solveFacts = (problemId: string, over: Partial<Parameters<typeof recordTrainingSolve>[0]> = {}) => ({
   problemId,
@@ -66,15 +70,54 @@ describe("recording", () => {
     expect(p.solves["power-monomial"].bestSeconds).toBe(12);
   });
 
+  it("counts every training solve toward today's activity total", () => {
+    recordTrainingSolve(solveFacts("power-monomial"));
+    recordTrainingSolve(solveFacts("power-monomial")); // same problem again still counts twice
+    recordTrainingSolve(solveFacts("power-polynomial"));
+    const p = getProgress();
+    expect(p.solveDays[dayKey()]).toBe(3);
+  });
+
+  it("counts every solved daily slot toward that day's activity total, not the day it was recorded", () => {
+    recordDaily(
+      [
+        { ...solveFacts("power-monomial"), solved: true },
+        { ...solveFacts("power-polynomial"), solved: true },
+        { ...solveFacts("power-monomial"), solved: false },
+      ],
+      new Date(2026, 7, 24, 12),
+    );
+    const p = getProgress();
+    expect(p.solveDays["2026-08-24"]).toBe(2);
+    expect(p.solveDays[dayKey()]).toBeUndefined();
+  });
+
   it("advances the streak on a solved daily", () => {
-    const r1 = recordDaily({ ...solveFacts("power-monomial"), solved: true }, new Date(2026, 7, 24, 12));
+    const r1 = recordDaily([{ ...solveFacts("power-monomial"), solved: true }], new Date(2026, 7, 24, 12));
     expect(r1.streak).toBe(1);
-    const r2 = recordDaily({ ...solveFacts("power-polynomial"), solved: true }, new Date(2026, 7, 25, 12));
+    const r2 = recordDaily(
+      [{ ...solveFacts("power-polynomial"), solved: true }],
+      new Date(2026, 7, 25, 12),
+    );
     expect(r2.streak).toBe(2);
   });
 
+  it("only advances the streak once every slot is solved", () => {
+    const day = new Date(2026, 7, 24, 12);
+    const r = recordDaily(
+      [
+        { ...solveFacts("power-monomial"), solved: true },
+        { ...solveFacts("power-polynomial"), solved: false },
+      ],
+      day,
+    );
+    expect(r.streak).toBe(0);
+    expect(r.solved).toBe(false);
+    expect(r.solvedCount).toBe(1);
+  });
+
   it("records a failed daily without touching the streak or XP", () => {
-    recordDaily({ ...solveFacts("power-monomial"), solved: false }, new Date(2026, 7, 24, 12));
+    recordDaily([{ ...solveFacts("power-monomial"), solved: false }], new Date(2026, 7, 24, 12));
     const p = getProgress();
     expect(p.xp).toBe(0);
     expect(p.streak.current).toBe(0);
@@ -83,8 +126,8 @@ describe("recording", () => {
 
   it("keeps one record per day", () => {
     const d = new Date(2026, 7, 24, 12);
-    recordDaily({ ...solveFacts("power-monomial"), solved: false }, d);
-    recordDaily({ ...solveFacts("power-monomial"), solved: true }, d);
+    recordDaily([{ ...solveFacts("power-monomial"), solved: false }], d);
+    recordDaily([{ ...solveFacts("power-monomial"), solved: true }], d);
     expect(Object.keys(getProgress().daily)).toHaveLength(1);
     expect(getProgress().daily["2026-08-24"].solved).toBe(true);
   });
@@ -125,7 +168,7 @@ describe("derived stats", () => {
     expect(s.badges.map((b) => b.id)).toContain("first-blood");
   });
 
-  it("splits technique mastery between lesson and practice", () => {
+  it("counts technique mastery from solves only", () => {
     const m = techniqueMastery(getProgress(), "parts");
     expect(m.mastery).toBe(0);
     expect(m.total).toBeGreaterThan(0);
@@ -186,5 +229,75 @@ describe("levels", () => {
     expect(s.progress).toBeGreaterThan(0);
     expect(s.progress).toBeLessThan(1);
     expect(s.rank).toBeTruthy();
+  });
+});
+
+describe("what the next hint costs", () => {
+  it("charges 20% until the penalty caps out", () => {
+    expect(nextHintCost(0)).toBeCloseTo(0.2);
+    expect(nextHintCost(1)).toBeCloseTo(0.2);
+    expect(nextHintCost(2)).toBeCloseTo(0.2);
+  });
+
+  it("charges nothing past the cap, which the button used to price at 20%", () => {
+    expect(nextHintCost(3)).toBeCloseTo(0);
+    expect(nextHintCost(9)).toBeCloseTo(0);
+  });
+
+  it("agrees with what scoreAttempt actually deducts", () => {
+    const at = (hintsUsed: number) =>
+      scoreAttempt({
+        difficulty: 3,
+        seconds: 0,
+        hintsUsed,
+        wrongAttempts: 0,
+        streak: 0,
+        mode: "daily",
+        repeat: false,
+      });
+    for (const used of [0, 1, 2, 3, 4]) {
+      const charged = at(used).hintPenalty - at(used + 1).hintPenalty;
+      expect(charged).toBeCloseTo(at(0).base * nextHintCost(used), 0);
+    }
+  });
+});
+
+describe("migrating stored data", () => {
+  // Before the daily held DAILY_SLOTS problems, a stored daily record had a single `problemId`
+  // string and no `solvedCount`. Anyone who played that version has exactly this shape sitting in
+  // their browser's localStorage, and every page that reads today's Progress has to survive it.
+  it("upgrades a pre-DAILY_SLOTS record instead of crashing on the missing problemIds array", () => {
+    setProgressScope("migration-test-user");
+    const oldShape = {
+      version: 1,
+      xp: 100,
+      solves: {},
+      daily: {
+        "2026-08-20": {
+          problemId: "power-monomial",
+          solved: true,
+          seconds: 30,
+          hintsUsed: 0,
+          wrongAttempts: 0,
+          score: 40,
+        },
+      },
+      streak: { current: 1, longest: 1, lastDayKey: "2026-08-20" },
+      badges: {},
+      lessonsRead: [],
+      sprints: {},
+    };
+    window.localStorage.setItem(scopedKey("arcana.integrals.progress.v1"), JSON.stringify(oldShape));
+    setProgressScope(null);
+    setProgressScope("migration-test-user"); // re-enter the scope so read() reloads from storage
+
+    const record = getProgress().daily["2026-08-20"];
+    expect(record.problemIds).toEqual(["power-monomial"]);
+    expect(record.solvedCount).toBe(1);
+    expect(record.solved).toBe(true);
+    expect(() => heatLevel(record)).not.toThrow();
+    expect(heatLevel(record)).toBeGreaterThan(0);
+
+    setProgressScope(null);
   });
 });

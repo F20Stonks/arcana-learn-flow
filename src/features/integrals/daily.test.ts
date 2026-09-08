@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyDifficulty, dailyNumber, dailyProblem, dayKey, shareText } from "./daily";
+import { dailyDifficulty, dailyNumber, dailyProblem, dailyProblems, DAILY_SLOTS, dayKey, shareText } from "./daily";
 
 const at = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12, 0, 0);
 
@@ -48,6 +48,33 @@ describe("daily selection", () => {
 
   it("keys days by local calendar date", () => {
     expect(dayKey(at(2026, 8, 26))).toBe("2026-08-26");
+  });
+});
+
+describe("dailyProblems (the day's full set)", () => {
+  it("gives DAILY_SLOTS distinct problems, all at the day's difficulty", () => {
+    const date = at(2026, 8, 26);
+    const problems = dailyProblems(date);
+    expect(problems).toHaveLength(DAILY_SLOTS);
+    expect(new Set(problems.map((p) => p.id)).size).toBe(DAILY_SLOTS);
+    for (const p of problems) expect(p.difficulty).toBe(dailyDifficulty(date));
+  });
+
+  it("gives the same three problems to everyone on the same day", () => {
+    const a = dailyProblems(at(2026, 8, 26)).map((p) => p.id);
+    const b = dailyProblems(new Date(2026, 7, 26, 23, 30)).map((p) => p.id);
+    expect(a).toEqual(b);
+  });
+
+  it("moves on the next day", () => {
+    const a = dailyProblems(at(2026, 8, 26)).map((p) => p.id);
+    const b = dailyProblems(at(2026, 8, 27)).map((p) => p.id);
+    expect(a).not.toEqual(b);
+  });
+
+  it("puts the first slot in agreement with dailyProblem", () => {
+    const date = at(2026, 8, 26);
+    expect(dailyProblems(date)[0].id).toBe(dailyProblem(date).id);
   });
 });
 

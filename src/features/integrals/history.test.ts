@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { difficultyBreakdown, heatLevel, heatmapWeeks, historySummary, monthLabels } from "./history";
+import {
+  activityHeatmapWeeks,
+  activityLevel,
+  difficultyBreakdown,
+  heatLevel,
+  heatmapWeeks,
+  historySummary,
+  monthLabels,
+} from "./history";
 import { emptyProgress, type Progress } from "./progress";
 import { PROBLEMS } from "./problems";
 import { BASE_POINTS } from "./scoring";
@@ -10,8 +18,9 @@ function withDaily(entries: Array<[string, Partial<Progress["daily"][string]>]>)
   const p = emptyProgress();
   for (const [key, record] of entries) {
     p.daily[key] = {
-      problemId: "power-monomial",
+      problemIds: ["power-monomial"],
       solved: true,
+      solvedCount: 1,
       seconds: 30,
       hintsUsed: 0,
       wrongAttempts: 0,
@@ -29,11 +38,11 @@ describe("heat level", () => {
 
   it("is nothing at all for a day that was missed or lost", () => {
     expect(heatLevel(undefined)).toBe(0);
-    expect(heatLevel({ problemId: "power-monomial", solved: false, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score: 0 })).toBe(0);
+    expect(heatLevel({ problemIds: ["power-monomial"], solved: false, solvedCount: 0, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score: 0 })).toBe(0);
   });
 
   it("grades against that day's par rather than the raw score", () => {
-    const day = (score: number) => ({ problemId: "power-monomial", solved: true, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
+    const day = (score: number) => ({ problemIds: ["power-monomial"], solved: true, solvedCount: 1, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
     expect(heatLevel(day(par * 0.5))).toBe(1);
     expect(heatLevel(day(par * 0.85))).toBe(2);
     expect(heatLevel(day(par * 1.1))).toBe(3);
@@ -45,7 +54,7 @@ describe("heat level", () => {
     // than a scraped Saturday.
     const hard = PROBLEMS.find((p) => p.difficulty === 5)!;
     const easy = PROBLEMS.find((p) => p.difficulty === 1)!;
-    const at = (id: string, score: number) => ({ problemId: id, solved: true, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
+    const at = (id: string, score: number) => ({ problemIds: [id], solved: true, solvedCount: 1, seconds: 9, hintsUsed: 0, wrongAttempts: 0, score });
     expect(heatLevel(at(hard.id, BASE_POINTS[5] * 1.4))).toBe(4);
     expect(heatLevel(at(easy.id, BASE_POINTS[1] * 1.4))).toBe(4);
     // ...and the same raw score means very different things on each.
@@ -100,6 +109,46 @@ describe("the calendar grid", () => {
     expect(labels.length).toBeGreaterThanOrEqual(4);
     expect(new Set(labels.map((l) => l.label)).size).toBe(labels.length);
     expect(labels.map((l) => l.index)).toEqual([...labels.map((l) => l.index)].sort((a, b) => a - b));
+  });
+});
+
+describe("activity level", () => {
+  it("buckets raw solve counts into the same four-step ramp as the daily heatmap", () => {
+    expect(activityLevel(0)).toBe(0);
+    expect(activityLevel(1)).toBe(1);
+    expect(activityLevel(3)).toBe(2);
+    expect(activityLevel(6)).toBe(3);
+    expect(activityLevel(7)).toBe(4);
+    expect(activityLevel(50)).toBe(4);
+  });
+});
+
+describe("the activity grid", () => {
+  it("is the same rectangle of whole weeks as the daily heatmap", () => {
+    const weeks = activityHeatmapWeeks(emptyProgress(), 18, today);
+    expect(weeks).toHaveLength(18);
+    for (const column of weeks) expect(column).toHaveLength(7);
+    expect(weeks.at(-1)!.some((c) => c.key === "2026-08-26")).toBe(true);
+  });
+
+  it("counts every solve that day regardless of which mode banked it", () => {
+    const p = emptyProgress();
+    p.solveDays["2026-08-24"] = 5;
+    p.solveDays["2026-08-25"] = 0;
+    const flat = activityHeatmapWeeks(p, 4, today).flat();
+    const busy = flat.find((c) => c.key === "2026-08-24")!;
+    const quiet = flat.find((c) => c.key === "2026-08-25")!;
+    const untouched = flat.find((c) => c.key === "2026-08-23")!;
+    expect(busy.count).toBe(5);
+    expect(busy.level).toBe(activityLevel(5));
+    expect(quiet.count).toBe(0);
+    expect(untouched.count).toBe(0);
+  });
+
+  it("marks days after today as future, same as the daily heatmap", () => {
+    const flat = activityHeatmapWeeks(emptyProgress(), 4, today).flat();
+    expect(flat.find((c) => c.key === "2026-08-26")!.future).toBe(false);
+    expect(flat.find((c) => c.key === "2026-08-27")!.future).toBe(true);
   });
 });
 

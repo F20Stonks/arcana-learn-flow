@@ -31,10 +31,13 @@ import {
   Flame,
   Trophy,
   Zap,
+  GraduationCap,
   Sigma,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Building2,
+  X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,6 +47,7 @@ import CustomizeMenu from "@/components/CustomizeMenu";
 import SafeBoundary from "@/components/SafeBoundary";
 
 const COLLAPSE_KEY = "cortexed.sidebarCollapsed";
+const BETA_BANNER_KEY = "cortexed.betaBannerDismissed";
 
 function BrandMark() {
   return (
@@ -69,6 +73,9 @@ type NavItem = {
   /** Extra routes that should also light this item up as current. */
   match?: (path: string) => boolean;
   badge?: number;
+  /** Not live in the beta yet — the route itself renders a "coming soon" page either way, this
+   *  just labels it in the nav so the sidebar doesn't promise something it can't deliver. */
+  soon?: boolean;
 };
 
 /** Grouped so the sidebar reads as three intentions — where I'm going, what I know, what I practise. */
@@ -76,7 +83,7 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
   return [
     {
       heading: null,
-      items: [{ label: "Home", icon: Home, to: "/dashboard", match: (p) => p.startsWith("/dashboard") || p.startsWith("/track/") }],
+      items: [{ label: "Home", icon: Home, to: "/dashboard", match: (p) => p.startsWith("/dashboard") || p.startsWith("/track/"), soon: true }],
     },
     {
       // These three were tabs in a right-hand slide-over. They're real routes now: a sheet has no
@@ -84,9 +91,9 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       // searchable list, a graph and a calendar.
       heading: "Knowledge",
       items: [
-        { label: "Concepts", icon: Brain, to: "/concepts" },
-        { label: "Map", icon: Network, to: "/map" },
-        { label: "Review Calendar", icon: CalendarDays, to: "/reviews", badge: dueReviews },
+        { label: "Concepts", icon: Brain, to: "/concepts", soon: true },
+        { label: "Map", icon: Network, to: "/map", soon: true },
+        { label: "Review Calendar", icon: CalendarDays, to: "/reviews", badge: dueReviews, soon: true },
       ],
     },
     {
@@ -94,9 +101,11 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       items: [
         { label: "Drills", icon: Zap, to: "/drills" },
         { label: "Integrals", icon: Sigma, to: "/integrals" },
-        { label: "Question bank", icon: Library, to: "/question-bank" },
-        { label: "Resources", icon: BookOpen, to: "/resource-bank" },
-        { label: "Analytics", icon: BarChart3, to: "/analytics" },
+        { label: "UK Bee", icon: GraduationCap, to: "/ukuib" },
+        { label: "Firm OAs", icon: Building2, to: "/oa" },
+        { label: "Question bank", icon: Library, to: "/question-bank", soon: true },
+        { label: "Resources", icon: BookOpen, to: "/resource-bank", soon: true },
+        { label: "Analytics", icon: BarChart3, to: "/analytics", soon: true },
       ],
     },
   ];
@@ -122,6 +131,9 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [peek, setPeek] = useState(false);
+  // Per-tab, not per-account: a beta notice that vanished forever after one click would go stale
+  // the moment more of the app actually ships. sessionStorage means it comes back next visit.
+  const [bannerDismissed, setBannerDismissed] = useState(() => sessionStorage.getItem(BETA_BANNER_KEY) === "1");
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
@@ -184,14 +196,24 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
                 )}
                 <item.icon className={`h-[16px] w-[16px] shrink-0 ${current ? "text-primary" : ""}`} />
                 {!iconOnly && <span className="truncate">{item.label}</span>}
-                {!!item.badge && item.badge > 0 && (
-                  <span
-                    className={`readout flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ${
-                      iconOnly ? "absolute -right-0.5 -top-0.5" : "ml-auto"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                {/* "Soon" wins over the numeric badge — a due-review count on a gated feature is a
+                    promise the beta can't keep yet. */}
+                {item.soon ? (
+                  !iconOnly && (
+                    <span className="ml-auto shrink-0 rounded-full border border-border bg-accent/50 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      Soon
+                    </span>
+                  )
+                ) : (
+                  !!item.badge && item.badge > 0 && (
+                    <span
+                      className={`readout flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ${
+                        iconOnly ? "absolute -right-0.5 -top-0.5" : "ml-auto"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )
                 )}
               </button>
             );
@@ -200,7 +222,9 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
                 <TooltipTrigger asChild>{button}</TooltipTrigger>
                 <TooltipContent side="right">
                   {item.label}
-                  {!!item.badge && item.badge > 0 && ` — ${item.badge} due`}
+                  {item.soon
+                    ? " — coming soon"
+                    : !!item.badge && item.badge > 0 && ` — ${item.badge} due`}
                 </TooltipContent>
               </Tooltip>
             ) : (
@@ -235,6 +259,28 @@ export default function AppShell({ children, focusMode = false }: AppShellProps)
 
   return (
     <div className="relative min-h-screen bg-background">
+      {/* ── Beta notice ──────────────────────────────────────────────────────────────── */}
+      {!focusMode && !bannerDismissed && (
+        <div className="relative z-50 flex items-center gap-2.5 border-b border-primary/25 bg-primary/[0.08] px-4 py-2 text-[12.5px] text-foreground">
+          <span className="readout shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+            Beta
+          </span>
+          <span className="min-w-0 flex-1 truncate">
+            Cortexed is in beta. Drills and Integral Arena are live — everything else is coming
+            soon, and every signup is already on the list for it.
+          </span>
+          <button
+            onClick={() => {
+              sessionStorage.setItem(BETA_BANNER_KEY, "1");
+              setBannerDismissed(true);
+            }}
+            aria-label="Dismiss beta notice"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/15 hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       {/* ── Top bar: identity, readouts, account ───────────────────────────────────── */}
       {!focusMode && (
         <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-xl">

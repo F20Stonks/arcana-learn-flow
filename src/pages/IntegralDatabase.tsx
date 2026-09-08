@@ -15,7 +15,7 @@ import SolutionSteps from "@/features/integrals/components/SolutionSteps";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { hasSolved } from "@/features/integrals/progress";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
-import { DIFFICULTY_LABEL, PROBLEMS, SOURCE_NAMES, formatSource } from "@/features/integrals/problems";
+import { DIFFICULTY_LABEL, PROBLEMS, SOURCES, formatSource, sourceKey } from "@/features/integrals/problems";
 import { integralLatex } from "@/features/integrals/latex";
 import type { TechniqueId } from "@/features/integrals/types";
 
@@ -33,7 +33,7 @@ export default function IntegralDatabase() {
     const q = query.trim().toLowerCase();
     return PROBLEMS.filter((p) => {
       if (technique && !p.techniques.includes(technique)) return false;
-      if (source && p.source.name !== source) return false;
+      if (source && sourceKey(p.source) !== source) return false;
       const solved = hasSolved(progress, p.id);
       if (solvedFilter === "solved" && !solved) return false;
       if (solvedFilter === "unsolved" && solved) return false;
@@ -94,9 +94,9 @@ export default function IntegralDatabase() {
               className="rounded-lg border border-border bg-background px-3 py-1.5 text-[13px] text-foreground"
             >
               <option value="">Every source</option>
-              {SOURCE_NAMES.map((name) => (
-                <option key={name} value={name}>
-                  {name === "original" ? "Original" : name}
+              {SOURCES.map((s) => (
+                <option key={sourceKey(s)} value={sourceKey(s)}>
+                  {formatSource(s)}
                 </option>
               ))}
             </select>

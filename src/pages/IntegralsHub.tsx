@@ -6,16 +6,36 @@
  * to show the player what they've built up — level, streak, mastery, badges.
  */
 import { Link } from "react-router-dom";
-import { BarChart3, BookMarked, Check, Dumbbell, Flame, Sigma, Timer, Trophy, Users } from "lucide-react";
+import {
+  BarChart3,
+  BookMarked,
+  Building2,
+  BookOpen,
+  Brain,
+  CalendarDays,
+  Check,
+  ClipboardList,
+  Dumbbell,
+  Flame,
+  Layers,
+  Sigma,
+  Timer,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react";
 import AppShell from "@/components/AppShell";
+import ScoringExplainer from "@/features/integrals/components/ScoringExplainer";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
+import DailyHeatmap from "@/features/integrals/components/DailyHeatmap";
+import ActivityHeatmap from "@/features/integrals/components/ActivityHeatmap";
 import { DifficultyStars } from "@/features/integrals/components/IntegralPrompt";
 import { integralLatex } from "@/features/integrals/latex";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
-import { dailyNumber, dailyProblem, WEEKDAY_NAMES } from "@/features/integrals/daily";
+import { dailyNumber, dailyProblems, WEEKDAY_NAMES } from "@/features/integrals/daily";
 import { allMastery, BADGES, stats, todaysDaily } from "@/features/integrals/progress";
-import { TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
+import { TECHNIQUE_BY_ID, TECHNIQUES } from "@/features/integrals/techniques";
 import { DIFFICULTY_LABEL } from "@/features/integrals/problems";
 
 function Stat({ value, label }: { value: string; label: string }) {
@@ -30,7 +50,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 export default function IntegralsHub() {
   const progress = useProgress();
   const s = stats(progress);
-  const today = dailyProblem();
+  const today = dailyProblems();
   const record = todaysDaily(progress);
   const mastery = allMastery(progress);
   const earned = new Set(s.badges.map((b) => b.id));
@@ -43,8 +63,8 @@ export default function IntegralsHub() {
             Integral Arena
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
-            One integral a day, the same one for everyone — plus a training room where you can learn a
-            technique and then grind it until it's reflex.
+            Three integrals a day, the same ones for everyone — plus a training room where you can
+            learn a technique and then grind it until it's reflex.
           </p>
         </header>
 
@@ -64,6 +84,15 @@ export default function IntegralsHub() {
               <BarChart3 className="h-3.5 w-3.5" /> Progress
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
+            {/* Deliberately the loudest control on the page — competing is the point of the
+                Arena, and as a muted text link nobody found it. */}
+            <Link
+              to="/leaderboards"
+              className="group inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-semibold text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_8px_24px_-8px_hsl(var(--primary)/0.6)] transition-opacity hover:opacity-90"
+            >
+              <Trophy className="h-4 w-4" /> Leaderboards
+              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
           </div>
         </section>
 
@@ -79,10 +108,11 @@ export default function IntegralsHub() {
                   Daily #{dailyNumber()}
                 </span>
                 <span className="text-[13px] text-muted-foreground">
-                  {WEEKDAY_NAMES[new Date().getDay()]} · {DIFFICULTY_LABEL[today.difficulty]}
+                  {WEEKDAY_NAMES[new Date().getDay()]} · {DIFFICULTY_LABEL[today[0].difficulty]} ·{" "}
+                  {today.length} integrals
                 </span>
               </div>
-              <DifficultyStars level={today.difficulty} />
+              <DifficultyStars level={today[0].difficulty} />
             </div>
 
             {/* Blur hides the problem from sight but not from assistive tech, which would read
@@ -92,10 +122,12 @@ export default function IntegralsHub() {
               aria-hidden={record ? undefined : true}
             >
               <Tex block className={`text-foreground ${record ? "" : "blur-[7px] select-none"}`}>
-                {integralLatex(today)}
+                {integralLatex(today[0])}
               </Tex>
             </div>
-            {!record && <p className="sr-only">Today's integral is hidden until you start the run.</p>}
+            {!record && (
+              <p className="sr-only">Today's {today.length} integrals are hidden until you start the run.</p>
+            )}
 
             <div className="flex items-center justify-between text-[13px]">
               {record ? (
@@ -116,7 +148,19 @@ export default function IntegralsHub() {
           </Link>
         </section>
 
-        <section className="reveal mb-6 grid gap-4 sm:grid-cols-2">
+        <div className="reveal mb-6 grid gap-4 sm:grid-cols-2">
+          <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <DailyHeatmap progress={progress} />
+          </section>
+          <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <ActivityHeatmap progress={progress} />
+          </section>
+        </div>
+
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Learn it</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Read the technique, then make it reflex.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
           <Link
             to="/integrals/train"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -124,14 +168,62 @@ export default function IntegralsHub() {
             <Dumbbell className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Training</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Eight techniques, each with a lesson on when to reach for it and a practice queue that
-              starts with what you haven't cracked yet.
+              {TECHNIQUES.length} techniques, each with a lesson on when to reach for it and a practice
+              queue that starts with what you haven't cracked yet.
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               Train →
             </span>
           </Link>
+          <Link
+            to="/integrals/lessons"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Lessons</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              Every technique written out in one place — read them straight through without starting a
+              drill. Reading isn't scored.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Read →
+            </span>
+          </Link>
+          <Link
+            to="/integrals/values"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Values deck</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              Flashcards for the results worth having cold — flip and check yourself. Not scored,
+              read it like the lessons.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Study →
+            </span>
+          </Link>
+          <Link
+            to="/integrals/campaign"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <CalendarDays className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Campaign</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              A session for today, counted back from Round 1 — recognition, problems and papers on
+              schedule, plus how ready you actually are.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Plan →
+            </span>
+          </Link>
+          </div>
+        </section>
 
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Under the clock</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Speed is the other half of the skill — these are all timed.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
           <Link
             to="/integrals/sprint"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -146,17 +238,80 @@ export default function IntegralsHub() {
               Sprint →
             </span>
           </Link>
+          <Link
+            to="/integrals/uk/round1"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <ClipboardList className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">UK Round 1</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The weekly benchmark: 30 problems, 120 minutes, free navigation — the real solo qualifier
+              format, with a full pacing report at the end.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Sit the paper →
+            </span>
+          </Link>
+          <Link
+            to="/oa"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Building2 className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">OA Arena</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The other clock you will sit under: reconstructions of trading firms' online
+              assessments — Optiver's eighty questions in eight minutes, SIG's sequences, Akuna's
+              options paper — built to the shape the real screens are reported to have.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Sit one →
+            </span>
+          </Link>
+          <Link
+            to="/integrals/recognition"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Zap className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Name the weapon</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              The integrand, four techniques, three seconds — no solving. Recognising the right move
+              on sight is most of the clock on an accessible question.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Drill →
+            </span>
+          </Link>
+          <Link
+            to="/integrals/headsolve"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Brain className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Headsolve</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              No answer input at all — think it, stop the clock, self-grade. The only speed number
+              that transfers to a competition you write by hand.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Start →
+            </span>
+          </Link>
+          </div>
+        </section>
 
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Compete</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Where your score is measured against everyone else playing.</p>
+          <div className="grid gap-4">
           <Link
             to="/integrals/daily"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:col-span-2"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
           >
             <Users className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Head to head</h2>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Everyone gets the same integral, so the scores mean something. Solve today's and you take
-              a place on its board — ranked by score, then by time. One attempt per puzzle, which is
-              what stops it becoming a retry contest.
+              Everyone gets the same three integrals, so the combined score means something. Solve
+              today's and you take a place on its board — ranked by score, then by time. One attempt
+              per puzzle, which is what stops it becoming a retry contest.
             </p>
             <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
               {record ? "See the board →" : "Play today's →"}
@@ -165,7 +320,7 @@ export default function IntegralsHub() {
 
           <Link
             to="/integrals/database"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:col-span-2"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
           >
             <BookMarked className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Problem database</h2>
@@ -177,10 +332,14 @@ export default function IntegralsHub() {
               Search →
             </span>
           </Link>
+          </div>
         </section>
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <h2 className="font-display text-[17px] font-semibold text-foreground">Technique mastery</h2>
+          <h2 className="font-display text-[17px] font-semibold text-foreground">Problems solved by technique</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Bars move only when you solve a problem — reading a lesson doesn't count.
+          </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {mastery.map((m) => (
               <Link
@@ -213,6 +372,10 @@ export default function IntegralsHub() {
             ))}
           </div>
         </section>
+
+        <div className="reveal mb-6">
+          <ScoringExplainer />
+        </div>
 
         <Link
           to="/integrals/progress"

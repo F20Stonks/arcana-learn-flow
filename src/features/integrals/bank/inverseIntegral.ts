@@ -8,7 +8,6 @@ import type { Problem } from "../types";
 export const InverseIntegral: Problem[] = [
   {
     id: "inv-sqrt-0to4",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{x}",
     integrandExpr: "sqrt(x)",
@@ -19,6 +18,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 4],
     difficulty: 2,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\sqrt x is the inverse of f(x)=x^2 — and x^2 is the one you can integrate without thinking.",
       "Match the bounds: f(2)=4, so use a=0, b=2 on the x^2 side to land on upper limit 4 on the \\sqrt x side.",
@@ -31,7 +31,6 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arcsin-0to1",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\arcsin x",
     integrandExpr: "asin(x)",
@@ -42,6 +41,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\arcsin has no antiderivative you'd want to guess — but its inverse, \\sin, integrates in one line.",
       "Match bounds so \\sin\\!\\left(\\frac{\\pi}{2}\\right)=1: use a=0, b=\\frac{\\pi}{2} on the \\sin side.",
@@ -54,7 +54,6 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arctan-0to1",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\arctan x",
     integrandExpr: "atan(x)",
@@ -65,6 +64,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, 1],
     difficulty: 3,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\tan is the trivial direction here — its integral is a single \\ln|\\cos x|.",
       "Match bounds so \\tan\\!\\left(\\frac{\\pi}{4}\\right)=1: use a=0, b=\\frac{\\pi}{4}.",
@@ -77,7 +77,6 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-ln-2to4",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln x",
     integrandExpr: "log(x)",
@@ -88,6 +87,7 @@ export const InverseIntegral: Problem[] = [
     domain: [2, 4],
     difficulty: 4,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "\\ln is the inverse of e^x, which integrates to itself.",
       "Match the bounds: e^{\\ln 2}=2 and e^{\\ln 4}=4, so use a=\\ln 2, b=\\ln 4 on the e^x side.",
@@ -100,7 +100,6 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arctan-0toSqrt3",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\arctan x",
     integrandExpr: "atan(x)",
@@ -111,6 +110,7 @@ export const InverseIntegral: Problem[] = [
     domain: [0, Math.sqrt(3)],
     difficulty: 5,
     techniques: ["inverse-integral"],
+    source: { name: "original" },
     hints: [
       "Same pair as before, harder bound: \\tan\\!\\left(\\frac{\\pi}{3}\\right)=\\sqrt3, so use a=0, b=\\frac{\\pi}{3}.",
       "\\int_0^{\\pi/3}\\tan x\\,dx = -\\ln\\cos\\frac{\\pi}{3} = -\\ln\\frac{1}{2} = \\ln 2.",
@@ -119,6 +119,29 @@ export const InverseIntegral: Problem[] = [
       "\\int_0^{\\pi/3}\\tan x\\,dx + \\int_0^{\\sqrt3}\\arctan x\\,dx = \\frac{\\pi}{3}\\cdot\\sqrt3 - 0\\cdot 0.",
       "\\int_0^{\\pi/3}\\tan x\\,dx = \\ln 2.",
       "So \\int_0^{\\sqrt3}\\arctan x\\,dx = \\frac{\\pi\\sqrt3}{3} - \\ln 2.",
+    ],
+  },
+  {
+    id: "inv-sqrt-reciprocal-minus-one",
+    kind: "definite",
+    integrand: "\\sqrt{\\frac{1}{x}-1}",
+    integrandExpr: "sqrt(1/x-1)",
+    lower: "0",
+    upper: "1",
+    answer: "pi/2",
+    answerLatex: "\\frac{\\pi}{2}",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["inverse-integral"],
+    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    hints: [
+      "Solving y=\\sqrt{1/x-1} for x gives x=\\frac{1}{1+y^2} — so the inverse of this function is g(t)=\\frac{1}{1+t^2}, which you already know how to integrate.",
+      "Substitute x=g(t)=\\frac{1}{1+t^2} directly (i.e. t is exactly the value of the original integrand) rather than working with f itself.",
+    ],
+    steps: [
+      "Let t=\\sqrt{1/x-1}, so x=\\frac{1}{1+t^2} and dx=-\\frac{2t}{(1+t^2)^2}\\,dt. As x:0\\to1, t:\\infty\\to0.",
+      "\\int_0^1\\sqrt{\\tfrac1x-1}\\,dx = \\int_0^\\infty\\frac{2t^2}{(1+t^2)^2}\\,dt (the bound flip cancels the minus sign).",
+      "With t=\\tan\\theta: \\frac{2t^2}{(1+t^2)^2}\\,dt = 2\\sin^2\\theta\\,d\\theta, so the integral is \\int_0^{\\pi/2}2\\sin^2\\theta\\,d\\theta = \\frac{\\pi}{2}.",
     ],
   },
 ];

@@ -60,6 +60,36 @@ export interface SprintConfig {
   seconds: Duration;
 }
 
+const SETUP_KEY = "arcana.integrals.sprint-setup";
+
+/**
+ * The last setup used. Anyone who runs Brutal · 5 min runs it again; making them re-pick both
+ * every visit is a toll on the one mode you are meant to play twice in a row.
+ */
+export function storedSetup(): SprintConfig {
+  const fallback: SprintConfig = { band: "mixed", seconds: 180 };
+  try {
+    const raw = globalThis.localStorage?.getItem(SETUP_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<SprintConfig>;
+    const band = BANDS.some((b) => b.id === parsed.band) ? (parsed.band as BandId) : fallback.band;
+    const seconds = DURATIONS.includes(parsed.seconds as Duration)
+      ? (parsed.seconds as Duration)
+      : fallback.seconds;
+    return { band, seconds };
+  } catch {
+    return fallback;
+  }
+}
+
+export function rememberSetup(config: SprintConfig) {
+  try {
+    globalThis.localStorage?.setItem(SETUP_KEY, JSON.stringify(config));
+  } catch {
+    // No storage, no memory — the sprint still runs.
+  }
+}
+
 /** One key per configuration, so a 60-second warm-up best never competes with a 5-minute brutal. */
 export function configKey(config: SprintConfig): string {
   return `${config.band}-${config.seconds}`;
@@ -72,16 +102,32 @@ export function describeConfig(config: SprintConfig): string {
 /**
  * The run's queue. Long enough that nobody reaches the end — a sprint that runs out of problems
  * would silently cap the score and make two runs incomparable.
+ *
+ * Already-solved problems are pushed to the back rather than dropped outright: a sprint still
+ * needs to be "long enough that nobody reaches the end" even for a player who has cleared most of
+ * a band, and a repeat is a much smaller ask than running out of problems mid-run.
  */
-export function buildQueue(config: SprintConfig, seed: number): Problem[] {
+export function buildQueue(
+  config: SprintConfig,
+  seed: number,
+  solvedIds: ReadonlySet<string> = new Set(),
+): Problem[] {
   const band = BAND_BY_ID[config.band];
   const pool = PROBLEMS.filter((p) => band.difficulties.includes(p.difficulty)).sort((a, b) =>
     a.id.localeCompare(b.id),
   );
-  return shuffled(pool, seed);
+  const shuffledPool = shuffled(pool, seed);
+  const unsolved = shuffledPool.filter((p) => !solvedIds.has(p.id));
+  const solved = shuffledPool.filter((p) => solvedIds.has(p.id));
+  return [...unsolved, ...solved];
 }
 
 const SOLVE_POINTS: Record<Difficulty, number> = { 1: 10, 2: 20, 3: 35, 4: 55, 5: 80 };
+
+/** What one solve pays. Exported so the run can tell you the moment you land it. */
+export function solvePoints(difficulty: Difficulty): number {
+  return SOLVE_POINTS[difficulty];
+}
 
 /** Skipping is allowed and costs a little — otherwise the best strategy is to skip until you get an easy one. */
 export const SKIP_PENALTY = 8;
@@ -90,6 +136,12 @@ export interface SprintResult {
   solved: Problem[];
   skipped: number;
   wrongAttempts: number;
+  /**
+   * The ones that got away — skipped, plus whatever was on screen when the clock stopped. The
+   * result screen shows them with their answers, because a sprint you learn nothing from is just
+   * a typing test.
+   */
+  missed: Problem[];
   score: number;
   config: SprintConfig;
 }

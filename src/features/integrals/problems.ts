@@ -29,6 +29,21 @@ import { InverseIntegral } from "./bank/inverseIntegral";
 import { FloorFunction } from "./bank/floorFunction";
 import { BetaIntegrals } from "./bank/betaIntegrals";
 import { IntroducingConstants } from "./bank/introducingConstants";
+import { LogPowerIntegrals } from "./bank/logPowerIntegrals";
+import { ReciprocalSubstitution } from "./bank/reciprocalSubstitution";
+import { GammaFunction } from "./bank/gammaFunction";
+import { ZetaSeries } from "./bank/zetaSeries";
+import { WallisProduct } from "./bank/wallisProduct";
+import { GaussianHypersphere } from "./bank/gaussianHypersphere";
+import { UkuibRound1_2021 } from "./bank/ukuib/round1_2021";
+import { UkuibRound1_2022 } from "./bank/ukuib/round1_2022";
+import { UkuibRound1_2023_2024 } from "./bank/ukuib/round1_2023_2024";
+import { UkuibRound3 } from "./bank/ukuib/round3";
+import { UkuibGroupRound } from "./bank/ukuib/groupRound";
+import { UkuibGroupRound2023_2026 } from "./bank/ukuib/groupRound2023_2026";
+import { UkuibQualifier } from "./bank/ukuib/qualifier";
+import { UkuibCrossnumber } from "./bank/ukuib/crossnumber";
+import { UkuibRelayShuttle } from "./bank/ukuib/relayShuttle";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -46,6 +61,21 @@ export const PROBLEMS: Problem[] = [
   ...FloorFunction,
   ...BetaIntegrals,
   ...IntroducingConstants,
+  ...LogPowerIntegrals,
+  ...ReciprocalSubstitution,
+  ...GammaFunction,
+  ...ZetaSeries,
+  ...WallisProduct,
+  ...GaussianHypersphere,
+  ...UkuibRound1_2021,
+  ...UkuibRound1_2022,
+  ...UkuibRound1_2023_2024,
+  ...UkuibRound3,
+  ...UkuibGroupRound,
+  ...UkuibGroupRound2023_2026,
+  ...UkuibQualifier,
+  ...UkuibCrossnumber,
+  ...UkuibRelayShuttle,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(
@@ -61,49 +91,45 @@ export function problemsForTechnique(id: TechniqueId): Problem[] {
   return PROBLEMS.filter((p) => p.techniques.includes(id)).sort((a, b) => a.difficulty - b.difficulty);
 }
 
+/** Union across an arbitrary subset of techniques — the multi-select "custom mix" pool. */
+export function problemsForTechniques(ids: TechniqueId[]): Problem[] {
+  const set = new Set(ids);
+  return PROBLEMS.filter((p) => p.techniques.some((t) => set.has(t))).sort(
+    (a, b) => a.difficulty - b.difficulty,
+  );
+}
+
 export function problemsByDifficulty(d: Difficulty): Problem[] {
   return PROBLEMS.filter((p) => p.difficulty === d);
 }
 
-/** Every distinct source name in the bank, "original" last, otherwise alphabetical. */
-export const SOURCE_NAMES: string[] = Array.from(new Set(PROBLEMS.map((p) => p.source.name))).sort(
-  (a, b) => (a === "original" ? 1 : b === "original" ? -1 : a.localeCompare(b)),
-);
-
-/** How many problems each source contributes — drives the "practice by source" cards. */
-export const SOURCE_COUNTS: Record<string, number> = SOURCE_NAMES.reduce(
-  (acc, name) => ({ ...acc, [name]: PROBLEMS.filter((p) => p.source.name === name).length }),
-  {} as Record<string, number>,
-);
-
-export function problemsForSource(name: string): Problem[] {
-  return PROBLEMS.filter((p) => p.source.name === name).sort((a, b) => a.difficulty - b.difficulty);
+/** Stable identity for a source — two problems are "the same source" iff this string matches. */
+export function sourceKey(s: ProblemSource): string {
+  return `${s.name}::${s.year ?? ""}::${s.round ?? ""}`;
 }
 
-export interface ProblemFilter {
-  /** Empty/omitted means "every technique". */
-  techniques?: TechniqueId[];
-  /** Omitted means "every source". */
-  source?: string;
+/** Every distinct source in the bank, in first-seen order — "original" included as one bucket among the rest. */
+export const SOURCES: ProblemSource[] = (() => {
+  const seen = new Map<string, ProblemSource>();
+  for (const p of PROBLEMS) {
+    const key = sourceKey(p.source);
+    if (!seen.has(key)) seen.set(key, p.source);
+  }
+  return [...seen.values()];
+})();
+
+/** A specific competition/document's problems, worked as that source's own uncurated set. */
+export function problemsForSource(s: ProblemSource): Problem[] {
+  const key = sourceKey(s);
+  return PROBLEMS.filter((p) => sourceKey(p.source) === key);
 }
 
-/**
- * The two independent practice filters combined: technique (multi-select) and source
- * (single competition set, worked as-is). Either can be applied alone or together.
- */
-export function filterProblems(filter: ProblemFilter): Problem[] {
-  const { techniques, source } = filter;
-  return PROBLEMS.filter(
-    (p) =>
-      (!techniques || techniques.length === 0 || p.techniques.some((t) => techniques.includes(t))) &&
-      (!source || p.source.name === source),
-  ).sort((a, b) => a.difficulty - b.difficulty);
-}
-
+/** Human-readable label for a source — "Original" for pedagogical examples, else name · round · year. */
 export function formatSource(source: ProblemSource): string {
   if (source.name === "original") return "Original";
-  const parts = [source.name, source.round, source.year ? String(source.year) : undefined].filter(Boolean);
-  return parts.join(" · ");
+  return [source.name, source.round, source.year ? String(source.year) : undefined]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

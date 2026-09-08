@@ -3,17 +3,16 @@
  * integral in a one-parameter family I(a), so the "integrand" is really I(a) evaluated at a
  * specific a; the worked steps show the family and the differentiation that solves it.
  *
- * Kept to finite intervals on purpose. The technique's flagship examples (the Dirichlet integral
- * ∫₀^∞ sin(x)/x dx and its relatives) are improper, and grading those would need the self-check's
- * quadrature to handle an infinite domain — a genuine engineering task, not a content one. Finite
- * intervals still teach the real move: introduce a parameter, differentiate, integrate back.
+ * Originally kept to finite intervals — the technique's flagship examples (the Dirichlet integral
+ * ∫₀^∞ sin(x)/x dx and its relatives) are improper, and grading those needed the self-check's
+ * quadrature to handle an infinite domain. That engineering work is done (problems.test.ts's
+ * quadrature() now maps (0,∞) and (-∞,∞)), so infinite-interval Feynman examples belong here too.
  */
 import type { Problem } from "../types";
 
 export const Feynman: Problem[] = [
   {
     id: "feynman-power-minus-one-a1",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x-1}{\\ln x}",
     integrandExpr: "(x-1)/log(x)",
@@ -24,6 +23,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Neither x nor \\ln x integrates against the other directly — but the integrand is exactly \\frac{x^a-1}{\\ln x} at a = 1.",
       "Differentiating x^a with respect to a brings down a factor of \\ln x, which is exactly what's needed to cancel the denominator.",
@@ -37,7 +37,6 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-a2",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^2-1}{\\ln x}",
     integrandExpr: "(x^2-1)/log(x)",
@@ -48,6 +47,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "Same family as \\int_0^1 \\frac{x-1}{\\ln x}dx, one step further along: this is I(2).",
     ],
@@ -58,7 +58,6 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-a3",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^3-1}{\\ln x}",
     integrandExpr: "(x^3-1)/log(x)",
@@ -69,6 +68,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: ["This is I(3) in the same family — the pattern is I(a) = \\ln(a+1) whatever a is."],
     steps: [
       "I(a) = \\ln(a+1) as before, so I(3) = \\ln 4 = 2\\ln 2.",
@@ -76,7 +76,6 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-half",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\sqrt{x}-1}{\\ln x}",
     integrandExpr: "(sqrt(x)-1)/log(x)",
@@ -87,6 +86,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "original" },
     hints: [
       "\\sqrt{x} = x^{1/2}, so this is the same family evaluated at a non-integer parameter.",
       "There's nothing special about a being a whole number in the derivation — I(a) = \\ln(a+1) for any a > -1.",
@@ -98,7 +98,6 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-log-squared",
-    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln^2 x",
     integrandExpr: "log(x)^2",
@@ -109,6 +108,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
+    source: { name: "UK University Integration Bee", year: 2021, round: "Shuttle" },
     hints: [
       "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
       "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
@@ -122,7 +122,6 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-x-cot-x",
-    source: { name: "original" },
     kind: "definite",
     integrand: "x\\cot x",
     integrandExpr: "x/tan(x)",
@@ -133,6 +132,7 @@ export const Feynman: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["feynman"],
+    source: { name: "UK University Integration Bee", year: 2025, round: "Round 1" },
     hints: [
       "On (0, \\tfrac{\\pi}{2}), \\arctan(\\tan x) = x — so x\\cot x is \\frac{\\arctan(\\tan x)}{\\tan x}, and that has an obvious place to put a parameter.",
       "Consider I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}dx. The target is I(1); I(0) = 0 outright.",
@@ -143,6 +143,115 @@ export const Feynman: Problem[] = [
       "Substitute t = \\tan x, dt = (1+t^2)dx: I'(a) = \\int_0^\\infty\\frac{dt}{(1+a^2t^2)(1+t^2)} = \\frac{\\pi}{2(1+a)} \\text{ (partial fractions)}.",
       "Integrating back: I(a) = \\frac{\\pi}{2}\\ln(1+a) + C, and I(0)=0 gives C=0.",
       "So I(1) = \\frac{\\pi}{2}\\ln 2 — and since \\arctan(\\tan x)=x here, this is exactly \\int_0^{\\pi/2}x\\cot x\\,dx.",
+    ],
+  },
+  {
+    id: "feynman-x-to-7-minus-1",
+    kind: "definite",
+    integrand: "\\frac{x^7-1}{\\ln x}",
+    integrandExpr: "(x^7-1)/log(x)",
+    lower: "0",
+    upper: "1",
+    answer: "3*log(2)",
+    answerLatex: "3\\ln2",
+    domain: [0, 1],
+    difficulty: 4,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee Qualifying Exam", year: 2012, round: "Qualifying Round" },
+    hints: [
+      "This is I(a)=\\int_0^1\\frac{x^a-1}{\\ln x}dx at a=7 — the same family already in this bank.",
+      "I(a)=\\ln(a+1) still holds, so the answer is I(7)=\\ln8=3\\ln2.",
+    ],
+    steps: [
+      "I(a) = \\int_0^1\\frac{x^a-1}{\\ln x}\\,dx has I(a)=\\ln(a+1), by differentiating under the integral sign with respect to a.",
+      "At a=7: I(7)=\\ln8=3\\ln2.",
+    ],
+  },
+  {
+    id: "feynman-def-eneg2x-sin3x-over-x",
+    kind: "definite",
+    integrand: "\\frac{e^{-2x}\\sin(3x)}x",
+    integrandExpr: "exp(-2*x)*sin(3*x)/x",
+    lower: "0",
+    upper: "\\infty",
+    answer: "atan(3/2)",
+    answerLatex: "\\arctan\\frac32",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Embed the 3 as a parameter: I(a)=\\int_0^\\infty\\frac{e^{-2x}\\sin(ax)}x\\,dx. Differentiating under the integral sign in a removes the troublesome \\frac1x.",
+    ],
+    steps: [
+      "I'(a) = \\int_0^\\infty e^{-2x}\\cos(ax)\\,dx = \\frac2{4+a^2} (a standard Laplace-transform integral).",
+      "Integrating back: I(a) = \\arctan\\frac a2+C, and I(0)=0 fixes C=0.",
+      "At a=3: I(3) = \\arctan\\frac32.",
+    ],
+  },
+  {
+    id: "feynman-def-tanhx-over-x-cosh2x",
+    kind: "definite",
+    integrand: "\\frac{\\tanh x}{x\\cosh(2x)}",
+    integrandExpr: "tanh(x)/(x*cosh(2*x))",
+    lower: "0",
+    upper: "\\infty",
+    answer: "log(2)",
+    answerLatex: "\\ln2",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Semifinal #2" },
+    hints: [
+      "Embed a parameter in the hyperbolic argument: I(a)=\\int_0^\\infty\\frac{\\tanh(ax)}{x\\cosh(2x)}\\,dx, so I(0)=0 and the target is I(1).",
+      "I'(a) = \\int_0^\\infty\\frac{\\operatorname{sech}^2(ax)}{\\cosh(2x)}\\,dx — a Laplace-transform-style integral in a that, when integrated back over a from 0 to 1, telescopes to the clean closed form \\ln2.",
+    ],
+    steps: [
+      "I'(a) = \\int_0^\\infty\\frac{\\operatorname{sech}^2(ax)}{\\cosh(2x)}\\,dx.",
+      "Integrating I'(a) over a from 0 to 1 and simplifying the resulting double integral (swap the order, integrate in x first) gives I(1)=\\ln2 — confirmed directly against the integral's own numeric value rather than reproduced symbol by symbol here.",
+    ],
+  },
+  {
+    id: "feynman-def-log-2ex-minus-1-over-ex-minus-1",
+    kind: "definite",
+    integrand: "\\frac{\\ln(2e^x-1)}{e^x-1}",
+    integrandExpr: "log(2*exp(x)-1)/(exp(x)-1)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi^2/4",
+    answerLatex: "\\frac{\\pi^2}4",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Finals" },
+    hints: [
+      "Substitute u=e^{-x} first to turn the infinite domain into an ordinary (0,1) integral, then look for a dilogarithm-flavored split.",
+    ],
+    steps: [
+      "u=e^{-x}: the integral becomes \\int_0^1\\frac{\\ln(2-u)-\\ln u}{\\frac1u-1}\\cdot\\frac{du}u = \\int_0^1\\frac{\\ln(2-u)-\\ln u}{1-u}\\,du.",
+      "Splitting and recognising each piece as a standard dilogarithm value at specific points (the same family as the classic \\int_0^1\\frac{\\ln x}{1-x}dx=-\\frac{\\pi^2}6 result) sums to \\frac{\\pi^2}4.",
+      "Confirmed directly against the integral's own numeric value.",
+    ],
+  },
+  {
+    id: "qf26-cos4x-over-x4plus4",
+    kind: "definite",
+    integrand: "\\frac{4\\cos(4x)}{x^4+4}",
+    integrandExpr: "4*cos(4*x)/(x^4+4)",
+    lower: "0",
+    upper: "\\infty",
+    answer: "pi/(2*exp(4))*(sin(4)+cos(4))",
+    answerLatex: "\\frac\\pi{2e^4}\\left(\\sin4+\\cos4\\right)",
+    domain: [0, Infinity],
+    difficulty: 5,
+    techniques: ["feynman"],
+    source: { name: "MIT Integration Bee", round: "Quarterfinal #4" },
+    hints: [
+      "This is a Feynman/contour-integration flagship: differentiate I(a)=\\int_0^\\infty\\frac{4\\cos(ax)}{x^4+4}\\,dx twice with respect to a to get an ODE that I(a) satisfies (from the x^4+4 denominator's roots), then solve it with the known boundary values I(0) and I'(0).",
+      "x^4+4=(x^2-2x+2)(x^2+2x+2) (Sophie Germain's identity), whose complex roots at 1\\pm i,\\ -1\\pm i are exactly what produce the e^{-4} decay and the \\sin4+\\cos4 combination via residues at a=4.",
+    ],
+    steps: [
+      "Confirmed by direct numeric integration against the closed form — the oscillatory integrand decays like 1/x^4, so the shared quadrature resolves it cleanly despite the cos(4x) factor.",
     ],
   },
 ];

@@ -234,9 +234,9 @@ export default function QuestionBank() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const { profile } = useAuth();
-  // This page is reachable by waitlisted users (see App.tsx — deliberately gated by ProtectedRoute, not
-  // DashboardGuard) who don't have a real /dashboard to go back to yet.
-  const backHome = profile && profile.waitlist_status !== "approved" ? "/waitlist" : "/dashboard";
+  // App.tsx gates this route behind BetaGate on profile.waitlist_status === "approved", so every
+  // account that reaches this component already has a real /dashboard to go back to.
+  const backHome = "/dashboard";
 
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -380,7 +380,7 @@ export default function QuestionBank() {
           onClick={() => navigate(backHome)}
           className="reveal mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> {backHome === "/waitlist" ? "Back" : "Dashboard"}
+          <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
         </button>
 
         <header className="reveal" style={{ animationDelay: "60ms" }}>
