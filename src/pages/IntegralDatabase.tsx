@@ -162,12 +162,21 @@ export default function IntegralDatabase() {
                           {TECHNIQUE_BY_ID[t]?.name ?? t}
                         </span>
                       ))}
-                      {solved && (
-                        <span className="flex items-center gap-1 font-medium text-primary">
-                          <Check className="h-3 w-3" /> Solved
-                        </span>
-                      )}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setManuallySolved(p.id, !solved)}
+                      aria-pressed={solved}
+                      className={`mb-4 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                        solved
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      {solved ? "Completed" : "Mark as complete"}
+                    </button>
                     <SolutionSteps problem={p} />
                   </div>
                 )}
