@@ -13,6 +13,7 @@ import type { Problem } from "../types";
 export const Feynman: Problem[] = [
   {
     id: "feynman-power-minus-one-a1",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x-1}{\\ln x}",
     integrandExpr: "(x-1)/log(x)",
@@ -36,6 +37,7 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-a2",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^2-1}{\\ln x}",
     integrandExpr: "(x^2-1)/log(x)",
@@ -56,6 +58,7 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-a3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^3-1}{\\ln x}",
     integrandExpr: "(x^3-1)/log(x)",
@@ -73,6 +76,7 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-power-minus-one-half",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\sqrt{x}-1}{\\ln x}",
     integrandExpr: "(sqrt(x)-1)/log(x)",
@@ -94,6 +98,7 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-log-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln^2 x",
     integrandExpr: "log(x)^2",
@@ -117,6 +122,7 @@ export const Feynman: Problem[] = [
   },
   {
     id: "feynman-x-cot-x",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x\\cot x",
     integrandExpr: "x/tan(x)",

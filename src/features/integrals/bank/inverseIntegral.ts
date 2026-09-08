@@ -8,6 +8,7 @@ import type { Problem } from "../types";
 export const InverseIntegral: Problem[] = [
   {
     id: "inv-sqrt-0to4",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{x}",
     integrandExpr: "sqrt(x)",
@@ -30,6 +31,7 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arcsin-0to1",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\arcsin x",
     integrandExpr: "asin(x)",
@@ -52,6 +54,7 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arctan-0to1",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\arctan x",
     integrandExpr: "atan(x)",
@@ -74,6 +77,7 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-ln-2to4",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln x",
     integrandExpr: "log(x)",
@@ -96,6 +100,7 @@ export const InverseIntegral: Problem[] = [
   },
   {
     id: "inv-arctan-0toSqrt3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\arctan x",
     integrandExpr: "atan(x)",

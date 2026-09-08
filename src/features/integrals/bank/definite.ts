@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const Definite: Problem[] = [
   {
     id: "def-odd-vanishes",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x^3\\cos x",
     integrandExpr: "x^3*cos(x)",
@@ -26,6 +27,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-odd-rational",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^5 - 3x^3 + x}{x^2+1}",
     integrandExpr: "(x^5 - 3*x^3 + x)/(x^2+1)",
@@ -45,6 +47,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-sin-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin^2 x",
     integrandExpr: "sin(x)^2",
@@ -67,6 +70,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-x-sin-x",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x\\sin x",
     integrandExpr: "x*sin(x)",
@@ -86,6 +90,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-kings-rule",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\sin x}{\\sin x + \\cos x}",
     integrandExpr: "sin(x)/(sin(x)+cos(x))",
@@ -109,6 +114,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-log-sin",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln(\\sin x)",
     integrandExpr: "log(sin(x))",
@@ -132,6 +138,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-arctan-unit",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{1+x^2}",
     integrandExpr: "1/(1+x^2)",
@@ -147,6 +154,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-x-exp-unit",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x e^{x}",
     integrandExpr: "x*e^x",
@@ -166,6 +174,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-log-to-e",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln x",
     integrandExpr: "log(x)",
@@ -188,6 +197,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-cubic-over-quadratic",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^3}{x^2+1}",
     integrandExpr: "x^3/(x^2+1)",
@@ -210,6 +220,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-semicircle-area",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{1-x^2}",
     integrandExpr: "sqrt(1-x^2)",
@@ -232,6 +243,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-putnam-log",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\ln(1+x)}{1+x^2}",
     integrandExpr: "log(1+x)/(1+x^2)",
@@ -255,6 +267,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-log-one-plus-tan",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\ln(1+\\tan x)",
     integrandExpr: "log(1+tan(x))",
@@ -277,6 +290,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-tan-power",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{1+\\tan^{\\sqrt{2}} x}",
     integrandExpr: "1/(1+tan(x)^sqrt(2))",
@@ -299,6 +313,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-king-weighted",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x\\sin x}{1+\\cos^2 x}",
     integrandExpr: "x*sin(x)/(1+cos(x)^2)",
@@ -322,6 +337,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-odd-times-square",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x(1-x)^2",
     integrandExpr: "x*(1-x)^2",
@@ -344,6 +360,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-odd-over-even-plus-one",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\sin x}{x^2+1}",
     integrandExpr: "sin(x)/(x^2+1)",
@@ -362,6 +379,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-shifted-odd-gaussian",
+    source: { name: "original" },
     kind: "definite",
     integrand: "(x-1)e^{(x-1)^2}",
     integrandExpr: "(x-1)*e^((x-1)^2)",
@@ -384,6 +402,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-odd-over-cosine-symmetric",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x}{1+\\cos x}",
     integrandExpr: "x/(1+cos(x))",
@@ -399,6 +418,7 @@ export const Definite: Problem[] = [
   },
   {
     id: "def-triple-product-parity",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin(2x)\\cos(7x)\\cos(9x)",
     integrandExpr: "sin(2*x)*cos(7*x)*cos(9*x)",

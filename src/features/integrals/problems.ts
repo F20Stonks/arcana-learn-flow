@@ -13,7 +13,7 @@
  * integrand and the answer. That is why the log problems live on the positive reals and the tan/sec
  * problems stop short of pi/2.
  */
-import type { Difficulty, Problem, TechniqueId } from "./types";
+import type { Difficulty, Problem, ProblemSource, TechniqueId } from "./types";
 import { StandardForms } from "./bank/standardForms";
 import { Substitution } from "./bank/substitution";
 import { Parts } from "./bank/parts";
@@ -63,6 +63,47 @@ export function problemsForTechnique(id: TechniqueId): Problem[] {
 
 export function problemsByDifficulty(d: Difficulty): Problem[] {
   return PROBLEMS.filter((p) => p.difficulty === d);
+}
+
+/** Every distinct source name in the bank, "original" last, otherwise alphabetical. */
+export const SOURCE_NAMES: string[] = Array.from(new Set(PROBLEMS.map((p) => p.source.name))).sort(
+  (a, b) => (a === "original" ? 1 : b === "original" ? -1 : a.localeCompare(b)),
+);
+
+/** How many problems each source contributes — drives the "practice by source" cards. */
+export const SOURCE_COUNTS: Record<string, number> = SOURCE_NAMES.reduce(
+  (acc, name) => ({ ...acc, [name]: PROBLEMS.filter((p) => p.source.name === name).length }),
+  {} as Record<string, number>,
+);
+
+export function problemsForSource(name: string): Problem[] {
+  return PROBLEMS.filter((p) => p.source.name === name).sort((a, b) => a.difficulty - b.difficulty);
+}
+
+export interface ProblemFilter {
+  /** Empty/omitted means "every technique". */
+  techniques?: TechniqueId[];
+  /** Omitted means "every source". */
+  source?: string;
+}
+
+/**
+ * The two independent practice filters combined: technique (multi-select) and source
+ * (single competition set, worked as-is). Either can be applied alone or together.
+ */
+export function filterProblems(filter: ProblemFilter): Problem[] {
+  const { techniques, source } = filter;
+  return PROBLEMS.filter(
+    (p) =>
+      (!techniques || techniques.length === 0 || p.techniques.some((t) => techniques.includes(t))) &&
+      (!source || p.source.name === source),
+  ).sort((a, b) => a.difficulty - b.difficulty);
+}
+
+export function formatSource(source: ProblemSource): string {
+  if (source.name === "original") return "Original";
+  const parts = [source.name, source.round, source.year ? String(source.year) : undefined].filter(Boolean);
+  return parts.join(" · ");
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

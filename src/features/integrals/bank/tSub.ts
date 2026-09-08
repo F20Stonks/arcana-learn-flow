@@ -8,6 +8,7 @@ import type { Problem } from "../types";
 export const TSub: Problem[] = [
   {
     id: "tsub-csc",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sin x}",
     integrandExpr: "1/sin(x)",
@@ -28,6 +29,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-3pluscos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{3+\\cos x}",
     integrandExpr: "1/(3+cos(x))",
@@ -49,6 +51,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-2minuscos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{2-\\cos x}",
     integrandExpr: "1/(2-cos(x))",
@@ -69,6 +72,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-1plussin-def",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{1+\\sin x}",
     integrandExpr: "1/(1+sin(x))",
@@ -92,6 +96,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-5plus3cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{5+3\\cos x}",
     integrandExpr: "1/(5+3*cos(x))",
@@ -112,6 +117,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-5plus3cos-def",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{5+3\\cos x}",
     integrandExpr: "1/(5+3*cos(x))",
@@ -134,6 +140,7 @@ export const TSub: Problem[] = [
   },
   {
     id: "tsub-one-plus-cos-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1+\\cos^2 x}",
     integrandExpr: "1/(1+cos(x)^2)",

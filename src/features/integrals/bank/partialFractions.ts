@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const PartialFractions: Problem[] = [
   {
     id: "pf-difference-of-squares",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2-1}",
     integrandExpr: "1/(x^2-1)",
@@ -21,6 +22,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-simple-product",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x(x+1)}",
     integrandExpr: "1/(x*(x+1))",
@@ -37,6 +39,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-linear-numerator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{3x+5}{(x-1)(x+2)}",
     integrandExpr: "(3*x+5)/((x-1)*(x+2))",
@@ -57,6 +60,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-irreducible-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^3+x}",
     integrandExpr: "1/(x^3+x)",
@@ -77,6 +81,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-quadratic-denominator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{2x-1}{x^2+x-6}",
     integrandExpr: "(2*x-1)/(x^2+x-6)",
@@ -97,6 +102,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-x-over-product",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{(x+1)(x+2)}",
     integrandExpr: "x/((x+1)*(x+2))",
@@ -114,6 +120,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-difference-four",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2-4}",
     integrandExpr: "1/(x^2-4)",
@@ -132,6 +139,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-equal-degrees",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^2}{x^2+1}",
     integrandExpr: "x^2/(x^2+1)",
@@ -152,6 +160,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-divide-then-split",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^3+x+1}{x^2+1}",
     integrandExpr: "(x^3+x+1)/(x^2+1)",
@@ -171,6 +180,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-log-plus-arctan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{2x+1}{x^2+1}",
     integrandExpr: "(2*x+1)/(x^2+1)",
@@ -190,6 +200,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-sum-of-cubes",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^3+1}",
     integrandExpr: "1/(x^3+1)",
@@ -211,6 +222,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-quartic-plus-one",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1+x^4}",
     integrandExpr: "1/(1+x^4)",
@@ -234,6 +246,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-cubic-over-linear",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^3}{x-1}",
     integrandExpr: "x^3/(x-1)",
@@ -251,6 +264,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-linear-over-linear",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{3x-2}{x+1}",
     integrandExpr: "(3*x-2)/(x+1)",
@@ -267,6 +281,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-irreducible-quadratic-bare",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2+x+1}",
     integrandExpr: "1/(x^2+x+1)",
@@ -283,6 +298,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-linear-numerator-shifted-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x+4}{x^2+2x+5}",
     integrandExpr: "(x+4)/(x^2+2*x+5)",
@@ -303,6 +319,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-cubic-minus-x-denominator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{4x-2}{x^3-x}",
     integrandExpr: "(4*x-2)/(x^3-x)",
@@ -323,6 +340,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-repeated-linear-with-simple",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x(x-2)^2}",
     integrandExpr: "1/(x*(x-2)^2)",
@@ -343,6 +361,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-linear-times-irreducible-bare",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x(x^2+1)}",
     integrandExpr: "1/(x*(x^2+1))",
@@ -360,6 +379,7 @@ export const PartialFractions: Problem[] = [
   },
   {
     id: "pf-hmmt-cubic-plus-quadratic-plus-linear",
+    source: { name: "HMMT Integration Bee Practice" },
     kind: "indefinite",
     integrand: "\\frac{x^2-1}{x^3+x^2+x}",
     integrandExpr: "(x^2-1)/(x^3+x^2+x)",

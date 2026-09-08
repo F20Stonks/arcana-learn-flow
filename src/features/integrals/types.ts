@@ -28,6 +28,17 @@ export type TechniqueId =
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
 
 /**
+ * Where a problem actually came from, so a student can work a specific competition's set as-is
+ * instead of the curated mix — mirroring the real paper. `name: "original"` marks problems with
+ * no specific competition provenance rather than leaving the field blank.
+ */
+export interface ProblemSource {
+  name: string;
+  year?: number;
+  round?: string;
+}
+
+/**
  * Indefinite problems are graded up to an additive constant; definite ones are graded as a single
  * number. Two different checkers, one problem type — see answer.ts.
  */
@@ -61,6 +72,8 @@ export interface Problem {
   difficulty: Difficulty;
   /** Primary technique first: that's the one training mode files it under. */
   techniques: TechniqueId[];
+  /** Where this problem came from — a competition set, or "original" if none. */
+  source: ProblemSource;
   /** Progressive: hint 0 nudges, the last one all but hands it over. */
   hints: string[];
   /** The worked solution, revealed after a solve or a give-up. Each line is LaTeX-in-prose. */

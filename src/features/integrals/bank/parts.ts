@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const Parts: Problem[] = [
   {
     id: "parts-x-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x e^{x}",
     integrandExpr: "x*e^x",
@@ -21,6 +22,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\ln x",
     integrandExpr: "log(x)",
@@ -38,6 +40,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sin x",
     integrandExpr: "x*sin(x)",
@@ -55,6 +58,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x2-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2 e^{x}",
     integrandExpr: "x^2*e^x",
@@ -75,6 +79,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-arctan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\arctan x",
     integrandExpr: "atan(x)",
@@ -95,6 +100,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-loop",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{x}\\sin x",
     integrandExpr: "e^x*sin(x)",
@@ -115,6 +121,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x2-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2 \\ln x",
     integrandExpr: "x^2*log(x)",
@@ -132,6 +139,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-arcsin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\arcsin x",
     integrandExpr: "asin(x)",
@@ -152,6 +160,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-arctan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\arctan x",
     integrandExpr: "x*atan(x)",
@@ -172,6 +181,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-sin-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin(\\ln x)",
     integrandExpr: "sin(log(x))",
@@ -192,6 +202,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\cos x",
     integrandExpr: "x*cos(x)",
@@ -208,6 +219,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-root-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sqrt{x}\\,\\ln x",
     integrandExpr: "sqrt(x)*log(x)",
@@ -225,6 +237,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-log-over-square",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\ln x}{x^2}",
     integrandExpr: "log(x)/x^2",
@@ -245,6 +258,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-loop-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{x}\\cos x",
     integrandExpr: "e^x*cos(x)",
@@ -265,6 +279,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x2-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2\\sin x",
     integrandExpr: "x^2*sin(x)",
@@ -282,6 +297,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-log-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\ln(x^2+1)",
     integrandExpr: "log(x^2+1)",
@@ -302,6 +318,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-sec-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sec^2 x",
     integrandExpr: "x/cos(x)^2",
@@ -322,6 +339,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-log-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(\\ln x)^2",
     integrandExpr: "log(x)^2",
@@ -342,6 +360,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x2-exp-negative",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2 e^{-x}",
     integrandExpr: "x^2*e^(-x)",
@@ -361,6 +380,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-loop-scaled",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{2x}\\sin 3x",
     integrandExpr: "e^(2*x)*sin(3*x)",
@@ -381,6 +401,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-arcsinh",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\ln\\!\\left(x+\\sqrt{x^2+1}\\right)",
     integrandExpr: "log(x + sqrt(x^2+1))",
@@ -401,6 +422,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-arcsin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\arcsin x",
     integrandExpr: "x*asin(x)",
@@ -421,6 +443,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-exp-2x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "xe^{2x}",
     integrandExpr: "x*e^(2*x)",
@@ -437,6 +460,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-cos-2x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\cos 2x",
     integrandExpr: "x*cos(2*x)",
@@ -452,6 +476,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-spot-the-product-rule-x-squared-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^x(x^2+2x)",
     integrandExpr: "e^x*(x^2+2*x)",
@@ -471,6 +496,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-ln-sqrt-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\ln\\sqrt{x}",
     integrandExpr: "log(sqrt(x))",
@@ -487,6 +513,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-csc-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\csc^2 x",
     integrandExpr: "x/sin(x)^2",
@@ -504,6 +531,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-cubed-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^3e^x",
     integrandExpr: "x^3*e^x",
@@ -521,6 +549,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-sin-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sin x\\cos x",
     integrandExpr: "x*sin(x)*cos(x)",
@@ -540,6 +569,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-def-arctan-reciprocal",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\arctan\\!\\left(\\frac{1}{x}\\right)",
     integrandExpr: "atan(1/x)",
@@ -562,6 +592,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-def-sin-ln-cos",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin x\\ln(\\cos x)",
     integrandExpr: "sin(x)*log(cos(x))",
@@ -584,6 +615,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-cos-ln-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos(\\ln x)",
     integrandExpr: "cos(log(x))",
@@ -604,6 +636,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-x-ln-one-plus-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\ln(1+x)",
     integrandExpr: "x*log(1+x)",
@@ -624,6 +657,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "parts-sin-sqrt-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin\\sqrt{x}",
     integrandExpr: "sin(sqrt(x))",
@@ -642,6 +676,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt-x-tan-sec-squared",
+    source: { name: "HMMT Integration Bee Practice" },
     kind: "definite",
     integrand: "x\\tan x\\sec^2 x",
     integrandExpr: "x*tan(x)*sec(x)^2",
@@ -665,6 +700,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt-cubic-plus-6x-cosx",
+    source: { name: "HMMT Integration Bee Practice" },
     kind: "definite",
     integrand: "(x^3+6x)\\cos x",
     integrandExpr: "(x^3+6*x)*cos(x)",
@@ -688,6 +724,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "hmmt2-x-ln-one-plus-x-def",
+    source: { name: "HMMT Integration Bee Practice" },
     kind: "definite",
     integrand: "x\\ln(x+1)",
     integrandExpr: "x*log(x+1)",
@@ -706,6 +743,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "wild-x-sec-tan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sec x\\tan x",
     integrandExpr: "x*sec(x)*tan(x)",
@@ -723,6 +761,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "wild-arctan-sqrt-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\arctan\\sqrt{x}",
     integrandExpr: "atan(sqrt(x))",
@@ -741,6 +780,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "wild-quotient-rule-exp-over-x-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{(x-1)e^x}{x^2}",
     integrandExpr: "(x-1)*e^x/x^2",
@@ -760,6 +800,7 @@ export const Parts: Problem[] = [
   },
   {
     id: "wild-x-plus-sinx-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(x+\\sin x)^2",
     integrandExpr: "(x+sin(x))^2",

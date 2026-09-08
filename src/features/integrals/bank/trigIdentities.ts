@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const TrigIdentities: Problem[] = [
   {
     id: "trig-sin-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin^2 x",
     integrandExpr: "sin(x)^2",
@@ -21,6 +22,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-cos-cubed",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos^3 x",
     integrandExpr: "cos(x)^3",
@@ -41,6 +43,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sin2-cos2",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin^2 x \\cos^2 x",
     integrandExpr: "sin(x)^2*cos(x)^2",
@@ -61,6 +64,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sec",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec x",
     integrandExpr: "1/cos(x)",
@@ -81,6 +85,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan^2 x",
     integrandExpr: "tan(x)^2",
@@ -94,6 +99,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-product-to-sum",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin 3x \\cos 5x",
     integrandExpr: "sin(3*x)*cos(5*x)",
@@ -113,6 +119,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-one-plus-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1+\\sin x}",
     integrandExpr: "1/(1+sin(x))",
@@ -133,6 +140,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-cos-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos^2 x",
     integrandExpr: "cos(x)^2",
@@ -153,6 +161,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-cubed",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan^3 x",
     integrandExpr: "tan(x)^3",
@@ -173,6 +182,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-cos-product",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos 3x \\cos x",
     integrandExpr: "cos(3*x)*cos(x)",
@@ -192,6 +202,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sec-cubed",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec^3 x",
     integrandExpr: "1/cos(x)^3",
@@ -212,6 +223,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sec-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec^4 x",
     integrandExpr: "1/cos(x)^4",
@@ -232,6 +244,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-one-plus-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1+\\cos x}",
     integrandExpr: "1/(1+cos(x))",
@@ -251,6 +264,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sin-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin^4 x",
     integrandExpr: "sin(x)^4",
@@ -271,6 +285,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan^4 x",
     integrandExpr: "tan(x)^4",
@@ -291,6 +306,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-def-sin-fifth-half-interval",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin^5 x",
     integrandExpr: "sin(x)^5",
@@ -314,6 +330,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-sin-cubed-cos-fifth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin^3 x\\cos^5 x",
     integrandExpr: "sin(x)^3*cos(x)^5",
@@ -333,6 +350,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-def-two-minus-sin-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "(2-\\sin x)^2",
     integrandExpr: "(2-sin(x))^2",
@@ -353,6 +371,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-cubed-sec",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan^3 x\\sec x",
     integrandExpr: "tan(x)^3*sec(x)",
@@ -372,6 +391,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-squared-plus-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan^2 x+\\tan^4 x",
     integrandExpr: "tan(x)^2+tan(x)^4",
@@ -389,6 +409,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-def-tan-fourth",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\tan^4 x",
     integrandExpr: "tan(x)^4",
@@ -408,6 +429,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-product-to-sum-4x-5x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin 4x\\cos 5x",
     integrandExpr: "sin(4*x)*cos(5*x)",
@@ -424,6 +446,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-product-to-sum-2x-3x-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos 2x\\cos 3x",
     integrandExpr: "cos(2*x)*cos(3*x)",
@@ -440,6 +463,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-product-to-sum-6x-8x-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin 6x\\sin 8x",
     integrandExpr: "sin(6*x)*sin(8*x)",
@@ -456,6 +480,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-def-sqrt-one-plus-cos2x",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{1+\\cos 2x}",
     integrandExpr: "sqrt(1+cos(2*x))",
@@ -474,6 +499,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-one-minus-tan-squared-over-sec-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1-\\tan^2 x}{\\sec^2 x}",
     integrandExpr: "(1-tan(x)^2)/sec(x)^2",
@@ -493,6 +519,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-one-over-one-minus-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1-\\cos x}",
     integrandExpr: "1/(1-cos(x))",
@@ -509,6 +536,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-tan-over-tan-double",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\tan x}{\\tan 2x}",
     integrandExpr: "tan(x)/tan(2*x)",
@@ -529,6 +557,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-one-plus-sin-over-one-plus-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1+\\sin x}{1+\\cos x}",
     integrandExpr: "(1+sin(x))/(1+cos(x))",
@@ -548,6 +577,7 @@ export const TrigIdentities: Problem[] = [
   },
   {
     id: "trig-def-two-plus-tan",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{2+\\tan x}",
     integrandExpr: "1/(2+tan(x))",

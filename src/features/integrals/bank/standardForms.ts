@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const StandardForms: Problem[] = [
   {
     id: "power-monomial",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^5",
     integrandExpr: "x^5",
@@ -17,6 +18,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-polynomial",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "3x^2 - 4x + 7",
     integrandExpr: "3x^2 - 4x + 7",
@@ -30,6 +32,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-root-and-reciprocal",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sqrt{x} + \\frac{1}{x^2}",
     integrandExpr: "sqrt(x) + 1/x^2",
@@ -50,6 +53,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-log-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{2}{x} + 3e^{x}",
     integrandExpr: "2/x + 3*e^x",
@@ -63,6 +67,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-divide-out",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{(x^2+1)^2}{x}",
     integrandExpr: "(x^2+1)^2/x",
@@ -83,6 +88,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-sec-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec^2 x",
     integrandExpr: "1/cos(x)^2",
@@ -96,6 +102,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-arctan-form",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{1+x^2}",
     integrandExpr: "1/(1+x^2)",
@@ -109,6 +116,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-arcsin-form",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{1-x^2}}",
     integrandExpr: "1/sqrt(1-x^2)",
@@ -122,6 +130,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-cosine",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos x",
     integrandExpr: "cos(x)",
@@ -135,6 +144,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-exp-linear",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{3x}",
     integrandExpr: "e^(3*x)",
@@ -151,6 +161,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-negative-cube",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^3}",
     integrandExpr: "1/x^3",
@@ -164,6 +175,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-general-exponential",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "2^{x}",
     integrandExpr: "2^x",
@@ -182,6 +194,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-sin-double",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin 2x",
     integrandExpr: "sin(2*x)",
@@ -198,6 +211,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-cosec-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\csc^2 x",
     integrandExpr: "1/sin(x)^2",
@@ -211,6 +225,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-sec-tan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec x \\tan x",
     integrandExpr: "sin(x)/cos(x)^2",
@@ -224,6 +239,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-cancel-first",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^3 - x}{x}",
     integrandExpr: "(x^3 - x)/x",
@@ -237,6 +253,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-expand-square",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(2x+3)^2",
     integrandExpr: "(2*x+3)^2",
@@ -254,6 +271,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-inverse-root",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{x}}",
     integrandExpr: "1/sqrt(x)",
@@ -267,6 +285,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-x-root-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sqrt{x}",
     integrandExpr: "x*sqrt(x)",
@@ -280,6 +299,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-cosh",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cosh x",
     integrandExpr: "cosh(x)",
@@ -293,6 +313,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-catenary",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{x} + e^{-x}",
     integrandExpr: "e^x + e^(-x)",
@@ -309,6 +330,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-trig-combination",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "3\\sin x - 2\\cos x",
     integrandExpr: "3*sin(x) - 2*cos(x)",
@@ -322,6 +344,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-cubic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "4x^3 - 6x^2 + 2",
     integrandExpr: "4*x^3 - 6*x^2 + 2",
@@ -335,6 +358,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-arctan-scaled",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2+9}",
     integrandExpr: "1/(x^2+9)",
@@ -355,6 +379,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-log-linear",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{2x+1}",
     integrandExpr: "1/(2*x+1)",
@@ -371,6 +396,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-linear-power",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(3x+2)^4",
     integrandExpr: "(3*x+2)^4",
@@ -388,6 +414,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-sec-squared-scaled",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec^2 3x",
     integrandExpr: "1/cos(3*x)^2",
@@ -401,6 +428,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-one-plus-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "1 + \\ln x",
     integrandExpr: "1 + log(x)",
@@ -419,6 +447,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-three-term-split",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1+\\sqrt{x}+x}{x}",
     integrandExpr: "(1+sqrt(x)+x)/x",
@@ -435,6 +464,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-squared-fraction",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\left(\\frac{1+x}{x}\\right)^2",
     integrandExpr: "((1+x)/x)^2",
@@ -454,6 +484,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-two-exponential-bases",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "2^{x}(1+5^{x})",
     integrandExpr: "2^x*(1+5^x)",
@@ -473,6 +504,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-reciprocal-cubic",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{x^2}-\\frac{4}{x^3}",
     integrandExpr: "1/x^2-4/x^3",
@@ -492,6 +524,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-half-minus-two-over-x",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x}{2}-\\frac{2}{x}",
     integrandExpr: "x/2-2/x",
@@ -511,6 +544,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-sec-tan",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sec x \\tan x",
     integrandExpr: "sec(x)*tan(x)",
@@ -526,6 +560,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-arcsin-sqrt3-half",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{\\sqrt{1-x^2}}",
     integrandExpr: "1/sqrt(1-x^2)",
@@ -541,6 +576,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-abs-linear",
+    source: { name: "original" },
     kind: "definite",
     integrand: "|2x-1|",
     integrandExpr: "abs(2*x-1)",
@@ -563,6 +599,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-abs-quadratic",
+    source: { name: "original" },
     kind: "definite",
     integrand: "|x^2-4|",
     integrandExpr: "abs(x^2-4)",
@@ -585,6 +622,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-sec-times-sec-plus-tan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sec x(\\sec x+\\tan x)",
     integrandExpr: "sec(x)*(sec(x)+tan(x))",
@@ -601,6 +639,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-csc-times-csc-plus-cot",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(\\csc x+\\cot x)\\csc x",
     integrandExpr: "(csc(x)+cot(x))*csc(x)",
@@ -617,6 +656,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-constant-integrand",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{2}",
     integrandExpr: "e^2",
@@ -630,6 +670,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-conjugate-roots",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{\\sqrt{x}+\\sqrt{x+1}}",
     integrandExpr: "1/(sqrt(x)+sqrt(x+1))",
@@ -653,6 +694,7 @@ export const StandardForms: Problem[] = [
   },
   {
     id: "power-def-mixed-exponential-bases",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{4^x+10^x}{2^x}",
     integrandExpr: "(4^x+10^x)/2^x",

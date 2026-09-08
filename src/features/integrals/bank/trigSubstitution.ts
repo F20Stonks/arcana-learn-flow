@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const TrigSubstitution: Problem[] = [
   {
     id: "trigsub-arcsin-scaled",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{4-x^2}}",
     integrandExpr: "1/sqrt(4-x^2)",
@@ -24,6 +25,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-semicircle",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sqrt{1-x^2}",
     integrandExpr: "sqrt(1-x^2)",
@@ -45,6 +47,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-secant",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2\\sqrt{x^2-1}}",
     integrandExpr: "1/(x^2*sqrt(x^2-1))",
@@ -65,6 +68,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-three-halves",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{(x^2+4)^{3/2}}",
     integrandExpr: "1/(x^2+4)^(3/2)",
@@ -85,6 +89,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-hyperbola",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sqrt{x^2+1}",
     integrandExpr: "sqrt(x^2+1)",
@@ -106,6 +111,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-reciprocal-root",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x\\sqrt{x^2+1}}",
     integrandExpr: "1/(x*sqrt(x^2+1))",
@@ -127,6 +133,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-root-over-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\sqrt{x^2-1}}{x}",
     integrandExpr: "sqrt(x^2-1)/x",
@@ -147,6 +154,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-x2-semicircle",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2\\sqrt{1-x^2}",
     integrandExpr: "x^2*sqrt(1-x^2)",
@@ -167,6 +175,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-squared-denominator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^2}{(x^2+4)^2}",
     integrandExpr: "x^2/(x^2+4)^2",
@@ -187,6 +196,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-reciprocal-semicircle",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2\\sqrt{4-x^2}}",
     integrandExpr: "1/(x^2*sqrt(4-x^2))",
@@ -207,6 +217,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-x-squared-over-root-one-minus",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^2}{\\sqrt{1-x^2}}",
     integrandExpr: "x^2/sqrt(1-x^2)",
@@ -226,6 +237,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-x-over-root-36-minus",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x}{\\sqrt{36-x^2}}",
     integrandExpr: "x/sqrt(36-x^2)",
@@ -245,6 +257,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-sqrt-4-minus-9x-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{4-9x^2}",
     integrandExpr: "sqrt(4-9*x^2)",
@@ -267,6 +280,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-root-4-plus-x-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{4+x^2}}",
     integrandExpr: "1/sqrt(4+x^2)",
@@ -283,6 +297,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-one-over-one-plus-x-squared-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{(1+x^2)^2}",
     integrandExpr: "1/(1+x^2)^2",
@@ -303,6 +318,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-sqrt-x-minus-x-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{x-x^2}",
     integrandExpr: "sqrt(x-x^2)",
@@ -325,6 +341,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-sqrt-4x-squared-minus-9-over-x",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{\\sqrt{4x^2-9}}{x}",
     integrandExpr: "sqrt(4*x^2-9)/x",
@@ -348,6 +365,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-x-cubed-over-one-minus-x-squared-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^3}{(1-x^2)^2}",
     integrandExpr: "x^3/(1-x^2)^2",
@@ -371,6 +389,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-def-quarter-circle-zero-one",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt{1-x^2}",
     integrandExpr: "sqrt(1-x^2)",
@@ -389,6 +408,7 @@ export const TrigSubstitution: Problem[] = [
   },
   {
     id: "trigsub-sqrt-one-plus-x-over-one-minus-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sqrt{\\frac{1+x}{1-x}}",
     integrandExpr: "sqrt((1+x)/(1-x))",

@@ -9,6 +9,7 @@ import type { Problem } from "../types";
 export const IntroducingConstants: Problem[] = [
   {
     id: "ic-xplus3-over-xplus1",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x+3}{x+1}",
     integrandExpr: "(x+3)/(x+1)",
@@ -28,6 +29,7 @@ export const IntroducingConstants: Problem[] = [
   },
   {
     id: "ic-3x2plus1-over-x2plus1",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{3x^2+1}{x^2+1}",
     integrandExpr: "(3*x^2+1)/(x^2+1)",
@@ -47,6 +49,7 @@ export const IntroducingConstants: Problem[] = [
   },
   {
     id: "ic-2x2plus3-over-x2plus4",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{2x^2+3}{x^2+4}",
     integrandExpr: "(2*x^2+3)/(x^2+4)",
@@ -66,6 +69,7 @@ export const IntroducingConstants: Problem[] = [
   },
   {
     id: "ic-quadratic-over-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^2+7x+8}{x^2+5x+3}",
     integrandExpr: "(x^2+7*x+8)/(x^2+5*x+3)",
@@ -86,6 +90,7 @@ export const IntroducingConstants: Problem[] = [
   },
   {
     id: "ic-trig-tsub",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{5\\cos x+7}{2+\\cos x}",
     integrandExpr: "(5*cos(x)+7)/(2+cos(x))",
@@ -106,6 +111,7 @@ export const IntroducingConstants: Problem[] = [
   },
   {
     id: "ic-one-plus-12x-over-one-plus-3x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1+12x}{1+3x}",
     integrandExpr: "(1+12*x)/(1+3*x)",

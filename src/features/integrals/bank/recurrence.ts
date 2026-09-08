@@ -8,6 +8,7 @@ import type { Problem } from "../types";
 export const Recurrence: Problem[] = [
   {
     id: "rec-x-over-1plusx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x}{1+x}",
     integrandExpr: "x/(1+x)",
@@ -29,6 +30,7 @@ export const Recurrence: Problem[] = [
   },
   {
     id: "rec-x2-over-1plusx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^2}{1+x}",
     integrandExpr: "x^2/(1+x)",
@@ -51,6 +53,7 @@ export const Recurrence: Problem[] = [
   },
   {
     id: "rec-x3-over-1plusx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^3}{1+x}",
     integrandExpr: "x^3/(1+x)",
@@ -72,6 +75,7 @@ export const Recurrence: Problem[] = [
   },
   {
     id: "rec-x4-over-1plusx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{x^4}{1+x}",
     integrandExpr: "x^4/(1+x)",
@@ -93,6 +97,7 @@ export const Recurrence: Problem[] = [
   },
   {
     id: "rec-sin4-0pi",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin^4 x",
     integrandExpr: "sin(x)^4",
@@ -114,6 +119,7 @@ export const Recurrence: Problem[] = [
   },
   {
     id: "rec-sin5-0pi",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sin^5 x",
     integrandExpr: "sin(x)^5",

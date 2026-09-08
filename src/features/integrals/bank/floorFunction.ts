@@ -9,6 +9,7 @@ import type { Problem } from "../types";
 export const FloorFunction: Problem[] = [
   {
     id: "floor-plain-0to3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\lfloor x\\rfloor",
     integrandExpr: "floor(x)",
@@ -30,6 +31,7 @@ export const FloorFunction: Problem[] = [
   },
   {
     id: "floor-plain-0to2half",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\lfloor x\\rfloor",
     integrandExpr: "floor(x)",
@@ -49,6 +51,7 @@ export const FloorFunction: Problem[] = [
   },
   {
     id: "floor-fracpart-0to4",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x-\\lfloor x\\rfloor",
     integrandExpr: "x-floor(x)",
@@ -71,6 +74,7 @@ export const FloorFunction: Problem[] = [
   },
   {
     id: "floor-x-times-floor-0to3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x\\lfloor x\\rfloor",
     integrandExpr: "x*floor(x)",
@@ -94,6 +98,7 @@ export const FloorFunction: Problem[] = [
   },
   {
     id: "floor-squared-0to3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\lfloor x\\rfloor^2",
     integrandExpr: "floor(x)^2",

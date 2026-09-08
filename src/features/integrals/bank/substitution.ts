@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const Substitution: Problem[] = [
   {
     id: "usub-gaussian-kernel",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "2x\\,e^{x^2}",
     integrandExpr: "2*x*e^(x^2)",
@@ -17,6 +18,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-log-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{x^2+1}",
     integrandExpr: "x/(x^2+1)",
@@ -37,6 +39,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-sin-cubed-cos",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin^3 x \\cos x",
     integrandExpr: "sin(x)^3*cos(x)",
@@ -50,6 +53,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-tan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\tan x",
     integrandExpr: "sin(x)/cos(x)",
@@ -70,6 +74,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-log-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x\\ln x}",
     integrandExpr: "1/(x*log(x))",
@@ -83,6 +88,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-logistic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{e^{x}}{1+e^{x}}",
     integrandExpr: "e^x/(1+e^x)",
@@ -96,6 +102,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-shifted-root",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x\\sqrt{x+1}",
     integrandExpr: "x*sqrt(x+1)",
@@ -116,6 +123,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-log-squared",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{(\\ln x)^2}{x}",
     integrandExpr: "log(x)^2/x",
@@ -129,6 +137,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-arctan-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\cos x}{1+\\sin^2 x}",
     integrandExpr: "cos(x)/(1+sin(x)^2)",
@@ -149,6 +158,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-exp-sqrt",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{\\sqrt{x}}",
     integrandExpr: "e^sqrt(x)",
@@ -170,6 +180,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-logistic-complement",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{e^{x}+1}",
     integrandExpr: "1/(e^x+1)",
@@ -190,6 +201,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cubic-exponent",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^2 e^{x^3}",
     integrandExpr: "x^2*e^(x^3)",
@@ -203,6 +215,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-log-general-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x+1}{x^2+2x+7}",
     integrandExpr: "(x+1)/(x^2+2*x+7)",
@@ -223,6 +236,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-sin-cos-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\sin x \\cos^4 x",
     integrandExpr: "sin(x)*cos(x)^4",
@@ -236,6 +250,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-exp-sin",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "e^{\\sin x}\\cos x",
     integrandExpr: "e^sin(x)*cos(x)",
@@ -249,6 +264,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-root-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{\\sqrt{x^2+4}}",
     integrandExpr: "x/sqrt(x^2+4)",
@@ -268,6 +284,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cubic-denominator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^2}{x^3+1}",
     integrandExpr: "x^2/(x^3+1)",
@@ -285,6 +302,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-improper-fraction",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{x+1}",
     integrandExpr: "x/(x+1)",
@@ -304,6 +322,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-arctan-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{e^{x}}{1+e^{2x}}",
     integrandExpr: "e^x/(1+e^(2*x))",
@@ -324,6 +343,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-arctan-square",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{1+x^4}",
     integrandExpr: "x/(1+x^4)",
@@ -343,6 +363,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-odd-power-exp",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "x^3 e^{x^2}",
     integrandExpr: "x^3*e^(x^2)",
@@ -363,6 +384,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-odd-power-root",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^3}{\\sqrt{1-x^2}}",
     integrandExpr: "x^3/sqrt(1-x^2)",
@@ -383,6 +405,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-log-log-log",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\ln(\\ln x)}{x}",
     integrandExpr: "log(log(x))/x",
@@ -403,6 +426,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-quotient-rule-backwards",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x e^{x}}{(1+x)^2}",
     integrandExpr: "x*e^x/(1+x)^2",
@@ -423,6 +447,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cos-double",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cos 2x",
     integrandExpr: "cos(2*x)",
@@ -436,6 +461,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cubic-minus-constant",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x^3}{x^4-5}",
     integrandExpr: "x^3/(x^4-5)",
@@ -449,6 +475,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-linear-inside-ninth-power",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "(1-x)^9",
     integrandExpr: "(1-x)^9",
@@ -462,6 +489,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-reciprocal-linear",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{5-3x}",
     integrandExpr: "1/(5-3*x)",
@@ -475,6 +503,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-sin-sqrt-over-sqrt",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\sin\\sqrt{x}}{\\sqrt{x}}",
     integrandExpr: "sin(sqrt(x))/sqrt(x)",
@@ -488,6 +517,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cot",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\cot x",
     integrandExpr: "cos(x)/sin(x)",
@@ -501,6 +531,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-cos-ln-over-x",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\cos(\\ln x)}{x}",
     integrandExpr: "cos(log(x))/x",
@@ -514,6 +545,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-linear-plus-arctan-standard",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1+x}{1+x^2}",
     integrandExpr: "(1+x)/(1+x^2)",
@@ -530,6 +562,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-def-cube-root-linear",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\sqrt[3]{1+7x}",
     integrandExpr: "cbrt(1+7*x)",
@@ -549,6 +582,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-def-exp-reciprocal-over-x-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{e^{1/x}}{x^2}",
     integrandExpr: "e^(1/x)/x^2",
@@ -568,6 +602,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-def-x-sqrt-x-minus-one",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x\\sqrt{x-1}",
     integrandExpr: "x*sqrt(x-1)",
@@ -586,6 +621,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-def-reciprocal-x-sqrt-ln",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{1}{x\\sqrt{\\ln x}}",
     integrandExpr: "1/(x*sqrt(log(x)))",
@@ -605,6 +641,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "usub-def-exp-over-one-plus-exp-squared",
+    source: { name: "original" },
     kind: "definite",
     integrand: "\\frac{e^x}{1+e^{2x}}",
     integrandExpr: "e^x/(1+e^(2*x))",
@@ -624,6 +661,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "hmmt-cos-minus-sin-over-sin-double-plus-two",
+    source: { name: "HMMT Integration Bee Practice" },
     kind: "indefinite",
     integrand: "\\frac{\\cos x-\\sin x}{\\sin2x+2}",
     integrandExpr: "(cos(x)-sin(x))/(sin(2*x)+2)",
@@ -644,6 +682,7 @@ export const Substitution: Problem[] = [
   },
   {
     id: "wild-sin-double-over-one-plus-sin-fourth",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{\\sin2x}{1+\\sin^4x}",
     integrandExpr: "sin(2*x)/(1+sin(x)^4)",

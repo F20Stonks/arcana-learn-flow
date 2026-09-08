@@ -8,6 +8,7 @@ import type { Problem } from "../types";
 export const BetaIntegrals: Problem[] = [
   {
     id: "beta-x-1mx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x(1-x)",
     integrandExpr: "x*(1-x)",
@@ -29,6 +30,7 @@ export const BetaIntegrals: Problem[] = [
   },
   {
     id: "beta-x2-1mx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x^2(1-x)",
     integrandExpr: "x^2*(1-x)",
@@ -46,6 +48,7 @@ export const BetaIntegrals: Problem[] = [
   },
   {
     id: "beta-x3-1mx2",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x^3(1-x)^2",
     integrandExpr: "x^3*(1-x)^2",
@@ -66,6 +69,7 @@ export const BetaIntegrals: Problem[] = [
   },
   {
     id: "beta-x4-1mx",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x^4(1-x)",
     integrandExpr: "x^4*(1-x)",
@@ -83,6 +87,7 @@ export const BetaIntegrals: Problem[] = [
   },
   {
     id: "beta-rescale-0to2",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x(2-x)",
     integrandExpr: "x*(2-x)",
@@ -105,6 +110,7 @@ export const BetaIntegrals: Problem[] = [
   },
   {
     id: "beta-x3-1mx3",
+    source: { name: "original" },
     kind: "definite",
     integrand: "x^3(1-x)^3",
     integrandExpr: "x^3*(1-x)^3",

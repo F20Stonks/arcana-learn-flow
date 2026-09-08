@@ -4,6 +4,7 @@ import type { Problem } from "../types";
 export const CompletingTheSquare: Problem[] = [
   {
     id: "cs-arctan",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2+2x+5}",
     integrandExpr: "1/(x^2+2*x+5)",
@@ -24,6 +25,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-arcsinh",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{x^2+4x+13}}",
     integrandExpr: "1/sqrt(x^2+4*x+13)",
@@ -44,6 +46,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-split-numerator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x+3}{x^2+2x+5}",
     integrandExpr: "(x+3)/(x^2+2*x+5)",
@@ -64,6 +67,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-arctan-thirteen",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{x^2+6x+13}",
     integrandExpr: "1/(x^2+6*x+13)",
@@ -83,6 +87,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-x-numerator",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{x^2+4x+5}",
     integrandExpr: "x/(x^2+4*x+5)",
@@ -103,6 +108,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-arcsin-shifted",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{1}{\\sqrt{8+2x-x^2}}",
     integrandExpr: "1/sqrt(8+2*x-x^2)",
@@ -123,6 +129,7 @@ export const CompletingTheSquare: Problem[] = [
   },
   {
     id: "cs-x-over-shifted-quadratic",
+    source: { name: "original" },
     kind: "indefinite",
     integrand: "\\frac{x}{x^2+2x+2}",
     integrandExpr: "x/(x^2+2*x+2)",
