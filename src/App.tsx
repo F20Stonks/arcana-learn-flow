@@ -25,6 +25,7 @@ import QuestionBank, { QuestionBankDetail } from "./pages/QuestionBank";
 import DrillsHub from "./pages/DrillsHub";
 import QuantHub from "./pages/QuantHub";
 import IntegralsHub from "./pages/IntegralsHub";
+import IntegralDatabase from "./pages/IntegralDatabase";
 import DailyIntegral from "./pages/DailyIntegral";
 import IntegralTraining, { TrainingTechnique } from "./pages/IntegralTraining";
 import IntegralLessons from "./pages/IntegralLessons";
@@ -153,6 +154,7 @@ function AppRoutes() {
           training room. Self-contained: its own grader, problem bank and progression. Also live for
           every signup: no BetaGate. */}
       <Route path="/integrals" element={<DashboardGuard><IntegralsHub /></DashboardGuard>} />
+      <Route path="/integrals/database" element={<DashboardGuard><IntegralDatabase /></DashboardGuard>} />
       <Route path="/integrals/daily" element={<DashboardGuard><DailyIntegral /></DashboardGuard>} />
       <Route path="/integrals/sprint" element={<DashboardGuard><IntegralSprint /></DashboardGuard>} />
       <Route path="/integrals/progress" element={<DashboardGuard><IntegralProgress /></DashboardGuard>} />

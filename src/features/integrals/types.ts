@@ -44,29 +44,14 @@ export type TechniqueId =
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
 
 /**
- * Competition/document provenance for a problem. `name` is a competition or source document
- * ("original" for pedagogical examples with no single-competition source); `year` and `round`
- * are whatever the source document actually gives — a specific year and section/round for a
- * real competition set, absent for "original".
- */
-export interface ProblemSource {
-  name: string;
-  year?: number;
-  round?: string;
-}
-
-/**
- * Indefinite problems are graded up to an additive constant; definite ones are graded as a single
- * number. Two different checkers, one problem type — see answer.ts.
- */
-export type ProblemKind = "indefinite" | "definite";
-
-/**
  * Where a problem came from.
  *
  * Two students want two different things from this bank: one is drilling a technique, the other
  * wants to sit a real competition's set as it was actually posed. The second is only possible if
- * every problem remembers its paper.
+ * every problem remembers its paper. `name` is a competition or source document ("original" for
+ * pedagogical examples with no single-competition source); `year` and `round` are whatever the
+ * source document actually gives — a specific year and section/round for a real competition set,
+ * absent for "original".
  */
 export interface ProblemSource {
   /** The competition, book or course the problem is a transcription of. */
@@ -75,6 +60,12 @@ export interface ProblemSource {
   /** Round, section or paper within that year, when the source distinguishes them. */
   round?: string;
 }
+
+/**
+ * Indefinite problems are graded up to an additive constant; definite ones are graded as a single
+ * number. Two different checkers, one problem type — see answer.ts.
+ */
+export type ProblemKind = "indefinite" | "definite";
 
 export interface Problem {
   id: string;

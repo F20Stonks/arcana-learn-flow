@@ -124,6 +124,14 @@ export function problemsForSource(s: ProblemSource): Problem[] {
   return PROBLEMS.filter((p) => sourceKey(p.source) === key);
 }
 
+/** Human-readable label for a source — "Original" for pedagogical examples, else name · round · year. */
+export function formatSource(source: ProblemSource): string {
+  if (source.name === "original") return "Original";
+  return [source.name, source.round, source.year ? String(source.year) : undefined]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   1: "Warm-up",
   2: "Routine",
