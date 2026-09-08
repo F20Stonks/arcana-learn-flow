@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useSearchParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -54,6 +54,7 @@ import PrivacyPage from "./pages/legal/PrivacyPage";
 import RefundPage from "./pages/legal/RefundPage";
 import { Loader2 } from "lucide-react";
 import { setProgressScope } from "@/features/integrals/progress";
+import { startSync } from "@/features/integrals/sync";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,14 @@ function AppRoutes() {
   // Local Integral Arena progress is namespaced per account, set here (during render, before any
   // page reads it) so signing in with a second email on the same browser starts from zero.
   setProgressScope(user?.id ?? null);
+
+  // …and once we know who they are, pull the account's saved copy down and keep pushing it back,
+  // so the same player picks up where they left off on a phone. Effect, not render: it talks to
+  // the network. startSync is a no-op when the account hasn't actually changed.
+  useEffect(() => {
+    startSync(user?.id ?? null);
+  }, [user?.id]);
+
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 

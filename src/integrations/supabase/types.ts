@@ -1803,7 +1803,43 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      integral_alltime_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          longest_streak: number
+          rank: number
+          solved: number
+          user_id: string
+          xp: number
+        }[]
+      }
       integral_current_puzzle_number: { Args: never; Returns: number }
+      integral_my_standing: {
+        Args: { p_season: string }
+        Returns: {
+          alltime_players: number
+          alltime_rank: number
+          alltime_solved: number
+          alltime_xp: number
+          season_players: number
+          season_points: number
+          season_rank: number
+        }[]
+      }
+      integral_season_leaderboard: {
+        Args: { p_limit?: number; p_season: string }
+        Returns: {
+          avatar_url: string
+          daily_score: number
+          display_name: string
+          points: number
+          rank: number
+          solves: number
+          user_id: string
+        }[]
+      }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
       leaderboard_profile: {
         Args: { p_user_id: string }

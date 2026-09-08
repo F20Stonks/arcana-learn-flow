@@ -10,9 +10,17 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Trophy } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import ScoringExplainer from "@/features/integrals/components/ScoringExplainer";
 import { DRILL_LIST } from "@/features/drills/registry";
 import {
+  fetchAllTimeBoard,
   fetchArenaBoard,
+  fetchMyStanding,
+  fetchSeasonBoard,
+  seasonKey,
+  seasonName,
+  type MyStanding,
+  type RankRow,
   fetchDrillGameBoard,
   fetchDrillOverallBoard,
   type ArenaRow,
@@ -20,7 +28,10 @@ import {
   type DrillOverallRow,
 } from "@/features/leaderboards/data";
 
-type Tab = "arena" | "drills";
+type Tab = "ranks" | "arena" | "drills";
+
+/** Which board the "Rankings" tab is showing: everything ever, or this calendar month. */
+type Scope = "alltime" | "season";
 
 function Medal({ rank }: { rank: number }) {
   const tone =
@@ -66,7 +77,12 @@ function Empty({ label }: { label: string }) {
 
 export default function LeaderboardsPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>("arena");
+  const [tab, setTab] = useState<Tab>("ranks");
+  const [scope, setScope] = useState<Scope>("alltime");
+  const [ranks, setRanks] = useState<RankRow[]>([]);
+  const [ranksLoading, setRanksLoading] = useState(true);
+  const [standing, setStanding] = useState<MyStanding | null>(null);
+  const season = seasonKey();
   const [loading, setLoading] = useState(true);
   const [arena, setArena] = useState<ArenaRow[]>([]);
   const [drills, setDrills] = useState<DrillOverallRow[]>([]);
@@ -85,6 +101,21 @@ export default function LeaderboardsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRanksLoading(true);
+    const load = scope === "alltime" ? fetchAllTimeBoard() : fetchSeasonBoard(season);
+    Promise.all([load, fetchMyStanding(season)]).then(([rows, mine]) => {
+      if (cancelled) return;
+      setRanks(rows);
+      setStanding(mine);
+      setRanksLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope, season]);
 
   useEffect(() => {
     if (!game) return;
@@ -119,7 +150,7 @@ export default function LeaderboardsPage() {
         </header>
 
         <div className="mb-6 inline-flex rounded-xl border border-border bg-card p-1">
-          {(["arena", "drills"] as Tab[]).map((t) => (
+          {(["ranks", "arena", "drills"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -127,12 +158,92 @@ export default function LeaderboardsPage() {
                 tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "arena" ? "Integral Arena" : "Drills"}
+              {t === "ranks" ? "Rankings" : t === "arena" ? "Integral Arena" : "Drills"}
             </button>
           ))}
         </div>
 
-        {loading ? (
+        {tab === "ranks" ? (
+          <div className="space-y-5">
+            <div className="inline-flex rounded-xl border border-border bg-card p-1">
+              {(["alltime", "season"] as Scope[]).map((sc) => (
+                <button
+                  key={sc}
+                  onClick={() => setScope(sc)}
+                  className={`rounded-lg px-4 py-1.5 text-[13px] font-medium transition-colors ${
+                    scope === sc ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {sc === "alltime" ? "All time" : seasonName(season)}
+                </button>
+              ))}
+            </div>
+
+            {standing && (
+              <section className="grid grid-cols-2 gap-4 rounded-2xl border border-border bg-card p-5 sm:grid-cols-4">
+                <div>
+                  <div className="readout text-[22px] font-semibold tabular-nums text-foreground">
+                    {standing.allTimeRank ? `#${standing.allTimeRank}` : "—"}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">all-time place</div>
+                </div>
+                <div>
+                  <div className="readout text-[22px] font-semibold tabular-nums text-foreground">
+                    {standing.seasonRank ? `#${standing.seasonRank}` : "—"}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">this season</div>
+                </div>
+                <div>
+                  <div className="readout text-[22px] font-semibold tabular-nums text-foreground">
+                    {standing.allTimeXp}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">total XP</div>
+                </div>
+                <div>
+                  <div className="readout text-[22px] font-semibold tabular-nums text-foreground">
+                    {standing.allTimeSolved}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">problems solved</div>
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+              <h2 className="px-3 pb-2 pt-1 text-[13px] font-medium text-muted-foreground">
+                {scope === "alltime"
+                  ? "Everything you have ever earned in the Arena"
+                  : `${seasonName(season)} — the board resets on the first of next month`}
+              </h2>
+              {ranksLoading ? (
+                <div className="flex items-center gap-3 px-3 py-10">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <p className="text-[14px] text-muted-foreground">Loading…</p>
+                </div>
+              ) : ranks.length === 0 ? (
+                <Empty
+                  label={
+                    scope === "alltime"
+                      ? "Nobody is on the board yet. Solve anything and you're first."
+                      : "This season is still empty. Play today and take the top spot."
+                  }
+                />
+              ) : (
+                ranks.map((r) => (
+                  <Row
+                    key={r.userId}
+                    rank={r.rank}
+                    name={r.displayName}
+                    you={r.userId === user?.id}
+                    primary={`${r.score}`}
+                    detail={r.detail}
+                  />
+                ))
+              )}
+            </section>
+
+            <ScoringExplainer />
+          </div>
+        ) : loading ? (
           <div className="flex items-center gap-3 py-16">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             <p className="text-[14px] text-muted-foreground">Loading boards…</p>

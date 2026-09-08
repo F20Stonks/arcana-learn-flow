@@ -123,3 +123,98 @@ export async function fetchDrillGameBoard(drillKey: string, limit = 25): Promise
     return [];
   }
 }
+
+// ── Arena rankings: all-time and monthly seasons ────────────────────────────────────────────────
+//
+// These read the SECURITY DEFINER ranking functions rather than a view: all-time standing is
+// derived from each player's synced progress blob and the season board from the month's daily
+// results, neither of which a client may read directly.
+
+export interface RankRow {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  score: number;
+  detail: string;
+  rank: number;
+}
+
+export interface MyStanding {
+  allTimeRank: number | null;
+  allTimeXp: number;
+  allTimeSolved: number;
+  seasonRank: number | null;
+  seasonScore: number;
+  players: number;
+}
+
+/** "2026-09" — the season a date falls in. Seasons are calendar months, UTC. */
+export function seasonKey(date = new Date()): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export function seasonName(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  if (!y || !m) return key;
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleString(undefined, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export async function fetchAllTimeBoard(limit = 50): Promise<RankRow[]> {
+  try {
+    const { data, error } = await db.rpc("integral_alltime_leaderboard", { p_limit: limit });
+    if (error || !data) return [];
+    return (data as Array<Record<string, unknown>>).map((r) => ({
+      userId: str(r.user_id),
+      displayName: str(r.display_name, "Anonymous"),
+      avatarUrl: (r.avatar_url as string | null) ?? null,
+      score: num(r.xp),
+      detail: `${num(r.solved)} solved · longest streak ${num(r.longest_streak)}`,
+      rank: num(r.rank),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSeasonBoard(season = seasonKey(), limit = 50): Promise<RankRow[]> {
+  try {
+    const { data, error } = await db.rpc("integral_season_leaderboard", {
+      p_season: season,
+      p_limit: limit,
+    });
+    if (error || !data) return [];
+    return (data as Array<Record<string, unknown>>).map((r) => ({
+      userId: str(r.user_id),
+      displayName: str(r.display_name, "Anonymous"),
+      avatarUrl: (r.avatar_url as string | null) ?? null,
+      score: num(r.points),
+      detail: `${num(r.solves)} solved · ${num(r.daily_score)} from dailies`,
+      rank: num(r.rank),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMyStanding(season = seasonKey()): Promise<MyStanding | null> {
+  try {
+    const { data, error } = await db.rpc("integral_my_standing", { p_season: season });
+    if (error || !data) return null;
+    const r = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+    if (!r) return null;
+    return {
+      allTimeRank: r.alltime_rank == null ? null : num(r.alltime_rank),
+      allTimeXp: num(r.alltime_xp),
+      allTimeSolved: num(r.alltime_solved),
+      seasonRank: r.season_rank == null ? null : num(r.season_rank),
+      seasonScore: num(r.season_points),
+      players: num(r.season_players ?? r.alltime_players),
+    };
+  } catch {
+    return null;
+  }
+}

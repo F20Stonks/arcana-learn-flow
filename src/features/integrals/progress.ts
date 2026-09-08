@@ -170,6 +170,14 @@ export function resetProgress() {
   write(emptyProgress());
 }
 
+/**
+ * Swap in a whole record — the cloud sync layer's landing point after it merges this device's
+ * progress with the account's saved copy. Goes through `write`, so every subscriber repaints.
+ */
+export function replaceProgress(next: Progress) {
+  write(next);
+}
+
 function update(fn: (p: Progress) => Progress) {
   write(fn(structuredClone(read())));
 }
