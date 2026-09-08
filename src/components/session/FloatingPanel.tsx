@@ -149,10 +149,22 @@ export default function FloatingPanel({
         {meta && <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">{meta}</span>}
         <div onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-0.5">
           {headerActions}
+          {onMinimize && (
+            <button
+              onClick={onMinimize}
+              data-panel-action="minimize"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title={`Minimize ${title}`}
+              aria-label={`Minimize ${title}`}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+          )}
           {onToggleMaximized && (
             <button
               onClick={onToggleMaximized}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              data-panel-action={maximized ? "restore-size" : "maximize"}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={maximized ? `Restore ${title} (Esc)` : `Expand ${title}`}
               aria-label={maximized ? `Restore ${title}` : `Expand ${title}`}
             >
@@ -161,22 +173,13 @@ export default function FloatingPanel({
           )}
           <button
             onClick={onToggleCollapsed}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            data-panel-action={collapsed ? "unfold" : "fold"}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={collapsed ? `Show ${title}` : `Fold ${title}`}
             aria-label={collapsed ? `Show ${title}` : `Fold ${title}`}
           >
             {collapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
-          {onMinimize && (
-            <button
-              onClick={onMinimize}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={`Put ${title} away — it stays in the dock below`}
-              aria-label={`Minimize ${title}`}
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-          )}
         </div>
       </div>
 
