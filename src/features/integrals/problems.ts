@@ -35,6 +35,12 @@ import { GammaFunction } from "./bank/gammaFunction";
 import { ZetaSeries } from "./bank/zetaSeries";
 import { WallisProduct } from "./bank/wallisProduct";
 import { GaussianHypersphere } from "./bank/gaussianHypersphere";
+import { UkuibRound1_2021 } from "./bank/ukuib/round1_2021";
+import { UkuibRound1_2022 } from "./bank/ukuib/round1_2022";
+import { UkuibRound1_2023_2024 } from "./bank/ukuib/round1_2023_2024";
+import { UkuibRound3 } from "./bank/ukuib/round3";
+import { UkuibGroupRound } from "./bank/ukuib/groupRound";
+import { UkuibQualifier } from "./bank/ukuib/qualifier";
 
 export const PROBLEMS: Problem[] = [
   ...StandardForms,
@@ -58,6 +64,12 @@ export const PROBLEMS: Problem[] = [
   ...ZetaSeries,
   ...WallisProduct,
   ...GaussianHypersphere,
+  ...UkuibRound1_2021,
+  ...UkuibRound1_2022,
+  ...UkuibRound1_2023_2024,
+  ...UkuibRound3,
+  ...UkuibGroupRound,
+  ...UkuibQualifier,
 ];
 
 export const PROBLEM_BY_ID: Record<string, Problem> = Object.fromEntries(

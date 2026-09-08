@@ -195,7 +195,7 @@ export const TSub: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["t-sub"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    source: { name: "UK University Integration Bee", year: 2021, round: "Round 1" },
     hints: [
       "King's rule symmetrises the numerator to \\sin x+\\cos x, same first move as the \\cos x/(2-\\sin2x) problem.",
       "After the u=\\sin x-\\cos x substitution, the result lands on \\int\\frac{\\cos\\theta}{(1+\\cos\\theta)^2}\\,d\\theta with \\theta=\\arcsin u — a rational function of \\cos\\theta, ready for a t-sub.",

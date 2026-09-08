@@ -195,44 +195,15 @@ export const UkuibRound1_2021: Problem[] = [
       "The boundary term vanishes at both ends, and -\\int_0^{\\pi/2}\\ln\\tan(x/2)\\,dx=2G, where G=\\sum_{n=0}^\\infty\\frac{(-1)^n}{(2n+1)^2} is Catalan's constant.",
     ],
   },
-  {
-    id: "ukuib21r1-p11",
-    kind: "definite",
-    integrand: "\\frac{\\ln x}{x^{2011}}",
-    integrandExpr: "log(x)/x^2011",
-    lower: "1",
-    upper: "\\infty",
-    answer: "1/4040100",
-    answerLatex: "\\frac1{2010^2}",
-    domain: [1, Infinity],
-    difficulty: 2,
-    techniques: ["parts"],
-    source: { name: "UK University Integration Bee", year: 2021, round: "Round 1" },
-    hints: ["\\int_1^\\infty x^{-n}\\ln x\\,dx=\\frac1{(n-1)^2} for n>1 — integrate by parts once with u=\\ln x."],
-    steps: [
-      "By parts: u=\\ln x,\\ dv=x^{-2011}dx,\\ v=\\frac{x^{-2010}}{-2010}. The boundary term vanishes at both ends.",
-      "What remains is \\frac1{2010}\\int_1^\\infty x^{-2011}dx=\\frac1{2010}\\cdot\\frac1{2010}=\\frac1{2010^2}=\\frac1{4040100}.",
-    ],
-  },
-  {
-    id: "ukuib21r1-p13",
-    kind: "definite",
-    integrand: "\\frac{\\cos x}{(1+\\sqrt{\\sin2x})^2}",
-    integrandExpr: "cos(x)/(1+sqrt(sin(2*x)))^2",
-    lower: "0",
-    upper: "\\frac{\\pi}{2}",
-    answer: "1/3",
-    answerLatex: "\\frac13",
-    domain: [0, Math.PI / 2],
-    difficulty: 4,
-    techniques: ["u-sub"],
-    source: { name: "UK University Integration Bee", year: 2021, round: "Round 1" },
-    hints: ["\\sin2x=2\\sin x\\cos x — try u=\\sin x and track how \\sqrt{\\sin2x}=\\sqrt{2u\\sqrt{1-u^2}} behaves."],
-    steps: [
-      "Substituting u=\\sin x (du=\\cos x\\,dx) and reducing the resulting radical carefully collapses this to a clean rational value.",
-      "Confirmed by direct quadrature to be exactly \\frac13.",
-    ],
-  },
+  // ukuib21r1-p11 (\ln x/x^{2011} on [1,\infty)) was an exact duplicate of the pre-existing
+  // recip-log-over-x-power-2011 in reciprocalSubstitution.ts, which already carries a real
+  // citation (SPLASH 2011) — left untouched rather than re-attributed or duplicated, matching
+  // this repo's established handling of a genuinely coincidental cross-document repeat.
+  // ukuib21r1-p13 (\cos x/(1+\sqrt{\sin2x})^2 on [0,\pi/2]) was an exact duplicate of the
+  // pre-existing tsub-cos-over-1-plus-sqrt-sin2x-squared in tSub.ts (sourced there to just "UK
+  // University Integration Bee Basic Techniques Guide", with no year/round) — re-attributed that
+  // entry to the more specific real competition source (2021 Round 1) this document confirms it
+  // came from, rather than keep two copies of the same integral.
   {
     id: "ukuib21r1-p14",
     kind: "definite",

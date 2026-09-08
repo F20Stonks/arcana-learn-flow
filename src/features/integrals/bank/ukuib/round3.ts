@@ -105,28 +105,9 @@ export const UkuibRound3: Problem[] = [
       "\\int_0^{\\pi/2}2\\cos t\\,dt = 2.",
     ],
   },
-  {
-    id: "ukuib24r3-chain1-p5",
-    kind: "definite",
-    integrand: "\\frac{\\ln(1+x+x^2)}{x}",
-    integrandExpr: "log(1+x+x^2)/x",
-    lower: "0",
-    upper: "1",
-    answer: "pi^2/9",
-    answerLatex: "\\frac{\\pi^2}9",
-    domain: [0, 1],
-    difficulty: 4,
-    techniques: ["zeta-series"],
-    source: { name: "UK University Integration Bee", year: 2024, round: "Chainlink" },
-    hints: [
-      "1+x+x^2 = \\frac{1-x^3}{1-x}, so \\ln(1+x+x^2) = \\ln(1-x^3)-\\ln(1-x).",
-      "Expand each log as its power series -\\sum \\frac{x^{kn}}n and integrate term by term.",
-    ],
-    steps: [
-      "\\int_0^1\\frac{\\ln(1-x^3)-\\ln(1-x)}{x}\\,dx = -\\sum_{n\\ge1}\\frac1n\\int_0^1\\left(x^{3n-1}-x^{n-1}\\right)dx.",
-      "= -\\sum_{n\\ge1}\\frac1n\\left(\\frac1{3n}-\\frac1n\\right) = \\frac23\\sum_{n\\ge1}\\frac1{n^2} = \\frac23\\cdot\\frac{\\pi^2}6 = \\frac{\\pi^2}9.",
-    ],
-  },
+  // ukuib24r3-chain1-p5 (\ln(1+x+x^2)/x on [0,1]) was an exact duplicate of the pre-existing
+  // ukuib22r1-p20 in round1_2022.ts — the same UK bee reused this integral three years apart.
+  // Left the earlier (2022 Round 1) entry untouched rather than duplicate it.
   {
     id: "ukuib24r3-chain1-p7",
     kind: "definite",
@@ -147,31 +128,15 @@ export const UkuibRound3: Problem[] = [
     steps: [
       "y=4x gives \\frac1{16}\\int_{4\\tan^{-1}(1/3)}^{4\\tan^{-1}(1/2)}\\frac{y}{\\sin y}\\,dy, with bounds symmetric about \\pi/2 since the two arctangents sum to \\pi/4.",
       "King's rule (y\\to\\pi-y) adds the integral to itself and cancels the y: 2\\times(\\text{integral}) = \\frac1{16}\\int\\pi\\csc y\\,dy over the same bounds.",
-      "\\int\\csc y\\,dy = \\ln|\\csc y-\\cot y|; evaluating and simplifying with \\cos\\left(4\\tan^{-1}\\frac12\\right)=-\\frac7{25}$ gives \\frac\\pi{32}\\ln\\frac{16}9 = \\frac\\pi{16}\\ln\\frac43.",
+      "\\int\\csc y\\,dy = \\ln|\\csc y-\\cot y|; evaluating and simplifying with \\cos\\left(4\\tan^{-1}\\frac12\\right)=-\\frac7{25} gives \\frac\\pi{32}\\ln\\frac{16}9 = \\frac\\pi{16}\\ln\\frac43.",
     ],
   },
   // ---------------------------------------------------------------------------------------------
   // Chainlink — Game 2
   // ---------------------------------------------------------------------------------------------
-  {
-    id: "ukuib24r3-chain2-p1",
-    kind: "definite",
-    integrand: "5\\left(x^6+x\\right)^4",
-    integrandExpr: "5*(x^6+x)^4",
-    lower: "-1",
-    upper: "0",
-    answer: "1/5",
-    answerLatex: "\\frac15",
-    domain: [-1, 0],
-    difficulty: 2,
-    techniques: ["u-sub"],
-    source: { name: "UK University Integration Bee", year: 2024, round: "Chainlink" },
-    hints: ["5(x^6+x)^4 = 5x^4(x^5+1)^4, and \\frac{d}{dx}(x^5+1) = 5x^4."],
-    steps: [
-      "5(x^6+x)^4 = 5x^4(x^5+1)^4, and u=x^5+1 gives du=5x^4\\,dx.",
-      "\\int_{-1}^0 5x^4(x^5+1)^4\\,dx = \\left[\\frac{(x^5+1)^5}5\\right]_{-1}^0 = \\frac15-0 = \\frac15.",
-    ],
-  },
+  // ukuib24r3-chain2-p1 (5(x^6+x)^4 on [-1,0]) was an exact duplicate of the pre-existing
+  // ukuib23r1-p13 in round1_2023_2024.ts — left that earlier (2023 Round 1) entry untouched
+  // rather than duplicate it.
   {
     id: "ukuib24r3-chain2-p2",
     kind: "indefinite",
@@ -253,7 +218,7 @@ export const UkuibRound3: Problem[] = [
     techniques: ["gaussian-hypersphere"],
     source: { name: "UK University Integration Bee", year: 2024, round: "Chainlink" },
     hints: [
-      "The general form \\int_0^\\infty e^{-a^2x^2-b^2/x^2}dx (this is the a=b=1 case) is solved by u=\\frac bax, which turns it into a Gaussian in u shifted by a coupling term -2ab.",
+      "The general form \\int_0^\\infty e^{-a^2x^2-b^2/x^2}dx (this is the a=b=1 case) is solved by u=\\frac{b}{a}x, which turns it into a Gaussian in u shifted by a coupling term -2ab.",
       "Once it's \\int_0^\\infty e^{-u^2-1/u^2}du, it equals \\int_{-\\infty}^\\infty of half that by symmetry, and completing the square on x-1/x collapses the coupling to a constant factor e^{-2}.",
     ],
     steps: [
@@ -653,7 +618,7 @@ export const UkuibRound3: Problem[] = [
     ],
     steps: [
       "By evenness, the integral is 2\\int_0^\\infty\\frac{dx}{(x^4+1)^2}; y=x^4 turns this into \\frac12B\\!\\left(\\frac14,\\frac74\\right) = \\frac{\\Gamma(1/4)\\Gamma(7/4)}{2\\Gamma(2)}.",
-      "\\Gamma(7/4)=\\frac34\\Gamma(3/4)$, and the reflection formula \\Gamma(1/4)\\Gamma(3/4)=\\frac\\pi{\\sin(\\pi/4)}=\\pi\\sqrt2 finishes the \\Gamma(1/4)\\Gamma(3/4) product.",
+      "\\Gamma(7/4)=\\frac34\\Gamma(3/4), and the reflection formula \\Gamma(1/4)\\Gamma(3/4)=\\frac\\pi{\\sin(\\pi/4)}=\\pi\\sqrt2 finishes the \\Gamma(1/4)\\Gamma(3/4) product.",
       "Putting it together gives \\frac{3\\sqrt2}8\\pi.",
     ],
   },
@@ -737,23 +702,9 @@ export const UkuibRound3: Problem[] = [
       "= \\frac12\\ln\\left|\\frac{1+u}{1-u}\\right|+\\tan^{-1}u+C = \\frac12\\left(\\ln|1+\\tan x|-\\ln|1-\\tan x|\\right)+x+C.",
     ],
   },
-  {
-    id: "ukuib24r3-dich1-2b",
-    kind: "indefinite",
-    integrand: "\\frac{\\tan x}{\\tan(2x)}",
-    integrandExpr: "tan(x)/tan(2*x)",
-    answer: "x - tan(x)/2",
-    answerLatex: "x-\\frac{\\tan x}2 + C",
-    domain: [-0.3, 0.3],
-    difficulty: 2,
-    techniques: ["trig-identity"],
-    source: { name: "UK University Integration Bee", year: 2024, round: "Dichotomy" },
-    hints: ["\\tan(2x) = \\frac{2\\tan x}{1-\\tan^2x}, so \\frac{\\tan x}{\\tan2x} = \\frac{1-\\tan^2x}2 = 1-\\frac{\\sec^2x}2."],
-    steps: [
-      "\\frac{\\tan x}{\\tan2x} = \\frac{1-\\tan^2x}2 = \\frac{2-\\sec^2x}2 = 1-\\frac{\\sec^2x}2.",
-      "\\int 1-\\frac{\\sec^2x}2\\,dx = x-\\frac{\\tan x}2+C.",
-    ],
-  },
+  // ukuib24r3-dich1-2b (\tan x/\tan2x, indefinite) was an exact duplicate of the pre-existing
+  // trig-tan-over-tan-double in trigIdentities.ts, which carried {name: "original"} — re-attributed
+  // that entry to this real source (2024 Dichotomy) instead of keeping two copies.
   {
     id: "ukuib24r3-dich1-3a",
     kind: "definite",
