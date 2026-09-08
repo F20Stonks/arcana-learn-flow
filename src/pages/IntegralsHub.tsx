@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import ScoringExplainer from "@/features/integrals/components/ScoringExplainer";
 import Tex from "@/features/integrals/components/Tex";
 import XpBar from "@/features/integrals/components/XpBar";
 import DailyHeatmap from "@/features/integrals/components/DailyHeatmap";
@@ -155,7 +156,10 @@ export default function IntegralsHub() {
           </section>
         </div>
 
-        <section className="reveal mb-6 grid gap-4 sm:grid-cols-2">
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Learn it</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Read the technique, then make it reflex.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
           <Link
             to="/integrals/train"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -170,7 +174,6 @@ export default function IntegralsHub() {
               Train →
             </span>
           </Link>
-
           <Link
             to="/integrals/lessons"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -185,7 +188,41 @@ export default function IntegralsHub() {
               Read →
             </span>
           </Link>
+          <Link
+            to="/integrals/values"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Values deck</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              Flashcards for the results worth having cold — flip and check yourself. Not scored,
+              read it like the lessons.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Study →
+            </span>
+          </Link>
+          <Link
+            to="/integrals/campaign"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+          >
+            <CalendarDays className="h-4 w-4 text-primary" />
+            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Campaign</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              A session for today, counted back from Round 1 — recognition, problems and papers on
+              schedule, plus how ready you actually are.
+            </p>
+            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
+              Plan →
+            </span>
+          </Link>
+          </div>
+        </section>
 
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Under the clock</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Speed is the other half of the skill — these are all timed.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
           <Link
             to="/integrals/sprint"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -200,7 +237,6 @@ export default function IntegralsHub() {
               Sprint →
             </span>
           </Link>
-
           <Link
             to="/integrals/uk/round1"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -215,7 +251,6 @@ export default function IntegralsHub() {
               Sit the paper →
             </span>
           </Link>
-
           <Link
             to="/oa"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -231,7 +266,6 @@ export default function IntegralsHub() {
               Sit one →
             </span>
           </Link>
-
           <Link
             to="/integrals/recognition"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -246,7 +280,6 @@ export default function IntegralsHub() {
               Drill →
             </span>
           </Link>
-
           <Link
             to="/integrals/headsolve"
             className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
@@ -261,40 +294,16 @@ export default function IntegralsHub() {
               Start →
             </span>
           </Link>
+          </div>
+        </section>
 
-          <Link
-            to="/integrals/values"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
-          >
-            <Layers className="h-4 w-4 text-primary" />
-            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Values deck</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              Flashcards for the results worth having cold — flip and check yourself. Not scored,
-              read it like the lessons.
-            </p>
-            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
-              Study →
-            </span>
-          </Link>
-
-          <Link
-            to="/integrals/campaign"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
-          >
-            <CalendarDays className="h-4 w-4 text-primary" />
-            <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Campaign</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-              A session for today, counted back from Round 1 — recognition, problems and papers on
-              schedule, plus how ready you actually are.
-            </p>
-            <span className="mt-3 inline-block text-[13px] font-medium text-foreground transition-transform group-hover:translate-x-0.5">
-              Plan →
-            </span>
-          </Link>
-
+        <section className="reveal mb-8">
+          <h2 className="mb-1 font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Compete</h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">Where your score is measured against everyone else playing.</p>
+          <div className="grid gap-4">
           <Link
             to="/integrals/daily"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:col-span-2"
+            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
           >
             <Users className="h-4 w-4 text-primary" />
             <h2 className="mt-3 font-display text-[17px] font-semibold text-foreground">Head to head</h2>
@@ -307,6 +316,7 @@ export default function IntegralsHub() {
               {record ? "See the board →" : "Play today's →"}
             </span>
           </Link>
+          </div>
         </section>
 
         <section className="reveal mb-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -346,6 +356,10 @@ export default function IntegralsHub() {
             ))}
           </div>
         </section>
+
+        <div className="reveal mb-6">
+          <ScoringExplainer />
+        </div>
 
         <Link
           to="/integrals/progress"
