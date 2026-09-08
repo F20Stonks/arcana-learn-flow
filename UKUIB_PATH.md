@@ -371,3 +371,73 @@ into `techniques.ts` / `problems.ts` / `types.ts` happens in WS-E, by one writer
     that map at all — it's currently keyed to `TECHNIQUES`, not `ALL_LESSONS`, on purpose per its own
     header comment, and widening that scope is a judgment call worth making deliberately rather than
     as a side effect of an unrelated commit).
+
+- 2026-09-08 (new session start, model switched to Sonnet by the owner mid-session to manage
+  usage): Picked up after a run of container restarts and rate limits (a session limit, then a
+  full weekly limit) had killed seven mining agents in a row without any of them writing a single
+  problem to disk — confirmed by checking `src/features/integrals/bank/ukuib/` (still exactly the
+  60 problems from the last real checkpoint) before doing anything else, rather than trusting the
+  failure notifications' timing. No content was lost; nothing to recover.
+  - **Closed the deferred `techniqueMap.ts` placement** (commit `cdf5909`) — this had been flagged
+    as "a judgment call worth making deliberately" ever since the six syllabus lessons were wired
+    into `TECHNIQUES`. Did it properly this time: read all six lessons' actual `prerequisites`/
+    `intuition` text in full before placing any of them, rather than guessing. Found a real,
+    grounded precedent already in the map (the `differentiate-under-integral` family already pairs
+    a general technique with its own specific repeated instance — feynman + log-power-integrals) —
+    that justified two genuine placements: `leibniz-rule` joins that same family, and a brand-new
+    `series-expansion` family holds `series-swap` + `zeta-series` (zeta-series moved out of
+    `STANDALONE_TECHNIQUES`, its existing cross-link to gamma-function untouched). The other four
+    (`named-series`, `euler-reflection`, `euler-mascheroni`, `sine-product`) are standalone with
+    real cross-links, each grounded in a specific derivation step cited in the lesson text, not a
+    vague resemblance. Widened `techniqueMap.test.ts`'s totality check from `TECHNIQUES` (21) to
+    `ALL_LESSONS` (27) so it actually covers what the map now claims to place. 2608/2608 passing
+    (was 2597), tsc and eslint clean.
+  - **Re-ran the full Playwright walkthrough from scratch** after all the churn (container
+    restarts, the exercise-shape change, the techniqueMap change) — full lesson completes
+    correctly end to end, crown awarded, XP banked, attempts logged, next skill unlocked, zero
+    console errors. Also spot-checked two of the six lesson-only skill pages directly
+    (`leibniz-rule`, `series-swap`) to confirm they render through the ordinary UKUIB skill route
+    (they have real `Skill` entries in `curriculum.ts` pointing at their technique ids, and
+    `TECHNIQUE_BY_ID` already resolves all 27) — both render the complete lesson correctly,
+    prerequisites through check-yourself.
+  - **Mining status**: relaunched all 7 outstanding mining agents (2021 Round 1, rest of the 2022
+    family, 2023/2024 Round 1, 2025/Qualifier/Virtual, Group Round 2021-2026, Relay+Shuttle,
+    Crossnumber) once real time had clearly moved past both the session-limit and weekly-limit
+    reset windows — all seven were killed by the weekly limit on the first relaunch attempt,
+    confirmed nothing had been written to disk by any of them. Sent a single test agent (2021
+    Round 1 alone) after further real time passed to confirm the limit had actually cleared before
+    relaunching the rest — cautious after two rounds of immediate kills, not wanting to burn seven
+    launches on a wall that hadn't cleared yet.
+  - **Newly scoped for the Group/Relay/Shuttle/Crossnumber families** (not in the original
+    UKUIB_PATH.md content-seed section, discovered by reading the source documents directly this
+    session): these Round Two formats are genuinely different from every Round One-style paper
+    mined so far.
+    - **Group Round** (5 documents, 2021-2026, ~54 problems): standalone integrals, but unusually
+      hard ones — multi-integrals, infinite sums inside integrands, argmax, implicit-function
+      definitions. Briefed the mining agent to use CLAUDE.md's existing "Nothing gets dropped"
+      playbook (Cauchy's formula for iterated integrals, sum-to-closed-form substitution,
+      continued-fraction fixed points) rather than force or skip wholesale.
+    - **Relay and Shuttle rounds** (5 documents): a genuinely new pattern not seen in any
+      previously-mined document — CHAINED puzzles, where a later question's stated integral
+      literally contains a letter (`a`, `b`, ...) meaning "the numeric answer to the previous
+      question in this chain." Briefed the agent to solve each chain in order and substitute the
+      real, determined handoff value — not a free choice the way the existing "pick specific
+      values" convention is, since the puzzle format itself fixes exactly one correct value at each
+      step. A chain that can't be resolved with confidence skips the *entire remainder* of that
+      chain, not just the unclear step, since every later value depends on it.
+    - **Crossnumber round** (9 documents, some likely blank grids to be skipped outright): the
+      hardest new case. A Crossnumber is a crossword-style puzzle where clues routinely reference
+      EACH OTHER by grid position ("x = final digit of 4 DOWN"), which cannot become a standalone
+      `Problem` — solving one requires solving the whole grid as a coupled system, a fundamentally
+      different kind of puzzle than this bank's one-integral-one-answer schema. Briefed the agent
+      to triage every clue into "self-contained integral" vs. "references another clue" BEFORE
+      attempting any calculus, and mine only the former.
+  - **Next**: once the weekly limit is confirmed clear (the single test agent's result will tell
+    us), relaunch the remaining 6 mining agents (2021 Round 1 may already be done by the test
+    agent) covering: rest of 2022 family, 2023/2024 Round 1, 2025/Qualifier/Virtual, Group Round,
+    Relay+Shuttle, Crossnumber. Independently re-verify every problem any agent reports (never
+    trust an agent's own "all verified" claim — re-run `harness.local/extractbank.ts` +
+    `harness.local/verify.ts` against the actual file on disk, as done for the first 60) before
+    committing. This is now the single largest remaining piece of the whole UKUIB task — the
+    course engine, UI, and all six syllabus lessons are complete and verified; what's left is
+    volume content.
