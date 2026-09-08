@@ -31,6 +31,7 @@ import {
   Flame,
   Trophy,
   Zap,
+  GraduationCap,
   Sigma,
   Menu,
   PanelLeftClose,
@@ -100,6 +101,7 @@ function useNavGroups(dueReviews: number): { heading: string | null; items: NavI
       items: [
         { label: "Drills", icon: Zap, to: "/drills" },
         { label: "Integrals", icon: Sigma, to: "/integrals" },
+        { label: "UK Bee", icon: GraduationCap, to: "/ukuib" },
         { label: "Firm OAs", icon: Building2, to: "/oa" },
         { label: "Question bank", icon: Library, to: "/question-bank", soon: true },
         { label: "Resources", icon: BookOpen, to: "/resource-bank", soon: true },

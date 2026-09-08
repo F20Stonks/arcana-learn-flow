@@ -39,6 +39,10 @@ import IntegralRecognition from "./pages/IntegralRecognition";
 import IntegralValues from "./pages/IntegralValues";
 import IntegralCampaign from "./pages/IntegralCampaign";
 import IntegralHeadsolve from "./pages/IntegralHeadsolve";
+import UkuibPath from "./pages/UkuibPath";
+import UkuibSkill from "./pages/UkuibSkill";
+import UkuibLesson from "./pages/UkuibLesson";
+import UkuibCheckpoint from "./pages/UkuibCheckpoint";
 import DrillPlay from "./pages/DrillPlay";
 import LeaderboardsPage from "./pages/LeaderboardsPage";
 import NotFound from "./pages/NotFound";
@@ -170,6 +174,15 @@ function AppRoutes() {
       {/* Headsolve — think time only, no answer input. See UK_BEE_BURST.md Extension 2, WS-9. */}
       <Route path="/integrals/headsolve" element={<DashboardGuard><IntegralHeadsolve /></DashboardGuard>} />
 
+      {/* The UKUIB course (src/features/integrals/ukuib) — a Duolingo-style path through the
+          published UK University Integration Bee syllabus. Its own section rather than another
+          Arena tile: the Arena is free-form practice by technique or by paper, the course is a
+          route. Both draw on the same bank and the same grader. See UKUIB_PATH.md. */}
+      <Route path="/ukuib" element={<DashboardGuard><UkuibPath /></DashboardGuard>} />
+      <Route path="/ukuib/skill/:skillId" element={<DashboardGuard><UkuibSkill /></DashboardGuard>} />
+      <Route path="/ukuib/lesson/:skillId" element={<DashboardGuard><UkuibLesson /></DashboardGuard>} />
+      <Route path="/ukuib/checkpoint/:unitId" element={<DashboardGuard><UkuibCheckpoint /></DashboardGuard>} />
+
       {/* OA Arena (src/features/oa) — format reconstructions of trading firms' online
           assessments. Self-contained like the Integral Arena: no backend, nothing leaves the
           browser, and every question is generated and graded locally. */}
@@ -227,6 +240,10 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/values" element={<IntegralValues />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/campaign" element={<IntegralCampaign />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/headsolve" element={<IntegralHeadsolve />} />}
+      {import.meta.env.DEV && <Route path="/dev/ukuib" element={<UkuibPath />} />}
+      {import.meta.env.DEV && <Route path="/dev/ukuib/skill/:skillId" element={<UkuibSkill />} />}
+      {import.meta.env.DEV && <Route path="/dev/ukuib/lesson/:skillId" element={<UkuibLesson />} />}
+      {import.meta.env.DEV && <Route path="/dev/ukuib/checkpoint/:unitId" element={<UkuibCheckpoint />} />}
       {/* Same unguarded-twin pattern as the /dev/integrals/* block above, for drills and UK Quant. */}
       {import.meta.env.DEV && <Route path="/dev/drills" element={<DrillsHub />} />}
       {import.meta.env.DEV && <Route path="/dev/drills/:drillKey" element={<DrillPlay />} />}

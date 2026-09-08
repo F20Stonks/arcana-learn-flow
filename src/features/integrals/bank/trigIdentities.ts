@@ -544,7 +544,7 @@ export const TrigIdentities: Problem[] = [
     domain: [0.1, 0.6],
     difficulty: 3,
     techniques: ["trig-identity"],
-    source: { name: "original" },
+    source: { name: "UK University Integration Bee", year: 2024, round: "Dichotomy" },
     hints: [
       "Expand \\tan2x with the double-angle formula and watch almost everything cancel.",
       "\\tan2x = \\frac{2\\tan x}{1-\\tan^2x}.",

@@ -2,11 +2,14 @@
  * The totality check techniqueMap.ts's own header comment promises, plus spot-checks of
  * familyOf/siblingsOf/crossLinksFor/confusablesFor's documented behavior.
  *
- * TECHNIQUES (techniques.ts) is treated as the canonical list of every real TechniqueId — every
- * other test file in this feature (problems.test.ts, lessonExamples.test.ts) already relies on it
- * being complete, and it's the only runtime-visible source of the TechniqueId union (TypeScript
- * types vanish at build time, so a hardcoded id list here couldn't catch a real drift the way
- * reading TECHNIQUES does).
+ * ALL_LESSONS (techniques.ts) — TECHNIQUES plus the six syllabus-completion lessons that have no
+ * drill pool yet — is the canonical list of every real TechniqueId. It used to be just TECHNIQUES,
+ * back when techniqueMap only needed to cover the drillable curriculum; now that the map places all
+ * six of those lessons too (see their entries in TECHNIQUE_FAMILIES/STANDALONE_TECHNIQUES), the
+ * totality check has to sweep the union or it would silently stop covering a quarter of what the
+ * map actually claims to place. It's the only runtime-visible source of the TechniqueId union
+ * (TypeScript types vanish at build time, so a hardcoded id list here couldn't catch a real drift
+ * the way reading ALL_LESSONS does).
  */
 import { describe, expect, it } from "vitest";
 import katex from "katex";
@@ -20,7 +23,7 @@ import {
   STANDALONE_TECHNIQUES,
   TECHNIQUE_FAMILIES,
 } from "./techniqueMap";
-import { TECHNIQUES } from "./techniques";
+import { ALL_LESSONS } from "./techniques";
 import { toMathMode } from "./mathText";
 import type { TechniqueId } from "./types";
 
@@ -33,7 +36,7 @@ const renders = (s: string) => {
   return true;
 };
 
-const ALL_IDS: TechniqueId[] = TECHNIQUES.map((t) => t.id);
+const ALL_IDS: TechniqueId[] = ALL_LESSONS.map((t) => t.id);
 const sortedIds = (ids: readonly TechniqueId[]) => [...ids].sort();
 
 describe("totality", () => {
@@ -83,10 +86,11 @@ describe("totality", () => {
     }
   });
 
-  it("has exactly 21 techniques placed in total, matching the real curriculum's size today", () => {
+  it("has exactly 27 techniques placed in total, matching the real curriculum's size today", () => {
     // Not the totality check itself (that's the test above, and it's what actually matters) -- just
     // pinning the number so a change in curriculum size is visible here too, not just inferred.
-    expect(ALL_IDS.length).toBe(21);
+    // 21 drillable TECHNIQUES + the 6 syllabus-completion lessons in LESSON_ONLY_TECHNIQUES.
+    expect(ALL_IDS.length).toBe(27);
   });
 });
 
@@ -157,18 +161,29 @@ describe("crossLinksFor", () => {
     expect(crossLinksFor("power")).toEqual([]);
   });
 
-  it("gamma-function sits at the hub of two cross-links (zeta-series and gaussian-hypersphere)", () => {
+  it("gamma-function sits at the hub of four cross-links", () => {
+    // zeta-series and gaussian-hypersphere predate the UKUIB syllabus lessons; euler-reflection and
+    // euler-mascheroni are genuine new connections (both derivations run through Gamma directly).
     expect(sortedIds(crossLinksFor("gamma-function"))).toEqual(
-      sortedIds(["zeta-series", "gaussian-hypersphere"]),
+      sortedIds(["zeta-series", "gaussian-hypersphere", "euler-reflection", "euler-mascheroni"]),
     );
   });
 });
 
 describe("confusablesFor", () => {
   it("unions siblings and cross-links, deduplicated", () => {
-    // gamma-function: 3 reduction-formulas siblings + 2 cross-links (zeta-series, gaussian-hypersphere).
+    // gamma-function: 3 reduction-formulas siblings + 4 cross-links (zeta-series,
+    // gaussian-hypersphere, euler-reflection, euler-mascheroni).
     expect(sortedIds(confusablesFor("gamma-function"))).toEqual(
-      sortedIds(["recurrence", "beta-integrals", "wallis-product", "zeta-series", "gaussian-hypersphere"]),
+      sortedIds([
+        "recurrence",
+        "beta-integrals",
+        "wallis-product",
+        "zeta-series",
+        "gaussian-hypersphere",
+        "euler-reflection",
+        "euler-mascheroni",
+      ]),
     );
   });
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import katex from "katex";
 import { normalizeGlyphs, segments, toMathMode } from "./mathText";
 import { PROBLEMS } from "./problems";
-import { TECHNIQUES } from "./techniques";
+import { ALL_LESSONS } from "./techniques";
 
 const renders = (s: string) => {
   // strict:"error" turns KaTeX's warnings (stray unicode, bad spacing) into failures too.
@@ -130,7 +130,7 @@ describe("everything in the bank renders", () => {
 });
 
 describe("everything in the curriculum renders", () => {
-  it.each(TECHNIQUES.map((t) => [t.id, t] as const))("%s", (_id, t) => {
+  it.each(ALL_LESSONS.map((t) => [t.id, t] as const))("%s", (_id, t) => {
     expect(renders(t.whenToUse)).toBe(true);
     for (const r of t.recipe) expect(renders(r)).toBe(true);
     for (const w of t.example.work) expect(renders(w)).toBe(true);

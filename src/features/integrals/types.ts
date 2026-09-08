@@ -28,7 +28,17 @@ export type TechniqueId =
   | "gamma-function"
   | "zeta-series"
   | "wallis-product"
-  | "gaussian-hypersphere";
+  | "gaussian-hypersphere"
+  // The UK University Integration Bee syllabus (see UKUIB_PATH.md §1) names seven required
+  // techniques and nine specific results. Mapping it item by item against the twenty-one above
+  // left exactly these six uncovered — every one of them explicitly on the syllabus, and every one
+  // of them a genuine gap rather than a rephrasing of something already taught.
+  | "leibniz-rule"
+  | "series-swap"
+  | "euler-reflection"
+  | "named-series"
+  | "euler-mascheroni"
+  | "sine-product";
 
 /** 1 = warm-up, 5 = the one that eats your lunch break. */
 export type Difficulty = 1 | 2 | 3 | 4 | 5;

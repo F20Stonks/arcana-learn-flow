@@ -108,7 +108,7 @@ export const Feynman: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["feynman"],
-    source: { name: "original" },
+    source: { name: "UK University Integration Bee", year: 2021, round: "Shuttle" },
     hints: [
       "There's no visible parameter here — introduce one where you know it belongs: in the exponent of x.",
       "\\int_0^1 x^a\\,dx = \\frac{1}{a+1} is trivial. Differentiating it with respect to a brings a \\ln x down each time.",
@@ -132,7 +132,7 @@ export const Feynman: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["feynman"],
-    source: { name: "original" },
+    source: { name: "UK University Integration Bee", year: 2025, round: "Round 1" },
     hints: [
       "On (0, \\tfrac{\\pi}{2}), \\arctan(\\tan x) = x — so x\\cot x is \\frac{\\arctan(\\tan x)}{\\tan x}, and that has an obvious place to put a parameter.",
       "Consider I(a) = \\int_0^{\\pi/2}\\frac{\\arctan(a\\tan x)}{\\tan x}dx. The target is I(1); I(0) = 0 outright.",
