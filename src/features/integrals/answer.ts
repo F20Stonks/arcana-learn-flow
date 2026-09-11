@@ -310,6 +310,12 @@ export function normalize(raw: string): string {
   let s = foldUnicode(raw).trim();
   if (!s) return "";
 
+  // A digit glued to `e` (or `E`) reads as scientific notation to mathjs's own tokenizer —
+  // `2e+1` silently becomes 20, and `2e+x` fails to parse at all — before any of our own
+  // identifier-splitting ever runs. Split them apart unless `e` is really the start of a
+  // longer name (`2exp(x)`), which implicit multiplication already handles correctly.
+  s = s.replace(/(\d)([eE])(?![a-zA-Z_])/g, "$1*$2");
+
   s = s.replace(/\*\*/g, "^"); // the programmer's power operator
   // Integral scaffolding, in case the whole line was pasted rather than just the answer.
   s = s.replace(/\\displaystyle|\\limits|\\int|\u222b/g, " ");

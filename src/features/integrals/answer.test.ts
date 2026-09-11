@@ -39,6 +39,19 @@ describe("normalize", () => {
     expect(normalize("2ln|x|")).toBe("2log(abs(x))");
     expect(normalize("3arctan(x)")).toBe("3atan(x)");
   });
+
+  it("doesn't let a digit-e coefficient read as scientific notation", () => {
+    // mathjs's own tokenizer treats `2e+1` as the number 20, not `2*e+1` — a coefficient in
+    // front of Euler's e, with anything that looks like an exponent after it, was silently
+    // misread (or, for a non-digit tail like `2e+x`, failed to parse at all).
+    expect(normalize("2e+1")).toBe("2*e+1");
+    expect(normalize("2e-1")).toBe("2*e-1");
+    expect(normalize("e^(2e+1)")).toBe("e^(2*e+1)");
+    expect(normalize("2e+x")).toBe("2*e+x");
+    // `e` here is the start of `exp`, a real function name — left for mathjs's own implicit
+    // multiplication, same as `2sin(x)` already is.
+    expect(normalize("2exp(x)")).toBe("2exp(x)");
+  });
 });
 
 describe("normalize: what students actually type", () => {
