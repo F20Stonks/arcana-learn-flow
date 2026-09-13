@@ -2111,9 +2111,36 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   file's Workflow. Its result will land as its own dated log entry once it reports back — do not
   duplicate that work if you're a session picking this file up before it lands.
 
+  **The dispatched SPLASH/UK-guide agent finished (commit `3c8cfef`)** — appending its result here
+  since it didn't log its own entry (a gap in this file's own required Workflow step; noting it so
+  a future session doesn't take agent-dispatch as license to skip this). It found more than the
+  WS-11 note assumed: an earlier, undocumented commit (`86b09cc`, 28 Aug) had already partially
+  "fixed" this by dropping `round` entirely — collapsing all 30 SPLASH and all 27 UK-guide problems
+  into one undifferentiated group apiece, not the near-singleton state WS-11's "30→11"/"28→20"
+  estimate assumed. Recovering the original per-problem citation strings (to restore section-level
+  grouping) surfaced a real pre-existing data error: two problems' citations were swapped
+  (`def-putnam-log` cited as "Serret's integral", `def-tan-power` cited as "Putnam 1980 A3", the
+  reverse of what's actually true) with no source PDF in this session to verify the correct
+  assignment against — so rather than propagate a guessed-at fix, it used each problem's own
+  already-verified `techniques[0]` as the round label instead of any citation string. Result:
+  SPLASH's 30 problems now split into 7 coherent groups (Log-power integrals 10, Gaussian
+  integrals & the hypersphere 8, Beta function integrals 4, Zeta-series integrals 3, Gamma
+  function 2, Wallis integrals 2, Reciprocal substitution 1); the UK guide's 27 into 8
+  (Reciprocal substitution 11, Symmetry and definite tricks 9, Introducing constants 2, plus four
+  singles). Only `source.round` touched — no integrand/answer/domain/name/year changes. Verified:
+  `npx vitest run` 3146/3146, `npx tsc --noEmit -p tsconfig.app.json` clean, `eslint` clean on all
+  14 touched files, real Playwright walkthrough confirming the by-source screen now shows legible
+  multi-problem groups instead of two giant blobs. **Flagged, not fixed**: the swapped
+  Putnam/Serret citation pair above is a real, separate data bug (unrelated to the grouping fix,
+  since neither problem's `source.name`/`answer`/`integrandExpr` was touched) — worth a dedicated
+  pass if the owner ever re-supplies the UK-guide PDF to verify the correct assignment against.
+
   **Continuing to work through the broader improvements list** the owner asked for in the same
-  message (better UX, more content, "core stuff needed to be a highly competent speed integrator")
-  — further entries will follow as that work lands. Standing directive #2 (no new practice problems
-  without new sourced PDFs) still applies throughout; everything above is either a parser/grading
-  correctness fix, new-but-non-authored function support, or engineering/UX work on already-sourced
-  content, not new problem authorship.
+  message (better UX, more content, "core stuff needed to be a highly competent speed integrator").
+  A second background agent is finishing WS-10's `completions`/`selfExplain` lesson sections for
+  the 5 techniques WS-10 deliberately left at the earlier baseline (`introducing-constants`,
+  `floor-function`, `inverse-integral`, `log-power-integrals`, `gaussian-hypersphere`) — its result
+  will land as its own dated entry once it reports back. Standing directive #2 (no new practice
+  problems without new sourced PDFs) still applies throughout; everything above and pending is
+  either a parser/grading correctness fix, new-but-non-authored function support, a data-quality
+  fix, or lesson-exposition work on already-sourced content — not new problem authorship.
