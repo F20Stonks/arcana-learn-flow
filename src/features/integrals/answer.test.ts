@@ -207,6 +207,10 @@ describe("special-function values, unsimplified", () => {
     // digamma(1) = -gamma_euler (Euler-Mascheroni constant)
     expect(checkDefinite("digamma(1)", "-0.5772156649015329").status).toBe("correct");
   });
+
+  it("accepts gcd(a,b), for floor-function-style problems that reduce to it", () => {
+    expect(checkDefinite("gcd(12,18)", "6").status).toBe("correct");
+  });
 });
 
 describe("checkDefinite", () => {
