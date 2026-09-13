@@ -61,6 +61,24 @@ const INVERSE: Group = {
     { label: "sinh", insert: "sinh()", back: 1, title: "Hyperbolic sine" },
     { label: "cosh", insert: "cosh()", back: 1, title: "Hyperbolic cosine" },
     { label: "tanh", insert: "tanh()", back: 1, title: "Hyperbolic tangent" },
+    { label: "artanh", insert: "artanh()", back: 1, title: "Inverse hyperbolic tangent" },
+  ],
+};
+
+/**
+ * Special-value functions. A student who correctly reduces an integral to e.g. ζ(2) or Γ(5/2)
+ * shouldn't have to separately know (or look up) its elementary closed form to get credit — these
+ * evaluate live, exactly like a memorised constant would, and grade identically either way.
+ */
+const SPECIAL: Group = {
+  name: "Special values",
+  tokens: [
+    { label: "Γ( )", insert: "gamma()", back: 1, title: "Gamma function, evaluated at a value" },
+    { label: "ζ( )", insert: "zeta()", back: 1, title: "Riemann zeta function, evaluated at a value" },
+    { label: "B( , )", insert: "beta(,)", back: 2, title: "Euler beta function B(a, b)" },
+    { label: "erf( )", insert: "erf()", back: 1, title: "Error function" },
+    { label: "⌊ ⌋", insert: "floor()", back: 1, title: "Floor" },
+    { label: "⌈ ⌉", insert: "ceil()", back: 1, title: "Ceiling" },
   ],
 };
 
@@ -80,7 +98,7 @@ function tokensFor(problem: Problem | undefined): Group[] {
       ? STRUCTURE.tokens.filter((t) => t.label !== "x")
       : [...STRUCTURE.tokens, PLUS_C],
   };
-  return [structure, LOGS, TRIG, INVERSE];
+  return [structure, LOGS, TRIG, INVERSE, SPECIAL];
 }
 
 interface Props {

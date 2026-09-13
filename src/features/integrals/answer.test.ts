@@ -20,6 +20,18 @@ describe("normalize", () => {
     expect(normalize("arctan(x)")).toBe("atan(x)");
   });
 
+  it("accepts the 'ar-' (area) prefix for inverse hyperbolics, not just 'arc-'", () => {
+    // "ar-" is the mathematically correct prefix here — "arc-" is for circular functions — and
+    // it's what most textbooks and calculators actually print. Before this, `artanh(x)` read as
+    // the bare symbol `artanh` times `x`: a genuine misconstrued-as-multiplication bug.
+    expect(normalize("artanh(x)")).toBe("atanh(x)");
+    expect(normalize("arsinh(x)")).toBe("asinh(x)");
+    expect(normalize("arcosh(x)")).toBe("acosh(x)");
+    expect(normalize("arcoth(x)")).toBe("acoth(x)");
+    expect(normalize("arsech(x)")).toBe("asech(x)");
+    expect(normalize("arcsch(x)")).toBe("acsch(x)");
+  });
+
   it("turns bars into abs", () => {
     expect(normalize("ln|x|")).toBe("log(abs(x))");
   });
@@ -154,6 +166,30 @@ describe("checkIndefinite", () => {
 
   it("flags unbalanced brackets", () => {
     expect(checkIndefinite("sin(x", "x^3/3", D).status).toBe("unparseable");
+  });
+});
+
+describe("special-function values, unsimplified", () => {
+  // A student who correctly reduces an integral to a special-function value shouldn't have to
+  // also know (or look up) its elementary closed form — grading is numeric, so once the function
+  // itself evaluates, it grades identically to whatever closed form it equals.
+  it("accepts zeta(n) against its closed form", () => {
+    expect(checkDefinite("zeta(2)", "pi^2/6").status).toBe("correct");
+    expect(checkDefinite("zeta(4)", "pi^4/90").status).toBe("correct");
+  });
+
+  it("accepts gamma(n) against the factorial it equals", () => {
+    expect(checkDefinite("gamma(5)", "24").status).toBe("correct");
+    expect(checkDefinite("2*gamma(7/2)", "2*gamma(7/2)").status).toBe("correct");
+  });
+
+  it("accepts beta(a,b), Euler's beta function", () => {
+    expect(checkDefinite("beta(2,3)", "1/12").status).toBe("correct");
+  });
+
+  it("accepts digamma(n), for the beta-integrals log-differentiation trick", () => {
+    // digamma(1) = -gamma_euler (Euler-Mascheroni constant)
+    expect(checkDefinite("digamma(1)", "-0.5772156649015329").status).toBe("correct");
   });
 });
 

@@ -22,7 +22,8 @@ const FUNCTIONS = new Set([
   "sinh", "cosh", "tanh", "sech", "csch", "coth",
   "asinh", "acosh", "atanh", "asech", "acsch", "acoth",
   "log", "log10", "log2", "exp", "sqrt", "cbrt", "nthRoot",
-  "abs", "sign", "floor", "ceil", "round", "min", "max", "gamma", "erf", "lambertw",
+  "abs", "sign", "floor", "ceil", "round", "min", "max",
+  "gamma", "erf", "lambertw", "zeta", "beta", "digamma", "gcd",
 ]);
 
 /** Textbook spellings → mathjs spellings, applied per identifier rather than by regex. */
@@ -33,6 +34,13 @@ const ALIASES: Record<string, string> = {
   ln: "log", E: "e",
   // British and continental spellings students genuinely use.
   cosec: "csc", cosech: "csch", arccosec: "acsc", cotan: "cot",
+  // "ar-" (area) is the mathematically correct prefix for an inverse hyperbolic function —
+  // "arc-" is for circular functions — and it's what most textbooks and calculators actually
+  // print, so both spellings have to work. Without this, `artanh(x)` reads as the two-letter
+  // symbol `artanh` times `x`: a genuine misconstrued-as-multiplication bug, not a rejection.
+  arsinh: "asinh", arcosh: "acosh", artanh: "atanh",
+  arsech: "asech", arcsch: "acsch", arcoth: "acoth",
+  psi: "digamma",
 };
 
 const SUPERSCRIPTS: Record<string, string> = {
