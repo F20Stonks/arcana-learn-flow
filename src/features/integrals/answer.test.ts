@@ -162,6 +162,22 @@ describe("checkIndefinite", () => {
   it("flags stray symbols instead of silently failing", () => {
     const v = checkIndefinite("t^3/3", "x^3/3", D);
     expect(v.status).toBe("unparseable");
+    // A one-letter stray symbol is never worth a "did you mean" guess — too likely to coincide
+    // with some real short name by pure edit-distance luck.
+    if (v.status === "unparseable") expect(v.reason).not.toContain("did you mean");
+  });
+
+  it("suggests a fix for a mistyped function name", () => {
+    const v = checkIndefinite("snh(x)", "sinh(x)", D);
+    expect(v.status).toBe("unparseable");
+    if (v.status === "unparseable") expect(v.reason).toBe("Unknown symbol snh — did you mean sinh?");
+  });
+
+  it("does not guess when a typo is ambiguous between two real names", () => {
+    // "artan" is one edit from both "arctan" and "atan" — no confident guess, no wrong one either.
+    const v = checkIndefinite("artan(x)", "atan(x)", D);
+    expect(v.status).toBe("unparseable");
+    if (v.status === "unparseable") expect(v.reason).not.toContain("did you mean");
   });
 
   it("flags unbalanced brackets", () => {
@@ -206,6 +222,12 @@ describe("checkDefinite", () => {
   it("rejects an answer that still contains x", () => {
     const v = checkDefinite("x^2", "pi/4");
     expect(v.status).toBe("unparseable");
+  });
+
+  it("suggests a fix for a mistyped function name", () => {
+    const v = checkDefinite("gamm(5)", "24");
+    expect(v.status).toBe("unparseable");
+    if (v.status === "unparseable") expect(v.reason).toBe("Unknown symbol gamm — did you mean gamma?");
   });
 
   it("rejects a wrong number", () => {

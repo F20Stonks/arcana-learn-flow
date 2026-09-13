@@ -285,6 +285,43 @@ function expandFunctionPowers(s: string): string {
   return out;
 }
 
+/** All names `normalize` will eventually recognise — used only to power "did you mean" typo hints. */
+const KNOWN_NAMES = [...FUNCTIONS, ...Object.keys(ALIASES)];
+
+/** Levenshtein edit distance, capped: we only care whether it's small, never the exact value. */
+function editDistance(a: string, b: string, cap: number): number {
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur.push(
+        a[i - 1] === b[j - 1]
+          ? prev[j - 1]
+          : 1 + Math.min(prev[j - 1], prev[j], cur[j - 1]),
+      );
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+/**
+ * A student who mistypes a function name — `snh(x)` for `sinh(x)`, `arctan2(x)` for `arctan(x)` —
+ * deserves a specific correction, not a bare "unknown symbol". Only offers a fix that is close and
+ * unambiguous: within edit distance 2 (1 for short names, where a distance-2 guess is usually a
+ * coin flip) of exactly one known name.
+ */
+function didYouMean(symbol: string): string | null {
+  const lower = symbol.toLowerCase();
+  // Too short to guess at all: a one- or two-letter symbol (t, dx, ...) is within edit distance 1
+  // of half the alphabet of short names (E, e, ...) — a guess there is a coincidence, not a fix.
+  if (lower.length < 3) return null;
+  const cap = lower.length <= 4 ? 1 : 2;
+  const matches = KNOWN_NAMES.filter((name) => editDistance(lower, name.toLowerCase(), cap) <= cap);
+  return matches.length === 1 ? matches[0] : null;
+}
+
 function inverseName(fn: string): string {
   if (fn.startsWith("a")) return fn.slice(1); // asin^-1 is nobody's notation, but be consistent
   return "a" + fn;
@@ -425,9 +462,12 @@ export function checkIndefinite(userRaw: string, referenceRaw: string, domain: [
   if (!user) return { status: "unparseable", reason: "Couldn't read that expression — check the brackets." };
   const stray = user.symbols.filter((s) => s !== "x");
   if (stray.length) {
+    const guess = didYouMean(stray[0]);
     return {
       status: "unparseable",
-      reason: `Unknown symbol ${stray[0]} — write the answer in terms of x (the "+ C" is assumed).`,
+      reason: guess
+        ? `Unknown symbol ${stray[0]} — did you mean ${guess}?`
+        : `Unknown symbol ${stray[0]} — write the answer in terms of x (the "+ C" is assumed).`,
     };
   }
 
@@ -467,9 +507,12 @@ export function checkDefinite(userRaw: string, referenceRaw: string): Verdict {
   const user = compile(normalized);
   if (!user) return { status: "unparseable", reason: "Couldn't read that expression — check the brackets." };
   if (user.symbols.length) {
+    const guess = didYouMean(user.symbols[0]);
     return {
       status: "unparseable",
-      reason: `This one is definite — the answer is a number, but you still have ${user.symbols[0]} in it.`,
+      reason: guess
+        ? `Unknown symbol ${user.symbols[0]} — did you mean ${guess}?`
+        : `This one is definite — the answer is a number, but you still have ${user.symbols[0]} in it.`,
     };
   }
 
