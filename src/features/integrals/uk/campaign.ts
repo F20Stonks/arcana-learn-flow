@@ -15,6 +15,7 @@
  * themselves — a plan hardcoded to one November Saturday would silently mis-phase for everyone
  * else, and would rot the moment the date moved.
  */
+import type { ConceptReviewStep } from "../conceptReview";
 import type { Difficulty } from "../types";
 
 /**
@@ -129,7 +130,7 @@ export function campaignDay(targetDate: string, today = new Date()): CampaignDay
   };
 }
 
-export type StepKind = "recognition" | "problems" | "paper" | "values" | "review";
+export type StepKind = "recognition" | "problems" | "paper" | "values" | "review" | "concept";
 
 export interface SessionStep {
   kind: StepKind;
@@ -146,13 +147,41 @@ export interface SessionStep {
 }
 
 /**
+ * A due lesson reread, as one more session step — the WS-10 concept-review scheduler
+ * (conceptReview.ts) slotted in. Kept as its own `"concept"` kind rather than reusing `"review"`
+ * (which already names two different things: the paper's band-by-band review, and the taper
+ * block's error-profile review) so a day that already has one of those never collides with this
+ * on `step.kind`, which the campaign page keys its step list by.
+ *
+ * Routes to the Lessons page itself rather than trying to deep-link into one technique's
+ * accordion — that page already renders its own "due for review" banner naming exactly this
+ * technique, so landing there and clicking the chip is a complete, un-hacky path, and this module
+ * never needs to know how that page's UI opens a lesson.
+ */
+function conceptStep(due: ConceptReviewStep): SessionStep {
+  // conceptReviewStep() only ever returns something already due (daysOverdue >= 0 by
+  // construction — see conceptReview.ts's isDue), so there's no "not due yet" case to word for.
+  return {
+    kind: "concept",
+    label: `Reread ${due.technique.name} — due for review`,
+    why: "Problems get resurfaced by the scheduler; ideas don't unless you bring them back yourself.",
+    route: "/integrals/lessons",
+  };
+}
+
+/**
  * Today's session, composed from modes that already exist. Nothing here reimplements grading,
  * selection or assembly — a step is a pointer at a mode plus the shape of the work.
  *
  * Advisory, never a cage: the competitor can always ignore this and drill whatever they know is
  * weak. The plan exists so that showing up requires no decision, not to remove the choice.
+ *
+ * `dueReview` is the campaign's one concession to needing something impure to decide (which
+ * technique is due for spaced review lives in localStorage, via conceptReview.ts) — the caller
+ * reads that store and hands the result in, so this function itself stays a pure function of the
+ * date alone and every existing test keeps working unchanged with the parameter omitted.
  */
-export function planSession(day: CampaignDay): SessionStep[] {
+export function planSession(day: CampaignDay, dueReview: ConceptReviewStep | null = null): SessionStep[] {
   if (day.finished) return [];
 
   if (day.isRestDay) {
@@ -191,6 +220,7 @@ export function planSession(day: CampaignDay): SessionStep[] {
     count: 20,
     route: "/integrals/recognition",
   };
+  const concept = dueReview ? [conceptStep(dueReview)] : [];
 
   switch (day.block.id) {
     case "breadth":
@@ -204,6 +234,7 @@ export function planSession(day: CampaignDay): SessionStep[] {
           difficulties: [2, 3, 4],
           route: "/integrals/train",
         },
+        ...concept,
       ];
     case "depth":
       return [
@@ -216,6 +247,7 @@ export function planSession(day: CampaignDay): SessionStep[] {
           difficulties: [4, 5],
           route: "/integrals/train",
         },
+        ...concept,
       ];
     case "taper":
       return [
@@ -234,6 +266,9 @@ export function planSession(day: CampaignDay): SessionStep[] {
           difficulties: [3, 4],
           route: "/integrals/train",
         },
+        // No new material in taper, but a spaced review of something already read is recall, not
+        // new — the same reasoning that keeps the values deck itself in this block.
+        ...concept,
         {
           kind: "review",
           label: "Read your error profile",

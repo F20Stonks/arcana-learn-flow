@@ -2028,3 +2028,92 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   with runway and no new uploads should check the list above for something concrete to pick up
   (all eight items are real, scoped, and actionable) rather than inventing problems or speculative
   features — the "hard stop" this runbook's opening section anticipates is genuinely reached again.
+
+- 2026-09-13 (new session, branch `claude/gracious-pasteur-z9h5ta`): The owner came into chat
+  directly (not "continue") asking for two things: (1) make the answer parser genuinely
+  impossible-to-misread, specifically calling out that `artanh(x)` wasn't accepted while
+  `arctanh(x)` was, and asking that students be able to leave an answer as an unevaluated special
+  function (e.g. the zeta function at a point) rather than being forced to know its closed form;
+  (2) a broader list of improvements to make the Integral Arena a better trainer and a better
+  product. Working autonomously per the owner's explicit go-ahead, spawning a background agent for
+  independent chunks.
+
+  **Root-caused the artanh bug precisely, and it generalizes.** `artanh`/`arsinh`/`arcosh`/
+  `arcoth`/`arsech`/`arcsch` — the "ar-" (area) prefix, which is the mathematically correct one for
+  inverse *hyperbolic* functions (as opposed to "arc-", correct for inverse *circular* ones, and
+  the only prefix `ALIASES` recognized before this) — were entirely unaliased in `answer.ts`. The
+  practical effect wasn't a rejection, it was silent misgrading: `fixImplicitCalls` treats any
+  unrecognized identifier immediately followed by `(` as multiplication, so `artanh(x)` normalized
+  to `artanh*(x)` and read as the two-letter symbol `artanh` times `x` — exactly the "misconstrued
+  as multiplication" class of bug the owner named. Verified this with a throwaway probe script
+  before touching anything (per this file's own Workflow section), confirmed the fix, then added
+  the missing aliases plus a permanent regression test in `answer.test.ts`. Also verified a wide
+  battery of other plausible ambiguity cases (`cos(x)sin(x)`, `1/2x` vs `1/(2x)`, `-x^2` vs
+  `(-x)^2`, `x^-1`, `sin^-1(x)`, glued digits like `x2`) — all already correct; no other live bugs
+  found there.
+
+  **Special-function values**: mathjs's `create(all)` instance (`mathEngine.ts`) already ships
+  `gamma` and `zeta` natively (confirmed the built-in `zeta` numerically first — `Math.PI**2/6`
+  matches to 1e-8 — rather than shipping a redundant custom implementation, which is what a first
+  draft did before checking). Added `beta(a,b) = Γ(a)Γ(b)/Γ(a+b)` and `digamma`/`psi` (shift-and-
+  asymptotic-series, same style as the existing `lambertw`) as the two genuinely missing ones, and
+  whitelisted `zeta`/`beta`/`digamma`/`gcd` in `answer.ts`'s `FUNCTIONS` set. Since
+  `checkDefinite`/`checkIndefinite` already grade by numeric evaluation, a student who reduces an
+  integral to `zeta(2)` now grades `correct` against a reference of `pi^2/6` with zero reference-
+  answer changes needed anywhere in the bank. Added a "Special values" row to the answer-builder
+  palette (`SymbolPalette.tsx`) with Γ( ), ζ( ), B( , ), erf( ), floor, ceil — floor/ceil had no
+  palette key at all before this, despite floor-function being a whole technique.
+
+  **Added "did you mean" typo correction** for mistyped function names, since a plain typo (`snh`
+  for `sinh`, `gamm` for `gamma`) was falling into the same generic "unknown symbol" bucket as a
+  genuine stray variable. Only fires when exactly one known name is within a small edit distance
+  (1 for names ≤4 chars, 2 longer) — caught and fixed two false-positive classes before shipping:
+  single/double-letter symbols (`t`, `g`) matching almost anything by coincidence (guarded with a
+  length ≥3 floor), and a genuinely ambiguous typo (`artan`, one edit from both `arctan` and
+  `atan`) which now correctly gets no guess rather than a coin-flip wrong one.
+
+  Verified per this file's Workflow: `npx vitest run` — whole repo, 3139/3139 passing (was
+  3132/3132 baseline); `npx tsc --noEmit -p tsconfig.app.json` (not bare `tsc --noEmit`, per the
+  standing tooling note earlier in this log) clean; `eslint` clean on every touched file. A real
+  Playwright walkthrough against the dev server confirmed both the new palette row rendering
+  correctly and `zeta(2)`/`artanh(x)` reading correctly live in the answer box. Two commits pushed
+  to `claude/gracious-pasteur-z9h5ta` (`33f0b65`, `36655c0`).
+
+  **Wired `conceptReviewStep()` into `uk/campaign.ts`'s `planSession`** — a gap flagged explicitly
+  at the end of the WS-10 log entry and again in WS-11's follow-up list ("real session-composition
+  judgment... left as a documented follow-up"). Made the judgment call: added a new `"concept"`
+  `StepKind` (rather than reusing `"review"`, which already names two different things — the
+  paper's band review and taper's error-profile review — and would have collided with taper's
+  existing review step on the key `IntegralCampaign.tsx` uses to render the list) and threaded an
+  optional `dueReview: ConceptReviewStep | null` parameter through `planSession` (default `null`,
+  so every existing call site and test keeps working unchanged). The concept step is appended, when
+  something's due, to breadth/depth/taper — deliberately including taper, since a spaced reread of
+  something already read is recall, not "new material," the same reasoning that already keeps the
+  values deck in that block — and deliberately excluded from rest days and paper days, which are
+  already fully scripted. It routes to `/integrals/lessons` rather than trying to deep-link into
+  one technique's accordion, since that page already renders its own "due for review" banner
+  naming the same technique — landing there and clicking the chip is a complete path with zero new
+  routing machinery. `useCampaign.ts` now composes this via the existing `useConceptReview` hook.
+  4 new tests in `campaign.test.ts` (nothing added when nothing's due; the step appears with the
+  right label/route in all three qualifying blocks; no day ever produces a duplicate `step.kind`,
+  due review or not; rest/paper days stay untouched). Verified end-to-end with a real Playwright
+  walkthrough — seeded a due `symmetry` record directly into `localStorage`, reloaded
+  `/dev/integrals/campaign`, confirmed "Reread Symmetry and definite tricks — due for review"
+  renders as the third checklist item with a working `Go →` link. `npx vitest run` 3139/3139 (no
+  regressions — this landed alongside the parsing work above, verified together);
+  `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` clean on every touched file.
+
+  **Dispatched a background agent** for the other ready-to-go item from WS-11's follow-up list
+  (item 8): SPLASH/UK-guide `source.round` still doubles as a citation locator the same way MIT's
+  did before that specific fix, collapsing the by-source practice view to near-one-problem groups.
+  Gave it the full context (which prior commits fixed the MIT case, what "the same fix" means, the
+  expected group-count reduction) and the same verification+documentation bar as the rest of this
+  file's Workflow. Its result will land as its own dated log entry once it reports back — do not
+  duplicate that work if you're a session picking this file up before it lands.
+
+  **Continuing to work through the broader improvements list** the owner asked for in the same
+  message (better UX, more content, "core stuff needed to be a highly competent speed integrator")
+  — further entries will follow as that work lands. Standing directive #2 (no new practice problems
+  without new sourced PDFs) still applies throughout; everything above is either a parser/grading
+  correctness fix, new-but-non-authored function support, or engineering/UX work on already-sourced
+  content, not new problem authorship.

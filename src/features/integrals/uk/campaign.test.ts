@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ConceptReviewStep } from "../conceptReview";
+import { TECHNIQUE_BY_ID } from "../techniques";
+import type { Technique } from "../types";
 import {
   BLOCKS,
   DEFAULT_TARGET_DATE,
@@ -156,6 +159,46 @@ describe("campaign — session shape", () => {
   it("defaults to the assumed Round 1 date until the competitor confirms one", () => {
     expect(DEFAULT_TARGET_DATE).toBe("2026-11-07");
     expect(parseDate(DEFAULT_TARGET_DATE).getDay()).toBe(6); // a Saturday
+  });
+});
+
+describe("campaign — spaced concept review", () => {
+  const t: Technique = TECHNIQUE_BY_ID["symmetry"];
+  const due: ConceptReviewStep = { techniqueId: "symmetry", technique: t, daysOverdue: 4 };
+
+  it("adds nothing when nothing is due", () => {
+    const breadth = planSession(campaignDay(TARGET, daysOut(60)), null);
+    const depth = planSession(campaignDay(TARGET, daysOut(25)), null);
+    const day9 = planSession(campaignDay(TARGET, daysOut(9)), null); // taper, not a paper day
+    expect(breadth.some((s) => s.kind === "concept")).toBe(false);
+    expect(depth.some((s) => s.kind === "concept")).toBe(false);
+    expect(day9.some((s) => s.kind === "concept")).toBe(false);
+  });
+
+  it("appends a concept step, naming the due technique, in breadth/depth/taper", () => {
+    for (const out of [60, 25, 9]) {
+      const plan = planSession(campaignDay(TARGET, daysOut(out)), due);
+      const step = plan.find((s) => s.kind === "concept");
+      expect(step).toBeDefined();
+      expect(step?.label).toContain(t.name);
+      expect(step?.route).toBe("/integrals/lessons");
+    }
+  });
+
+  it("never duplicates a step kind on any single day, due review or not", () => {
+    for (const out of [60, 40, 25, 21, 10, 9, 1]) {
+      const day = campaignDay(TARGET, daysOut(out));
+      const kinds = planSession(day, due).map((s) => s.kind);
+      expect(new Set(kinds).size).toBe(kinds.length);
+    }
+  });
+
+  it("skips the concept step on rest days and paper days, which are already fully scripted", () => {
+    const rest = planSession(campaignDay(TARGET, daysOut(1)), due);
+    const paperDay = campaignDay(TARGET, daysOut(21)); // a Saturday in depth, per the test above
+    const paper = planSession(paperDay, due);
+    expect(rest.some((s) => s.kind === "concept")).toBe(false);
+    expect(paper.some((s) => s.kind === "concept")).toBe(false);
   });
 });
 

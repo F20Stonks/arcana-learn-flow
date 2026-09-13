@@ -10,6 +10,7 @@ import {
   subscribeCampaign,
   toggleStep as storeToggleStep,
 } from "../uk/campaignStore";
+import { useConceptReview } from "./useConceptReview";
 
 export interface UseCampaign {
   targetDate: string;
@@ -39,7 +40,10 @@ export function useCampaign(now: Date = new Date()): UseCampaign {
   const state = useSyncExternalStore(subscribeCampaign, getCampaignState, getCampaignState);
   const today = dayKey(now);
   const day = campaignDay(state.targetDate, now);
-  const steps = planSession(day);
+  // Which technique is due for a spaced reread, if any — the one piece of planSession's input
+  // that lives in its own store (conceptReview.ts) rather than being a pure function of the date.
+  const { next: dueReview } = useConceptReview(now);
+  const steps = planSession(day, dueReview);
 
   const isStepDone = useCallback(
     (step: StepKind) => stepIsComplete(state.sessions, today, step),
