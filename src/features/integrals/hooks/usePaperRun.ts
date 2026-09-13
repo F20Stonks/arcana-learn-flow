@@ -111,6 +111,7 @@ export function usePaperRun(seed: number): PaperRunApi {
             bandId: band.id,
             correct: slice.filter((s) => s.status === "correct").length,
             total: slice.length,
+            attempted: slice.filter((s) => s.status !== "unattempted").length,
             secondsSpent: slice.reduce((sum, s) => sum + s.secondsSpent, 0),
           };
         });

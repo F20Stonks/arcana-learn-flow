@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  computePaperReadiness,
   computeReadiness,
   MIN_READINESS_SAMPLE,
   READINESS_WINDOW_DAYS,
 } from "./campaignReadiness";
 import type { AttemptRecord } from "../attempts";
+import type { PaperBandResult, PaperResult } from "./paperHistory";
 
 const NOW = new Date("2026-09-15T12:00:00.000Z");
 
@@ -105,5 +107,88 @@ describe("computeReadiness — real numbers", () => {
     const attempts = Array.from({ length: 5 }, () => mk({ at: daysAgo(READINESS_WINDOW_DAYS) }));
     const r = computeReadiness(attempts, NOW);
     expect(r.attemptsInWindow).toBe(5);
+  });
+});
+
+function band(bandId: PaperBandResult["bandId"], over: Partial<PaperBandResult> = {}): PaperBandResult {
+  return { bandId, correct: 5, total: 10, secondsSpent: 900, ...over };
+}
+
+let paperSeq = 0;
+function paper(over: Partial<Omit<PaperResult, "id">> = {}): PaperResult {
+  paperSeq += 1;
+  return {
+    id: `paper-${paperSeq}`,
+    seed: paperSeq,
+    startedAt: "2026-09-01T09:00:00.000Z",
+    finishedAt: "2026-09-01T11:00:00.000Z",
+    endReason: "submitted",
+    score: 18,
+    total: 30,
+    bands: [band("accessible"), band("solid"), band("tail")],
+    triageSeconds: 600,
+    secondsUsed: 7000,
+    ...over,
+  };
+}
+
+describe("computePaperReadiness — not enough data", () => {
+  it("is all null/zero with no sittings at all", () => {
+    const r = computePaperReadiness([]);
+    expect(r.sittings).toBe(0);
+    expect(r.accessiblePaceSeconds).toBeNull();
+    expect(r.tailReachRate).toBeNull();
+    expect(r.tailReachSampleSize).toBe(0);
+    expect(r.scoreTrend).toBeNull();
+  });
+
+  it("has a pace from a single sitting, but no trend (nothing to compare it to)", () => {
+    const r = computePaperReadiness([paper()]);
+    expect(r.sittings).toBe(1);
+    expect(r.accessiblePaceSeconds).not.toBeNull();
+    expect(r.scoreTrend).toBeNull();
+  });
+
+  it("excludes tail reach from sittings recorded before the `attempted` field existed", () => {
+    const old = paper({ bands: [band("accessible"), band("solid"), band("tail")] }); // no `attempted`
+    const r = computePaperReadiness([old]);
+    expect(r.tailReachRate).toBeNull();
+    expect(r.tailReachSampleSize).toBe(0);
+  });
+});
+
+describe("computePaperReadiness — real numbers", () => {
+  it("computes accessible pace as seconds spent per question, medianed across sittings", () => {
+    const p1 = paper({ bands: [band("accessible", { secondsSpent: 400, total: 10 })] }); // 40s/q
+    const p2 = paper({ bands: [band("accessible", { secondsSpent: 800, total: 10 })] }); // 80s/q
+    const p3 = paper({ bands: [band("accessible", { secondsSpent: 600, total: 10 })] }); // 60s/q
+    const r = computePaperReadiness([p1, p2, p3]);
+    expect(r.accessiblePaceSeconds).toBeCloseTo(60, 10);
+  });
+
+  it("computes tail reach as the mean fraction of the tail band actually opened", () => {
+    const p1 = paper({ bands: [band("tail", { attempted: 4, total: 10 })] }); // 40%
+    const p2 = paper({ bands: [band("tail", { attempted: 8, total: 10 })] }); // 80%
+    const r = computePaperReadiness([p1, p2]);
+    expect(r.tailReachRate).toBeCloseTo(0.6, 10);
+    expect(r.tailReachSampleSize).toBe(2);
+  });
+
+  it("computes a score trend against the first sitting on record, in percentage points", () => {
+    const first = paper({ score: 15, total: 30 }); // 50%
+    const middle = paper({ score: 18, total: 30 }); // 60% — not the trend's endpoint
+    const latest = paper({ score: 24, total: 30 }); // 80%
+    const r = computePaperReadiness([first, middle, latest]);
+    expect(r.scoreTrend).not.toBeNull();
+    expect(r.scoreTrend?.firstScore).toBe(15);
+    expect(r.scoreTrend?.latestScore).toBe(24);
+    expect(r.scoreTrend?.deltaPercentagePoints).toBeCloseTo(30, 10); // 80% - 50%
+  });
+
+  it("reports a negative delta honestly when the latest sitting is worse than the first", () => {
+    const first = paper({ score: 24, total: 30 });
+    const latest = paper({ score: 15, total: 30 });
+    const r = computePaperReadiness([first, latest]);
+    expect(r.scoreTrend?.deltaPercentagePoints).toBeCloseTo(-30, 10);
   });
 });

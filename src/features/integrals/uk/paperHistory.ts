@@ -20,6 +20,12 @@ export interface PaperBandResult {
   total: number;
   /** Summed focus time across every question in this band. */
   secondsSpent: number;
+  /**
+   * How many of this band's questions were opened at all (correct or not), as opposed to never
+   * reached before time ran out. Optional because sittings recorded before this field existed
+   * don't have it — treat a missing value as "unknown," never as 0, when reading old history.
+   */
+  attempted?: number;
 }
 
 export type PaperEndReason = "submitted" | "time-up";

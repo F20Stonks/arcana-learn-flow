@@ -25,7 +25,12 @@ import {
 import AppShell from "@/components/AppShell";
 import { useCampaign } from "@/features/integrals/hooks/useCampaign";
 import { useAttempts } from "@/features/integrals/hooks/useAttempts";
-import { computeReadiness, MIN_READINESS_SAMPLE } from "@/features/integrals/uk/campaignReadiness";
+import {
+  computePaperReadiness,
+  computeReadiness,
+  MIN_READINESS_SAMPLE,
+} from "@/features/integrals/uk/campaignReadiness";
+import { getPaperHistory } from "@/features/integrals/uk/paperHistory";
 import { BLOCKS } from "@/features/integrals/uk/campaign";
 
 function Stat({ value, label, caption }: { value: string; label: string; caption?: string }) {
@@ -56,10 +61,19 @@ function formatPercent(n: number | null): string {
   return n === null ? "—" : `${Math.round(n * 100)}%`;
 }
 
+function formatTrend(n: number): string {
+  const rounded = Math.round(n);
+  if (rounded === 0) return "±0 pts";
+  return rounded > 0 ? `+${rounded} pts` : `${rounded} pts`;
+}
+
 export default function IntegralCampaign() {
   const campaign = useCampaign();
   const attempts = useAttempts();
   const readiness = useMemo(() => computeReadiness(attempts), [attempts]);
+  // Paper history has no live-store subscription (see paperHistory.ts) — read once at mount, the
+  // same way the paper page itself reads it for its own "already sat this week" landing state.
+  const paperReadiness = useMemo(() => computePaperReadiness(getPaperHistory()), []);
   const [dateDraft, setDateDraft] = useState(campaign.targetDate);
 
   const { day, steps } = campaign;
@@ -250,6 +264,43 @@ export default function IntegralCampaign() {
               }
             />
           </div>
+
+          {paperReadiness.sittings > 0 && (
+            <div className="mt-6 border-t border-border pt-5">
+              <p className="text-[12px] uppercase tracking-[0.1em] text-muted-foreground/80">
+                From {paperReadiness.sittings} paper sitting{paperReadiness.sittings === 1 ? "" : "s"}
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <Stat
+                  value={formatSeconds(paperReadiness.accessiblePaceSeconds)}
+                  label="Q1–10 pace"
+                  caption="median seconds per accessible question"
+                />
+                <Stat
+                  value={formatPercent(paperReadiness.tailReachRate)}
+                  label="tail reach"
+                  caption={
+                    paperReadiness.tailReachRate === null
+                      ? "Not enough data yet — sit another paper"
+                      : `of Q21–30 actually opened (n=${paperReadiness.tailReachSampleSize})`
+                  }
+                />
+                <Stat
+                  value={
+                    paperReadiness.scoreTrend
+                      ? formatTrend(paperReadiness.scoreTrend.deltaPercentagePoints)
+                      : "—"
+                  }
+                  label="score trend"
+                  caption={
+                    paperReadiness.scoreTrend
+                      ? `vs your first sitting (${paperReadiness.scoreTrend.firstScore}/${paperReadiness.scoreTrend.firstTotal})`
+                      : "Not enough data yet — needs a second sitting"
+                  }
+                />
+              </div>
+            </div>
+          )}
         </section>
 
         {campaign.streak > 0 && (
