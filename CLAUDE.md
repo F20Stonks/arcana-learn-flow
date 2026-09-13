@@ -2144,3 +2144,46 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   problems without new sourced PDFs) still applies throughout; everything above and pending is
   either a parser/grading correctness fix, new-but-non-authored function support, a data-quality
   fix, or lesson-exposition work on already-sourced content — not new problem authorship.
+
+- 2026-09-13 (dispatched session, own entry): This is the session that actually did the
+  SPLASH/UK-guide `source.round` fix the two entries directly above describe (dispatch, then a
+  backfilled summary at commit `3c8cfef`) — appending my own entry per this file's own required
+  Workflow step 8, since the backfill above correctly flagged that step as skipped and I'd rather
+  not repeat that gap. Full reasoning and numbers are in the entry above and in `3c8cfef`'s own
+  commit message; this entry is the short, first-person confirmation the Workflow asks for, not a
+  restatement.
+
+  Sequence, briefly: fetched/merged this branch, read the whole runbook, then found that the
+  WS-11 follow-up's "30→11"/"28→20" estimate didn't match the live tree at all — `round` was
+  already fully dropped for both sources (commit `86b09cc`, undocumented in this file until now),
+  collapsing each into one blob rather than near-singletons. Recovered `86b09cc`'s pre-image via
+  `git diff 86b09cc~1 86b09cc` to see what the original per-problem citations actually were,
+  which is where the swapped Putnam-1980-A3/Serret's-integral citation pair (`def-putnam-log` /
+  `def-tan-power`) turned up — confirmed by reading each problem's own worked `steps`, not
+  assumed from the id names alone (the id names are themselves misleading here: `def-putnam-log`
+  is the real Putnam problem despite being the one cited "Serret's"). Chose `techniques[0]`
+  (existing, tested data) over any citation string specifically to avoid shipping that swap, or
+  any other undetected one like it, as a "restored" round label.
+
+  Verified before committing: `npx vitest run` — 3146/3146 across 49 files, no test edited;
+  `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` on all 14 touched bank files — zero
+  findings. Playwright walkthrough against a real dev server (`/dev/integrals/train`, Chromium
+  from `/opt/pw-browsers`, `playwright` symlinked into a scratch `node_modules` since it isn't a
+  project devDependency, `--host 127.0.0.1 --port 5183` per this sandbox's IPv6-bind limitation)
+  confirmed the "By source" section now renders exactly 7 SPLASH cards and 8 UK-guide cards with
+  legible technique-name subtitles (screenshot taken) in place of the two undifferentiated blobs;
+  clicking into a card correctly redirects an unauthenticated session to `/auth` (pre-existing
+  `DashboardGuard` behavior, unrelated to this change) with zero console/page errors. Dev server
+  killed afterward. This session's working directory turned out to be shared live with the
+  dispatching session — its concurrent commits (`8909804`, `e0af1d1`, `357d526`) appeared in my
+  local `HEAD`/working tree without an explicit fetch on my part at least once (a stray
+  uncommitted `answer.test.ts` edit showed up mid-task and was deliberately left untouched and
+  unstaged, since it wasn't mine to commit — it landed safely in `e0af1d1` moments later). Staged
+  and committed only the 14 bank files this fix actually touched, never a blanket `git add -A`,
+  for exactly that reason. `git push` after committing reported "Everything up-to-date" — the
+  commit was already visible on `origin` by the time I ran it, consistent with the shared-checkout
+  finding above.
+
+  Nothing further queued from this specific follow-up item (WS-11's item 8 is now closed); the
+  swapped-citation data bug is a separate, smaller flagged item (already noted above) for whenever
+  the owner can re-supply the UK-guide PDF to check the real assignment against.
