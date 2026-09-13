@@ -1369,6 +1369,36 @@ export const TECHNIQUES: Technique[] = [
       answer: "1",
       hint: "f(x)=e^x is the easy direction here. Match bounds: f(a)=1\\Rightarrow a=0, and f(b)=e\\Rightarrow b=1.",
     },
+    completions: [
+      {
+        setup: [
+          "\\int_0^8\\sqrt[3]x\\,dx — the same family as the lesson's \\sqrt x example, one power up: \\sqrt[3]x is the inverse of f(x)=x^3, the easy direction. Match bounds: f(a)=0\\Rightarrow a=0, and f(b)=8\\Rightarrow b=2.",
+          "The identity gives \\int_0^2x^3\\,dx+\\int_0^8\\sqrt[3]x\\,dx=b\\,f(b)-a\\,f(a)=2\\cdot8-0\\cdot0=16.",
+        ],
+        blank: "Compute the easy piece, \\int_0^2x^3\\,dx, and solve for the target.",
+        answer: "\\int_0^2x^3\\,dx=\\left[\\frac{x^4}4\\right]_0^2=4, so \\int_0^8\\sqrt[3]x\\,dx=16-4=12.",
+        integrandExpr: "x^(1/3)",
+        resultExpr: "12",
+        domain: [0, 8],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_{1/2}^2\\ln x\\,dx — same pair as checkYourself, f(x)=e^x, but this time NEITHER bound is the convenient 0: match f(a)=\\frac12\\Rightarrow a=-\\ln2, and f(b)=2\\Rightarrow b=\\ln2.",
+          "The identity gives \\int_{-\\ln2}^{\\ln2}e^x\\,dx+\\int_{1/2}^2\\ln x\\,dx=b\\,f(b)-a\\,f(a)=(\\ln2)(2)-(-\\ln2)\\!\\left(\\frac12\\right)=2\\ln2+\\frac12\\ln2.",
+        ],
+        blank: "Compute the easy piece, \\int_{-\\ln2}^{\\ln2}e^x\\,dx, and solve for the target.",
+        answer: "\\int_{-\\ln2}^{\\ln2}e^x\\,dx=e^{\\ln2}-e^{-\\ln2}=2-\\frac12=\\frac32. So \\int_{1/2}^2\\ln x\\,dx=\\frac52\\ln2-\\frac32.",
+        integrandExpr: "log(x)",
+        resultExpr: "(5/2)*log(2) - 3/2",
+        domain: [0.5, 2],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The pitfalls say by parts on \\arcsin/\\arctan/\\ln 'always works too and is worth checking against.' If by parts always works anyway, what does the inverse-integral identity actually SAVE you from doing, given that its own derivation (in Intuition) is built out of by parts and a substitution in the first place?",
+      answer: "Take \\arcsin x by parts directly: u=\\arcsin x,\\ dv=dx gives \\int\\arcsin x\\,dx=x\\arcsin x-\\int\\frac x{\\sqrt{1-x^2}}\\,dx, and that LEFTOVER integral still needs its own idea — a substitution w=1-x^2 — before it finishes at \\sqrt{1-x^2}. That's two separate moves chained together, and you have to spot the second one yourself. The inverse-integral identity's derivation performs exactly that same by-parts-then-substitution reasoning once, for the whole family of inverse functions at once, and packages the result as b\\,f(b)-a\\,f(a) minus an integral of f^{-1} itself — so using the formula means reciting \\int\\sin x\\,dx (something you already know cold) instead of re-deriving \\int\\frac x{\\sqrt{1-x^2}}\\,dx from scratch. It doesn't change the underlying computation at all, which is exactly why the by-parts check always agrees — it just trades 'notice and execute a substitution' for 'match two bounds,' which is faster when f^{-1} is something you can write down on sight.",
+    },
   },
   {
     id: "floor-function",
@@ -1397,6 +1427,36 @@ export const TECHNIQUES: Technique[] = [
       prompt: "x-\\lfloor x\\rfloor \\text{ on } [0, 2.5]",
       answer: "\\frac98",
       hint: "Two full unit intervals, each worth \\frac12 by the pitfall above, plus a partial piece [2,2.5) where x-\\lfloor x\\rfloor=x-2 ranges from 0 to 0.5.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_{-2}^2\\lfloor x\\rfloor\\,dx — same integer-by-integer split, but straddling zero: watch the pitfall about negative x rounding DOWN, not toward zero.",
+          "\\lfloor x\\rfloor=-2 on [-2,-1) (not -1!), =-1 on [-1,0), =0 on [0,1), and =1 on [1,2) — the single point x=2 doesn't affect the integral.",
+        ],
+        blank: "Multiply each constant piece by its width (1 each) and sum.",
+        answer: "(-2)(1)+(-1)(1)+(0)(1)+(1)(1)=-2-1+0+1=-2.",
+        integrandExpr: "floor(x)",
+        resultExpr: "-2",
+        domain: [-2, 2],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_{1.5}^{4.5}(x-\\lfloor x\\rfloor)\\,dx — split at the integers inside: [1.5,2),\\,[2,3),\\,[3,4),\\,[4,4.5]. The two MIDDLE pieces are full unit intervals, so by the pitfall each is worth \\frac12: [2,3) and [3,4) contribute \\frac12 apiece.",
+          "That leaves the two partial end pieces, [1.5,2) and [4,4.5) — each width 0.5, but at OPPOSITE ends of the fractional-part cycle: x-\\lfloor x\\rfloor runs from 0.5 to 1 on the first and from 0 to 0.5 on the second.",
+        ],
+        blank: "Compute the two partial pieces directly and see what they add up to.",
+        answer: "\\int_{1.5}^2(x-1)\\,dx=\\left[\\frac{(x-1)^2}2\\right]_{1.5}^2=\\frac38, and \\int_4^{4.5}(x-4)\\,dx=\\left[\\frac{(x-4)^2}2\\right]_4^{4.5}=\\frac18. Together the partial pieces sum to \\frac38+\\frac18=\\frac12 — exactly one more full period, since between them they cover the fractional range [0,1) exactly once. Total: \\frac12+\\frac12+\\frac12=\\frac32.",
+        integrandExpr: "x-floor(x)",
+        resultExpr: "3/2",
+        domain: [1.5, 4.5],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The recipe says split at every integer strictly inside the interval, because that's where \\lfloor x\\rfloor jumps. But some problems have \\lfloor 2x\\rfloor or \\lfloor\\log_2x\\rfloor instead of plain \\lfloor x\\rfloor. Where does a function like THAT jump, and how would you find the split points for it in general?",
+      answer: "\\lfloor g(x)\\rfloor jumps wherever g(x) ITSELF crosses an integer — that is, wherever g(x)=n for some integer n, not wherever x itself is an integer. So the general recipe is: solve g(x)=n for every integer n in the range g takes over the interval, and those x-values (not the bare integers) are the split points, each with \\lfloor g(x)\\rfloor constant in between. For \\lfloor2x\\rfloor, g(x)=2x, so 2x=n gives splits at every HALF-integer x=\\frac n2. For \\lfloor\\log_2x\\rfloor, g(x)=\\log_2x, so \\log_2x=n gives splits at every POWER OF TWO, x=2^n. The rectangle-summing idea afterward is identical either way — this only changes where you draw the lines, by inverting g instead of reading integers straight off the x-axis.",
     },
   },
   {
@@ -1487,6 +1547,38 @@ export const TECHNIQUES: Technique[] = [
       answer: "\\frac52\\ln(x^2+4)-\\frac32\\arctan\\!\\left(\\frac x2\\right)+C",
       hint: "D'(x)=2x here, with no constant term to match — split 5x-3=\\frac52(2x)+(-3), then integrate each piece separately (a log and a scaled arctan).",
     },
+    completions: [
+      {
+        setup: [
+          "\\int\\frac{4x+9}{x^2+6x+13}\\,dx — the numerator is degree 1, one less than the denominator, exactly like checkYourself: match against D'(x)=2x+6, writing 4x+9=\\lambda(2x+6)+\\mu.",
+          "Match the x-coefficient: 2\\lambda=4\\Rightarrow\\lambda=2, so \\lambda(2x+6)=4x+12. That leaves \\mu=9-12=-3, confirming 4x+9=2(2x+6)-3.",
+          "Split: 2\\int\\frac{2x+6}{x^2+6x+13}\\,dx-3\\int\\frac{dx}{x^2+6x+13}. The first piece is 2\\ln(x^2+6x+13) directly (top is exactly D'). The second needs Completing the square first: x^2+6x+13=(x+3)^2+4.",
+        ],
+        blank: "Integrate \\int\\frac{dx}{(x+3)^2+4} using the standard \\arctan form, multiply by -3, and add the log piece.",
+        answer: "\\int\\frac{dx}{(x+3)^2+4}=\\frac12\\arctan\\!\\left(\\frac{x+3}2\\right), so the second piece is -\\frac32\\arctan\\!\\left(\\frac{x+3}2\\right). Total: 2\\ln(x^2+6x+13)-\\frac32\\arctan\\!\\left(\\frac{x+3}2\\right)+C.",
+        integrandExpr: "(4*x+9)/(x^2+6*x+13)",
+        resultExpr: "2*log(x^2+6*x+13) - (3/2)*atan((x+3)/2)",
+        domain: [-1, 3],
+        kind: "indefinite",
+      },
+      {
+        setup: [
+          "\\int\\frac{3x^2+7}{x^2+1}\\,dx — here the numerator and denominator have the SAME degree, so match against D(x) itself rather than D'(x): write 3x^2+7=\\lambda(x^2+1)+\\mu.",
+          "Match the x^2-coefficient: \\lambda=3. Then \\lambda(x^2+1)=3x^2+3, leaving \\mu=7-3=4, so 3x^2+7=3(x^2+1)+4.",
+          "Split: 3\\int1\\,dx+4\\int\\frac{dx}{x^2+1}. The first piece is the trivial 3x; the second is a standard form you already know on sight.",
+        ],
+        blank: "Write down \\int\\frac{dx}{x^2+1} and add both pieces together.",
+        answer: "\\int\\frac{dx}{x^2+1}=\\arctan x, so the total is 3x+4\\arctan x+C.",
+        integrandExpr: "(3*x^2+7)/(x^2+1)",
+        resultExpr: "3*x + 4*atan(x)",
+        domain: [0, 2],
+        kind: "indefinite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The lesson's two worked examples and checkYourself each match against a DIFFERENT target — one matches the numerator against D(x) itself, the other against D'(x). Before doing any algebra, how do you know which one a given numerator calls for?",
+      answer: "Compare degrees. When the numerator's degree EQUALS the denominator's degree (as in \\frac{x^2+7x+8}{x^2+5x+3}, or the second completion above), the fraction is 'improper' the way an ordinary number like \\frac75 is — matching against D(x) itself peels off a whole-number multiple of 1, leaving a genuine remainder of strictly lower degree, exactly like long division. When the numerator's degree is ONE LESS than the denominator's (as in the second worked example, checkYourself, and the first completion above), matching against D(x) itself can't work — a constant times D(x) would have the wrong degree entirely — so instead you match against D'(x), which naturally has that same one-lower degree, and a match there turns the leading piece into an exact \\ln|D(x)| rather than a bare constant. The degree comparison is the whole decision; the coefficient-matching mechanics afterward are identical either way.",
+    },
   },
   {
     id: "log-power-integrals",
@@ -1514,6 +1606,36 @@ export const TECHNIQUES: Technique[] = [
       prompt: "\\ln^3x \\text{ on } [0,1]",
       answer: "-6",
       hint: "This is n=0,\\ k=3 — x^0=1 is still a valid power. Differentiate J(a)=\\frac1{a+1} three times and set a=0.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_0^1x^3\\ln x\\,dx — matches the pattern with n=3,\\ k=1.",
+          "J(a)=\\int_0^1x^a\\,dx=\\frac1{a+1}. Differentiating once brings down one factor of \\ln x on the left (since \\frac{\\partial}{\\partial a}x^a=x^a\\ln x) and gives -(a+1)^{-2} on the right, so J'(a)=\\int_0^1x^a\\ln x\\,dx=-\\frac1{(a+1)^2}.",
+        ],
+        blank: "Set a=3 to match n=3.",
+        answer: "J'(3)=-\\frac1{4^2}=-\\frac1{16}.",
+        integrandExpr: "x^3*log(x)",
+        resultExpr: "-1/16",
+        domain: [0, 1],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^1\\ln^2x\\,dx — matches the pattern with n=0,\\ k=2 (x^0=1, so this is a bare power of \\ln x, one derivative short of the checkYourself problem).",
+          "Differentiate J(a)=\\frac1{a+1} twice: J'(a)=-\\frac1{(a+1)^2},\\ J''(a)=\\frac2{(a+1)^3} — each derivative brings down one more factor of \\ln x on the left and knocks the power down one more on the right, matching the recipe's closed form \\frac{(-1)^kk!}{(a+1)^{k+1}}.",
+        ],
+        blank: "Set a=0 to match n=0.",
+        answer: "J''(0)=\\frac{2!}{1^3}=2.",
+        integrandExpr: "log(x)^2",
+        resultExpr: "2",
+        domain: [0, 1],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "This technique differentiates J(a)=\\int_0^1x^a\\,dx WITH RESPECT TO a, treating the exponent as the variable instead of x. Why is that legal — what actually lets you swap the order of 'differentiate' and 'integrate' here, and why is a=n (a specific number) only plugged in at the very end rather than from the start?",
+      answer: "J(a) is a genuine function of a — a different number for every a>-1, since the value of \\int_0^1x^a\\,dx obviously depends on which power you're integrating — so differentiating it with respect to a is completely ordinary single-variable calculus, no different in kind from differentiating any other function of a. The subtlety is only in HOW that derivative interacts with the integral sign: \\frac{d}{da}\\int_0^1x^a\\,dx equals \\int_0^1\\frac{\\partial}{\\partial a}x^a\\,dx because the integration (over x, from 0 to 1, a fixed range with no dependence on a) and the differentiation (with respect to a, a completely separate variable) don't interfere with each other — this is exactly Feynman's trick's own differentiate-under-the-integral-sign move, listed as this technique's own prerequisite. Plugging in a=n only at the end, rather than starting from x^n directly, is what makes the whole method work at all: x^n has no a left in it to differentiate, so there'd be nothing to bring down a factor of \\ln x. J(a) has to stay a genuine function of a right up until the last step, purely so there's still something left to differentiate.",
     },
   },
   {
@@ -1779,6 +1901,36 @@ export const TECHNIQUES: Technique[] = [
       prompt: "x^4e^{-x^2} \\text{ on } [0,\\infty)",
       answer: "\\frac{3\\sqrt\\pi}8",
       hint: "By parts with u=x^3,\\ dv=xe^{-x^2}dx reduces this to a multiple of the second worked example's result, \\frac{\\sqrt\\pi}4.",
+    },
+    completions: [
+      {
+        setup: [
+          "\\int_0^\\infty x^7e^{-x^2}\\,dx — an ODD power, so per the pitfall this should be secretly elementary via u=x^2, with no \\sqrt\\pi in the answer. Write x^7=x^6\\cdot x and substitute u=x^2,\\ du=2x\\,dx: x^6=u^3, so x^7e^{-x^2}\\,dx=u^3e^{-u}\\cdot\\frac{du}2, with u running over the same (0,\\infty).",
+          "\\int_0^\\infty x^7e^{-x^2}\\,dx=\\frac12\\int_0^\\infty u^3e^{-u}\\,du — exactly a Gamma-function integral in u, the family this technique's own prerequisite already solved.",
+        ],
+        blank: "\\int_0^\\infty u^3e^{-u}\\,du=3! by the Gamma-function technique — finish the computation.",
+        answer: "\\frac12\\cdot3!=\\frac12\\cdot6=3 — no \\sqrt\\pi anywhere, exactly as the pitfall predicts for an odd power.",
+        integrandExpr: "x^7*exp(-x^2)",
+        resultExpr: "3",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+      {
+        setup: [
+          "\\int_0^\\infty x^6e^{-x^2}\\,dx — reduce it exactly like checkYourself reduced x^4e^{-x^2}: by parts with u=x^5,\\ dv=xe^{-x^2}\\,dx (so du=5x^4\\,dx,\\ v=-\\frac12e^{-x^2}).",
+          "The boundary term -\\frac{x^5}2e^{-x^2} vanishes at both ends exactly as it did there, leaving \\int_0^\\infty x^6e^{-x^2}\\,dx=\\frac52\\int_0^\\infty x^4e^{-x^2}\\,dx — the SAME reduction pattern, one step further up the ladder.",
+        ],
+        blank: "\\int_0^\\infty x^4e^{-x^2}\\,dx is exactly the checkYourself value — plug it in and simplify.",
+        answer: "\\int_0^\\infty x^4e^{-x^2}\\,dx=\\frac{3\\sqrt\\pi}8 (from checkYourself), so \\int_0^\\infty x^6e^{-x^2}\\,dx=\\frac52\\cdot\\frac{3\\sqrt\\pi}8=\\frac{15\\sqrt\\pi}{16}.",
+        integrandExpr: "x^6*exp(-x^2)",
+        resultExpr: "15*sqrt(pi)/16",
+        domain: [0, Infinity],
+        kind: "definite",
+      },
+    ],
+    selfExplain: {
+      prompt: "The recipe's squaring trick works for I=\\int_{-\\infty}^\\infty e^{-x^2}\\,dx — square it and switch to polar coordinates. But this lesson's own examples need \\int_0^\\infty x^ne^{-x^2}\\,dx, with an extra power of x. Why doesn't squaring THAT the same way work, and what actually justifies handling it by reduction instead?",
+      answer: "Squaring \\int_0^\\infty x^ne^{-x^2}\\,dx would give \\iint(xy)^ne^{-(x^2+y^2)}\\,dx\\,dy over the first quadrant — and (xy)^n is NOT radially symmetric, since in polar coordinates it becomes r^{2n}(\\cos\\theta\\sin\\theta)^n, which depends on \\theta as well as r. Switching to polar coordinates only paid off in the base case because e^{-(x^2+y^2)} depends on r ALONE, letting the \\theta-integral separate out as a bare constant (2\\pi); adding a power of x with no matching power of y to pair it with breaks exactly that symmetry. That's why the technique instead REDUCES x^ne^{-x^2} down to the plain base case via integration by parts (or, for odd n, an ordinary substitution) rather than squaring it directly — squaring is the one-time move that establishes \\frac{\\sqrt\\pi}2; everything built on top of it uses ordinary single-variable calculus to climb back down to that base case.",
     },
   },
 ];

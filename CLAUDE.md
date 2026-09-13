@@ -2187,3 +2187,82 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   Nothing further queued from this specific follow-up item (WS-11's item 8 is now closed); the
   swapped-citation data bug is a separate, smaller flagged item (already noted above) for whenever
   the owner can re-supply the UK-guide PDF to check the real assignment against.
+
+- 2026-09-13 (new session, WS-10 finish): **The last 5 of 21 techniques now have
+  `completions`+`selfExplain` — WS-10 is fully closed.** Started on `claude/gracious-pasteur-z9h5ta`
+  at baseline `8909804` per the fetch; a parallel session's commits (`e0af1d1` gcd whitelist,
+  `3c8cfef`/`357d526`/`bb913f5` the SPLASH/UK-guide source-round fix) landed in this same shared
+  working directory mid-session without an explicit fetch on my part — confirmed harmless (zero
+  overlap with `techniques.ts`/`lessonExamples.test.ts`, matches the shared-checkout finding the
+  immediately-preceding log entry already documents) and re-verified against `HEAD=bb913f5` before
+  committing rather than assumed safe. Read the full WS-2/WS-8/WS-10 log entries above and the
+  already-shipped `zeta-series`/`wallis-product`/`beta-integrals` lessons in full before writing
+  anything, per this file's own Workflow.
+
+  Finished exactly the 5 techniques the prior WS-10 session named as its own lower-priority
+  remainder: `introducing-constants`, `floor-function`, `inverse-integral`, `log-power-integrals`,
+  `gaussian-hypersphere`. Each got 2 `completions` + 1 `selfExplain`, same shape and tone as the
+  16 already done — every completion's crux move pulled from that technique's own lesson (its
+  worked examples, its pitfalls, or a hint already given in checkYourself), nothing borrowed from
+  a technique the lesson doesn't teach. One example per technique, to spot-check the flavor:
+  - `introducing-constants`: \\int\\frac{3x^2+7}{x^2+1}\\,dx=3x+4\\arctan x+C, chosen to exercise
+    the OTHER matching target the recipe names (against D(x) itself, since numerator and
+    denominator share a degree) rather than repeating the D'(x)-matching move both existing
+    worked examples already used — the selfExplain then asks exactly how a reader is supposed to
+    tell which target a given numerator calls for (answer: compare degrees).
+  - `floor-function`: \\int_{-2}^2\\lfloor x\\rfloor\\,dx=-2, deliberately straddling zero to
+    exercise the pitfall about negative x rounding DOWN (\\lfloor-2,-1)\\rfloor=-2, not -1) that
+    neither existing worked example nor checkYourself's domain ever crosses.
+  - `inverse-integral`: \\int_0^8\\sqrt[3]x\\,dx=12, the natural x^3-inverse sibling of the
+    lesson's own \\sqrt x-is-the-inverse-of-x^2 framing, one power up.
+  - `log-power-integrals`: \\int_0^1\\ln^2x\\,dx=2 (n=0,\\,k=2), one derivative short of
+    checkYourself's own n=0,\\,k=3 — walks the SAME differentiate-J(a)-repeatedly ladder one rung
+    lower.
+  - `gaussian-hypersphere`: \\int_0^\\infty x^7e^{-x^2}\\,dx=3 via u=x^2, chosen specifically to
+    make the pitfall's claim concrete — "odd powers are secretly elementary, no \\sqrt\\pi" — with
+    an odd power higher than any already in the bank or lesson.
+
+  Every numeric claim (10 completions + this session's own honesty check that none of the
+  selfExplain prose asserted anything false) was derived by hand and verified in a throwaway
+  Node script (`/tmp/.../scratchpad/verify_ws10_finish.mjs`, plain `Math.*`, `derivative()`/
+  `quadrature()` copied verbatim from `problems.test.ts`/`lessonExamples.test.ts` including the
+  infinite-domain substitution for the two Gaussian claims) before being written into
+  `techniques.ts` — all 10 passed with essentially zero error (worst case 1.7% of the tolerance
+  boundary, most machine-precision-exact), comfortably clear of the "find a cleaner example"
+  guardrail. Grepped both `techniques.ts` and every `bank/*.ts` file for each candidate
+  `integrandExpr` (and its domain, where the bare expression alone recurs at a different domain —
+  `floor(x)` and `x-floor(x)` both do) before writing it in; all 10 are genuinely new content, no
+  duplicates re-attributed or dropped. Every `integrandExpr` written in terms of `x` regardless of
+  the derivation's own variable names, per the standing `t`-vs-`x` guardrail.
+
+  Updated `lessonExamples.test.ts`'s `gradeableCompletions` guard from 32 to 42 (2×21 techniques
+  now that all of them have completions) and its doc comment to say so — the only edit to that
+  file. Independently confirmed programmatically (a throwaway script importing the real
+  `TECHNIQUES` array, not just eyeballing the diff) that every one of the 21 techniques now has
+  `completions.length >= 2` and a `selfExplain`, matching WS-8's own "all 21 techniques" closure
+  framing for the lesson-rebuild milestone.
+
+  Verified: `npx vitest run` — **3157/3157** across 49 files (was 3147 at fetch time before the
+  parallel session's own new tests landed; 3157 is the real post-merge baseline plus this
+  session's 10 new completion checks, confirmed by running the full suite again immediately before
+  committing, after the parallel commits had already landed); `npx tsc --noEmit -p
+  tsconfig.app.json` clean; `eslint` on both touched files (`techniques.ts`,
+  `lessonExamples.test.ts`) — zero findings. No existing test was edited apart from the one guard
+  number. Since this was pure lesson-content + one test-fixture-count change with no UI files
+  touched, the mandatory-Playwright-walkthrough rule didn't strictly apply — done anyway, since a
+  human reads this content closely: `/dev/integrals/lessons` against a real dev server (Chromium
+  from `/opt/pw-browsers`, `playwright` symlinked into a scratch `node_modules`, `--host
+  127.0.0.1 --port 5183` per this sandbox's IPv6-bind limitation), `introducing-constants` and
+  `gaussian-hypersphere` opened, every new completion revealed by clicking through the real UI
+  (not just asserted from the test suite), checkYourself and the existing worked examples
+  screenshotted alongside them to confirm no regression to the untouched parts of the lesson body.
+  Both rendered with correct KaTeX throughout and zero console/page errors. Dev server killed
+  afterward.
+
+  **This closes WS-10 entirely** — all 21 techniques in `TECHNIQUES` now carry
+  `prerequisites`/`intuition`/`examples`/`checkYourself`/`completions`/`selfExplain`, the full
+  schema the WS-2/WS-8/WS-10 progression built up incrementally. Nothing was authored into
+  `bank/*.ts` this session, per standing directive #2 — every new claim lives in `techniques.ts`'s
+  lesson exposition. No new follow-ups are being flagged beyond what earlier entries in this log
+  already carry (the WS-11 entry's numbered list of 8 open items is still the accurate summary of
+  what remains un-actioned repo-wide).
