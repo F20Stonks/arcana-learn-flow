@@ -98,7 +98,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [-1, 1],
     difficulty: 5,
     techniques: ["introducing-constants", "t-sub"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "Introducing constants" },
     hints: [
       "Split off the denominator first, same as always: 5\\cos x+7 = 5(2+\\cos x) - 3.",
       "That leaves 5\\int dx - 3\\int\\frac{dx}{2+\\cos x} — and the second integral is a t-sub result you may already have.",
@@ -138,7 +138,7 @@ export const IntroducingConstants: Problem[] = [
     domain: [0, 2 * Math.PI],
     difficulty: 5,
     techniques: ["introducing-constants", "t-sub"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "Introducing constants" },
     hints: [
       "Add and subtract 2 in the numerator: \\frac{\\cos x}{2+\\cos x}=1-\\frac{2}{2+\\cos x}.",
       "The t-sub antiderivative of \\frac{1}{2+\\cos x} isn't valid across the whole [0,2\\pi] in one piece — split at \\pi where \\tan(x/2) has its own discontinuity.",

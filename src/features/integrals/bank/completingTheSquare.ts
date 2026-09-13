@@ -160,7 +160,7 @@ export const CompletingTheSquare: Problem[] = [
     domain: [0, Infinity],
     difficulty: 5,
     techniques: ["complete-square"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "Completing the square" },
     hints: [
       "Complete the square first: x^2+2x+2=(x+1)^2+1. Then substitute x+1=\\tan\\theta.",
       "Write \\ln(\\tan\\theta-1) as \\ln(\\sin\\theta-\\cos\\theta)-\\ln(\\cos\\theta) and use \\sin\\theta-\\cos\\theta=\\sqrt2\\sin\\!\\left(\\theta-\\frac{\\pi}{4}\\right) — the same log-sine reduction as Serret's integral.",

@@ -172,7 +172,7 @@ export const TSub: Problem[] = [
     domain: [0, Math.PI / 2],
     difficulty: 5,
     techniques: ["t-sub"],
-    source: { name: "UK University Integration Bee Basic Techniques Guide" },
+    source: { name: "UK University Integration Bee Basic Techniques Guide", round: "The t-substitution" },
     hints: [
       "King's rule (x\\to\\frac{\\pi}{2}-x) sends \\cos x to \\sin x while leaving \\sin2x unchanged — average the two forms to get \\sin x+\\cos x on top.",
       "u=\\sin x-\\cos x turns \\sin2x into 1-u^2, since u^2=1-\\sin2x.",

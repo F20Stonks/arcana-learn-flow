@@ -147,7 +147,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 4,
     techniques: ["beta-integrals"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "Beta function integrals" },
     hints: [
       "This is \\int_0^1x^3(1-x)^{1/2}\\,dx — the Beta identity still holds with a half-integer exponent, using \\Gamma instead of a factorial for the half-integer side.",
       "\\Gamma(3/2)=\\frac{\\sqrt\\pi}{2} and \\Gamma(11/2)=\\frac{945}{32}\\sqrt\\pi — the \\sqrt\\pi cancels in the ratio, leaving a rational number.",
@@ -169,7 +169,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "Beta function integrals" },
     hints: [
       "\\ln x\\ln(1-x) is exactly the \\varepsilon\\delta term in the double Taylor expansion of \\int_0^1x^\\varepsilon(1-x)^\\delta\\,dx=\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1+\\delta)}{\\Gamma(2+\\varepsilon+\\delta)} about \\varepsilon=\\delta=0.",
       "Expanding that ratio of Gammas to second order, the \\gamma terms cancel between numerator and denominator and only a \\zeta(2)\\varepsilon\\delta term survives.",
@@ -191,7 +191,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "Beta function integrals" },
     hints: [
       "Differentiate \\int_0^1x^{1+\\varepsilon}(1-x)^{-1/2}\\,dx = \\frac{\\Gamma(2+\\varepsilon)\\Gamma(1/2)}{\\Gamma(5/2+\\varepsilon)}\\cdot\\frac{1}{1}... — really, work with \\int_0^1x^\\varepsilon(1-x)^{-1/2}dx=\\frac{\\Gamma(1+\\varepsilon)\\Gamma(1/2)}{\\Gamma(3/2+\\varepsilon)} and differentiate at \\varepsilon=0.",
       "\\psi(1)=-\\gamma and \\psi(3/2)=2-2\\ln 2-\\gamma — the \\gamma cancels in the difference, leaving an elementary answer.",
@@ -214,7 +214,7 @@ export const BetaIntegrals: Problem[] = [
     domain: [0, 1],
     difficulty: 5,
     techniques: ["beta-integrals"],
-    source: { name: "SPLASH 2011 – Superhuman Integration Techniques" },
+    source: { name: "SPLASH 2011 – Superhuman Integration Techniques", round: "Beta function integrals" },
     hints: [
       "Differentiate B(3+\\varepsilon,4) with respect to \\varepsilon at \\varepsilon=0 — since both arguments are positive integers, the digamma difference is a difference of harmonic numbers, not \\gamma.",
       "\\psi(3)-\\psi(7) = H_2-H_6 = \\frac{3}{2}-\\frac{49}{20} = -\\frac{19}{20}.",
