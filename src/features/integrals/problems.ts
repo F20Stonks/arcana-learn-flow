@@ -108,6 +108,34 @@ export function sourceKey(s: ProblemSource): string {
   return `${s.name}::${s.year ?? ""}::${s.round ?? ""}`;
 }
 
+/**
+ * A general multi-condition filter — the pool behind both the problem database's search and a
+ * custom practice session's "start" button, so the two surfaces (browse it, then drill it) always
+ * agree on what a given filter actually matches. Every field is optional and AND-combined with the
+ * others; an omitted or empty `techniques`/`sourceKeys` matches every technique/source, the same
+ * "no filter set means no restriction" convention `IntegralDatabase.tsx` already used before this
+ * helper existed.
+ */
+export interface ProblemFilter {
+  techniques?: TechniqueId[];
+  sourceKeys?: string[];
+  minDifficulty?: Difficulty;
+  maxDifficulty?: Difficulty;
+}
+
+export function problemsForFilter(filter: ProblemFilter): Problem[] {
+  const techSet = filter.techniques?.length ? new Set(filter.techniques) : null;
+  const sourceSet = filter.sourceKeys?.length ? new Set(filter.sourceKeys) : null;
+  const min = filter.minDifficulty ?? 1;
+  const max = filter.maxDifficulty ?? 5;
+  return PROBLEMS.filter((p) => {
+    if (techSet && !p.techniques.some((t) => techSet.has(t))) return false;
+    if (sourceSet && !sourceSet.has(sourceKey(p.source))) return false;
+    if (p.difficulty < min || p.difficulty > max) return false;
+    return true;
+  }).sort((a, b) => a.difficulty - b.difficulty || a.id.localeCompare(b.id));
+}
+
 /** Every distinct source in the bank, in first-seen order — "original" included as one bucket among the rest. */
 export const SOURCES: ProblemSource[] = (() => {
   const seen = new Map<string, ProblemSource>();

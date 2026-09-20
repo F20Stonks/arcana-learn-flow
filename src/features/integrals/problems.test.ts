@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "./mathEngine";
 import { gradeAnswer, normalize } from "./answer";
-import { PROBLEMS, problemsForSource, problemsForTechniques, SOURCES, sourceKey } from "./problems";
+import { PROBLEMS, problemsForFilter, problemsForSource, problemsForTechniques, SOURCES, sourceKey } from "./problems";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "./techniques";
 
 function fn(expr: string): (x: number) => number | null {
@@ -145,6 +145,35 @@ describe("problem bank", () => {
     ]);
     expect(union.length).toBe(expectedIds.size);
     for (const p of union) expect(expectedIds.has(p.id)).toBe(true);
+  });
+
+  it("problemsForFilter with no fields set matches the whole bank", () => {
+    expect(problemsForFilter({}).length).toBe(PROBLEMS.length);
+  });
+
+  it("problemsForFilter AND-combines technique, source and difficulty range", () => {
+    const [a, b] = [TECHNIQUES[0].id, TECHNIQUES[1].id];
+    const oneSource = sourceKey(SOURCES[0]);
+    const filtered = problemsForFilter({
+      techniques: [a, b],
+      sourceKeys: [oneSource],
+      minDifficulty: 1,
+      maxDifficulty: 3,
+    });
+    const expected = PROBLEMS.filter(
+      (p) =>
+        p.techniques.some((t) => t === a || t === b) &&
+        sourceKey(p.source) === oneSource &&
+        p.difficulty >= 1 &&
+        p.difficulty <= 3,
+    );
+    expect(filtered.map((p) => p.id).sort()).toEqual(expected.map((p) => p.id).sort());
+  });
+
+  it("problemsForFilter's difficulty range is inclusive at both ends", () => {
+    const onlyThrees = problemsForFilter({ minDifficulty: 3, maxDifficulty: 3 });
+    expect(onlyThrees.length).toBeGreaterThan(0);
+    for (const p of onlyThrees) expect(p.difficulty).toBe(3);
   });
 
   it("finds every problem again through problemsForSource", () => {

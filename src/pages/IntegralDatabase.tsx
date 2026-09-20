@@ -12,6 +12,7 @@ import { ArrowLeft, Check, ChevronDown, Search } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Tex from "@/features/integrals/components/Tex";
 import SolutionSteps from "@/features/integrals/components/SolutionSteps";
+import SessionBuilder from "@/features/integrals/components/SessionBuilder";
 import { useProgress } from "@/features/integrals/hooks/useProgress";
 import { hasSolved, setManuallySolved } from "@/features/integrals/progress";
 import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
@@ -58,10 +59,14 @@ export default function IntegralDatabase() {
             Problem database
           </h1>
           <p className="mt-1.5 text-[15px] text-muted-foreground">
-            Every problem in the bank, searchable. Remember an integral? Look it up here instead of
-            grinding through the queue to find it again.
+            Every problem in the bank, searchable — or build a session below and work through a
+            slice of it on your own terms.
           </p>
         </header>
+
+        <div className="reveal mb-6">
+          <SessionBuilder />
+        </div>
 
         <div className="reveal rounded-2xl border border-border bg-card p-4">
           <label className="relative block">

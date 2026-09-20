@@ -2266,3 +2266,76 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   lesson exposition. No new follow-ups are being flagged beyond what earlier entries in this log
   already carry (the WS-11 entry's numbered list of 8 open items is still the accurate summary of
   what remains un-actioned repo-wide).
+
+- 2026-09-20 (new session, same branch): Merged `claude/gracious-pasteur-z9h5ta` into `main`
+  (clean fast-forward, `4c67595` → `4d8fd33`, no divergence to reconcile — verified via an
+  isolated detached worktree, full suite 3157/3157 + `tsc --noEmit -p tsconfig.app.json` clean
+  before pushing, per the established merge pattern from earlier WS entries). The owner then asked
+  for an ongoing loop of further improvements, scoped exclusively to the question bank: "adding
+  questions and making adding questions easier to use" and "set up my own practice seshs to get
+  through the thing." Also asked about using something called "the silver guide" as a verbatim
+  course — no file or reference by that name exists anywhere in this repo or session's uploads;
+  asked the owner directly rather than guess, and they confirmed it's a real document not yet
+  sent. **Do not start building any "verbatim course" structure until that PDF actually arrives**
+  — this is a placeholder note for whichever session receives it.
+
+  **Shipped: the practice session builder** — the concrete answer to "set up my own sessions to
+  get through the bank." Three pieces:
+  1. `problemsForFilter(filter: ProblemFilter)` in `problems.ts` — a general AND-combined filter
+     (technique(s), source(s), a difficulty range) shared by the database page's search and by
+     training's widened custom mode, so browsing a slice of the bank and then drilling exactly
+     that slice can never silently disagree about what matched.
+  2. `practiceSessions.ts` (+ `hooks/usePracticeSessions.ts`) — a new, independent scoped/fail-soft
+     localStorage store (same pattern as every store since `attempts.ts`: `scopedKey`, cache
+     self-invalidates on scope change, no notification wiring needed back into `progress.ts`)
+     holding named, saved `{filter, unsolvedOnly}` bookmarks. This is what makes a session
+     resumable rather than a one-off: `IntegralTraining.tsx`'s custom mode now resolves its pool
+     two ways — `?session=<id>` (a saved session, stable `queueKey` of `session:<id>`, so "last
+     place" tracking survives across visits exactly like every other practice mode) or an ad hoc
+     `?techniques=&sources=&minDifficulty=&maxDifficulty=&unsolved=` query string (what a
+     "start once, don't bother saving" click produces). Both paths converge on
+     `problemsForFilter` plus an optional unsolved-only pass against `progress.ts`'s `hasSolved`.
+  3. `components/SessionBuilder.tsx`, mounted on `IntegralDatabase.tsx` (top of page, above the
+     existing single-select search filters, which were left completely untouched — multi-select
+     "give me everything matching this shape" and single-select "find this one problem again" are
+     different questions, so kept visually and statefully separate rather than overloading one
+     set of controls): multi-select technique/source chips, a difficulty range, an unsolved-only
+     toggle, a live "N problems in this session, M already solved" readout, a "Start practicing"
+     link, a name field + Save, and a "My sessions" list (each row: live count, Start, inline
+     rename, delete).
+
+  Added the missing `/dev/integrals/database` unguarded twin in `App.tsx` (the page existed only
+  behind `DashboardGuard` before this — every other Integral Arena page already has this pattern,
+  this one had simply been missed) so the feature could actually be Playwright-walked through.
+
+  Real bugs caught during the walkthrough, both in the *test script*, not the feature — worth
+  recording since this is a recurring class of self-inflicted false alarm in this repo's own
+  history (WS-7's `h2.font-display` selector miss, WS-9's `text=Start` substring miss): (1) a
+  `fullPage: true` screenshot against the database page came back 75,944px tall, because the
+  results list below the builder renders all matching problems inline — not a bug, just the wrong
+  screenshot mode for this page; switched to viewport screenshots + `scrollIntoViewIfNeeded`. (2)
+  a text-content assertion for "My sessions" failed because the heading carries a Tailwind
+  `uppercase` class — Playwright's `innerText()` returns the rendered (visually transformed) text,
+  so the real heading reads "MY SESSIONS" at that point in the DOM; fixed the assertion, not the
+  markup. Once both were fixed, the real walkthrough confirmed: building a filter (2 techniques +
+  difficulty 1–3) live-updates the count and matched problems; saving produces a named row in "My
+  sessions" with the right live count; clicking a saved session's Start correctly redirects an
+  unauthenticated session to `/auth` (existing, correct `DashboardGuard` behavior — same
+  precedent noted in the WS-11 entry, not something this change needed to route around); hitting
+  the equivalent `/dev/integrals/train/custom?session=<id>` URL directly (bypassing the guard, the
+  standard way this repo verifies guarded routes) shows the saved session's name as the page title
+  and "Saved session · N/total · <difficulty>" as the subtitle, with `hasSolved`/place-tracking
+  working identically to every other practice mode; the ad hoc (unsaved) filter path
+  (`?techniques=a,b&minDifficulty=2&maxDifficulty=4`) independently shows "N techniques selected"
+  and correctly narrows the pool (212 matched problems, confirmed against `problemsForFilter`
+  directly). Zero console/page errors throughout.
+
+  Verified: `npx vitest run` — **3168/3168** across 50 files (was 3157/3157 pre-merge baseline;
+  +11 new — 3 in `problems.test.ts` for `problemsForFilter`, 8 in `practiceSessions.test.ts`);
+  `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` clean on every touched/new file. No
+  existing test was edited.
+
+  **"Making adding questions easier to use"** — the other half of the owner's ask — is still
+  queued for this same loop; not started in this entry. Continuing to work through both this and
+  further scoped improvements autonomously, merging as each verified increment lands, per the
+  owner's explicit go-ahead to run a loop rather than stop after one item.

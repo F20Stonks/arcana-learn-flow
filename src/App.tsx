@@ -231,6 +231,7 @@ function AppRoutes() {
       {import.meta.env.DEV && <Route path="/dev/integrals/lessons" element={<IntegralLessons />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/train" element={<IntegralTraining />} />}
       {import.meta.env.DEV && <Route path="/dev/integrals/lessons" element={<IntegralLessons />} />}
+      {import.meta.env.DEV && <Route path="/dev/integrals/database" element={<IntegralDatabase />} />}
       {import.meta.env.DEV && (
         <Route path="/dev/integrals/train/source/:sourceKey" element={<TrainingTechnique />} />
       )}

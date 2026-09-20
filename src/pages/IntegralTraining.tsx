@@ -40,13 +40,15 @@ import { TECHNIQUES, TECHNIQUE_BY_ID } from "@/features/integrals/techniques";
 import {
   DIFFICULTY_LABEL,
   PROBLEMS,
+  problemsForFilter,
   problemsForSource,
   problemsForTechnique,
-  problemsForTechniques,
   SOURCES,
   sourceKey,
+  type ProblemFilter,
 } from "@/features/integrals/problems";
-import type { Problem, ProblemSource, TechniqueId } from "@/features/integrals/types";
+import { getPracticeSessions } from "@/features/integrals/practiceSessions";
+import type { Difficulty, Problem, ProblemSource, TechniqueId } from "@/features/integrals/types";
 
 const MIXED = "mixed";
 const CUSTOM = "custom";
@@ -257,23 +259,59 @@ export function TrainingTechnique() {
   const custom = techniqueId === CUSTOM;
   const technique = mixed || custom || isSource ? null : TECHNIQUE_BY_ID[techniqueId as TechniqueId];
 
-  const customIds = useMemo(() => {
-    if (!custom) return [];
-    const raw = searchParams.get("techniques") ?? "";
-    return raw.split(",").filter((id): id is TechniqueId => id in TECHNIQUE_BY_ID);
+  // A custom pool comes from one of two places: a saved practice session (?session=<id>, a stable
+  // bookmark — the database page's "My sessions" list launches these) or an ad hoc one-off filter
+  // built inline in the query string (?techniques=&sources=&minDifficulty=&maxDifficulty=&unsolved=
+  // — what the database page's "Start practicing" button on an unsaved filter launches). Both reduce
+  // to the same {filter, unsolvedOnly} shape, so the pool/queueKey logic below never needs to care
+  // which one it's looking at.
+  const savedSession = useMemo(() => {
+    if (!custom) return undefined;
+    const id = searchParams.get("session");
+    return id ? getPracticeSessions().find((s) => s.id === id) : undefined;
   }, [custom, searchParams]);
+
+  const adHocFilter = useMemo((): ProblemFilter => {
+    const techniques = (searchParams.get("techniques") ?? "")
+      .split(",")
+      .filter((id): id is TechniqueId => id in TECHNIQUE_BY_ID);
+    const sourceKeys = (searchParams.get("sources") ?? "")
+      .split(",")
+      .map((s) => (s ? decodeURIComponent(s) : ""))
+      .filter(Boolean);
+    const minRaw = Number(searchParams.get("minDifficulty"));
+    const maxRaw = Number(searchParams.get("maxDifficulty"));
+    const minDifficulty = minRaw >= 1 && minRaw <= 5 ? (minRaw as Difficulty) : undefined;
+    const maxDifficulty = maxRaw >= 1 && maxRaw <= 5 ? (maxRaw as Difficulty) : undefined;
+    return { techniques, sourceKeys, minDifficulty, maxDifficulty };
+  }, [searchParams]);
+
+  const customFilter: ProblemFilter = savedSession ? savedSession.filter : adHocFilter;
+  const customUnsolvedOnly = savedSession ? savedSession.unsolvedOnly : searchParams.get("unsolved") === "1";
+  // customIds only ever feeds the header copy below ("N techniques selected") for the legacy
+  // technique-only ad hoc flow — a saved session or a filter that also narrows by source/difficulty
+  // states its own summary instead (see the header below).
+  const customIds = customFilter.techniques ?? [];
 
   const pool = useMemo(() => {
     if (isSource) return source ? problemsForSource(source) : [];
     if (mixed) return PROBLEMS;
-    if (custom) return problemsForTechniques(customIds);
+    if (custom) {
+      const base = problemsForFilter(customFilter);
+      return customUnsolvedOnly ? base.filter((p) => !hasSolved(progress, p.id)) : base;
+    }
     return problemsForTechnique(techniqueId as TechniqueId);
-  }, [isSource, source, mixed, custom, customIds, techniqueId]);
+  }, [isSource, source, mixed, custom, customFilter, customUnsolvedOnly, progress, techniqueId]);
 
   // Two different selections are two different queues, so they resume separately — otherwise a
-  // custom session would pick up on a problem that is not in it.
+  // custom session would pick up on a problem that is not in it. A saved session's key is just its
+  // id, which is what makes it a stable, resumable bookmark rather than a one-off filter — the same
+  // filter typed in by hand twice (never saved) gets its own key each time by the filter's own
+  // contents instead, since there is no id to key on.
   const queueKey = custom
-    ? `custom:${customIds.join(",")}`
+    ? savedSession
+      ? `session:${savedSession.id}`
+      : `custom:${(customFilter.techniques ?? []).join(",")}:${(customFilter.sourceKeys ?? []).join("|")}:${customFilter.minDifficulty ?? ""}-${customFilter.maxDifficulty ?? ""}:${customUnsolvedOnly ? "u" : ""}`
     : isSource
       ? `source:${sourceKeyParam}`
       : techniqueId;
@@ -416,7 +454,7 @@ export function TrainingTechnique() {
             {technique
               ? technique.name
               : custom
-                ? "Custom mix"
+                ? (savedSession?.name ?? "Custom mix")
                 : source
                   ? `${source.name}${source.year ? ` · ${source.year}` : ""}`
                   : "Mixed practice"}
@@ -426,7 +464,11 @@ export function TrainingTechnique() {
               {technique
                 ? technique.tagline
                 : custom
-                  ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
+                  ? savedSession
+                    ? `Saved session${customUnsolvedOnly ? " · unsolved only" : ""}.`
+                    : customIds.length > 0 && !customFilter.sourceKeys?.length
+                      ? `${customIds.length} technique${customIds.length === 1 ? "" : "s"} selected.`
+                      : "A custom filter over the bank."
                   : source
                     ? "This competition's set, worked exactly as it was set."
                     : "Every problem in the bank, technique unannounced."}
