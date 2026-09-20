@@ -100,6 +100,16 @@ export function renamePracticeSession(id: string, name: string): void {
   write({ ...read(), sessions: read().sessions.map((s) => (s.id === id ? { ...s, name } : s)) });
 }
 
+/**
+ * Changes what a saved session actually matches, in place — the id, name and createdAt survive,
+ * so this is not "delete and recreate": a session's `queueKey` in `IntegralTraining.tsx` is its
+ * id, and place-tracking for it would be silently orphaned by a fresh id. Used by the "Edit"
+ * action on a saved session, once the builder's filter panel has been repopulated from it.
+ */
+export function updatePracticeSession(id: string, filter: ProblemFilter, unsolvedOnly: boolean): void {
+  write({ ...read(), sessions: read().sessions.map((s) => (s.id === id ? { ...s, filter, unsolvedOnly } : s)) });
+}
+
 /** Tests, and a possible future settings screen, alongside resetProgress/resetAttempts. */
 export function resetPracticeSessions(): void {
   write(emptyLog());

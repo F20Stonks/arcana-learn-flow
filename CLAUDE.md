@@ -2381,3 +2381,37 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   Both halves of the owner's "adding questions" ask are now done. Continuing to work through
   further scoped improvements autonomously, merging as each verified increment lands, per the
   owner's explicit go-ahead to run a loop rather than stop after one item.
+
+- 2026-09-20 (same session, `/loop` invoked, dynamic self-paced mode): The owner asked me to keep
+  scoping and merging improvements in a loop. Ran the `/loop` skill with no fixed interval, so
+  this self-paces — each iteration re-fetches the branch, does one concrete verified increment,
+  commits, pushes, fast-forward-merges into `main`, then schedules its own next wakeup.
+
+  **Iteration 1 — edit a saved session's filter in place, commit `<see below>`.** The session
+  builder shipped two entries ago could only rename or delete a saved session, never adjust what
+  it actually matches — a real gap the moment a student realises a saved session should also
+  include one more technique, or they want to narrow a source down by difficulty. Added
+  `updatePracticeSession(id, filter, unsolvedOnly)` to `practiceSessions.ts` (id/name/createdAt
+  survive — this is in-place, not delete-and-recreate, which matters because a session's id is
+  its `queueKey` in `IntegralTraining.tsx`, and a fresh id would silently orphan place-tracking).
+  `SessionBuilder.tsx`'s saved-session rows got a pencil "Edit" action: clicking it loads that
+  session's filter into the panel above (opens it if closed), highlights the row, and swaps the
+  panel's save controls for an `Update "<name>"` button that writes back to that same id;
+  clicking the pencil again (or "Cancel edit") clears the panel back to blank. 3 new tests in
+  `practiceSessions.test.ts` (updates the filter/unsolvedOnly without disturbing id/name/
+  createdAt; keeps a stable id, never appending a new entry; no-ops on an id that doesn't exist).
+
+  Verified: `npx vitest run` — **3171/3171** across 50 files (was 3168/3168; +3, all new);
+  `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` clean on every touched file. Real
+  Playwright walkthrough against `/dev/integrals/database`: seeded a saved session directly into
+  `localStorage`, clicked its pencil, confirmed the panel opened pre-populated and the row
+  highlighted with "Editing below — adjust the filter, then Update.", added a second technique,
+  clicked `Update "Edit me"`, read `localStorage` back and confirmed the stored session gained
+  the new technique while keeping its original id/name/createdAt exactly — screenshot taken,
+  zero console/page errors.
+
+  Committed, pushed to `claude/gracious-pasteur-z9h5ta`, fast-forward-merged into `main` the same
+  way as every prior increment this session (fetch, confirm no divergence, push branch:main).
+  Continuing the loop — next iteration will pick another concrete item from the same short list
+  (a coverage/progress readout, `verify-problem.ts` batch mode, surfacing the database/session
+  builder more prominently from the hub) unless the owner redirects.

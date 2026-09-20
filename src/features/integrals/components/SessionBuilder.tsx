@@ -16,14 +16,20 @@
  */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ListPlus, Play, Save, Trash2, X } from "lucide-react";
+import { ChevronDown, ListPlus, Pencil, Play, Save, Trash2, X } from "lucide-react";
 import { useProgress } from "../hooks/useProgress";
 import { usePracticeSessions } from "../hooks/usePracticeSessions";
 import { hasSolved } from "../progress";
 import { TECHNIQUES } from "../techniques";
 import { DIFFICULTY_LABEL, formatSource, problemsForFilter, sourceKey, SOURCES } from "../problems";
-import { deletePracticeSession, renamePracticeSession, savePracticeSession } from "../practiceSessions";
+import {
+  deletePracticeSession,
+  renamePracticeSession,
+  savePracticeSession,
+  updatePracticeSession,
+} from "../practiceSessions";
 import type { ProblemFilter } from "../problems";
+import type { PracticeSession } from "../practiceSessions";
 import type { Difficulty, TechniqueId } from "../types";
 
 const ALL_DIFFICULTIES: Difficulty[] = [1, 2, 3, 4, 5];
@@ -77,10 +83,20 @@ function Chip({
   );
 }
 
-/** One saved session's row: live count, resume, rename in place, delete. */
-function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name: string; filter: ProblemFilter; unsolvedOnly: boolean }) {
+/** One saved session's row: live count, resume, rename in place, edit the filter, delete. */
+function SavedSessionRow({
+  session,
+  editing: isBeingEdited,
+  onEdit,
+}: {
+  session: PracticeSession;
+  /** True while this exact session is loaded into the builder panel above for editing. */
+  editing: boolean;
+  onEdit: () => void;
+}) {
+  const { id, name, filter, unsolvedOnly } = session;
   const progress = useProgress();
-  const [editing, setEditing] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(name);
 
   const matched = useMemo(() => problemsForFilter(filter), [filter]);
@@ -91,13 +107,17 @@ function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name:
     const trimmed = draft.trim();
     if (trimmed && trimmed !== name) renamePracticeSession(id, trimmed);
     else setDraft(name);
-    setEditing(false);
+    setRenaming(false);
   };
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3.5 py-2.5">
+    <li
+      className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 ${
+        isBeingEdited ? "border-primary bg-primary/[0.04]" : "border-border bg-background"
+      }`}
+    >
       <div className="min-w-0 flex-1">
-        {editing ? (
+        {renaming ? (
           <input
             autoFocus
             value={draft}
@@ -107,7 +127,7 @@ function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name:
               if (e.key === "Enter") commitRename();
               if (e.key === "Escape") {
                 setDraft(name);
-                setEditing(false);
+                setRenaming(false);
               }
             }}
             className="w-full rounded border border-primary/40 bg-card px-1.5 py-0.5 text-[14px] text-foreground"
@@ -115,7 +135,7 @@ function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name:
         ) : (
           <button
             type="button"
-            onClick={() => setEditing(true)}
+            onClick={() => setRenaming(true)}
             className="truncate text-left text-[14px] font-medium text-foreground hover:underline"
             title="Rename"
           >
@@ -123,8 +143,9 @@ function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name:
           </button>
         )}
         <p className="mt-0.5 text-[12px] text-muted-foreground">
-          {remaining} problem{remaining === 1 ? "" : "s"} left
-          {unsolvedOnly ? "" : ` · ${solved}/${matched.length} solved`}
+          {isBeingEdited
+            ? "Editing below — adjust the filter, then Update."
+            : `${remaining} problem${remaining === 1 ? "" : "s"} left${unsolvedOnly ? "" : ` · ${solved}/${matched.length} solved`}`}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -134,6 +155,17 @@ function SavedSessionRow({ id, name, filter, unsolvedOnly }: { id: string; name:
         >
           <Play className="h-3.5 w-3.5" /> Start
         </Link>
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-pressed={isBeingEdited}
+          aria-label={`Edit ${name}'s filter`}
+          className={`rounded-lg p-1.5 transition-colors ${
+            isBeingEdited ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
         <button
           type="button"
           onClick={() => deletePracticeSession(id)}
@@ -158,6 +190,29 @@ export default function SessionBuilder() {
   const [unsolvedOnly, setUnsolvedOnly] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [justSaved, setJustSaved] = useState(false);
+  /** Non-null while a saved session's filter is loaded into the panel for editing — the save
+   *  button becomes "Update <name>" and writes back to this id instead of creating a new one. */
+  const [editing, setEditing] = useState<PracticeSession | null>(null);
+
+  const startEdit = (session: PracticeSession) => {
+    setEditing(session);
+    setTechniques(new Set(session.filter.techniques ?? []));
+    setSources(new Set(session.filter.sourceKeys ?? []));
+    setMinDifficulty(session.filter.minDifficulty ?? 1);
+    setMaxDifficulty(session.filter.maxDifficulty ?? 5);
+    setUnsolvedOnly(session.unsolvedOnly);
+    setOpen(true);
+    setJustSaved(false);
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setTechniques(new Set());
+    setSources(new Set());
+    setMinDifficulty(1);
+    setMaxDifficulty(5);
+    setUnsolvedOnly(false);
+  };
 
   const filter: ProblemFilter = useMemo(
     () => ({
@@ -172,14 +227,6 @@ export default function SessionBuilder() {
   const matched = useMemo(() => problemsForFilter(filter), [filter]);
   const solvedCount = matched.filter((p) => hasSolved(progress, p.id)).length;
   const sessionSize = unsolvedOnly ? matched.length - solvedCount : matched.length;
-
-  const clearAll = () => {
-    setTechniques(new Set());
-    setSources(new Set());
-    setMinDifficulty(1);
-    setMaxDifficulty(5);
-    setUnsolvedOnly(false);
-  };
 
   const hasAnyFilter =
     techniques.size > 0 || sources.size > 0 || minDifficulty !== 1 || maxDifficulty !== 5 || unsolvedOnly;
@@ -282,13 +329,13 @@ export default function SessionBuilder() {
               Unsolved only
             </label>
 
-            {hasAnyFilter && (
+            {(hasAnyFilter || editing) && (
               <button
                 type="button"
-                onClick={clearAll}
+                onClick={cancelEdit}
                 className="flex items-center gap-1 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                <X className="h-3.5 w-3.5" /> Clear filter
+                <X className="h-3.5 w-3.5" /> {editing ? "Cancel edit" : "Clear filter"}
               </button>
             )}
           </div>
@@ -313,27 +360,43 @@ export default function SessionBuilder() {
               </span>
             )}
 
-            <input
-              value={saveName}
-              onChange={(e) => {
-                setSaveName(e.target.value);
-                setJustSaved(false);
-              }}
-              placeholder="Name it to save for later…"
-              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground"
-            />
-            <button
-              type="button"
-              disabled={!saveName.trim()}
-              onClick={() => {
-                savePracticeSession(saveName.trim(), filter, unsolvedOnly);
-                setSaveName("");
-                setJustSaved(true);
-              }}
-              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-40"
-            >
-              <Save className="h-3.5 w-3.5" /> {justSaved ? "Saved" : "Save"}
-            </button>
+            {editing ? (
+              <button
+                type="button"
+                disabled={sessionSize === 0}
+                onClick={() => {
+                  updatePracticeSession(editing.id, filter, unsolvedOnly);
+                  setJustSaved(true);
+                }}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                <Save className="h-3.5 w-3.5" /> {justSaved ? "Updated" : `Update "${editing.name}"`}
+              </button>
+            ) : (
+              <>
+                <input
+                  value={saveName}
+                  onChange={(e) => {
+                    setSaveName(e.target.value);
+                    setJustSaved(false);
+                  }}
+                  placeholder="Name it to save for later…"
+                  className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground"
+                />
+                <button
+                  type="button"
+                  disabled={!saveName.trim()}
+                  onClick={() => {
+                    savePracticeSession(saveName.trim(), filter, unsolvedOnly);
+                    setSaveName("");
+                    setJustSaved(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-40"
+                >
+                  <Save className="h-3.5 w-3.5" /> {justSaved ? "Saved" : "Save"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -345,7 +408,12 @@ export default function SessionBuilder() {
           </div>
           <ul className="flex flex-col gap-2">
             {sessions.map((s) => (
-              <SavedSessionRow key={s.id} id={s.id} name={s.name} filter={s.filter} unsolvedOnly={s.unsolvedOnly} />
+              <SavedSessionRow
+                key={s.id}
+                session={s}
+                editing={editing?.id === s.id}
+                onEdit={() => (editing?.id === s.id ? cancelEdit() : startEdit(s))}
+              />
             ))}
           </ul>
         </div>

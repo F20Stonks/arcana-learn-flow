@@ -5,6 +5,7 @@ import {
   renamePracticeSession,
   resetPracticeSessions,
   savePracticeSession,
+  updatePracticeSession,
 } from "./practiceSessions";
 import { setProgressScope } from "./progress";
 
@@ -50,6 +51,32 @@ describe("deleting and renaming", () => {
     expect(got.name).toBe("new name");
     expect(got.filter.minDifficulty).toBe(3);
     expect(got.unsolvedOnly).toBe(true);
+  });
+});
+
+describe("updating", () => {
+  it("changes the filter and unsolvedOnly without disturbing id, name or createdAt", () => {
+    const s = savePracticeSession("my session", { minDifficulty: 1 }, false);
+    updatePracticeSession(s.id, { minDifficulty: 4, sourceKeys: ["MIT::2024::Qualifying Round"] }, true);
+    const [got] = getPracticeSessions();
+    expect(got.id).toBe(s.id);
+    expect(got.name).toBe("my session");
+    expect(got.createdAt).toBe(s.createdAt);
+    expect(got.filter).toEqual({ minDifficulty: 4, sourceKeys: ["MIT::2024::Qualifying Round"] });
+    expect(got.unsolvedOnly).toBe(true);
+  });
+
+  it("keeps a stable id — updating is never delete-and-recreate", () => {
+    const a = savePracticeSession("A", {}, false);
+    const b = savePracticeSession("B", {}, false);
+    updatePracticeSession(a.id, { minDifficulty: 2 }, false);
+    expect(getPracticeSessions().map((s) => s.id)).toEqual([a.id, b.id]);
+  });
+
+  it("is a no-op on an id that doesn't exist", () => {
+    savePracticeSession("A", {}, false);
+    updatePracticeSession("session:does-not-exist", { minDifficulty: 2 }, false);
+    expect(getPracticeSessions()).toHaveLength(1);
   });
 });
 
