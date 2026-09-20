@@ -1,0 +1,9 @@
+{
+  "kind": "definite",
+  "integrandExpr": "1/(1+x^2)",
+  "answer": "pi/4",
+  "domain": [0, 1],
+  "difficulty": 1,
+  "techniques": ["power"],
+  "source": { "name": "original" }
+}

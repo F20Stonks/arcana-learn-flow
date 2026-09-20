@@ -183,17 +183,26 @@ why, so the owner can make the final call rather than it just quietly vanishing.
 ## Workflow (this has been working well — keep using it)
 
 1. Derive the closed form by hand.
-2. Write a throwaway `node /tmp/verify.mjs` script using plain `Math.*` that mirrors
-   `problems.test.ts`'s `derivative()`/`quadrature()` logic exactly (five-point central
-   difference for indefinite; smoothstep-substitution midpoint quadrature for definite, same
-   tolerances: `1e-5*(1+|target|)` and `1e-4*(1+|expected|)` respectively). Check the candidate
-   passes with real margin — if the error is within ~50% of the tolerance boundary, that's a
-   signal to find a cleaner example rather than ship something marginal.
-3. Grep `bank/*.ts` for the candidate `integrandExpr` substring before adding it, to catch
-   duplicates the exact-match test wouldn't catch by construction (different phrasing of the
-   same function, etc.). There's also the automated exact-duplicate test in `problems.test.ts`
-   ("has no duplicated integrands", keyed on `kind:integrandExpr:lower:upper") — that's the
-   final backstop, not the first line of defense.
+2. **Verify it**: `npm run verify:problem -- path/to/draft.json` (see
+   `scripts/verify-problem.ts` and `scripts/verify-problem.example.json`) runs the exact numeric
+   methods `problems.test.ts` uses — same `derivative()`/`quadrature()` logic, same tolerances
+   (`1e-5*(1+|target|)` indefinite, `1e-4*(1+|expected|)` definite) — PLUS the real live grader
+   (`gradeAnswer` must accept the answer against itself), against a small JSON draft
+   (`{kind, integrandExpr, answer, domain, techniques?, difficulty?, source?}`). It also greps
+   every `bank/*.ts` file for the candidate integrand (catching duplicates the exact-match test in
+   `problems.test.ts` wouldn't, since that one only fires on an exact match), suggests which bank
+   file the primary technique's problems already live in, and prints a ready-to-paste `Problem`
+   scaffold with the LaTeX/hints/steps fields marked TODO — those still need a human, this only
+   automates the mechanical, error-prone numeric+duplicate check. This replaces hand-rolling a
+   throwaway `node /tmp/verify.mjs` script for the common case; still write one by hand for
+   anything the script's shape doesn't cover (a lesson `WorkedExample`/`Completion`, a
+   per-problem substitution too specific to generalize, an infinite-domain case needing a bigger
+   `n` — see the caveat below). If the error is within ~50% of the tolerance boundary, that's a
+   signal to find a cleaner example rather than ship something marginal, script or no script.
+3. The script's duplicate grep is a substring flag, not a semantic equivalence check — still worth
+   a manual look at any hit before adding. There's also the automated exact-duplicate test in
+   `problems.test.ts` ("has no duplicated integrands", keyed on `kind:integrandExpr:lower:upper")
+   — that's the final backstop, not the first line of defense.
 4. Write the `Technique` lesson entry (if new) into `techniques.ts` and the `TechniqueId` into
    `types.ts`.
 5. Write the bank file entries, wire new files into `problems.ts`.
@@ -2335,7 +2344,40 @@ why, so the owner can make the final call rather than it just quietly vanishing.
   `npx tsc --noEmit -p tsconfig.app.json` clean; `eslint` clean on every touched/new file. No
   existing test was edited.
 
-  **"Making adding questions easier to use"** — the other half of the owner's ask — is still
-  queued for this same loop; not started in this entry. Continuing to work through both this and
+  **"Making adding questions easier to use"** — the other half of the owner's ask — shipped as
+  `scripts/verify-problem.ts`, run via `npm run verify:problem -- path/to/draft.json` (or
+  directly: `npx vite-node scripts/verify-problem.ts -- path/to/draft.json`). Takes a small JSON
+  draft (`{kind, integrandExpr, answer, domain, techniques?, difficulty?, source?, id?}` — see
+  `scripts/verify-problem.example.json`) and automates the two mechanical, error-prone steps this
+  file's own Workflow section has always asked for by hand: (1) the numeric check — imports the
+  real `parse`/`normalize` from `mathEngine.ts`/`answer.ts` and duplicates `derivative()`/
+  `quadrature()` verbatim from `problems.test.ts` (matching this repo's own established
+  convention in `lessonExamples.test.ts`/`errorTaxonomy.ts` — copy the method, don't import the
+  test file), at the identical tolerances, PLUS the real `gradeAnswer(problem, problem.answer)`
+  self-check every bank entry is held to; (2) the duplicate check — greps every `bank/*.ts` file
+  for the candidate integrand. On success it also suggests which bank file the primary technique's
+  problems already live in (by tallying `techniques: ["<id>"` occurrences per file, not a
+  hardcoded map, so it can't go stale as new bank files are added) and prints a ready-to-paste
+  `Problem` object literal with the LaTeX/hints/steps fields marked TODO — those still need a
+  human to write, this only removes the parts that were pure mechanical risk. Updated this file's
+  own Workflow section (step 2) to point here as the default path, keeping the manual
+  throwaway-script fallback for what the tool's fixed shape can't cover (lesson `WorkedExample`/
+  `Completion` entries, per-problem substitutions too specific to generalize, infinite-domain
+  cases needing a bigger `n`).
+
+  Verified the tool itself both ways: a real, currently-in-the-bank definite integral
+  (`1/(1+x^2)` on `[0,1] = pi/4`) passes cleanly and correctly flags all three bank files that
+  already contain it (`definite.ts`, `standardForms.ts`, `trigSubstitution.ts`) as likely
+  duplicates; a deliberately wrong answer (`sin(x)` claimed as its own antiderivative) fails with
+  a specific point-by-point diagnostic and a non-zero exit code (confirmed via `$?`, not just the
+  printed message — the tool is meant to be scriptable, not just readable). `npx tsc --noEmit`
+  against the script directly (the project's two tsconfig files don't `include` `scripts/`, so
+  this needed its own one-off invocation with matching compiler flags) and `eslint
+  scripts/verify-problem.ts` both clean. Whole-repo `npx vitest run` — 3168/3168 unchanged (the
+  script isn't wired into the test suite; it's a standalone CLI, same category as `harness.ts`-
+  style throwaway scripts this log has described before, just kept permanently instead of
+  discarded).
+
+  Both halves of the owner's "adding questions" ask are now done. Continuing to work through
   further scoped improvements autonomously, merging as each verified increment lands, per the
   owner's explicit go-ahead to run a loop rather than stop after one item.
